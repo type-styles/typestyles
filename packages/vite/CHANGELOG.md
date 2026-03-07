@@ -1,5 +1,11 @@
 # @typestyles/vite
 
+## 0.1.1
+
+### Patch Changes
+
+- f2163d8: Add additional test coverage for vite plugin
+
 ## 0.1.0
 
 ### Minor Changes
