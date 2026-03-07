@@ -1,5 +1,31 @@
 # typestyles
 
+## 0.3.0
+
+### Minor Changes
+
+- 5b08816: Add support for attribute selectors in nested styles. You can now use `[data-variant]`, `[disabled]`, `[data-size="lg"]` and other attribute selectors directly in style definitions:
+
+  ```typescript
+  styles.create('button', {
+    padding: '8px',
+    '[data-variant="primary"]': { backgroundColor: 'blue' },
+    '[disabled]': { opacity: 0.5 },
+  });
+  ```
+
+- c72cb12: Fix lint errors and TypeScript issues
+  - Replace `any` types with `unknown` in type definitions
+  - Fix empty object types `{}` in defineProperties
+  - Add proper generic type parameters to functions
+  - Prefix unused parameters with underscore
+  - Add eslint ignores for generated docs files and scripts
+  - Fix test assertions to use proper types
+
+### Patch Changes
+
+- 60bc3e5: Add CI workflow for lint, typecheck, and test
+
 ## 0.2.0
 
 ### Minor Changes
