@@ -1,6 +1,44 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStyles, compose } from './styles.js';
+import { createStyles, createClass, compose } from './styles.js';
 import { reset, flushSync } from './sheet.js';
+
+describe('createClass', () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  it('returns the class name string', () => {
+    const card = createClass('card', { padding: '1rem', borderRadius: '8px' });
+    expect(card).toBe('card');
+  });
+
+  it('injects CSS into the style sheet', () => {
+    createClass('class-test', { color: 'red', fontSize: '14px' });
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    expect(style).not.toBeNull();
+    const rule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.class-test'
+    ) as CSSStyleRule;
+    expect(rule).toBeDefined();
+    expect(rule.style.color).toBe('red');
+  });
+
+  it('supports nested selectors', () => {
+    createClass('hover-card', {
+      padding: '1rem',
+      '&:hover': { color: 'blue' },
+    });
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rules = Array.from(style.sheet?.cssRules ?? []) as CSSStyleRule[];
+    const selectors = rules.map((r) => r.selectorText);
+    expect(selectors).toContain('.hover-card');
+    expect(selectors).toContain('.hover-card:hover');
+  });
+});
 
 describe('createStyles', () => {
   beforeEach(() => {
@@ -87,6 +125,37 @@ describe('createStyles', () => {
 
     expect(selectors).toContain('.hover-test-link');
     expect(selectors).toContain('.hover-test-link:hover');
+  });
+
+  describe('three-argument form (base + variants)', () => {
+    it('always includes base and applies variants', () => {
+      const button = createStyles(
+        'btn',
+        { padding: '8px 16px', borderRadius: '6px' },
+        {
+          default: { backgroundColor: '#0066ff', color: '#fff' },
+          outline: { border: '1px solid', backgroundColor: 'transparent' },
+          large: { padding: '12px 24px' },
+        }
+      );
+
+      expect(button()).toBe('btn-base');
+      expect(button('default')).toBe('btn-base btn-default');
+      expect(button('outline', 'large')).toBe('btn-base btn-outline btn-large');
+    });
+
+    it('filters falsy variants', () => {
+      const button = createStyles(
+        'btn2',
+        { padding: '8px' },
+        { primary: { color: 'blue' }, disabled: { opacity: 0.5 } }
+      );
+
+      const isDisabled = false;
+      expect(button('primary', isDisabled && 'disabled')).toBe(
+        'btn2-base btn2-primary'
+      );
+    });
   });
 });
 
