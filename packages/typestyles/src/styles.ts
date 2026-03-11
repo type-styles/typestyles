@@ -4,28 +4,85 @@ import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
 /**
- * Create a style group and return a selector function.
- *
- * The selector function accepts variant names and returns a composed
- * class name string. Class names are deterministic and human-readable:
- * `{namespace}-{variant}`.
+ * Create a single class with the given styles. Returns the class name string.
+ * Use this when you don't need variants — just a class with typed CSS properties.
  *
  * @example
  * ```ts
- * const button = createStyles('button', {
- *   base: { padding: '8px 16px', fontSize: '14px' },
- *   primary: { backgroundColor: '#0066ff', color: '#fff' },
- *   large: { padding: '12px 24px', fontSize: '16px' },
+ * const card = styles.class('card', {
+ *   padding: '1rem',
+ *   borderRadius: '0.5rem',
+ *   backgroundColor: 'white',
+ *   '&:hover': { boxShadow: '0 4px 6px rgb(0 0 0 / 0.1)' },
  * });
  *
- * button('base', 'primary')          // "button-base button-primary"
- * button('base', isLarge && 'large') // conditional application
+ * <div className={card} />  // class="card"
+ * ```
+ */
+export function createClass(name: string, properties: CSSProperties): string {
+  if (process.env.NODE_ENV !== 'production') {
+    if (registeredNamespaces.has(name)) {
+      console.warn(
+        `[typestyles] styles.class('${name}', ...) called more than once. ` +
+          `This will cause class name collisions. Each class name should be unique.`,
+      );
+    }
+  }
+  registeredNamespaces.add(name);
+
+  const selector = `.${name}`;
+  const rules = serializeStyle(selector, properties);
+  insertRules(rules);
+
+  return name;
+}
+
+/**
+ * Create a style group and return a selector function.
+ *
+ * **Two-argument form** (definitions object with 'base' and variants):
+ * ```ts
+ * const button = styles.create('button', {
+ *   base: { padding: '8px 16px' },
+ *   primary: { backgroundColor: '#0066ff' },
+ * });
+ * button('base', 'primary')  // "button-base button-primary"
+ * ```
+ *
+ * **Three-argument form** (base styles + variants, no 'base' key needed):
+ * ```ts
+ * const button = styles.create('button',
+ *   { padding: '8px 16px', borderRadius: '6px' },  // base styles
+ *   {
+ *     default: { backgroundColor: '#0066ff', color: '#fff' },
+ *     outline: { border: '1px solid', backgroundColor: 'transparent' },
+ *     large: { padding: '12px 24px' },
+ *   }
+ * );
+ * button('default')           // "button-base button-default" — base always included
+ * button('outline', 'large')   // "button-base button-outline button-large"
  * ```
  */
 export function createStyles<K extends string>(
   namespace: string,
   definitions: StyleDefinitions & Record<K, CSSProperties>,
-): SelectorFunction<K> {
+): SelectorFunction<K>;
+export function createStyles(
+  namespace: string,
+  base: CSSProperties,
+  variants: Record<string, CSSProperties>,
+): SelectorFunction<string>;
+export function createStyles(
+  namespace: string,
+  baseOrDefinitions: CSSProperties | (StyleDefinitions & Record<string, CSSProperties>),
+  variants?: Record<string, CSSProperties>,
+): SelectorFunction<string> {
+  const definitions: StyleDefinitions & Record<string, CSSProperties> =
+    variants !== undefined
+      ? { base: baseOrDefinitions as CSSProperties, ...variants }
+      : (baseOrDefinitions as StyleDefinitions & Record<string, CSSProperties>);
+
+  const withBase = variants !== undefined;
   // Development-mode duplicate detection
   if (process.env.NODE_ENV !== 'production') {
     if (registeredNamespaces.has(namespace)) {
@@ -50,14 +107,15 @@ export function createStyles<K extends string>(
   insertRules(rules);
 
   // Return the selector function
-  const selectorFn = (...variants: (K | false | null | undefined)[]): string => {
-    return variants
-      .filter(Boolean)
-      .map((v) => `${namespace}-${v as string}`)
-      .join(' ');
+  const selectorFn = (...variants: (string | false | null | undefined)[]): string => {
+    const filtered = variants.filter(Boolean);
+    const classes = withBase
+      ? ['base', ...filtered.filter((v) => v !== 'base')]
+      : filtered;
+    return classes.map((v) => `${namespace}-${v as string}`).join(' ');
   };
 
-  return selectorFn as SelectorFunction<K>;
+  return selectorFn as SelectorFunction<string>;
 }
 
 /**

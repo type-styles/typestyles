@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/coverage/**',
       '**/.turbo/**',
+      '**/.next/**',
       'docs/.content-collections/**',
       'scripts/**',
     ],
