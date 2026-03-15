@@ -1,5 +1,4 @@
-import type { ComponentProps } from 'react';
-import { TextField as AriaTextField } from 'react-aria-components';
+import type { TextFieldProps as AriaTextFieldProps } from 'react-aria-components';
 
 export function cx(...parts: Array<string | undefined | false>): string {
   return parts.filter(Boolean).join(' ');
@@ -11,4 +10,4 @@ export type FieldMeta = {
   errorMessage?: string;
 };
 
-export type BaseTextFieldProps = Omit<ComponentProps<typeof AriaTextField>, 'children'> & FieldMeta;
+export type BaseTextFieldProps = Omit<AriaTextFieldProps, 'children'> & FieldMeta;

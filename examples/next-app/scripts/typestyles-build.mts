@@ -13,12 +13,10 @@ async function main() {
 
   const outFile = resolve(root, 'app/typestyles.css');
   await writeFile(outFile, css, 'utf8');
-  // eslint-disable-next-line no-console
   console.log(`[typestyles] Wrote extracted CSS to ${outFile}`);
 }
 
 main().catch((error) => {
-  // eslint-disable-next-line no-console
   console.error('[typestyles] Failed to extract CSS', error);
   process.exitCode = 1;
 });

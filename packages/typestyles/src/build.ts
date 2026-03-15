@@ -27,7 +27,6 @@ export async function collectStylesFromModules(
     // register typestyles styles, tokens, keyframes, etc.
     // We await in case a loader returns a promise (e.g. dynamic import).
     // The return value itself is ignored; only the side effects matter.
-    // eslint-disable-next-line no-await-in-loop
     await load();
   }
 

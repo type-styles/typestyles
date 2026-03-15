@@ -1,6 +1,6 @@
 import { button, card, layout, spinner } from './styles.js';
 
-const app = document.getElementById('app');
+const app = globalThis.document.getElementById('app');
 
 if (!app) {
   throw new Error('Missing #app root element.');
