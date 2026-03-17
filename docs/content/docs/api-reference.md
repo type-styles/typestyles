@@ -16,6 +16,7 @@ Style creation and composition API.
 **Methods:**
 
 - `styles.create(namespace, definitions)`: Creates style variants
+- `styles.withUtils(utils)`: Returns utility-aware `create`, `class`, and `hashClass` helpers
 - `styles.compose(...selectors)`: Combines multiple selector functions or class strings
 - `styles.component(namespace, config)`: Creates variant-based component styles
 - `styles.recipe(namespace, config)`: First-class recipe API (`base`, `variants`, `compoundVariants`, `defaultVariants`)

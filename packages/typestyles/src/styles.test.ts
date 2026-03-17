@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStyles, createClass, createHashClass, compose } from './styles.js';
+import { createStyles, createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
 import { reset, flushSync } from './sheet.js';
 
 describe('createClass', () => {
@@ -294,5 +294,145 @@ describe('compose', () => {
 
     expect(composed('flex')).toBe('layout-flex spacing-flex');
     expect(composed('block')).toBe('layout-block spacing-block');
+  });
+});
+
+describe('createStylesWithUtils', () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  it('expands utility keys in class()', () => {
+    const u = createStylesWithUtils({
+      marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),
+      size: (value: string | number) => ({ width: value, height: value }),
+    });
+
+    const cls = u.class('util-class-test', {
+      marginX: 16,
+      size: 24,
+    });
+
+    expect(cls).toBe('util-class-test');
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-class-test',
+    ) as CSSStyleRule;
+
+    expect(rule.style.getPropertyValue('margin-left')).toBe('16px');
+    expect(rule.style.getPropertyValue('margin-right')).toBe('16px');
+    expect(rule.style.getPropertyValue('width')).toBe('24px');
+    expect(rule.style.getPropertyValue('height')).toBe('24px');
+  });
+
+  it('expands utility keys in create() two-argument form', () => {
+    const u = createStylesWithUtils({
+      paddingY: (value: string | number) => ({ paddingTop: value, paddingBottom: value }),
+    });
+
+    u.create('util-create-two', {
+      base: { paddingY: 12 },
+    });
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-create-two-base',
+    ) as CSSStyleRule;
+
+    expect(rule.style.getPropertyValue('padding-top')).toBe('12px');
+    expect(rule.style.getPropertyValue('padding-bottom')).toBe('12px');
+  });
+
+  it('expands utility keys in create() three-argument form', () => {
+    const u = createStylesWithUtils({
+      marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),
+    });
+
+    const card = u.create(
+      'util-create-three',
+      { marginX: 10 },
+      { active: { marginX: 20 } },
+    );
+
+    expect(card()).toBe('util-create-three-base');
+    expect(card('active')).toBe('util-create-three-base util-create-three-active');
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const baseRule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-create-three-base',
+    ) as CSSStyleRule;
+    const activeRule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-create-three-active',
+    ) as CSSStyleRule;
+
+    expect(baseRule.style.getPropertyValue('margin-left')).toBe('10px');
+    expect(baseRule.style.getPropertyValue('margin-right')).toBe('10px');
+    expect(activeRule.style.getPropertyValue('margin-left')).toBe('20px');
+    expect(activeRule.style.getPropertyValue('margin-right')).toBe('20px');
+  });
+
+  it('allows utility output to include nested selectors', () => {
+    const u = createStylesWithUtils({
+      hoverColor: (value: string) => ({ '&:hover': { color: value } }),
+    });
+
+    u.class('util-nested-test', {
+      hoverColor: 'red',
+    });
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const selectors = Array.from(style.sheet?.cssRules ?? []).map(
+      (rule) => (rule as CSSStyleRule).selectorText,
+    );
+
+    expect(selectors).toContain('.util-nested-test:hover');
+  });
+
+  it('preserves declaration order so direct props can override utility output', () => {
+    const u = createStylesWithUtils({
+      marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),
+    });
+
+    u.class('util-order-test', {
+      marginX: 8,
+      marginLeft: 20,
+    });
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-order-test',
+    ) as CSSStyleRule;
+
+    expect(rule.style.getPropertyValue('margin-left')).toBe('20px');
+    expect(rule.style.getPropertyValue('margin-right')).toBe('8px');
+  });
+
+  it('expands utility keys in hashClass()', () => {
+    const u = createStylesWithUtils({
+      size: (value: string | number) => ({ width: value, height: value }),
+    });
+
+    const cls = u.hashClass({ size: 30 }, 'avatar');
+    expect(cls.startsWith('ts-avatar-')).toBe(true);
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === `.${cls}`,
+    ) as CSSStyleRule;
+
+    expect(rule.style.getPropertyValue('width')).toBe('30px');
+    expect(rule.style.getPropertyValue('height')).toBe('30px');
   });
 });

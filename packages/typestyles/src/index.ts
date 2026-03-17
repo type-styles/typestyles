@@ -1,4 +1,4 @@
-import { createStyles, createClass, createHashClass, compose } from './styles.js';
+import { createStyles, createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
 import { createTokens, useTokens, createTheme } from './tokens.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
@@ -11,6 +11,9 @@ export type {
   CSSProperties,
   CSSValue,
   StyleDefinitions,
+  StyleDefinitionsWithUtils,
+  CSSPropertiesWithUtils,
+  StyleUtils,
   SelectorFunction,
   TokenValues,
   TokenRef,
@@ -51,6 +54,7 @@ export const styles = {
   hashClass: createHashClass,
   component: createComponent,
   recipe: createRecipe,
+  withUtils: createStylesWithUtils,
   compose,
 } as const;
 

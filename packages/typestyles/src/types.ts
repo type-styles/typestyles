@@ -19,6 +19,37 @@ export interface CSSProperties extends CSS.Properties<CSSValue> {
 }
 
 /**
+ * Utility function map used by styles.withUtils().
+ * Each key becomes an extra style property that expands into CSSProperties.
+ */
+export type StyleUtils = Record<string, (value: any) => CSSProperties>;
+
+type UtilityValue<U extends StyleUtils, K extends keyof U> = U[K] extends (
+  value: infer V,
+) => CSSProperties
+  ? V
+  : never;
+
+/**
+ * CSS properties augmented with user-defined utility keys.
+ */
+export type CSSPropertiesWithUtils<U extends StyleUtils> = CSS.Properties<CSSValue> & {
+  [K in keyof U]?: UtilityValue<U, K>;
+} & {
+  [selector: `&${string}`]: CSSPropertiesWithUtils<U>;
+  [attribute: `[${string}]`]: CSSPropertiesWithUtils<U>;
+  [atRule: `@${string}`]: CSSPropertiesWithUtils<U>;
+};
+
+/**
+ * A map of style names to utility-aware CSS property definitions.
+ */
+export type StyleDefinitionsWithUtils<U extends StyleUtils> = Record<
+  string,
+  CSSPropertiesWithUtils<U>
+>;
+
+/**
  * A map of variant names to their CSS property definitions.
  */
 export type StyleDefinitions = Record<string, CSSProperties>;

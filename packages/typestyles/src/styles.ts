@@ -1,4 +1,11 @@
-import type { CSSProperties, SelectorFunction, StyleDefinitions } from './types.js';
+import type {
+  CSSProperties,
+  CSSPropertiesWithUtils,
+  SelectorFunction,
+  StyleDefinitions,
+  StyleDefinitionsWithUtils,
+  StyleUtils,
+} from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
@@ -161,7 +168,7 @@ export function createStyles(
  * ```
  */
 type AnySelectorFunction = {
-  (...args: unknown[]): string;
+  (...args: any[]): string;
 };
 
 export function compose(
@@ -183,6 +190,152 @@ export function compose(
 
     return classNames.join(' ');
   };
+}
+
+export type StylesWithUtilsApi<U extends StyleUtils> = {
+  class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
+  hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
+  create: {
+    <K extends string>(
+      namespace: string,
+      definitions: StyleDefinitionsWithUtils<U> & Record<K, CSSPropertiesWithUtils<U>>,
+    ): SelectorFunction<K>;
+    (
+      namespace: string,
+      base: CSSPropertiesWithUtils<U>,
+      variants: Record<string, CSSPropertiesWithUtils<U>>,
+    ): SelectorFunction<string>;
+  };
+  compose: typeof compose;
+};
+
+/**
+ * Create a utility-aware styles API, similar to Stitches' `utils`.
+ *
+ * @example
+ * ```ts
+ * const u = createStylesWithUtils({
+ *   marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),
+ *   size: (value: string | number) => ({ width: value, height: value }),
+ * });
+ *
+ * const card = u.class('card', {
+ *   size: 40,
+ *   marginX: 16,
+ * });
+ * ```
+ */
+export function createStylesWithUtils<U extends StyleUtils>(utils: U): StylesWithUtilsApi<U> {
+  const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
+    expandStyleWithUtils(properties, utils);
+
+  function create<K extends string>(
+    namespace: string,
+    definitions: StyleDefinitionsWithUtils<U> & Record<K, CSSPropertiesWithUtils<U>>,
+  ): SelectorFunction<K>;
+  function create(
+    namespace: string,
+    base: CSSPropertiesWithUtils<U>,
+    variants: Record<string, CSSPropertiesWithUtils<U>>,
+  ): SelectorFunction<string>;
+  function create(
+    namespace: string,
+    baseOrDefinitions:
+      | CSSPropertiesWithUtils<U>
+      | (StyleDefinitionsWithUtils<U> & Record<string, CSSPropertiesWithUtils<U>>),
+    variants?: Record<string, CSSPropertiesWithUtils<U>>,
+  ): SelectorFunction<string> {
+    if (variants !== undefined) {
+      const transformedVariants = Object.fromEntries(
+        Object.entries(variants).map(([variant, properties]) => [variant, apply(properties)]),
+      );
+      return createStyles(namespace, apply(baseOrDefinitions as CSSPropertiesWithUtils<U>), transformedVariants);
+    }
+
+    const transformedDefinitions = Object.fromEntries(
+      Object.entries(
+        baseOrDefinitions as StyleDefinitionsWithUtils<U> & Record<string, CSSPropertiesWithUtils<U>>,
+      ).map(([variant, properties]) => [variant, apply(properties)]),
+    ) as StyleDefinitions & Record<string, CSSProperties>;
+
+    return createStyles(namespace, transformedDefinitions);
+  }
+
+  return {
+    class: (name, properties) => createClass(name, apply(properties)),
+    hashClass: (properties, label) => createHashClass(apply(properties), label),
+    create,
+    compose,
+  };
+}
+
+function expandStyleWithUtils<U extends StyleUtils>(
+  properties: CSSPropertiesWithUtils<U>,
+  utils: U,
+): CSSProperties {
+  const expanded: CSSProperties = {};
+
+  for (const [key, value] of Object.entries(properties as Record<string, unknown>)) {
+    if (value == null) continue;
+
+    if (key.startsWith('&') || key.startsWith('[') || key.startsWith('@')) {
+      if (isObject(value)) {
+        assignStyleEntry(
+          expanded,
+          key,
+          expandStyleWithUtils(value as CSSPropertiesWithUtils<U>, utils),
+        );
+      }
+      continue;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(utils, key)) {
+      const utilFn = utils[key as keyof U] as (arg: unknown) => CSSProperties;
+      const utilResult = utilFn(value);
+      const normalized = expandStyleWithUtils(utilResult as CSSPropertiesWithUtils<U>, utils);
+      for (const [utilKey, utilValue] of Object.entries(normalized as Record<string, unknown>)) {
+        assignStyleEntry(expanded, utilKey, utilValue);
+      }
+      continue;
+    }
+
+    assignStyleEntry(expanded, key, value);
+  }
+
+  return expanded;
+}
+
+function assignStyleEntry(target: CSSProperties, key: string, value: unknown): void {
+  const targetRecord = target as Record<string, unknown>;
+
+  if (isObject(value)) {
+    const existing = targetRecord[key];
+    if (isObject(existing)) {
+      targetRecord[key] = mergeStyleObjects(
+        existing as CSSProperties,
+        value as CSSProperties,
+      );
+      return;
+    }
+    targetRecord[key] = value;
+    return;
+  }
+
+  targetRecord[key] = value;
+}
+
+function mergeStyleObjects(base: CSSProperties, next: CSSProperties): CSSProperties {
+  const merged: CSSProperties = { ...base };
+
+  for (const [key, value] of Object.entries(next as Record<string, unknown>)) {
+    assignStyleEntry(merged, key, value);
+  }
+
+  return merged;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function stableSerialize(value: unknown): string {

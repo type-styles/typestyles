@@ -95,6 +95,41 @@ button('root'); // "base-root primary-root"
 
 See the [Style Composition](/docs/compose) guide for more details.
 
+## Utility shortcuts
+
+Use `styles.withUtils()` to define reusable shorthand properties (similar to Stitches `utils`).
+
+```ts
+import { styles } from 'typestyles';
+
+const s = styles.withUtils({
+  marginX: (value: string | number) => ({
+    marginLeft: value,
+    marginRight: value,
+  }),
+  paddingY: (value: string | number) => ({
+    paddingTop: value,
+    paddingBottom: value,
+  }),
+  size: (value: string | number) => ({
+    width: value,
+    height: value,
+  }),
+});
+
+const avatar = s.class('avatar', {
+  size: 40,
+  marginX: 8,
+});
+
+const button = s.create('button', {
+  base: { paddingY: 8 },
+  compact: { paddingY: 4 },
+});
+```
+
+Utility keys are fully typed from your utility definitions and can be mixed with normal CSS properties.
+
 ## Composing with tokens
 
 Use token references (e.g. from `tokens.create()`) in your style values. They compile to `var(--name-key)` and work with themes.
