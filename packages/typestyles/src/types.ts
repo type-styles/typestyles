@@ -22,7 +22,11 @@ export interface CSSProperties extends CSS.Properties<CSSValue> {
  * Utility function map used by styles.withUtils().
  * Each key becomes an extra style property that expands into CSSProperties.
  */
-export type StyleUtils = Record<string, (value: any) => CSSProperties>;
+type BivariantCallback<Arg, Ret> = {
+  bivarianceHack(value: Arg): Ret;
+}['bivarianceHack'];
+
+export type StyleUtils = Record<string, BivariantCallback<unknown, CSSProperties>>;
 
 type UtilityValue<U extends StyleUtils, K extends keyof U> = U[K] extends (
   value: infer V,

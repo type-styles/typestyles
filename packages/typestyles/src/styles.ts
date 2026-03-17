@@ -168,7 +168,7 @@ export function createStyles(
  * ```
  */
 type AnySelectorFunction = {
-  (...args: any[]): string;
+  (...args: unknown[]): string;
 };
 
 export function compose(
@@ -290,7 +290,7 @@ function expandStyleWithUtils<U extends StyleUtils>(
     }
 
     if (Object.prototype.hasOwnProperty.call(utils, key)) {
-      const utilFn = utils[key as keyof U] as (arg: unknown) => CSSProperties;
+      const utilFn = utils[key as keyof U] as unknown as (arg: unknown) => CSSProperties;
       const utilResult = utilFn(value);
       const normalized = expandStyleWithUtils(utilResult as CSSPropertiesWithUtils<U>, utils);
       for (const [utilKey, utilValue] of Object.entries(normalized as Record<string, unknown>)) {
