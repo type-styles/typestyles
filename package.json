@@ -15,6 +15,7 @@
     "vite": "pnpm --filter @typestyles/vite",
     "rollup": "pnpm --filter @typestyles/rollup",
     "next": "pnpm --filter @typestyles/next",
+    "migrate": "pnpm --filter @typestyles/migrate",
     "vite-app": "pnpm --filter typestyles-vite-example",
     "rollup-app": "pnpm --filter typestyles-rollup-example",
     "rolldown-app": "pnpm --filter typestyles-rolldown-example",

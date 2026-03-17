@@ -1,0 +1,65 @@
+{
+  "name": "@typestyles/migrate",
+  "version": "0.1.0",
+  "description": "CLI codemods for migrating codebases to typestyles",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "typestyles-migrate": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "typestyles",
+    "codemod",
+    "migration",
+    "cli",
+    "styled-components",
+    "emotion"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dbanksdesign/typestyles",
+    "directory": "packages/migrate"
+  },
+  "devDependencies": {
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/node": "^25.2.1",
+    "@types/picomatch": "^4.0.2",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@babel/generator": "^7.29.1",
+    "@babel/parser": "^7.29.2",
+    "@babel/traverse": "^7.29.0",
+    "@babel/types": "^7.29.0",
+    "diff": "^8.0.3",
+    "fast-glob": "^3.3.3",
+    "picomatch": "^4.0.3",
+    "postcss": "^8.5.8"
+  }
+}

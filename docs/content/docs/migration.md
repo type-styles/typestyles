@@ -737,6 +737,41 @@ After migration, your JavaScript bundle may be slightly smaller (no CSS parsing 
 | **Theme values**   | `${props => props.theme...}` | `${theme...}`             | Config-based        | Token references      |
 | **Dynamic values** | Template literals            | Template literals         | Arbitrary values    | Inline styles         |
 
+## Migration CLI (MVP)
+
+The `@typestyles/migrate` package includes an early CLI to help with static migrations from styled-components and Emotion.
+
+### Scope in this first version
+
+- Converts static tagged templates (`styled.*`, `styled(...)`, and `css\`...\``) into `styles.class(...)`.
+- Rewrites JSX usage for safely transformable styled components.
+- Skips dynamic template interpolations and emits warnings instead of doing unsafe rewrites.
+
+### Usage
+
+```bash
+pnpm --filter @typestyles/migrate typestyles-migrate src
+```
+
+By default the command is **dry-run** and prints patch output. Use `--write` to apply changes:
+
+```bash
+pnpm --filter @typestyles/migrate typestyles-migrate src --write
+```
+
+Useful options:
+
+- `--include <glob>`: only process matching files (repeatable)
+- `--exclude <glob>`: ignore matching files (repeatable)
+- `--extensions .ts,.tsx`: customize scanned extensions
+- `--report migration-report.json`: write a JSON summary and warning report
+
+### Current limitations
+
+- Dynamic interpolations (for example `${(props) => ...}`) are intentionally not auto-migrated.
+- Exported styled components are skipped to avoid accidental API-shape changes.
+- Complex non-JSX references to styled component variables are skipped.
+
 ## Troubleshooting migration issues
 
 ### Styles not applying
