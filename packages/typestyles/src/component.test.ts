@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createComponent } from './component.js';
+import { createComponent, createRecipe } from './component.js';
 import { reset, flushSync, getRegisteredCss } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
@@ -181,5 +181,80 @@ describe('createComponent', () => {
 
     const css = getRegisteredCss();
     expect(css).toContain('.cv-test-compound-0');
+  });
+
+  it('matches compound variants with array values', () => {
+    const btn = createComponent('arrbtn', {
+      variants: {
+        intent: {
+          primary: { color: 'blue' },
+          secondary: { color: 'purple' },
+          ghost: { color: 'gray' },
+        },
+        size: {
+          sm: { fontSize: '12px' },
+          lg: { fontSize: '18px' },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: { intent: ['primary', 'secondary'], size: 'lg' },
+          style: { textTransform: 'uppercase' },
+        },
+      ],
+    });
+
+    expect(btn({ intent: 'primary', size: 'lg' })).toContain('arrbtn-compound-0');
+    expect(btn({ intent: 'secondary', size: 'lg' })).toContain('arrbtn-compound-0');
+    expect(btn({ intent: 'ghost', size: 'lg' })).not.toContain('arrbtn-compound-0');
+  });
+
+  it('supports boolean variant keys in selections and defaults', () => {
+    const btn = createComponent('boolbtn', {
+      variants: {
+        outlined: {
+          true: { border: '1px solid currentColor' },
+          false: { border: 'none' },
+        },
+      },
+      defaultVariants: { outlined: false },
+    });
+
+    expect(btn()).toBe('boolbtn-outlined-false');
+    expect(btn({ outlined: true })).toBe('boolbtn-outlined-true');
+    expect(btn({ outlined: false })).toBe('boolbtn-outlined-false');
+  });
+});
+
+describe('createRecipe', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('is a first-class alias with recipe terminology', () => {
+    const button = createRecipe('recipe-btn', {
+      base: { padding: '8px' },
+      variants: {
+        intent: {
+          primary: { color: 'blue' },
+          ghost: { color: 'black' },
+        },
+        rounded: {
+          true: { borderRadius: '9999px' },
+          false: { borderRadius: '0' },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: { intent: ['primary', 'ghost'], rounded: true },
+          style: { fontWeight: 700 },
+        },
+      ],
+      defaultVariants: { intent: 'primary', rounded: false },
+    });
+
+    expect(button()).toBe('recipe-btn-base recipe-btn-intent-primary recipe-btn-rounded-false');
+    expect(button({ rounded: true })).toContain('recipe-btn-compound-0');
   });
 });

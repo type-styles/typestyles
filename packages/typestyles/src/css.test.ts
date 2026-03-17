@@ -135,4 +135,39 @@ describe('serializeStyle', () => {
     expect(rules[2].css).toBe('.button[disabled] { opacity: 0.5; }');
     expect(rules[3].css).toBe('.button[data-size] { padding: 8px; }');
   });
+
+  it('serializes attribute selector operators and aria/data selectors', () => {
+    const rules = serializeStyle('.trigger', {
+      '&[data-state="open"]': { opacity: 1 },
+      '&[data-side^="top"]': { marginTop: '4px' },
+      '&[data-value$="-lg"]': { padding: '12px' },
+      '&[data-name*="admin"]': { fontWeight: 700 },
+      '&[data-flags~="selected"]': { borderStyle: 'solid' },
+      '&[lang|="en"]': { fontFamily: 'system-ui' },
+      '&[aria-expanded="true"]': { backgroundColor: 'blue' },
+      '&[aria-selected="true"]': { color: 'white' },
+      '&[data-theme="dark" i]': { color: 'white' },
+    });
+
+    expect(rules.map((r) => r.css)).toEqual([
+      '.trigger[data-state="open"] { opacity: 1; }',
+      '.trigger[data-side^="top"] { margin-top: 4px; }',
+      '.trigger[data-value$="-lg"] { padding: 12px; }',
+      '.trigger[data-name*="admin"] { font-weight: 700; }',
+      '.trigger[data-flags~="selected"] { border-style: solid; }',
+      '.trigger[lang|="en"] { font-family: system-ui; }',
+      '.trigger[aria-expanded="true"] { background-color: blue; }',
+      '.trigger[aria-selected="true"] { color: white; }',
+      '.trigger[data-theme="dark" i] { color: white; }',
+    ]);
+  });
+
+  it('prefixes comma-separated attribute selector lists with the parent selector', () => {
+    const rules = serializeStyle('.item', {
+      '[data-state="open"], [aria-expanded="true"]': { opacity: 1 },
+    });
+
+    expect(rules).toHaveLength(1);
+    expect(rules[0].css).toBe('.item[data-state="open"], .item[aria-expanded="true"] { opacity: 1; }');
+  });
 });

@@ -1,4 +1,11 @@
-import type { CSSProperties, VariantDefinitions, ComponentConfig, ComponentFunction } from './types.js';
+import type {
+  CSSProperties,
+  VariantDefinitions,
+  ComponentConfig,
+  ComponentFunction,
+  RecipeConfig,
+  RecipeFunction,
+} from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
@@ -38,7 +45,28 @@ import { registeredNamespaces } from './registry.js';
  */
 export function createComponent<V extends VariantDefinitions>(
   namespace: string,
-  config: ComponentConfig<V>
+  config: ComponentConfig<V>,
+): ComponentFunction<V> {
+  return createVariantFactory(namespace, config, 'component');
+}
+
+/**
+ * Create a variant recipe and return a className resolver.
+ *
+ * This is an alias-style API over `styles.component`, using recipe terminology:
+ * `base`, `variants`, `compoundVariants`, and `defaultVariants`.
+ */
+export function createRecipe<V extends VariantDefinitions>(
+  namespace: string,
+  config: RecipeConfig<V>,
+): RecipeFunction<V> {
+  return createVariantFactory(namespace, config, 'recipe');
+}
+
+function createVariantFactory<V extends VariantDefinitions>(
+  namespace: string,
+  config: ComponentConfig<V>,
+  apiName: 'component' | 'recipe',
 ): ComponentFunction<V> {
   const { base, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
 
@@ -46,7 +74,7 @@ export function createComponent<V extends VariantDefinitions>(
   if (process.env.NODE_ENV !== 'production') {
     if (registeredNamespaces.has(namespace)) {
       console.warn(
-        `[typestyles] styles.component('${namespace}', ...) called more than once. ` +
+        `[typestyles] styles.${apiName}('${namespace}', ...) called more than once. ` +
           `This will cause class name collisions. Each namespace should be unique.`
       );
     }
@@ -86,29 +114,60 @@ export function createComponent<V extends VariantDefinitions>(
 
     // Resolve final selections (explicit overrides defaultVariants)
     const resolvedSelections: Record<string, unknown> = {};
-    for (const dimension of Object.keys(variants)) {
-      resolvedSelections[dimension] =
-        selections[dimension] ?? (defaultVariants as Record<string, unknown>)[dimension];
+    for (const [dimension, options] of Object.entries(variants)) {
+      const optionMap = options as Record<string, CSSProperties>;
+      const explicit = selections[dimension];
+      const fallback = (defaultVariants as Record<string, unknown>)[dimension];
+      resolvedSelections[dimension] = normalizeSelection(explicit ?? fallback, optionMap);
     }
 
     // Apply variant classes
-    for (const dimension of Object.keys(variants)) {
+    for (const [dimension, options] of Object.entries(variants)) {
       const selected = resolvedSelections[dimension];
-      if (selected != null && selected !== false) {
-        classes.push(`${namespace}-${dimension}-${String(selected)}`);
+      const optionMap = options as Record<string, CSSProperties>;
+      const selectedKey = normalizeSelection(selected, optionMap);
+      if (selectedKey != null) {
+        classes.push(`${namespace}-${dimension}-${selectedKey}`);
       }
     }
 
     // Apply compound variant classes
     (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
       (cv, index) => {
-        const matches = Object.entries(cv.variants).every(
-          ([k, v]) => resolvedSelections[k] === v
-        );
+        const matches = Object.entries(cv.variants).every(([k, expected]) => {
+          const options = (variants as Record<string, Record<string, CSSProperties>>)[k];
+          if (!options) return false;
+
+          const selected = normalizeSelection(resolvedSelections[k], options);
+          if (selected == null) return false;
+
+          if (Array.isArray(expected)) {
+            return expected.some((value) => normalizeSelection(value, options) === selected);
+          }
+
+          return normalizeSelection(expected, options) === selected;
+        });
         if (matches) classes.push(`${namespace}-compound-${index}`);
       }
     );
 
     return classes.join(' ');
   }) as ComponentFunction<V>;
+}
+
+function normalizeSelection(
+  value: unknown,
+  options: Record<string, CSSProperties>,
+): string | undefined {
+  if (value == null) return undefined;
+
+  if (typeof value === 'boolean') {
+    const boolKey = String(value);
+    if (Object.prototype.hasOwnProperty.call(options, boolKey)) return boolKey;
+    // Preserve existing behavior: false acts as an opt-out when no "false" variant is defined.
+    if (value === false) return undefined;
+    return boolKey;
+  }
+
+  return String(value);
 }

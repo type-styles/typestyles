@@ -30,6 +30,27 @@ const button = styles.create('button', {
 // In your component: className={button('base', 'primary')}
 ```
 
+## Which API should I use?
+
+| You want to... | Use | Why |
+| --- | --- | --- |
+| Create a simple named style group (`base`, `primary`, `large`) | `styles.create` | Lowest ceremony and very readable class output |
+| Build typed variant dimensions (`intent`, `size`, `tone`) with defaults and compounds | `styles.recipe` | First-class recipe model: `variants`, `compoundVariants`, `defaultVariants` |
+| Make one standalone class from one style object | `styles.class` | Best for one-off reusable classes |
+| Compose multiple selectors/classes together | `styles.compose` | Reuse and merge style groups cleanly |
+
+Quick rule of thumb:
+
+- Start with `styles.create` for straightforward component styles.
+- Use `styles.recipe` when your API has variant dimensions.
+- Use `styles.class` for single utility-like classes.
+
+See also:
+
+- [Styles](/docs/styles)
+- [Recipes](/docs/recipes)
+- [Migration Guide](/docs/migration)
+
 Create design tokens with `tokens.create()` and use them in styles:
 
 ```ts

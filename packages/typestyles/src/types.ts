@@ -13,7 +13,7 @@ export interface CSSProperties extends CSS.Properties<CSSValue> {
   /** Nested selector (e.g., '&:hover', '& .child', '&::before', '&[data-variant]') */
   [selector: `&${string}`]: CSSProperties;
   /** Attribute selector (e.g., '[data-variant]', '[data-variant="primary"]', '[disabled]') */
-  [attribute: `[${string}`]: CSSProperties;
+  [attribute: `[${string}]`]: CSSProperties;
   /** At-rule (e.g., '@media (max-width: 768px)', '@container', '@supports') */
   [atRule: `@${string}`]: CSSProperties;
 }
@@ -59,6 +59,21 @@ export type KeyframeStops = Record<string, CSSProperties>;
  */
 export type VariantDefinitions = Record<string, Record<string, CSSProperties>>;
 
+type VariantOptionKey<V extends VariantDefinitions, K extends keyof V> = Extract<keyof V[K], string>;
+
+type VariantSelectionValue<OptionKey extends string> =
+  | OptionKey
+  | (Extract<OptionKey, 'true'> extends never ? never : true)
+  | (Extract<OptionKey, 'false'> extends never ? never : false);
+
+type CompoundSelectionValue<OptionKey extends string> =
+  | VariantSelectionValue<OptionKey>
+  | readonly VariantSelectionValue<OptionKey>[];
+
+export type ComponentSelections<V extends VariantDefinitions> = {
+  [K in keyof V]?: VariantSelectionValue<VariantOptionKey<V, K>> | null | undefined;
+};
+
 /**
  * The full config object passed to styles.component().
  */
@@ -66,18 +81,24 @@ export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
   variants?: V;
   compoundVariants?: Array<{
-    variants: { [K in keyof V]?: keyof V[K] };
+    variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
     style: CSSProperties;
   }>;
-  defaultVariants?: { [K in keyof V]?: keyof V[K] };
+  defaultVariants?: ComponentSelections<V>;
 };
 
 /**
  * The function returned by styles.component().
  */
-export type ComponentFunction<V extends VariantDefinitions> = (selections?: {
-  [K in keyof V]?: keyof V[K] | false | null | undefined;
-}) => string;
+export type ComponentFunction<V extends VariantDefinitions> = (
+  selections?: ComponentSelections<V>,
+) => string;
+
+/**
+ * Alias terminology for variant recipes.
+ */
+export type RecipeConfig<V extends VariantDefinitions> = ComponentConfig<V>;
+export type RecipeFunction<V extends VariantDefinitions> = ComponentFunction<V>;
 
 /**
  * A reference to a CSS custom property created by createVar().

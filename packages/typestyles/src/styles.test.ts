@@ -127,6 +127,24 @@ describe('createStyles', () => {
     expect(selectors).toContain('.hover-test-link:hover');
   });
 
+  it('injects selector-list attribute rules for data/aria state', () => {
+    createStyles('state-list-test', {
+      trigger: {
+        '[data-state="open"], [aria-expanded="true"]': { opacity: 1 },
+      },
+    });
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rules = Array.from(style.sheet?.cssRules ?? []) as CSSStyleRule[];
+    const selectors = rules.map((r) => r.selectorText);
+
+    expect(selectors).toContain(
+      '.state-list-test-trigger[data-state="open"], .state-list-test-trigger[aria-expanded="true"]',
+    );
+  });
+
   describe('three-argument form (base + variants)', () => {
     it('always includes base and applies variants', () => {
       const button = createStyles(

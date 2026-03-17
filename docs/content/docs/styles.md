@@ -7,6 +7,10 @@ description: Create and compose style variants with styles.create
 
 The `styles` API lets you define named style variants and compose them at the call site.
 
+For typed variant dimensions (`variants`, `compoundVariants`, `defaultVariants`), see [Recipes](/docs/recipes).
+
+Use `styles.create` when your variants are a flat list of class names. If your component API is dimensioned (like `intent`, `size`, `tone`), use [Recipes](/docs/recipes).
+
 ## Creating styles
 
 Call `styles.create(namespace, definitions)` with a unique namespace and an object of variant names to style definitions:
@@ -46,6 +50,32 @@ const button = styles.create('button', {
 });
 ```
 
+### Data and ARIA attribute selectors
+
+Attribute selectors work with `&`-prefixed nested selectors, including all CSS attribute selector operators:
+
+```ts
+const trigger = styles.create('trigger', {
+  base: {
+    // exact match
+    '&[data-state="open"]': { opacity: 1 },
+
+    // starts with / ends with / contains
+    '&[data-side^="top"]': { marginTop: '4px' },
+    '&[data-size$="-lg"]': { padding: '12px' },
+    '&[data-name*="admin"]': { fontWeight: 700 },
+
+    // whitespace-separated token / language-style match
+    '&[data-flags~="selected"]': { borderStyle: 'solid' },
+    '&[lang|="en"]': { fontFamily: 'system-ui' },
+
+    // accessibility state hooks
+    '&[aria-expanded="true"]': { backgroundColor: '#1d4ed8' },
+    '&[aria-selected="true"]': { color: 'white' },
+  },
+});
+```
+
 ## Composing styles
 
 Use `styles.compose()` to combine multiple selector functions or class strings:
@@ -68,3 +98,5 @@ See the [Style Composition](/docs/compose) guide for more details.
 ## Composing with tokens
 
 Use token references (e.g. from `tokens.create()`) in your style values. They compile to `var(--name-key)` and work with themes.
+
+If you are migrating from CVA, Stitches, or vanilla-extract recipes, see [Migration Guide](/docs/migration).

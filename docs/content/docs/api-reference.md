@@ -18,6 +18,7 @@ Style creation and composition API.
 - `styles.create(namespace, definitions)`: Creates style variants
 - `styles.compose(...selectors)`: Combines multiple selector functions or class strings
 - `styles.component(namespace, config)`: Creates variant-based component styles
+- `styles.recipe(namespace, config)`: First-class recipe API (`base`, `variants`, `compoundVariants`, `defaultVariants`)
 
 
 ### `tokens`
@@ -95,6 +96,28 @@ const primary = styles.create('primary', {
 
 const button = styles.compose(base, primary);
 button('root'); // "base-root primary-root"
+```
+
+### Creating Recipes
+
+```ts
+import { styles } from 'typestyles';
+
+const button = styles.recipe('button', {
+  base: { borderRadius: '8px' },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#2563eb', color: 'white' },
+      ghost: { backgroundColor: 'transparent', color: '#111827' },
+    },
+  },
+  defaultVariants: {
+    intent: 'primary',
+  },
+});
+
+button(); // "button-base button-intent-primary"
+button({ intent: 'ghost' }); // "button-base button-intent-ghost"
 ```
 
 ## @typestyles/props

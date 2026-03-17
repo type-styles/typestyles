@@ -216,9 +216,23 @@ const link = styles.create('link', {
         content: '" (opens in new tab)"',
       },
     },
+
+    // Selector list support (both selectors scoped to .link-base)
+    '[data-state="open"], [aria-expanded="true"]': {
+      fontWeight: 600,
+    },
   },
 });
 ```
+
+All CSS attribute selector operators are supported:
+
+- exact match: `[attr="value"]`
+- contains token: `[attr~="token"]`
+- starts with / language: `[attr|="en"]`
+- starts with: `[attr^="prefix"]`
+- ends with: `[attr$="suffix"]`
+- contains substring: `[attr*="part"]`
 
 ## Media queries
 

@@ -87,14 +87,9 @@ export function serializeStyle(selector: string, properties: CSSProperties): CSS
   for (const [prop, value] of Object.entries(properties)) {
     if (value == null) continue;
 
-    if (prop.startsWith('&')) {
-      // Nested selector: replace & with the parent selector
-      const nestedSelector = prop.replace(/&/g, selector);
+    const nestedSelector = resolveNestedSelector(selector, prop);
+    if (nestedSelector) {
       rules.push(...serializeStyle(nestedSelector, value as CSSProperties));
-    } else if (prop.startsWith('[')) {
-      // Attribute selector: combine with parent selector
-      const attrSelector = selector + prop;
-      rules.push(...serializeStyle(attrSelector, value as CSSProperties));
     } else if (prop.startsWith('@')) {
       // At-rule: wrap the serialized content in the at-rule
       const innerRules = serializeStyle(selector, value as CSSProperties);
@@ -120,4 +115,65 @@ export function serializeStyle(selector: string, properties: CSSProperties): CSS
   }
 
   return rules;
+}
+
+function resolveNestedSelector(parentSelector: string, key: string): string | null {
+  if (key.startsWith('&')) {
+    return key.replace(/&/g, parentSelector);
+  }
+
+  // Support attribute selectors without requiring "&", including selector lists:
+  // '[data-state="open"], [aria-expanded="true"]'
+  if (key.startsWith('[')) {
+    const parts = splitSelectorList(key);
+    return parts.map((part) => `${parentSelector}${part.trimStart()}`).join(', ');
+  }
+
+  return null;
+}
+
+function splitSelectorList(selector: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let bracketDepth = 0;
+  let parenDepth = 0;
+  let quote: '"' | "'" | null = null;
+
+  for (let i = 0; i < selector.length; i++) {
+    const char = selector[i];
+    const prev = i > 0 ? selector[i - 1] : '';
+
+    if (quote) {
+      current += char;
+      if (char === quote && prev !== '\\') {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      current += char;
+      continue;
+    }
+
+    if (char === '[') bracketDepth++;
+    if (char === ']') bracketDepth = Math.max(0, bracketDepth - 1);
+    if (char === '(') parenDepth++;
+    if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
+
+    if (char === ',' && bracketDepth === 0 && parenDepth === 0) {
+      result.push(current.trim());
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current.trim()) {
+    result.push(current.trim());
+  }
+
+  return result;
 }

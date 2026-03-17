@@ -7,6 +7,8 @@ description: Migrate to typestyles from other CSS-in-JS libraries
 
 Switching to typestyles from other styling solutions is straightforward. This guide covers the most common migration paths.
 
+If you are adopting the new variant API, start with [Recipes](/docs/recipes).
+
 ## From styled-components
 
 ### Component structure
@@ -181,6 +183,244 @@ className={button('base', isPrimary && 'primary', isLarge && 'large')}
 ```
 
 typestyles' selector function already handles conditional class names, so you don't need a separate `cx` utility.
+
+## From CVA (Class Variance Authority)
+
+`styles.recipe` maps closely to CVA's mental model:
+
+- `variants`
+- `compoundVariants`
+- `defaultVariants`
+
+### Basic mapping
+
+**Before (CVA):**
+
+```ts
+import { cva } from 'class-variance-authority';
+
+export const button = cva('inline-flex rounded font-medium', {
+  variants: {
+    intent: {
+      primary: 'bg-blue-600 text-white',
+      ghost: 'bg-transparent text-gray-900',
+    },
+    size: {
+      sm: 'px-2 py-1 text-sm',
+      lg: 'px-4 py-2 text-base',
+    },
+  },
+  compoundVariants: [
+    {
+      intent: ['primary', 'ghost'],
+      size: 'lg',
+      class: 'uppercase',
+    },
+  ],
+  defaultVariants: {
+    intent: 'primary',
+    size: 'sm',
+  },
+});
+```
+
+**After (typestyles):**
+
+```ts
+import { styles } from 'typestyles';
+
+export const button = styles.recipe('button', {
+  base: {
+    display: 'inline-flex',
+    borderRadius: '8px',
+    fontWeight: 500,
+  },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#2563eb', color: 'white' },
+      ghost: { backgroundColor: 'transparent', color: '#111827' },
+    },
+    size: {
+      sm: { padding: '4px 8px', fontSize: '14px' },
+      lg: { padding: '8px 16px', fontSize: '16px' },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        intent: ['primary', 'ghost'],
+        size: 'lg',
+      },
+      style: {
+        textTransform: 'uppercase',
+      },
+    },
+  ],
+  defaultVariants: {
+    intent: 'primary',
+    size: 'sm',
+  },
+});
+```
+
+### Key differences
+
+1. CVA returns composed class strings from existing class tokens; typestyles generates and injects CSS from style objects.
+2. CVA `class` in `compoundVariants` becomes typestyles `style`.
+3. You can keep readable deterministic class output (`button-intent-primary`, etc.).
+
+## From Stitches variants
+
+### Variant migration
+
+**Before (Stitches):**
+
+```ts
+import { styled } from '@stitches/react';
+
+const Button = styled('button', {
+  padding: '8px 12px',
+  variants: {
+    intent: {
+      primary: { backgroundColor: 'dodgerblue', color: 'white' },
+      ghost: { backgroundColor: 'transparent' },
+    },
+    outlined: {
+      true: { border: '1px solid currentColor' },
+    },
+  },
+  compoundVariants: [
+    {
+      intent: 'primary',
+      outlined: true,
+      css: { borderColor: 'blue' },
+    },
+  ],
+  defaultVariants: {
+    intent: 'primary',
+  },
+});
+```
+
+**After (typestyles):**
+
+```ts
+import { styles } from 'typestyles';
+
+const button = styles.recipe('button', {
+  base: {
+    padding: '8px 12px',
+  },
+  variants: {
+    intent: {
+      primary: { backgroundColor: 'dodgerblue', color: 'white' },
+      ghost: { backgroundColor: 'transparent' },
+    },
+    outlined: {
+      true: { border: '1px solid currentColor' },
+      false: { border: 'none' },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        intent: 'primary',
+        outlined: true,
+      },
+      style: {
+        borderColor: 'blue',
+      },
+    },
+  ],
+  defaultVariants: {
+    intent: 'primary',
+    outlined: false,
+  },
+});
+```
+
+## From vanilla-extract recipes
+
+### Recipe migration
+
+**Before (vanilla-extract recipes):**
+
+```ts
+import { recipe } from '@vanilla-extract/recipes';
+
+export const button = recipe({
+  base: {
+    borderRadius: 6,
+  },
+  variants: {
+    tone: {
+      neutral: { background: 'white' },
+      brand: { background: 'blue', color: 'white' },
+    },
+  },
+  defaultVariants: {
+    tone: 'neutral',
+  },
+});
+```
+
+**After (typestyles):**
+
+```ts
+import { styles } from 'typestyles';
+
+export const button = styles.recipe('button', {
+  base: {
+    borderRadius: '6px',
+  },
+  variants: {
+    tone: {
+      neutral: { backgroundColor: 'white' },
+      brand: { backgroundColor: 'blue', color: 'white' },
+    },
+  },
+  defaultVariants: {
+    tone: 'neutral',
+  },
+});
+```
+
+Main trade-off:
+
+- vanilla-extract is build-time only
+- typestyles supports runtime + SSR today, with build-mode work in progress
+
+## From typestyles `styles.component`
+
+If you already use `styles.component`, migration is mostly a rename to align with recipe terminology:
+
+```ts
+// Before
+const button = styles.component('button', {
+  base: { padding: '8px 12px' },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#2563eb' },
+      ghost: { backgroundColor: 'transparent' },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+
+// After
+const button = styles.recipe('button', {
+  base: { padding: '8px 12px' },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#2563eb' },
+      ghost: { backgroundColor: 'transparent' },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+```
+
+For API details and advanced patterns, see [Recipes](/docs/recipes).
 
 ## From Tailwind CSS
 

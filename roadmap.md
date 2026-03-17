@@ -65,6 +65,41 @@ Typestyles occupies a unique position in the CSS-in-JS landscape:
 
 ## Medium Priority
 
+### CSS Selector and Naming Strategy Initiative
+
+Reference: `docs/content/docs/css-selector-patterns.md`
+
+Goal: support the full range of real-world CSS authoring (semantic classes, utility composition, variants, and data/ARIA attribute-driven state) without locking users into one methodology.
+
+#### Milestones
+
+1. **Selector completeness (M1)**
+   - Ensure full selector support in style objects for:
+     - data attributes (`[data-state]`, `[data-part]`)
+     - ARIA attributes (`[aria-expanded]`, `[aria-selected]`)
+     - all CSS attribute operators (`=`, `~=`, `|=`, `^=`, `$=`, `*=`)
+   - Add docs/examples for nested selectors with `&`.
+
+2. **Recipe API v1 (M2)**
+   - Ship first-class variant APIs: `variants`, `compoundVariants`, `defaultVariants`.
+   - Support boolean variants and multi-value compound matching.
+   - Keep output deterministic across runtime/build modes.
+
+3. **Slot recipes + headless patterns (M3)**
+   - Add slot/multipart recipe support (e.g. `root`, `trigger`, `content`).
+   - Document styling with `data-part` and `data-state` for headless UI patterns.
+
+4. **Class naming modes (M4)**
+   - Add naming strategy options:
+     - readable semantic classes
+     - scoped/hashed classes
+     - atomic prototype mode
+   - Allow per-project/per-package configuration for gradual adoption.
+
+5. **Linting and migration tooling (M5)**
+   - Add optional lint rules for naming conventions and selector/state pitfalls.
+   - Provide migration helpers from CVA/CSS Modules/utility-heavy codebases.
+
 ### 4. Enhanced Component API
 
 - Add `styleVariants` (vanilla-extract style) for generating variant maps
