@@ -27,6 +27,7 @@
     "format:check": "prettier --check .",
     "changeset": "changeset",
     "version": "changeset version",
+    "version:unstable": "node scripts/set-unstable-versions.js",
     "release": "turbo build && changeset publish",
     "prepare": "husky"
   },

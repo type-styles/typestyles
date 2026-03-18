@@ -1,0 +1,46 @@
+name: Release Unstable
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  release-unstable:
+    name: Release unstable packages
+    if: github.event.head_commit.message != 'chore: version packages'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Set unstable commit versions
+        run: node scripts/set-unstable-versions.js
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Publish all workspace packages with unstable tag
+        run: pnpm -r --filter "./packages/*" publish --tag unstable --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
