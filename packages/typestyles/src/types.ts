@@ -92,9 +92,12 @@ export type KeyframeStops = Record<string, CSSProperties>;
 /**
  * A map of variant dimensions to their options (each option maps to CSSProperties).
  */
+type VariantDimensions = Record<string, Record<string, unknown>>;
 export type VariantDefinitions = Record<string, Record<string, CSSProperties>>;
+export type SlotStyles<S extends string> = Partial<Record<S, CSSProperties>>;
+export type SlotVariantDefinitions<S extends string> = Record<string, Record<string, SlotStyles<S>>>;
 
-type VariantOptionKey<V extends VariantDefinitions, K extends keyof V> = Extract<keyof V[K], string>;
+type VariantOptionKey<V extends VariantDimensions, K extends keyof V> = Extract<keyof V[K], string>;
 
 type VariantSelectionValue<OptionKey extends string> =
   | OptionKey
@@ -105,7 +108,7 @@ type CompoundSelectionValue<OptionKey extends string> =
   | VariantSelectionValue<OptionKey>
   | readonly VariantSelectionValue<OptionKey>[];
 
-export type ComponentSelections<V extends VariantDefinitions> = {
+export type ComponentSelections<V extends VariantDimensions> = {
   [K in keyof V]?: VariantSelectionValue<VariantOptionKey<V, K>> | null | undefined;
 };
 
@@ -129,11 +132,20 @@ export type ComponentFunction<V extends VariantDefinitions> = (
   selections?: ComponentSelections<V>,
 ) => string;
 
-/**
- * Alias terminology for variant recipes.
- */
-export type RecipeConfig<V extends VariantDefinitions> = ComponentConfig<V>;
-export type RecipeFunction<V extends VariantDefinitions> = ComponentFunction<V>;
+export type SlotComponentConfig<S extends string, V extends SlotVariantDefinitions<S>> = {
+  slots: readonly S[];
+  base?: SlotStyles<S>;
+  variants?: V;
+  compoundVariants?: Array<{
+    variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
+    style: SlotStyles<S>;
+  }>;
+  defaultVariants?: ComponentSelections<V>;
+};
+
+export type SlotComponentFunction<S extends string, V extends SlotVariantDefinitions<S>> = (
+  selections?: ComponentSelections<V>,
+) => Record<S, string>;
 
 /**
  * A reference to a CSS custom property created by createVar().
@@ -154,12 +166,12 @@ export type CSSVarRef = `var(--${string})`;
  *   },
  * });
  *
- * type ButtonProps = RecipeVariants<typeof button>;
+ * type ButtonProps = ComponentVariants<typeof button>;
  * // { intent?: 'primary' | 'ghost'; size?: 'sm' | 'lg' }
  * ```
  */
-export type RecipeVariants<T> =
-  T extends ComponentFunction<infer V> ? { [K in keyof V]?: keyof V[K] } : never;
+export type ComponentVariants<T> =
+  T extends (selections?: ComponentSelections<infer V>) => unknown ? { [K in keyof V]?: keyof V[K] } : never;
 
 /**
  * Font face property declarations.

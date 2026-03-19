@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createComponent, createRecipe } from './component.js';
+import { createComponent } from './component.js';
 import { reset, flushSync, getRegisteredCss } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
@@ -226,35 +226,112 @@ describe('createComponent', () => {
   });
 });
 
-describe('createRecipe', () => {
+describe('createComponent with slots', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
   });
 
-  it('is a first-class alias with recipe terminology', () => {
-    const button = createRecipe('recipe-btn', {
-      base: { padding: '8px' },
+  it('returns per-slot class maps with defaults', () => {
+    const tabs = createComponent('tabs', {
+      slots: ['root', 'trigger', 'content'] as const,
+      base: {
+        root: { display: 'grid' },
+        trigger: { cursor: 'pointer' },
+      },
+      variants: {
+        size: {
+          sm: {
+            trigger: { fontSize: '12px' },
+            content: { padding: '8px' },
+          },
+          lg: {
+            trigger: { fontSize: '16px' },
+            content: { padding: '12px' },
+          },
+        },
+      },
+      defaultVariants: { size: 'sm' },
+    });
+
+    const defaults = tabs();
+    expect(defaults.root).toBe('tabs-root');
+    expect(defaults.trigger).toBe('tabs-trigger tabs-trigger-size-sm');
+    expect(defaults.content).toBe('tabs-content-size-sm');
+
+    const large = tabs({ size: 'lg' });
+    expect(large.trigger).toBe('tabs-trigger tabs-trigger-size-lg');
+    expect(large.content).toBe('tabs-content-size-lg');
+  });
+
+  it('applies slot compound variants to targeted slots', () => {
+    const tabs = createComponent('tabs-cv', {
+      slots: ['root', 'trigger', 'content'] as const,
       variants: {
         intent: {
-          primary: { color: 'blue' },
-          ghost: { color: 'black' },
+          primary: {
+            trigger: { color: 'blue' },
+          },
+          ghost: {
+            trigger: { color: 'gray' },
+          },
         },
-        rounded: {
-          true: { borderRadius: '9999px' },
-          false: { borderRadius: '0' },
+        size: {
+          sm: {
+            content: { padding: '8px' },
+          },
+          lg: {
+            content: { padding: '12px' },
+          },
         },
       },
       compoundVariants: [
         {
-          variants: { intent: ['primary', 'ghost'], rounded: true },
-          style: { fontWeight: 700 },
+          variants: { intent: ['primary', 'ghost'], size: 'lg' },
+          style: {
+            trigger: { fontWeight: 700 },
+          },
         },
       ],
-      defaultVariants: { intent: 'primary', rounded: false },
+      defaultVariants: { intent: 'primary', size: 'sm' },
     });
 
-    expect(button()).toBe('recipe-btn-base recipe-btn-intent-primary recipe-btn-rounded-false');
-    expect(button({ rounded: true })).toContain('recipe-btn-compound-0');
+    const noMatch = tabs();
+    expect(noMatch.trigger).not.toContain('tabs-cv-trigger-compound-0');
+
+    const withMatch = tabs({ size: 'lg' });
+    expect(withMatch.trigger).toContain('tabs-cv-trigger-compound-0');
+    expect(withMatch.content).not.toContain('tabs-cv-content-compound-0');
+  });
+
+  it('injects per-slot CSS class rules', () => {
+    createComponent('tabs-css', {
+      slots: ['root', 'trigger'] as const,
+      base: {
+        root: { display: 'grid' },
+      },
+      variants: {
+        intent: {
+          primary: {
+            trigger: { color: 'blue' },
+          },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: { intent: 'primary' },
+          style: {
+            trigger: { fontWeight: 600 },
+          },
+        },
+      ],
+      defaultVariants: { intent: 'primary' },
+    });
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.tabs-css-root');
+    expect(css).toContain('.tabs-css-trigger-intent-primary');
+    expect(css).toContain('.tabs-css-trigger-compound-0');
   });
 });

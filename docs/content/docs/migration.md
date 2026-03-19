@@ -9,6 +9,142 @@ Switching to typestyles from other styling solutions is straightforward. This gu
 
 If you are adopting the new variant API, start with [Recipes](/docs/recipes).
 
+## From Panda CSS
+
+Panda and typestyles share many concepts (recipes, tokens, utilities), so migration is mostly API shape changes rather than a full styling rewrite.
+
+### `css()` to `styles.class()` or `styles.create()`
+
+**Before (Panda CSS):**
+
+```tsx
+import { css } from '../styled-system/css';
+
+const className = css({
+  display: 'flex',
+  gap: '4',
+  '&:hover': { opacity: 0.9 },
+});
+```
+
+**After (typestyles):**
+
+```tsx
+import { styles } from 'typestyles';
+
+const className = styles.class('card', {
+  display: 'flex',
+  gap: '16px',
+  '&:hover': { opacity: 0.9 },
+});
+```
+
+For reusable variant families, prefer `styles.create()` instead of a single class.
+
+### `cva()` / `defineRecipe()` to `styles.component()`
+
+**Before (Panda CSS):**
+
+```ts
+import { cva } from '../styled-system/css';
+
+const button = cva({
+  base: { fontWeight: 'medium' },
+  variants: {
+    intent: {
+      solid: { bg: 'blue.500', color: 'white' },
+      ghost: { bg: 'transparent' },
+    },
+  },
+  defaultVariants: { intent: 'solid' },
+});
+```
+
+**After (typestyles):**
+
+```ts
+import { styles } from 'typestyles';
+
+const button = styles.component('button', {
+  base: { fontWeight: 500 },
+  variants: {
+    intent: {
+      solid: { backgroundColor: '#2563eb', color: 'white' },
+      ghost: { backgroundColor: 'transparent' },
+    },
+  },
+  defaultVariants: { intent: 'solid' },
+});
+```
+
+### `theme.tokens` / semantic tokens to `tokens.create()` + `tokens.createTheme()`
+
+**Before (Panda CSS):**
+
+```ts
+// panda.config.ts
+theme: {
+  tokens: {
+    colors: {
+      primary: { value: '#0FEE0F' }
+    }
+  },
+  semanticTokens: {
+    colors: {
+      danger: { value: { base: '{colors.red.500}', _dark: '{colors.red.200}' } }
+    }
+  }
+}
+```
+
+**After (typestyles):**
+
+```ts
+import { tokens } from 'typestyles';
+
+export const color = tokens.create('color', {
+  primary: '#0FEE0F',
+  danger: '#ef4444',
+});
+
+export const darkTheme = tokens.createTheme('dark', {
+  color: {
+    danger: '#fca5a5',
+  },
+});
+```
+
+Apply `darkTheme` on a parent container to scope dark values.
+
+### Panda utility props to `@typestyles/props`
+
+```ts
+import { defineProperties, createProps } from '@typestyles/props';
+
+const atoms = createProps(
+  'atom',
+  defineProperties({
+    conditions: {
+      sm: { '@media': '(min-width: 640px)' },
+      dark: { selector: '[data-theme="dark"] &' },
+    },
+    properties: {
+      display: ['flex', 'grid', 'block'],
+      gap: { 1: '4px', 2: '8px', 3: '12px' },
+    },
+  }),
+);
+
+atoms({
+  display: 'flex',
+  gap: { _: 2, sm: 3 },
+});
+```
+
+### Slot recipe note
+
+If you use Panda `sva` (slot recipes), migrate by defining explicit per-slot styles in typestyles and composing them in component code. typestyles does not currently expose a first-class slot recipe API.
+
 ## From styled-components
 
 ### Component structure
@@ -186,7 +322,7 @@ typestyles' selector function already handles conditional class names, so you do
 
 ## From CVA (Class Variance Authority)
 
-`styles.recipe` maps closely to CVA's mental model:
+`styles.component` maps closely to CVA's mental model:
 
 - `variants`
 - `compoundVariants`
@@ -229,7 +365,7 @@ export const button = cva('inline-flex rounded font-medium', {
 ```ts
 import { styles } from 'typestyles';
 
-export const button = styles.recipe('button', {
+export const button = styles.component('button', {
   base: {
     display: 'inline-flex',
     borderRadius: '8px',
@@ -307,7 +443,7 @@ const Button = styled('button', {
 ```ts
 import { styles } from 'typestyles';
 
-const button = styles.recipe('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 12px',
   },
@@ -369,7 +505,7 @@ export const button = recipe({
 ```ts
 import { styles } from 'typestyles';
 
-export const button = styles.recipe('button', {
+export const button = styles.component('button', {
   base: {
     borderRadius: '6px',
   },
@@ -389,38 +525,6 @@ Main trade-off:
 
 - vanilla-extract is build-time only
 - typestyles supports runtime + SSR today, with build-mode work in progress
-
-## From typestyles `styles.component`
-
-If you already use `styles.component`, migration is mostly a rename to align with recipe terminology:
-
-```ts
-// Before
-const button = styles.component('button', {
-  base: { padding: '8px 12px' },
-  variants: {
-    intent: {
-      primary: { backgroundColor: '#2563eb' },
-      ghost: { backgroundColor: 'transparent' },
-    },
-  },
-  defaultVariants: { intent: 'primary' },
-});
-
-// After
-const button = styles.recipe('button', {
-  base: { padding: '8px 12px' },
-  variants: {
-    intent: {
-      primary: { backgroundColor: '#2563eb' },
-      ghost: { backgroundColor: 'transparent' },
-    },
-  },
-  defaultVariants: { intent: 'primary' },
-});
-```
-
-For API details and advanced patterns, see [Recipes](/docs/recipes).
 
 ## From Tailwind CSS
 

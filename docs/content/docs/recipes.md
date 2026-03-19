@@ -1,11 +1,11 @@
 ---
 title: Recipes
-description: Build typed variant APIs with styles.recipe
+description: Build typed variant APIs with styles.component
 ---
 
 # Recipes
 
-`styles.recipe()` is the first-class API for variant-driven component styling.
+`styles.component()` is the first-class API for variant-driven component styling.
 
 If you need flat named variants (without dimensioned recipe config), see [Styles](/docs/styles).
 
@@ -21,7 +21,7 @@ Use it when you want a typed interface with:
 ```ts
 import { styles } from 'typestyles';
 
-export const button = styles.recipe('button', {
+export const button = styles.component('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -56,7 +56,7 @@ button({ intent: 'ghost', size: 'lg' }); // "button-base button-intent-ghost but
 Use `compoundVariants` for styles that should apply only when multiple variant values match.
 
 ```ts
-const badge = styles.recipe('badge', {
+const badge = styles.component('badge', {
   variants: {
     tone: {
       success: { color: '#166534' },
@@ -90,7 +90,7 @@ badge({ tone: 'danger', size: 'lg' }); // does not include compound class
 Boolean variant dimensions are represented with `"true"` / `"false"` option keys.
 
 ```ts
-const input = styles.recipe('input', {
+const input = styles.component('input', {
   base: { border: '1px solid #d1d5db' },
   variants: {
     invalid: {
@@ -112,7 +112,7 @@ input({ invalid: true }); // "input-base input-invalid-true"
 Recipes use the same selector model as `styles.create`.
 
 ```ts
-const accordionTrigger = styles.recipe('accordion-trigger', {
+const accordionTrigger = styles.component('accordion-trigger', {
   base: {
     '&[data-state="open"]': { fontWeight: 600 },
     '&[aria-expanded="true"]': { color: '#1d4ed8' },
@@ -122,9 +122,9 @@ const accordionTrigger = styles.recipe('accordion-trigger', {
 
 ## Migration quick-start
 
-### From `styles.component` to `styles.recipe`
+### Variant API
 
-`styles.recipe` uses the same config shape as `styles.component`, so migration is usually a rename.
+`styles.component` uses the `base`, `variants`, `compoundVariants`, and `defaultVariants` config shape.
 
 ```ts
 // Before
@@ -139,8 +139,8 @@ const button = styles.component('button', {
   defaultVariants: { intent: 'primary' },
 });
 
-// After
-const button = styles.recipe('button', {
+// Single API
+const button = styles.component('button', {
   base: { padding: '8px 12px' },
   variants: {
     intent: {
@@ -157,7 +157,7 @@ const button = styles.recipe('button', {
 CVA config maps directly:
 
 - `cva(base, { variants, compoundVariants, defaultVariants })`
-- to `styles.recipe(name, { base, variants, compoundVariants, defaultVariants })`
+- to `styles.component(name, { base, variants, compoundVariants, defaultVariants })`
 
 The main difference is class generation/injection is handled by typestyles.
 

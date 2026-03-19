@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, expectTypeOf } from 'vitest';
 import { createVar, assignVars, __resetVarCounter } from './vars.js';
-import type { CSSVarRef, RecipeVariants, ComponentFunction } from './types.js';
+import type { CSSVarRef, ComponentVariants, ComponentFunction } from './types.js';
 
 describe('createVar', () => {
   beforeEach(() => {
@@ -72,14 +72,14 @@ describe('assignVars', () => {
   });
 });
 
-describe('RecipeVariants', () => {
+describe('ComponentVariants', () => {
   it('extracts variant prop types from a ComponentFunction', () => {
     type MockFn = ComponentFunction<{
       intent: { primary: object; ghost: object };
       size: { sm: object; lg: object };
     }>;
 
-    type Props = RecipeVariants<MockFn>;
+    type Props = ComponentVariants<MockFn>;
 
     expectTypeOf<Props>().toMatchTypeOf<{
       intent?: 'primary' | 'ghost';
@@ -88,7 +88,7 @@ describe('RecipeVariants', () => {
   });
 
   it('resolves to never for non-ComponentFunction types', () => {
-    type Props = RecipeVariants<string>;
+    type Props = ComponentVariants<string>;
     expectTypeOf<Props>().toBeNever();
   });
 });

@@ -3,7 +3,7 @@ import { createTokens, useTokens, createTheme } from './tokens.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
 import { getRegisteredCss, insertRules, reset, flushSync } from './sheet.js';
-import { createComponent, createRecipe } from './component.js';
+import { createComponent } from './component.js';
 import { globalStyle, globalFontFace } from './global.js';
 import { createVar, assignVars } from './vars.js';
 
@@ -22,11 +22,13 @@ export type {
   VariantDefinitions,
   ComponentConfig,
   ComponentFunction,
-  RecipeConfig,
-  RecipeFunction,
+  SlotStyles,
+  SlotVariantDefinitions,
+  SlotComponentConfig,
+  SlotComponentFunction,
   FontFaceProps,
   CSSVarRef,
-  RecipeVariants,
+  ComponentVariants,
 } from './types.js';
 
 export { createVar, assignVars };
@@ -53,7 +55,6 @@ export const styles = {
   class: createClass,
   hashClass: createHashClass,
   component: createComponent,
-  recipe: createRecipe,
   withUtils: createStylesWithUtils,
   compose,
 } as const;

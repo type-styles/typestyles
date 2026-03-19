@@ -19,7 +19,6 @@ Style creation and composition API.
 - `styles.withUtils(utils)`: Returns utility-aware `create`, `class`, and `hashClass` helpers
 - `styles.compose(...selectors)`: Combines multiple selector functions or class strings
 - `styles.component(namespace, config)`: Creates variant-based component styles
-- `styles.recipe(namespace, config)`: First-class recipe API (`base`, `variants`, `compoundVariants`, `defaultVariants`)
 
 
 ### `tokens`
@@ -99,12 +98,12 @@ const button = styles.compose(base, primary);
 button('root'); // "base-root primary-root"
 ```
 
-### Creating Recipes
+### Creating Variant Components
 
 ```ts
 import { styles } from 'typestyles';
 
-const button = styles.recipe('button', {
+const button = styles.component('button', {
   base: { borderRadius: '8px' },
   variants: {
     intent: {
