@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createComponent } from './component.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createComponent, slotClass } from './component.js';
 import { resetClassNaming } from './class-naming.js';
 import { reset, flushSync, getRegisteredCss } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
@@ -268,7 +268,7 @@ describe('createComponent with slots', () => {
 
   it('applies slot compound variants to targeted slots', () => {
     const tabs = createComponent('tabs-cv', {
-      slots: ['root', 'trigger', 'content'] as const,
+      slots: ['trigger', 'content'] as const,
       variants: {
         intent: {
           primary: {
@@ -335,5 +335,56 @@ describe('createComponent with slots', () => {
     expect(css).toContain('.tabs-css-root');
     expect(css).toContain('.tabs-css-trigger-intent-primary');
     expect(css).toContain('.tabs-css-trigger-compound-0');
+  });
+
+  it('warns when a declared slot is never referenced (non-production)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const prev = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'test';
+    try {
+      createComponent('unused-slot-warn', {
+        slots: ['root', 'neverUsed'] as const,
+        base: { root: { display: 'block' } },
+      });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("declares slot 'neverUsed'"),
+      );
+    } finally {
+      process.env.NODE_ENV = prev;
+      warn.mockRestore();
+    }
+  });
+
+  it('does not warn for unused slots when TYPESTYLES_SILENT_UNUSED_SLOTS=1', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const prevSilent = process.env.TYPESTYLES_SILENT_UNUSED_SLOTS;
+    process.env.TYPESTYLES_SILENT_UNUSED_SLOTS = '1';
+    try {
+      createComponent('silent-unused', {
+        slots: ['root', 'ghost'] as const,
+        base: { root: { display: 'block' } },
+      });
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      process.env.TYPESTYLES_SILENT_UNUSED_SLOTS = prevSilent;
+      warn.mockRestore();
+    }
+  });
+
+  it('slotClass returns the same string as indexing the slot map', () => {
+    const tabs = createComponent('slot-class-tabs', {
+      slots: ['root', 'trigger'] as const,
+      base: { root: { display: 'flex' } },
+      variants: {
+        size: {
+          sm: { trigger: { fontSize: '12px' } },
+          lg: { trigger: { fontSize: '16px' } },
+        },
+      },
+      defaultVariants: { size: 'sm' },
+    });
+
+    expect(slotClass(tabs, 'trigger', { size: 'lg' })).toBe(tabs({ size: 'lg' }).trigger);
+    expect(slotClass(tabs, 'root')).toBe(tabs().root);
   });
 });

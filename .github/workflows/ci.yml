@@ -74,3 +74,25 @@ jobs:
 
       - name: Run tests
         run: pnpm run test
+
+  examples:
+    name: Example apps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build example apps (extract + bundlers)
+        run: pnpm examples:build

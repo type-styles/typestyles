@@ -109,6 +109,164 @@ input(); // "input-base input-invalid-false"
 input({ invalid: true }); // "input-base input-invalid-true"
 ```
 
+## Multipart components (slots)
+
+For components with several styled parts (tabs, accordion, select), pass a `slots` array. The same variant dimensions apply to every part; each variant option maps **slot names** to style objects. The function returns a **record of class strings**—one entry per declared slot. Slots with no matching styles still appear on the object with an empty string.
+
+This is the TypeStyles equivalent of Panda’s [slot recipes](https://panda-css.com/docs/concepts/slot-recipes) (`sva`).
+
+### Tabs
+
+Typical parts: `root`, `list`, `trigger`, `content`.
+
+```ts
+import { styles, slotClass } from 'typestyles';
+
+export const tabs = styles.component('tabs', {
+  slots: ['root', 'list', 'trigger', 'content'] as const,
+  base: {
+    root: { display: 'flex', flexDirection: 'column', gap: '8px' },
+    list: { display: 'flex', gap: '4px', borderBottom: '1px solid #e5e7eb' },
+    trigger: {
+      cursor: 'pointer',
+      padding: '8px 12px',
+      border: 'none',
+      background: 'transparent',
+    },
+    content: { padding: '12px 0' },
+  },
+  variants: {
+    size: {
+      sm: {
+        trigger: { fontSize: '13px' },
+        content: { fontSize: '13px' },
+      },
+      md: {
+        trigger: { fontSize: '15px' },
+        content: { fontSize: '15px' },
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: { size: 'md' },
+      style: {
+        trigger: { fontWeight: 600 },
+      },
+    },
+  ],
+  defaultVariants: { size: 'sm' },
+});
+
+// In render: resolve once, pass classes to each element
+function TabPanel() {
+  const cn = tabs({ size: 'md' });
+  return (
+    <div className={cn.root}>
+      <div className={cn.list} role="tablist">
+        <button type="button" className={cn.trigger} role="tab">
+          One
+        </button>
+      </div>
+      <div className={cn.content} role="tabpanel">
+        …
+      </div>
+    </div>
+  );
+}
+
+// Or pull a single slot (e.g. for a child component prop)
+slotClass(tabs, 'trigger', { size: 'md' });
+```
+
+### Accordion
+
+Parts: `root`, `item`, `trigger`, `content`.
+
+```ts
+export const accordion = styles.component('accordion', {
+  slots: ['root', 'item', 'trigger', 'content'] as const,
+  base: {
+    root: { display: 'flex', flexDirection: 'column', gap: '4px' },
+    item: { border: '1px solid #e5e7eb', borderRadius: '6px' },
+    trigger: {
+      width: '100%',
+      textAlign: 'left',
+      padding: '10px 12px',
+      cursor: 'pointer',
+      border: 'none',
+      background: 'transparent',
+    },
+    content: { padding: '0 12px 12px' },
+  },
+  variants: {
+    variant: {
+      bordered: {
+        item: { borderColor: '#d1d5db' },
+      },
+      ghost: {
+        item: { border: 'none' },
+        trigger: { paddingLeft: 0 },
+      },
+    },
+  },
+  defaultVariants: { variant: 'bordered' },
+});
+```
+
+### Select
+
+Parts: `root`, `control`, `icon`, `menu`, `option`.
+
+```ts
+export const select = styles.component('select', {
+  slots: ['root', 'control', 'icon', 'menu', 'option'] as const,
+  base: {
+    root: { position: 'relative', display: 'inline-block' },
+    control: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      minWidth: '160px',
+      padding: '8px 12px',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      cursor: 'pointer',
+    },
+    icon: { width: '16px', height: '16px', opacity: 0.7 },
+    menu: {
+      marginTop: '4px',
+      padding: '4px 0',
+      borderRadius: '6px',
+      border: '1px solid #e5e7eb',
+      background: '#fff',
+    },
+    option: { padding: '8px 12px', cursor: 'pointer' },
+  },
+  variants: {
+    size: {
+      sm: {
+        control: { fontSize: '13px', padding: '6px 10px' },
+        option: { fontSize: '13px' },
+      },
+      md: {
+        control: { fontSize: '15px' },
+        option: { fontSize: '15px' },
+      },
+    },
+  },
+  defaultVariants: { size: 'md' },
+});
+```
+
+### Slot map helper
+
+`slotClass(component, slotName, selections?)` returns the same string as `component(selections)[slotName]`. Use it when you only need one part (for example a `className` prop on a shared primitive).
+
+### Declared slots with no styles
+
+If a name appears in `slots` but is never used in `base`, `variants`, or `compoundVariants`, that part always gets `''`. Whenever **`NODE_ENV` is not `production`** (including `development` and `test`), TypeStyles logs a console warning. Set **`TYPESTYLES_SILENT_UNUSED_SLOTS=1`** to disable those warnings.
+
 ## Data and ARIA selectors inside recipes
 
 Recipes use the same selector model as `styles.create`.

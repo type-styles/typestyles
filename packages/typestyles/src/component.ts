@@ -3,6 +3,7 @@ import type {
   VariantDefinitions,
   ComponentConfig,
   ComponentFunction,
+  ComponentSelections,
   SlotComponentConfig,
   SlotComponentFunction,
   SlotVariantDefinitions,
@@ -65,6 +66,55 @@ export function createComponent(
     );
   }
   return createSingleComponent(namespace, config as ComponentConfig<VariantDefinitions>);
+}
+
+/**
+ * Resolve the class string for one slot of a multipart `styles.component` recipe.
+ *
+ * @example
+ * ```ts
+ * const tabs = styles.component('tabs', { slots: ['root', 'trigger'], ... });
+ * slotClass(tabs, 'trigger', { size: 'lg' }); // same as tabs({ size: 'lg' }).trigger
+ * ```
+ */
+export function slotClass<S extends string, V extends SlotVariantDefinitions<S>>(
+  component: SlotComponentFunction<S, V>,
+  slot: S,
+  selections?: ComponentSelections<V>,
+): string {
+  return component(selections)[slot];
+}
+
+function collectReferencedSlotNames(
+  base: Record<string, CSSProperties>,
+  variants: SlotVariantDefinitions<string>,
+  compoundVariants: Array<{ style: Record<string, CSSProperties> }>,
+): Set<string> {
+  const refs = new Set<string>();
+  for (const k of Object.keys(base)) refs.add(k);
+  for (const options of Object.values(variants)) {
+    for (const slotStyles of Object.values(options as Record<string, Record<string, CSSProperties>>)) {
+      for (const k of Object.keys(slotStyles)) refs.add(k);
+    }
+  }
+  for (const cv of compoundVariants) {
+    for (const k of Object.keys(cv.style)) refs.add(k);
+  }
+  return refs;
+}
+
+function warnUnusedDeclaredSlots(namespace: string, declared: readonly string[], referenced: Set<string>) {
+  const silent = process.env.TYPESTYLES_SILENT_UNUSED_SLOTS === '1';
+  if (silent || process.env.NODE_ENV === 'production') return;
+
+  for (const slot of declared) {
+    if (!referenced.has(slot)) {
+      console.warn(
+        `[typestyles] styles.component('${namespace}', ...) declares slot '${slot}' but no base, variant, or compound styles reference it. ` +
+          `That slot will always resolve to an empty class string. Remove it from slots or add styles.`,
+      );
+    }
+  }
 }
 
 function createSingleComponent<V extends VariantDefinitions>(
@@ -193,6 +243,16 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
   config: SlotComponentConfig<S, V>,
 ): SlotComponentFunction<S, V> {
   const { slots, base = {}, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
+
+  warnUnusedDeclaredSlots(
+    namespace,
+    slots as readonly string[],
+    collectReferencedSlotNames(
+      base as Record<string, CSSProperties>,
+      variants as SlotVariantDefinitions<string>,
+      compoundVariants as Array<{ style: Record<string, CSSProperties> }>,
+    ),
+  );
 
   // Development-mode duplicate detection
   if (process.env.NODE_ENV !== 'production') {

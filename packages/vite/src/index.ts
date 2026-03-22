@@ -116,13 +116,15 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
     config(config: UserConfig, env) {
       isBuildCommand = env.command === 'build';
 
-      if (
-        env.command === 'build' &&
-        (mode === 'build' || mode === 'hybrid')
-      ) {
+      // "build": no runtime injection in dev or prod — CSS comes from extracted file only.
+      if (mode === 'build') {
         config.define = {
           ...(config.define ?? {}),
-          // Inlined by the bundler so typestyles sheet skips creating <style> in production
+          __TYPESTYLES_RUNTIME_DISABLED__: JSON.stringify('true'),
+        };
+      } else if (mode === 'hybrid' && env.command === 'build') {
+        config.define = {
+          ...(config.define ?? {}),
           __TYPESTYLES_RUNTIME_DISABLED__: JSON.stringify('true'),
         };
       }
@@ -132,6 +134,57 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
     configResolved(config) {
       resolvedConfig = config;
+    },
+
+    configureServer(server) {
+      // Hybrid keeps runtime injection in dev; only "build" serves a static sheet in dev.
+      if (mode !== 'build') return;
+      if (!extract?.modules.length) return;
+      if (!resolvedConfig) return;
+
+      const root = resolvedConfig.root;
+      const fileName = extract.fileName ?? 'typestyles.css';
+      const devPath = `/${fileName.replace(/^\/+/, '')}`;
+
+      let cssPromise: Promise<string> | null = null;
+      const getCss = () => {
+        if (!cssPromise) {
+          cssPromise = runTypestylesBuild({
+            root,
+            modules: extract.modules,
+          });
+        }
+        return cssPromise;
+      };
+
+      server.middlewares.use((req, res, next) => {
+        const pathname = req.url
+          ? new URL(req.url, 'http://localhost').pathname
+          : '';
+        if (pathname !== devPath) {
+          next();
+          return;
+        }
+
+        void getCss().then(
+          (css) => {
+            res.setHeader('Content-Type', 'text/css; charset=utf-8');
+            res.end(css);
+          },
+          (err: unknown) => {
+            next(err instanceof Error ? err : new Error(String(err)));
+          },
+        );
+      });
+    },
+
+    transformIndexHtml(html) {
+      if (mode !== 'build' || !extract?.modules.length) return html;
+      const fileName = extract.fileName ?? 'typestyles.css';
+      const href = `/${fileName.replace(/^\/+/, '')}`;
+      if (html.includes(href)) return html;
+      const link = `    <link rel="stylesheet" href="${href}" />\n`;
+      return html.replace(/<head(\s[^>]*)?>/i, `<head$1>\n${link}`);
     },
 
     transform(code, id) {

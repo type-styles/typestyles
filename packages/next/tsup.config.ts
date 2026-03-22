@@ -39,4 +39,17 @@ export default defineConfig([
     },
     external: ['typestyles', 'typestyles/server', 'react', 'react-dom', 'next'],
   },
+  // Build-time extraction + webpack helper
+  {
+    format: ['esm', 'cjs'],
+    dts: false,
+    clean: false,
+    splitting: false,
+    entry: ['src/build.ts'],
+    outDir: 'dist',
+    loader: {
+      '.ts': 'ts',
+    },
+    external: ['@typestyles/build', 'next', 'webpack', 'node:module', 'node:path'],
+  },
 ]);

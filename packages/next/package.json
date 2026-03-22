@@ -22,6 +22,11 @@
       "import": "./dist/client.js",
       "require": "./dist/client.cjs",
       "default": "./dist/client.js"
+    },
+    "./build": {
+      "types": "./src/build.d.ts",
+      "import": "./dist/build.js",
+      "require": "./dist/build.cjs"
     }
   },
   "files": [
@@ -44,11 +49,15 @@
     "url": "https://github.com/dbanksdesign/typestyles",
     "directory": "packages/next"
   },
+  "dependencies": {
+    "@typestyles/build": "workspace:*"
+  },
   "peerDependencies": {
     "next": ">=13.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "typestyles": ">=0.1.0"
+    "typestyles": ">=0.1.0",
+    "webpack": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "next": {
@@ -59,6 +68,9 @@
     },
     "react-dom": {
       "optional": false
+    },
+    "webpack": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -69,6 +81,7 @@
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "webpack": "^5.97.1"
   }
 }

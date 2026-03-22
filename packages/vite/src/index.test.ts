@@ -136,6 +136,20 @@ describe('typestyles vite plugin', () => {
     const plugin = mod.default();
     expect(plugin.name).toBe('typestyles');
   });
+
+  it('transformIndexHtml injects stylesheet link in build mode with extract', async () => {
+    const mod = await import('./index.js');
+    const plugin = mod.default({
+      mode: 'build',
+      extract: { modules: ['src/entry.ts'], fileName: 'typestyles.css' },
+    });
+    const html = `<!DOCTYPE html><html><head></head><body></body></html>`;
+    const out =
+      typeof plugin.transformIndexHtml === 'function'
+        ? plugin.transformIndexHtml(html)
+        : html;
+    expect(out).toContain('href="/typestyles.css"');
+  });
 });
 
 describe('runtime/build parity', () => {

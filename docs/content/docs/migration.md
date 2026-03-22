@@ -141,9 +141,9 @@ atoms({
 });
 ```
 
-### Slot recipe note
+### Slot recipes (`sva`)
 
-If you use Panda `sva` (slot recipes), migrate by defining explicit per-slot styles in typestyles and composing them in component code. typestyles does not currently expose a first-class slot recipe API.
+Panda `sva` maps to `styles.component` with a `slots` array: each variant option holds **per-slot** style objects, and the recipe function returns a **map of class names** (one key per slot). See [Recipes — multipart components](/docs/recipes#multipart-components-slots).
 
 ## From styled-components
 

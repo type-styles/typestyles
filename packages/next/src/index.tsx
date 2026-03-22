@@ -6,6 +6,7 @@
  * 1. Main entry (this file) - Re-exports everything
  * 2. `/server` - Server-safe utilities (getRegisteredCss, collectStylesFromComponent, getTypestylesMetadata)
  * 3. `/client` - Client components (TypestylesStylesheet, useTypestyles, useServerInsertedHTML)
+ * 4. `/build` - Build-time CSS extraction (`buildTypestylesForNext`, `withTypestylesExtract`)
  *
  * For App Router, prefer using the client entry for components:
  *   import { TypestylesStylesheet } from '@typestyles/next/client';
