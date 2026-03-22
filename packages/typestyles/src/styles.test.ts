@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createStyles, createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
+import { resetClassNaming } from './class-naming.js';
 import { reset, flushSync } from './sheet.js';
 
 describe('createClass', () => {
   beforeEach(() => {
     reset();
+    resetClassNaming();
   });
 
   it('returns the class name string', () => {
@@ -43,6 +45,7 @@ describe('createClass', () => {
 describe('createStyles', () => {
   beforeEach(() => {
     reset();
+    resetClassNaming();
   });
 
   it('returns a selector function', () => {
@@ -180,6 +183,7 @@ describe('createStyles', () => {
 describe('createHashClass', () => {
   beforeEach(() => {
     reset();
+    resetClassNaming();
   });
 
   it('returns deterministic class names for identical styles', () => {
@@ -215,6 +219,7 @@ describe('createHashClass', () => {
 describe('compose', () => {
   beforeEach(() => {
     reset();
+    resetClassNaming();
   });
 
   it('composes multiple SelectorFunctions with shared variants', () => {
@@ -300,6 +305,7 @@ describe('compose', () => {
 describe('createStylesWithUtils', () => {
   beforeEach(() => {
     reset();
+    resetClassNaming();
   });
 
   it('expands utility keys in class()', () => {

@@ -9,6 +9,14 @@ import type {
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
+import {
+  buildRecipeClassName,
+  buildSingleClassName,
+  getClassNamingConfig,
+  hashString,
+  sanitizeClassSegment,
+  stableSerialize,
+} from './class-naming.js';
 
 /**
  * Create a single class with the given styles. Returns the class name string.
@@ -37,11 +45,12 @@ export function createClass(name: string, properties: CSSProperties): string {
   }
   registeredNamespaces.add(name);
 
-  const selector = `.${name}`;
+  const className = buildSingleClassName(name, properties);
+  const selector = `.${className}`;
   const rules = serializeStyle(selector, properties);
   insertRules(rules);
 
-  return name;
+  return className;
 }
 
 /**
@@ -64,9 +73,15 @@ export function createClass(name: string, properties: CSSProperties): string {
  * ```
  */
 export function createHashClass(properties: CSSProperties, label?: string): string {
-  const serialized = stableSerialize(properties);
+  const cfg = getClassNamingConfig();
+  const serialized =
+    cfg.scopeId !== ''
+      ? stableSerialize({ scope: cfg.scopeId, properties })
+      : stableSerialize(properties);
   const hash = hashString(serialized);
-  const className = label ? `ts-${sanitizeLabel(label)}-${hash}` : `ts-${hash}`;
+  const className = label
+    ? `${cfg.prefix}-${sanitizeClassSegment(label)}-${hash}`
+    : `${cfg.prefix}-${hash}`;
   const selector = `.${className}`;
   const rules = serializeStyle(selector, properties);
   insertRules(rules);
@@ -132,11 +147,14 @@ export function createStyles(
 
   // Generate and inject CSS for all variants
   const rules: Array<{ key: string; css: string }> = [];
+  const variantToClass: Record<string, string> = {};
 
   for (const [variant, properties] of Object.entries(definitions)) {
-    const className = `${namespace}-${variant}`;
+    const props = properties as CSSProperties;
+    const className = buildRecipeClassName(namespace, variant, props);
+    variantToClass[variant] = className;
     const selector = `.${className}`;
-    const variantRules = serializeStyle(selector, properties as CSSProperties);
+    const variantRules = serializeStyle(selector, props);
     rules.push(...variantRules);
   }
 
@@ -148,7 +166,7 @@ export function createStyles(
     const classes = withBase
       ? ['base', ...filtered.filter((v) => v !== 'base')]
       : filtered;
-    return classes.map((v) => `${namespace}-${v as string}`).join(' ');
+    return classes.map((v) => variantToClass[v as string] ?? '').filter(Boolean).join(' ');
   };
 
   return selectorFn as SelectorFunction<string>;
@@ -336,31 +354,4 @@ function mergeStyleObjects(base: CSSProperties, next: CSSProperties): CSSPropert
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function stableSerialize(value: unknown): string {
-  if (value === null) return 'null';
-  if (typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map((v) => stableSerialize(v)).join(',')}]`;
-
-  const entries = Object.entries(value as Record<string, unknown>)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${JSON.stringify(k)}:${stableSerialize(v)}`);
-
-  return `{${entries.join(',')}}`;
-}
-
-function hashString(input: string): string {
-  // FNV-1a 32-bit hash, compact base36 output.
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(36);
-}
-
-function sanitizeLabel(label: string): string {
-  const normalized = label.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-  return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '') || 'style';
 }

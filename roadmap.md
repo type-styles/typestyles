@@ -55,12 +55,6 @@ Typestyles occupies a unique position in the CSS-in-JS landscape:
   - Addresses the "runtime overhead" concern that led companies to abandon Emotion/styled-components.
   - Keeps incremental adoption: projects can start in runtime mode and later switch specific routes or the whole app to build mode.
 
-### 3. Utils API
-
-- Create custom CSS property shortcuts (like Stitches' `utils`)
-- Example: `marginX`, `paddingY`, `size` helpers
-- High-value DX improvement
-
 ---
 
 ## Medium Priority
@@ -89,12 +83,10 @@ Goal: support the full range of real-world CSS authoring (semantic classes, util
    - Add slot/multipart recipe support (e.g. `root`, `trigger`, `content`).
    - Document styling with `data-part` and `data-state` for headless UI patterns.
 
-4. **Class naming modes (M4)**
-   - Add naming strategy options:
-     - readable semantic classes
-     - scoped/hashed classes
-     - atomic prototype mode
-   - Allow per-project/per-package configuration for gradual adoption.
+4. **Class naming modes (M4)** — _in progress_
+   - Shipped: `configureClassNaming({ mode: 'semantic' | 'hashed' | 'atomic', prefix?, scopeId? })` for `styles.create` / `styles.class` / `styles.component` (and slot recipes); optional `scopeId` for monorepos; `styles.hashClass` uses configured `prefix` and optional `scopeId` in the hash input.
+   - Docs: `docs/content/docs/class-naming.md` (and sidebar “Class naming”); cross-links from Styles, Recipes, API Reference, Testing.
+   - Still open: build/plugin integration if class names must be known at compile time, true per-property atomic splitting (see §6).
 
 5. **Linting and migration tooling (M5)**
    - Add optional lint rules for naming conventions and selector/state pitfalls.

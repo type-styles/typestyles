@@ -51,6 +51,8 @@ button({ size: 'lg' }); // "button-base button-intent-primary button-size-lg"
 button({ intent: 'ghost', size: 'lg' }); // "button-base button-intent-ghost button-size-lg"
 ```
 
+Class strings follow the global [class naming](/docs/class-naming) configuration (`semantic` by default).
+
 ## Compound variants
 
 Use `compoundVariants` for styles that should apply only when multiple variant values match.

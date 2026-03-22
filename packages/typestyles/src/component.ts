@@ -10,11 +10,12 @@ import type {
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
+import { buildRecipeClassName } from './class-naming.js';
 
 /**
  * Create a multi-variant component style and return a selector function.
  *
- * Class naming convention:
+ * Class naming convention (default `semantic` mode; see `configureClassNaming`):
  *   base                         → `{namespace}-base`
  *   variants.intent.primary      → `{namespace}-intent-primary`
  *   compoundVariants[0]          → `{namespace}-compound-0`
@@ -85,24 +86,32 @@ function createSingleComponent<V extends VariantDefinitions>(
 
   const rules: Array<{ key: string; css: string }> = [];
 
+  let baseClassName: string | undefined;
+  const variantClassByKey: Record<string, string> = {};
+  const compoundClassByIndex: string[] = [];
+
   // 1. Inject CSS for base
   if (base) {
-    rules.push(...serializeStyle(`.${namespace}-base`, base));
+    baseClassName = buildRecipeClassName(namespace, 'base', base);
+    rules.push(...serializeStyle(`.${baseClassName}`, base));
   }
 
   // 2. Inject CSS for each variant option
   for (const [dimension, options] of Object.entries(variants)) {
     for (const [option, properties] of Object.entries(options as Record<string, CSSProperties>)) {
-      const className = `.${namespace}-${dimension}-${option}`;
-      rules.push(...serializeStyle(className, properties));
+      const segment = `${dimension}-${option}`;
+      const className = buildRecipeClassName(namespace, segment, properties);
+      variantClassByKey[segment] = className;
+      rules.push(...serializeStyle(`.${className}`, properties));
     }
   }
 
   // 3. Inject CSS for each compound variant
   (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
     (cv, index) => {
-      const className = `.${namespace}-compound-${index}`;
-      rules.push(...serializeStyle(className, cv.style));
+      const className = buildRecipeClassName(namespace, `compound-${index}`, cv.style);
+      compoundClassByIndex[index] = className;
+      rules.push(...serializeStyle(`.${className}`, cv.style));
     }
   );
 
@@ -112,7 +121,7 @@ function createSingleComponent<V extends VariantDefinitions>(
   return ((selections: Record<string, unknown> = {}) => {
     const classes: string[] = [];
 
-    if (base) classes.push(`${namespace}-base`);
+    if (base && baseClassName) classes.push(baseClassName);
 
     // Resolve final selections (explicit overrides defaultVariants)
     const resolvedSelections: Record<string, unknown> = {};
@@ -129,7 +138,9 @@ function createSingleComponent<V extends VariantDefinitions>(
       const optionMap = options as Record<string, CSSProperties>;
       const selectedKey = normalizeSelection(selected, optionMap);
       if (selectedKey != null) {
-        classes.push(`${namespace}-${dimension}-${selectedKey}`);
+        const variantKey = `${dimension}-${selectedKey}`;
+        const cn = variantClassByKey[variantKey];
+        if (cn) classes.push(cn);
       }
     }
 
@@ -149,7 +160,10 @@ function createSingleComponent<V extends VariantDefinitions>(
 
           return normalizeSelection(expected, options) === selected;
         });
-        if (matches) classes.push(`${namespace}-compound-${index}`);
+        if (matches) {
+          const cn = compoundClassByIndex[index];
+          if (cn) classes.push(cn);
+        }
       }
     );
 
@@ -193,25 +207,33 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
 
   const rules: Array<{ key: string; css: string }> = [];
 
+  const baseClassBySlot: Record<string, string> = {};
   for (const [slot, properties] of Object.entries(base as Record<string, CSSProperties>)) {
-    const className = `.${namespace}-${slot}`;
-    rules.push(...serializeStyle(className, properties));
+    const className = buildRecipeClassName(namespace, slot, properties);
+    baseClassBySlot[slot] = className;
+    rules.push(...serializeStyle(`.${className}`, properties));
   }
 
+  const variantClassByKey: Record<string, string> = {};
   for (const [dimension, options] of Object.entries(variants)) {
     for (const [option, slotStyles] of Object.entries(options as Record<string, Record<string, CSSProperties>>)) {
       for (const [slot, properties] of Object.entries(slotStyles)) {
-        const className = `.${namespace}-${slot}-${dimension}-${option}`;
-        rules.push(...serializeStyle(className, properties));
+        const segment = `${slot}-${dimension}-${option}`;
+        const className = buildRecipeClassName(namespace, segment, properties);
+        variantClassByKey[segment] = className;
+        rules.push(...serializeStyle(`.${className}`, properties));
       }
     }
   }
 
+  const slotCompoundClassByKey: Record<string, string> = {};
   (compoundVariants as Array<{ variants: Record<string, unknown>; style: Record<string, CSSProperties> }>).forEach(
     (cv, index) => {
       for (const [slot, properties] of Object.entries(cv.style)) {
-        const className = `.${namespace}-${slot}-compound-${index}`;
-        rules.push(...serializeStyle(className, properties));
+        const segment = `${slot}-compound-${index}`;
+        const className = buildRecipeClassName(namespace, segment, properties);
+        slotCompoundClassByKey[`${slot}::${index}`] = className;
+        rules.push(...serializeStyle(`.${className}`, properties));
       }
     }
   );
@@ -233,7 +255,8 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
     }
 
     for (const slot of Object.keys(base as Record<string, CSSProperties>)) {
-      if (classes[slot]) classes[slot].push(`${namespace}-${slot}`);
+      const cn = baseClassBySlot[slot];
+      if (cn && classes[slot]) classes[slot].push(cn);
     }
 
     for (const [dimension, options] of Object.entries(variants)) {
@@ -244,7 +267,9 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
       if (!slotStyles) continue;
 
       for (const slot of Object.keys(slotStyles)) {
-        if (classes[slot]) classes[slot].push(`${namespace}-${slot}-${dimension}-${selected}`);
+        const segment = `${slot}-${dimension}-${selected}`;
+        const cn = variantClassByKey[segment];
+        if (cn && classes[slot]) classes[slot].push(cn);
       }
     }
 
@@ -267,7 +292,8 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
         if (!matches) return;
 
         for (const slot of Object.keys(cv.style)) {
-          if (classes[slot]) classes[slot].push(`${namespace}-${slot}-compound-${index}`);
+          const cn = slotCompoundClassByKey[`${slot}::${index}`];
+          if (cn && classes[slot]) classes[slot].push(cn);
         }
       }
     );

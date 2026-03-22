@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createComponent } from './component.js';
+import { resetClassNaming } from './class-naming.js';
 import { reset, flushSync, getRegisteredCss } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
@@ -7,6 +8,7 @@ describe('createComponent', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
+    resetClassNaming();
   });
 
   it('returns a function', () => {

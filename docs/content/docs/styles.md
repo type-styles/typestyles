@@ -36,6 +36,8 @@ Class names are deterministic: `card-base`, `card-elevated`. Combine variants by
 card('base', 'elevated'); // "card-base card-elevated"
 ```
 
+To use **hashed** or **hash-only** class strings instead (for example in a design system package), see [Class naming](/docs/class-naming).
+
 ## Selectors
 
 Use the `&` prefix for pseudo-classes and nested selectors, just like in CSS:

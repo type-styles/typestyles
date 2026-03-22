@@ -7,6 +7,8 @@ description: Type-safe atomic CSS utilities with @typestyles/props
 
 The `@typestyles/props` package provides a type-safe way to generate atomic CSS utility classes, similar to Tailwind CSS but with full TypeScript inference and zero runtime overhead.
 
+Runtime APIs such as `styles.create` and `styles.component` use a separate naming system; to change those class strings (semantic vs hashed), see [Class naming](/docs/class-naming).
+
 ## Installation
 
 ```bash

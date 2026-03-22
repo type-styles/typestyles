@@ -49,6 +49,7 @@ See also:
 
 - [Styles](/docs/styles)
 - [Recipes](/docs/recipes)
+- [Class naming](/docs/class-naming) — semantic vs hashed output for `styles.create` / `styles.component`
 - [Migration Guide](/docs/migration)
 
 Create design tokens with `tokens.create()` and use them in styles:

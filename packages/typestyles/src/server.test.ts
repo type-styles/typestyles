@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { collectStyles } from './server.js';
+import { resetClassNaming } from './class-naming.js';
 import { createStyles } from './styles.js';
 import { createTokens } from './tokens.js';
 import { reset } from './sheet.js';
@@ -7,6 +8,7 @@ import { reset } from './sheet.js';
 describe('collectStyles', () => {
   beforeEach(() => {
     reset();
+    resetClassNaming();
   });
 
   it('collects CSS from styles created during render', () => {

@@ -7,6 +7,9 @@ import { createComponent } from './component.js';
 import { globalStyle, globalFontFace } from './global.js';
 import { createVar, assignVars } from './vars.js';
 
+export type { ClassNamingConfig, ClassNamingMode } from './class-naming.js';
+export { configureClassNaming, getClassNamingConfig, resetClassNaming } from './class-naming.js';
+
 export type {
   CSSProperties,
   CSSValue,

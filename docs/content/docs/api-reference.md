@@ -20,6 +20,15 @@ Style creation and composition API.
 - `styles.compose(...selectors)`: Combines multiple selector functions or class strings
 - `styles.component(namespace, config)`: Creates variant-based component styles
 
+### Class naming
+
+Global options for emitted class strings (used by `styles.create`, `styles.class`, and `styles.component`):
+
+- `configureClassNaming(options)`: Set `mode` (`'semantic' | 'hashed' | 'atomic'`), optional `prefix`, optional `scopeId`
+- `getClassNamingConfig()`: Read current config
+- `resetClassNaming()`: Restore defaults (mainly for tests)
+
+See [Class naming](/docs/class-naming).
 
 ### `tokens`
 
