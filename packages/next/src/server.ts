@@ -28,24 +28,25 @@ export async function collectStylesFromComponent(component: React.ReactElement):
 }
 
 /**
- * Generate CSS for use in Next.js metadata API.
- * Call this in your layout or page to get CSS for the head.
+ * Collect CSS by rendering a React element on the server (alias for {@link collectStylesFromComponent}).
+ * Use when you need styles for a specific subtree; inject the returned string in `<head>` / layout as needed.
  *
- * Note: This only captures CSS registered during the synchronous render.
+ * Next.js `metadata` / `generateMetadata` does not support injecting arbitrary `<style>` payloads; prefer
+ * {@link getRegisteredCss} in root `layout.tsx` or pipe this string into your own head/streaming pipeline.
+ *
+ * Note: This only captures CSS registered during that render.
  * For dynamic styles that may be registered client-side, use TypestylesStylesheet.
  *
  * @example
  * ```tsx
- * // app/layout.tsx
- * import { generateMetadata } from 'next/metadata';
+ * // app/some-route/head-styles.tsx (Server Component)
  * import { getTypestylesMetadata } from '@typestyles/next/server';
- * import { Home } from './Home';
+ * import { ProductPage } from './ProductPage';
  *
- * export async function generateMetadata() {
- *   const css = await getTypestylesMetadata(<Home />);
- *   return {
- *     styles: [{ cssText: css }],
- *   };
+ * export async function ProductPageStyles() {
+ *   const css = await getTypestylesMetadata(<ProductPage />);
+ *   if (!css) return null;
+ *   return <style id="typestyles-product" dangerouslySetInnerHTML={{ __html: css }} />;
  * }
  * ```
  */

@@ -128,23 +128,27 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### Option 3: Metadata API
+### Option 3: Collecting from a specific component tree
 
-For static generation, you can collect styles in `generateMetadata`:
+`getTypestylesMetadata` (alias of `collectStylesFromComponent`) renders a React element on the server and returns the CSS registered during that render. Use it when you need CSS scoped to a subtree rather than the whole app. For App Router pages, injecting the result still belongs in `layout.tsx` / `<head>` (Next.js `Metadata` does not provide a supported hook for arbitrary `<style>` payloads).
 
 ```tsx
-// app/layout.tsx
-import { generateMetadata } from 'next';
 import { getTypestylesMetadata } from '@typestyles/next/server';
 import { Home } from './Home';
 
-export async function generateMetadata() {
-  const css = await getTypestylesMetadata(<Home />);
-  return {
-    styles: [{ cssText: css, id: 'typestyles' }],
-  };
-}
+const css = await getTypestylesMetadata(<Home />);
+// Pass `css` into your layout <style> or streaming head pipeline.
 ```
+
+## Build-time CSS + Turbopack
+
+To ship a static `typestyles.css` and avoid client-side `<style>` injection (uses `typestyles/build` under the hood):
+
+1. Run `buildTypestylesForNext` before `next build` to emit CSS (and optional manifest).
+2. Import that CSS from your root layout (e.g. `import './typestyles.css'`).
+3. Wrap config with `withTypestylesExtract` from `@typestyles/next/build`.
+
+`withTypestylesExtract` sets **`NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED`** via `next.config` `env` (works with **webpack and Turbopack**) and adds webpack **`DefinePlugin`** for `__TYPESTYLES_RUNTIME_DISABLED__` on client bundles when webpack runs. Example app: `examples/next-app`.
 
 ## API Reference
 
@@ -171,7 +175,7 @@ const css = await collectStylesFromComponent(<YourComponent />);
 
 ### getTypestylesMetadata
 
-Generate CSS for use in Next.js metadata API. Collects styles by rendering the component server-side.
+Same as `collectStylesFromComponent` — renders the given element on the server and returns registered CSS. Use when you want a dedicated name for “CSS for this subtree.”
 
 ```tsx
 import { getTypestylesMetadata } from '@typestyles/next/server';

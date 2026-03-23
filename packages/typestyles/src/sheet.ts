@@ -9,11 +9,20 @@ const insertedRules = new Set<string>();
  * Whether runtime DOM insertion is disabled (for build-time/zero-runtime mode).
  * The Vite plugin (mode: 'build') defines __TYPESTYLES_RUNTIME_DISABLED__ as the
  * string "true" at build time, so this is true in production and no <style> is created.
+ *
+ * `@typestyles/next/build` `withTypestylesExtract` sets `NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED`
+ * via `next.config` `env` so Turbopack and webpack both inline the flag (DefinePlugin
+ * alone does not run under Turbopack).
  */
 declare const __TYPESTYLES_RUNTIME_DISABLED__: string | undefined;
+function readNextPublicRuntimeDisabled(): boolean {
+  if (typeof process === 'undefined' || !process.env) return false;
+  return process.env.NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED === 'true';
+}
 const RUNTIME_DISABLED =
-  typeof __TYPESTYLES_RUNTIME_DISABLED__ !== 'undefined' &&
-  __TYPESTYLES_RUNTIME_DISABLED__ === 'true';
+  (typeof __TYPESTYLES_RUNTIME_DISABLED__ !== 'undefined' &&
+    __TYPESTYLES_RUNTIME_DISABLED__ === 'true') ||
+  readNextPublicRuntimeDisabled();
 
 /**
  * Buffer of CSS rules waiting to be flushed.

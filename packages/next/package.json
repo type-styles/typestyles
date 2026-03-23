@@ -22,6 +22,11 @@
       "import": "./dist/client.js",
       "require": "./dist/client.cjs",
       "default": "./dist/client.js"
+    },
+    "./build": {
+      "types": "./src/build.d.ts",
+      "import": "./dist/build.js",
+      "require": "./dist/build.cjs"
     }
   },
   "files": [
@@ -29,7 +34,9 @@
     "src"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "next",
@@ -48,7 +55,8 @@
     "next": ">=13.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "typestyles": ">=0.1.0"
+    "typestyles": ">=0.1.0",
+    "webpack": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "next": {
@@ -59,16 +67,22 @@
     },
     "react-dom": {
       "optional": false
+    },
+    "webpack": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "vitest": "^3.0.0",
     "@types/node": "^25.2.1",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "next": "^14.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.4.0"
+    "typestyles": "workspace:*",
+    "typescript": "^5.4.0",
+    "webpack": "^5.97.1"
   }
 }

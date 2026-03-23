@@ -20,15 +20,19 @@ Typestyles occupies a unique position in the CSS-in-JS landscape:
 
 ### 1. Framework Integrations
 
-| Integration | Priority | Notes                                                    |
-| ----------- | -------- | -------------------------------------------------------- |
-| **Next.js** | High     | Critical for adoption - includes App Router, RSC support |
-| **Gatsby**  | Medium   | Still widely used                                        |
-| **Webpack** | Medium   | Many enterprise projects use Webpack                     |
-| **Rollup**  | Medium   | For library building                                     |
-| **PostCSS** | Medium   | For custom build pipelines                               |
+| Integration | Priority | Notes |
+| ----------- | -------- | ----- |
+| **Next.js** | High | `@typestyles/next` — App Router, Pages Router, RSC documented (`packages/next` README, `examples/next-app`). Extract mode: webpack `DefinePlugin` **+** `next.config` `env` (`NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED`) so **Turbopack** disables client runtime injection too. |
+| **Vite** | High | `@typestyles/vite` ships today (HMR). Zero-runtime **`mode`** / extraction evolution tracked in §2. Example: `examples/vite-app`. |
+| **Rollup / Rolldown** | Medium | `@typestyles/rollup` ships (runtime / build / hybrid). Rolldown supported via same plugin. Example: `examples/rollup-app`, `examples/rolldown-app`. |
+| **Webpack** | Medium | No standalone `@typestyles/webpack` yet; generic enterprise bundler integration. Next-specific webpack wiring lives under `@typestyles/next/build`. |
+| **PostCSS** | Medium | No public PostCSS plugin today (only internal PostCSS use in `@typestyles/migrate`). Plugin would unlock CSS-pipeline adoption. |
+| **Gatsby** | Medium | No package yet; still widely used for content sites. |
+| **Remix** | Low | No dedicated package; SSR patterns documented in `docs/content/docs/ssr.md`. |
 
-**Status**: Next.js package exists (`packages/next`). Need to verify RSC support.
+**Also see** §7 for UI-layer packages (`@typestyles/react`, Vue, Svelte) — separate from bundler/framework SSR wiring.
+
+**Status summary**: Next, Vite, and Rollup integrations exist as packages. Next RSC is **documented**; remaining Next work is mostly edge-case hardening (streaming, very large trees) and the other integrations in the table that are still missing.
 
 ### 2. Zero-Runtime Build Option
 
@@ -158,6 +162,6 @@ Goal: support the full range of real-world CSS authoring (semantic classes, util
 
 ## Suggested Next Steps
 
-1. **Next.js integration** - Verify and enhance RSC support (highest impact)
+1. **Next.js integration** - RSC + extract path documented; continue edge-case hardening as issues arise
 2. **Zero-runtime build option** - Address main criticism of runtime CSS-in-JS
 3. **Utils API** - High-value, relatively low-effort DX improvement

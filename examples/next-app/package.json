@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm typestyles:build && next build",
+    "build": "pnpm typestyles:build && pnpm typestyles:verify && next build",
     "build:runtime": "next build",
     "typestyles:build": "tsx ./scripts/typestyles-build.mts",
+    "typestyles:verify": "tsx ./scripts/verify-typestyles.mts",
     "start": "next start",
     "lint": "next lint"
   },

@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import type { useSyncExternalStore, useServerInsertedHTML } from 'react';
+import type { useSyncExternalStore } from 'react';
 
 /**
  * Subscribe to typestyles CSS changes. Use this in client components
@@ -8,9 +8,12 @@ import type { useSyncExternalStore, useServerInsertedHTML } from 'react';
 export function useTypestyles(): ReturnType<typeof useSyncExternalStore<string>>;
 
 /**
- * Collect styles during server rendering for App Router.
+ * Re-export of React’s `useServerInsertedHTML` (App Router / streaming SSR).
+ * Declared here so consumers get a stable signature even when their `@types/react` predates the hook.
  */
-export { useServerInsertedHTML };
+export function useServerInsertedHTML(
+  callback: () => React.ReactNode | null,
+): void;
 
 /**
  * Props for the TypestylesStylesheet component.
