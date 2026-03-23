@@ -1,18 +1,19 @@
+import { mkdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
-import {
-  writeExtractedCss,
-  extractCss,
-  type WriteExtractedCssOptions,
-  type TypestylesExtractManifestV1,
-} from '@typestyles/build';
+import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { collectStylesFromModules } from 'typestyles/build';
 import type { NextConfig } from 'next';
 
-export {
-  writeExtractedCss,
-  extractCss,
-  type WriteExtractedCssOptions,
-  type TypestylesExtractManifestV1,
+/** Manifest shape written next to extracted CSS (optional). */
+export interface TypestylesExtractManifestV1 {
+  version: 1;
+  css: string;
+}
+
+/** Shape of `require('webpack')` for `DefinePlugin` only (webpack is an optional peer). */
+type WebpackWithDefinePlugin = {
+  DefinePlugin: new (definitions: Record<string, string>) => unknown;
 };
 
 export interface BuildTypestylesForNextOptions {
@@ -25,15 +26,28 @@ export interface BuildTypestylesForNextOptions {
 
 /**
  * Extract TypeStyles CSS for a Next.js app (run from a script before `next build`, or in CI).
+ * Loads each module path (relative to `root`) so side-effect registrations run, then writes CSS.
  */
 export async function buildTypestylesForNext(options: BuildTypestylesForNextOptions): Promise<void> {
-  await writeExtractedCss({
-    root: options.root,
-    modules: options.modules,
-    outFile: options.cssOutFile,
-    manifestOutFile: options.manifestOutFile,
-    manifestCssPath: options.manifestCssPath,
+  const { root, modules, cssOutFile, manifestOutFile, manifestCssPath } = options;
+  const loaders = modules.map((mod) => {
+    const abs = resolve(root, mod);
+    const href = pathToFileURL(abs).href;
+    return () => import(href);
   });
+  const css = await collectStylesFromModules(loaders);
+  const outAbs = resolve(root, cssOutFile);
+  await mkdir(dirname(outAbs), { recursive: true });
+  await writeFile(outAbs, css, 'utf8');
+  if (manifestOutFile) {
+    const manifest: TypestylesExtractManifestV1 = {
+      version: 1,
+      css: manifestCssPath ?? cssOutFile,
+    };
+    const manAbs = resolve(root, manifestOutFile);
+    await mkdir(dirname(manAbs), { recursive: true });
+    await writeFile(manAbs, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  }
 }
 
 export interface WithTypestylesExtractOptions {
@@ -79,7 +93,7 @@ export function withTypestylesExtract(
       if (disableClientRuntime && !context.isServer) {
         try {
           const require = createRequire(join(process.cwd(), 'package.json'));
-          const webpackLib = require('webpack') as typeof import('webpack');
+          const webpackLib = require('webpack') as WebpackWithDefinePlugin;
           nextWebpack.plugins.push(
             new webpackLib.DefinePlugin({
               __TYPESTYLES_RUNTIME_DISABLED__: JSON.stringify('true'),

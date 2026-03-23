@@ -142,9 +142,9 @@ const css = await getTypestylesMetadata(<Home />);
 
 ## Build-time CSS + Turbopack
 
-To ship a static `typestyles.css` and avoid client-side `<style>` injection (see `@typestyles/build`):
+To ship a static `typestyles.css` and avoid client-side `<style>` injection (uses `typestyles/build` under the hood):
 
-1. Run `buildTypestylesForNext` (or `writeExtractedCss`) before `next build` to emit CSS (and optional manifest).
+1. Run `buildTypestylesForNext` before `next build` to emit CSS (and optional manifest).
 2. Import that CSS from your root layout (e.g. `import './typestyles.css'`).
 3. Wrap config with `withTypestylesExtract` from `@typestyles/next/build`.
 
