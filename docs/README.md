@@ -9,12 +9,13 @@ docs/
 ├── content/
 │   └── docs/           # All documentation markdown files
 ├── src/
-│   ├── routes/         # TanStack Router routes
+│   ├── pages/          # Astro routes
+│   ├── layouts/        # Shared Astro layouts
+│   ├── lib/            # Markdown/document helpers
 │   ├── navigation.ts   # Navigation configuration
 │   ├── styles.ts       # Documentation site styles
 │   └── tokens.ts       # Documentation site tokens
-├── content-collections.ts  # Content collections config
-├── vite.config.ts      # Vite configuration
+├── astro.config.mjs    # Astro configuration
 ├── package.json
 └── README.md           # This file
 ```
@@ -38,7 +39,7 @@ cd docs
 # Install dependencies
 pnpm install
 
-# Start development server
+# Start Astro development server
 pnpm dev
 
 # Build for production

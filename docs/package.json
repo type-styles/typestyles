@@ -4,30 +4,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.102.0",
-    "@tanstack/react-start": "^1.121.0",
+    "astro": "^5.6.1",
     "@typestyles/props": "workspace:*",
     "highlight.js": "^11.11.1",
     "marked": "^15.0.0",
     "marked-highlight": "^2.2.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "typestyles": "workspace:*"
   },
   "devDependencies": {
-    "@content-collections/core": "^0.14.0",
-    "@content-collections/vite": "^0.2.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
     "@typestyles/vite": "workspace:*",
-    "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.4.0",
-    "vite": "^7.0.0",
     "vite-tsconfig-paths": "^5.0.1",
     "zod": "^3.24.0"
   }

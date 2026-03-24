@@ -1,0 +1,36 @@
+---
+import { home } from '../styles';
+import DocsLayout from '../layouts/DocsLayout.astro';
+import { getAllDocs } from '../lib/docs';
+
+const docs = await getAllDocs();
+const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.slug, title: doc.title }]));
+---
+
+<DocsLayout docsBySlug={docsBySlug}>
+  <div class={home('hero')}>
+    <h1 class={home('title')}>
+      CSS-in-TypeScript that
+      <br />
+      <span class={home('titleAccent')}>embraces CSS</span>
+    </h1>
+    <p class={home('subtitle')}>
+      Design tokens, style variants, and keyframes - with full control over the CSS. No runtime
+      overhead, no magic, just types.
+    </p>
+    <div class={home('actions')}>
+      <a href="/docs/getting-started" class={home('cta')}>
+        Get started
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+      <a
+        href="https://github.com/typestyles/typestyles"
+        class={home('ctaSecondary')}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        GitHub
+      </a>
+    </div>
+  </div>
+</DocsLayout>

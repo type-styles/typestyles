@@ -1,0 +1,54 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { doc, docPage } from '../../styles';
+import { getAllDocs, getDocBySlug, getDocNeighbors } from '../../lib/docs';
+
+export async function getStaticPaths() {
+  const docs = await getAllDocs();
+  return docs.map((entry) => ({
+    params: { slug: entry.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect('/docs');
+}
+
+const docs = await getAllDocs();
+const docsBySlug = Object.fromEntries(docs.map((entry) => [entry.slug, entry]));
+const entry = await getDocBySlug(slug);
+
+if (!entry) {
+  throw new Error(`Document not found for slug: ${slug}`);
+}
+
+const neighbors = getDocNeighbors(slug);
+---
+
+<DocsLayout
+  docsBySlug={docsBySlug}
+  currentSlug={slug}
+  title={`${entry.title} - typestyles documentation`}
+>
+  <article class={doc('root')}>
+    <h1 class={doc('title')}>{entry.title}</h1>
+    {entry.description && <p class={doc('description')}>{entry.description}</p>}
+    <div class={doc('content')} set:html={entry.html} />
+
+    <div class={docPage('pagination')}>
+      {neighbors.prev ? (
+        <a href={`/docs/${neighbors.prev.slug}`} class={docPage('paginationLink')}>
+          &larr; {neighbors.prev.title}
+        </a>
+      ) : (
+        <span />
+      )}
+      {neighbors.next && (
+        <a href={`/docs/${neighbors.next.slug}`} class={docPage('paginationLink')} style="margin-left:auto;">
+          {neighbors.next.title} &rarr;
+        </a>
+      )}
+    </div>
+  </article>
+</DocsLayout>

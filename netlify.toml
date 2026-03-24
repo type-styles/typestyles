@@ -1,0 +1,3 @@
+[build]
+  command = "turbo run build --filter typestyles-docs"
+  publish = "docs/dist"

@@ -28,3 +28,4 @@ dist-ssr
 .turbo
 .pnpm-store
 .content-collections
+docs/.astro
