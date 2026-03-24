@@ -120,11 +120,11 @@ importers:
         version: link:../../packages/typestyles
     devDependencies:
       '@types/react':
-        specifier: latest
-        version: 19.2.14
+        specifier: ^18.2.0
+        version: 18.3.28
       '@types/react-dom':
-        specifier: latest
-        version: 19.2.3(@types/react@19.2.14)
+        specifier: ^18.2.0
+        version: 18.3.7(@types/react@18.3.28)
 
   examples/rolldown-app:
     dependencies:
