@@ -5,29 +5,29 @@ This checklist focuses on making `@examples/design-system` complete enough to po
 ## Phase 1 - Docs-first components
 
 - [ ] **CodeBlock (core)**
-  - [ ] Add container, header, filename, language badge, and scrollable body styles.
-  - [ ] Add variants: `default`, `inline`, `diff`, `terminal`.
-  - [ ] Add line-number and highlighted-line styles.
-  - [ ] Add long-line wrapping and horizontal-scroll options.
+  - [x] Add container, header, filename, language badge, and scrollable body styles.
+  - [x] Add variants: `default`, `inline`, `diff`, `terminal`.
+  - [x] Add line-number and highlighted-line styles.
+  - [x] Add long-line wrapping and horizontal-scroll options.
 - [ ] **CodeBlock copy UX**
-  - [ ] Add copy button recipe with states: idle, hover, copied, error.
-  - [ ] Provide accessible labels (`Copy code`, `Copied`).
-  - [ ] Add feedback slot styles (toast/inline status).
-  - [ ] Provide framework-agnostic helper pattern docs for clipboard integration.
-- [ ] **Syntax highlighting themes**
-  - [ ] Define semantic tokens for code syntax categories (keyword, string, comment, etc).
-  - [ ] Add light and dark code themes aligned with docs brand colors.
-  - [ ] Add diff tokens (`addition`, `deletion`, backgrounds).
-  - [ ] Document integration pattern with `highlight.js` output classes.
-- [ ] **Alert / Callout block**
-  - [ ] Add alert recipe with variants: `info`, `success`, `warning`, `danger`, `tip`.
-  - [ ] Add optional title, icon slot, and action link styles.
-  - [ ] Add subtle and solid visual modes.
-  - [ ] Ensure readable contrast in both light and dark themes.
-- [ ] **Docs content primitives**
-  - [ ] Add styles for: blockquote, kbd, badge, table, divider, anchor heading links.
-  - [ ] Add "admonition-like" markdown mapping examples.
-  - [ ] Add responsive spacing scale for prose content.
+  - [x] Add copy button recipe with states: idle, hover, copied, error.
+  - [x] Provide accessible labels (`Copy code`, `Copied`).
+  - [x] Add feedback slot styles (toast/inline status).
+  - [x] Provide framework-agnostic helper pattern docs for clipboard integration.
+- [x] **Syntax highlighting themes**
+  - [x] Define semantic tokens for code syntax categories (keyword, string, comment, etc).
+  - [x] Add light and dark code themes aligned with docs brand colors.
+  - [x] Add diff tokens (`addition`, `deletion`, backgrounds).
+  - [x] Document integration pattern with `highlight.js` output classes.
+- [x] **Alert / Callout block**
+  - [x] Add alert recipe with variants: `info`, `success`, `warning`, `danger`, `tip`.
+  - [x] Add optional title, icon slot, and action link styles.
+  - [x] Add subtle and solid visual modes.
+  - [x] Ensure readable contrast in both light and dark themes.
+- [x] **Docs content primitives**
+  - [x] Add styles for: blockquote, kbd, badge, table, divider, anchor heading links.
+  - [x] Add "admonition-like" markdown mapping examples.
+  - [x] Add responsive spacing scale for prose content.
 
 ## Phase 2 - Theming and tokens
 

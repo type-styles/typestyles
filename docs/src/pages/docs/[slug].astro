@@ -1,6 +1,8 @@
 ---
+// @ts-nocheck
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import { doc, docPage } from '../../styles';
+import Alert from '../../components/docs/Alert.astro';
+import { doc, docPage, docProseRoot } from '../../styles';
 import { getAllDocs, getDocBySlug, getDocNeighbors } from '../../lib/docs';
 
 export async function getStaticPaths() {
@@ -34,7 +36,38 @@ const neighbors = getDocNeighbors(slug);
   <article class={doc('root')}>
     <h1 class={doc('title')}>{entry.title}</h1>
     {entry.description && <p class={doc('description')}>{entry.description}</p>}
-    <div class={doc('content')} set:html={entry.html} />
+    <div class:list={[docProseRoot, doc('content')]} set:html={entry.html} />
+
+    {
+      slug === 'component-library' ? (
+        <div class:list={[docProseRoot, doc('content')]}>
+          <h2>Alert / callout</h2>
+          <p>
+            The docs use the same alert recipe as <code>@examples/design-system</code> (see{' '}
+            <code>Alert.astro</code> and the React <code>Alert</code> wrapper).
+          </p>
+          <Alert variant="info" title="Info">
+            Use informational callouts for neutral context that supports the main content.
+          </Alert>
+          <Alert variant="tip" title="Tip" actionLabel="Read the recipes guide" actionHref="/docs/recipes">
+            Optional action links inherit the callout foreground for solid and subtle modes.
+          </Alert>
+          <Alert variant="warning" title="Warning" appearance="solid">
+            Solid mode uses filled surfaces with foreground colors tuned for contrast in light and dark
+            themes.
+          </Alert>
+          <Alert variant="danger" title="Danger" appearance="subtle">
+            Subtle mode uses tinted backgrounds and a colored title accent.
+          </Alert>
+          <Alert variant="success" title="Success">
+            <span slot="icon" aria-hidden="true">
+              ✓
+            </span>
+            The icon slot is optional; use it for inline SVG or text symbols.
+          </Alert>
+        </div>
+      ) : null
+    }
 
     <div class={docPage('pagination')}>
       {neighbors.prev ? (

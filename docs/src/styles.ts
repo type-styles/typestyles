@@ -1,5 +1,9 @@
 import { styles } from 'typestyles';
+import { proseContent } from '@examples/design-system';
 import { color, space, font } from './tokens';
+
+/** Compose with `doc('content')` on markdown bodies — registers prose CSS before doc overrides. */
+export const docProseRoot = proseContent('root');
 
 const bp = '@media (max-width: 768px)';
 
@@ -314,33 +318,27 @@ export const doc = styles.create('docs-doc', {
     lineHeight: 1.6,
   },
   content: {
-    fontSize: '15px',
-    lineHeight: 1.75,
-    color: color.text,
-    '& h2': {
-      fontSize: '22px',
-      fontWeight: 600,
-      marginTop: space.xl,
-      marginBottom: space.sm,
-      letterSpacing: '-0.015em',
-      color: color.text,
-    },
-    '& h3': {
-      fontSize: '17px',
-      fontWeight: 600,
-      marginTop: space.lg,
-      marginBottom: space.xs,
-      color: color.text,
-    },
-    '& p': { marginBottom: space.md },
-    '& ul': { marginBottom: space.md, paddingLeft: space.lg },
-    '& ol': { marginBottom: space.md, paddingLeft: space.lg },
-    '& li': { marginBottom: space.xs },
-    '& a': {
+    '& a:not([data-prose-heading-anchor]):not([data-alert-action])': {
       color: color.link,
       textDecoration: 'none',
       transition: 'color 0.12s ease',
       '&:hover': { color: color.linkHover, textDecoration: 'underline' },
+    },
+    '& a[data-prose-heading-anchor]': {
+      color: color.textMuted,
+      fontWeight: 500,
+      '&:hover': {
+        color: color.link,
+      },
+    },
+    '& a[data-alert-action]': {
+      color: 'inherit',
+      fontWeight: 'inherit',
+      textDecoration: 'underline',
+      '&:hover': {
+        color: 'inherit',
+        textDecoration: 'none',
+      },
     },
     '& code': {
       fontFamily: font.mono,
@@ -350,7 +348,7 @@ export const doc = styles.create('docs-doc', {
       borderRadius: '4px',
       border: `1px solid ${color.codeBorder}`,
     },
-    '& pre': {
+    '& pre:not([data-codeblock-pre])': {
       fontFamily: font.mono,
       fontSize: '13px',
       lineHeight: 1.6,
@@ -365,35 +363,6 @@ export const doc = styles.create('docs-doc', {
       backgroundColor: 'transparent',
       padding: 0,
       border: 'none',
-    },
-    '& blockquote': {
-      borderLeft: `3px solid ${color.primary}`,
-      paddingLeft: space.md,
-      margin: `${space.md} 0`,
-      color: color.textMuted,
-      fontStyle: 'italic',
-    },
-    '& hr': {
-      border: 'none',
-      borderTop: `1px solid ${color.border}`,
-      margin: `${space.lg} 0`,
-    },
-    '& table': {
-      width: '100%',
-      borderCollapse: 'collapse',
-      marginBottom: space.md,
-    },
-    '& th, & td': {
-      textAlign: 'left',
-      padding: `${space.sm} ${space.md}`,
-      borderBottom: `1px solid ${color.border}`,
-    },
-    '& th': {
-      fontWeight: 600,
-      fontSize: '13px',
-      color: color.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
     },
   },
 });

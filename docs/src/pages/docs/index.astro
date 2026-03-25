@@ -1,6 +1,6 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import { doc } from '../../styles';
+import { doc, docProseRoot } from '../../styles';
 import { docNavigation } from '../../navigation';
 import { getAllDocs } from '../../lib/docs';
 
@@ -16,7 +16,7 @@ const docsBySlug = Object.fromEntries(docs.map((entry) => [entry.slug, entry]));
       <a href="/docs/getting-started">Getting Started</a>.
     </p>
 
-    <div class={doc('content')}>
+    <div class:list={[docProseRoot, doc('content')]}>
       {
         docNavigation.categories.map((category) => (
           <div>

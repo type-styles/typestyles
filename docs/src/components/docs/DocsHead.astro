@@ -20,3 +20,8 @@ const { title, darkThemeClass } = Astro.props;
 <script
   set:html={`(function(){try{var s=localStorage.getItem('typestyles-theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(!s&&p)){document.documentElement.classList.add('${darkThemeClass}')}}catch(e){}})();`}
 />
+<script>
+  if (import.meta.env.DEV) {
+    void import('../../typestyles-entry');
+  }
+</script>

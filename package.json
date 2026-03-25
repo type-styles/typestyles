@@ -13,6 +13,7 @@
     "props": "pnpm --filter @typestyles/props",
     "open-props": "pnpm --filter @typestyles/open-props",
     "vite": "pnpm --filter @typestyles/vite",
+    "astro": "pnpm --filter @typestyles/astro",
     "rollup": "pnpm --filter @typestyles/rollup",
     "next": "pnpm --filter @typestyles/next",
     "migrate": "pnpm --filter @typestyles/migrate",

@@ -5,6 +5,9 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "typestyles#build": {
+      "cache": false
+    },
     "test": {
       "dependsOn": ["build"]
     },
@@ -13,6 +16,7 @@
       "inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     }
