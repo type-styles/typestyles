@@ -1,0 +1,14 @@
+---
+import { mobileBar } from '../../styles';
+import DocsLogo from './DocsLogo.astro';
+---
+
+<div className={mobileBar('root')}>
+  <button className={mobileBar('menuBtn')} id="mobile-menu-toggle" aria-label="Open menu">
+    <span id="mobile-menu-icon">☰</span>
+  </button>
+  <DocsLogo className={mobileBar('logo')} accentClassName={mobileBar('logoAccent')} />
+  <div className={mobileBar('actions')}>
+    <button className={mobileBar('themeBtn')} id="theme-toggle-mobile" aria-label="Toggle theme">◐</button>
+  </div>
+</div>

@@ -9,6 +9,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
+    "@examples/design-system": "workspace:*",
     "astro": "^5.6.1",
     "@typestyles/props": "workspace:*",
     "highlight.js": "^11.11.1",

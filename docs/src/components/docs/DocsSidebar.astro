@@ -1,0 +1,52 @@
+---
+import { sidebar } from '../../styles';
+import { docNavigation } from '../../navigation';
+import type { DocMeta } from '../../lib/docs';
+import DocsLogo from './DocsLogo.astro';
+
+type Props = {
+  docsBySlug: Record<string, DocMeta>;
+  currentSlug: string;
+};
+
+const { docsBySlug, currentSlug } = Astro.props;
+---
+
+<div className={sidebar('backdrop')} id="sidebar-backdrop" aria-hidden="true"></div>
+<aside className={sidebar('root')} id="docs-sidebar">
+  <div className={sidebar('header')}>
+    <DocsLogo className={sidebar('logo')} accentClassName={sidebar('logoAccent')} />
+  </div>
+  <div className={sidebar('searchWrapper')}>
+    <span className={sidebar('searchIcon')}>⌕</span>
+    <input type="search" placeholder="Search docs..." className={sidebar('searchInput')} />
+    <span className={sidebar('searchKbd')}>⌘K</span>
+  </div>
+  <nav className={sidebar('nav')}>
+    {
+      docNavigation.categories.map((category) => (
+        <div className={sidebar('section')}>
+          <div className={sidebar('sectionTitle')}>{category.title}</div>
+          {category.items.map((item) => {
+            const doc = docsBySlug[item.slug];
+            if (!doc) return null;
+            const activeClass =
+              item.slug === currentSlug
+                ? `${sidebar('link')} ${sidebar('linkActive')}`
+                : sidebar('link');
+            return (
+              <a href={`/docs/${item.slug}`} className={activeClass}>
+                {doc.title}
+              </a>
+            );
+          })}
+        </div>
+      ))
+    }
+  </nav>
+  <div className={sidebar('footer')}>
+    <button className={sidebar('themeToggle')} id="theme-toggle-sidebar" aria-label="Toggle theme">
+      Toggle theme
+    </button>
+  </div>
+</aside>

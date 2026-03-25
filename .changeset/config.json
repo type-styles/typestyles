@@ -7,7 +7,15 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["typestyles-docs", "typestyles-vite-example"],
+  "ignore": [
+    "@examples/design-system",
+    "@examples/react-design-system",
+    "next-app",
+    "typestyles-docs",
+    "typestyles-rolldown-example",
+    "typestyles-rollup-example",
+    "typestyles-vite-example"
+  ],
   "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
     "onlyUpdatePeerDependentsWhenOutOfRange": true
   }

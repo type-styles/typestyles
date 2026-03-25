@@ -35,6 +35,9 @@ importers:
 
   docs:
     dependencies:
+      '@examples/design-system':
+        specifier: workspace:*
+        version: link:../examples/design-system
       '@typestyles/props':
         specifier: workspace:*
         version: link:../packages/props
@@ -66,6 +69,12 @@ importers:
       zod:
         specifier: ^3.24.0
         version: 3.25.76
+
+  examples/design-system:
+    dependencies:
+      typestyles:
+        specifier: workspace:*
+        version: link:../../packages/typestyles
 
   examples/next-app:
     dependencies:
@@ -106,6 +115,9 @@ importers:
 
   examples/react-design-system:
     dependencies:
+      '@examples/design-system':
+        specifier: workspace:*
+        version: link:../design-system
       react:
         specifier: '>=18'
         version: 19.2.4

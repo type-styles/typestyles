@@ -20,6 +20,7 @@
     "rollup-app": "pnpm --filter typestyles-rollup-example",
     "rolldown-app": "pnpm --filter typestyles-rolldown-example",
     "next-app": "pnpm --filter next-app",
+    "design-system": "pnpm --filter @examples/design-system",
     "react-design-system": "pnpm --filter @examples/react-design-system",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

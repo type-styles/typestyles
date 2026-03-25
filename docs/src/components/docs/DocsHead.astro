@@ -1,0 +1,22 @@
+---
+type Props = {
+  title: string;
+  darkThemeClass: string;
+};
+
+const { title, darkThemeClass } = Astro.props;
+---
+
+<meta charSet="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+/>
+<style set:html="*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; } body { margin: 0; } a { color: inherit; text-decoration: none; } input, button { font: inherit; }" />
+<script
+  set:html={`(function(){try{var s=localStorage.getItem('typestyles-theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(!s&&p)){document.documentElement.classList.add('${darkThemeClass}')}}catch(e){}})();`}
+/>

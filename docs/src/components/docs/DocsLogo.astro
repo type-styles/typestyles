@@ -1,0 +1,10 @@
+---
+type Props = {
+  className: string;
+  accentClassName: string;
+};
+
+const { className, accentClassName } = Astro.props;
+---
+
+<a href="/" className={className}>type<span className={accentClassName}>styles</span></a>

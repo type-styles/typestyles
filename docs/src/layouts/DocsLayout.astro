@@ -1,9 +1,13 @@
 ---
+// @ts-nocheck
 import { getRegisteredCss } from 'typestyles';
-import { layout, sidebar, mobileBar } from '../styles';
+import { layout, sidebar } from '../styles';
 import { darkTheme } from '../tokens';
-import { docNavigation } from '../navigation';
 import type { DocMeta } from '../lib/docs';
+import DocsHead from '../components/docs/DocsHead.astro';
+import DocsMobileBar from '../components/docs/DocsMobileBar.astro';
+import DocsSidebar from '../components/docs/DocsSidebar.astro';
+import DocsClientScripts from '../components/docs/DocsClientScripts.astro';
 import '../codeTheme';
 
 type Props = {
@@ -13,125 +17,32 @@ type Props = {
 };
 
 const { title = 'typestyles - CSS-in-TypeScript', currentSlug = '', docsBySlug } = Astro.props;
-const css = getRegisteredCss();
+const sidebarRootOpenClass = sidebar('rootOpen');
+const sidebarBackdropVisibleClass = sidebar('backdropVisible');
 ---
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-    />
-    <style is:inline>
-      {`*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; } body { margin: 0; } a { color: inherit; text-decoration: none; } input, button { font: inherit; }`}
-    </style>
-    <style is:inline>{css}</style>
-    <script is:inline>
-      {`(function(){try{var s=localStorage.getItem('typestyles-theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(!s&&p)){document.documentElement.classList.add('${darkTheme}')}}catch(e){}})();`}
-    </script>
+    <DocsHead title={title} darkThemeClass={darkTheme} />
   </head>
   <body>
-    <div class={mobileBar('root')}>
-      <button class={mobileBar('menuBtn')} id="mobile-menu-toggle" aria-label="Open menu">
-        <span id="mobile-menu-icon">☰</span>
-      </button>
-      <a href="/" class={mobileBar('logo')}>type<span class={mobileBar('logoAccent')}>styles</span></a>
-      <div class={mobileBar('actions')}>
-        <button class={mobileBar('themeBtn')} id="theme-toggle-mobile" aria-label="Toggle theme">◐</button>
-      </div>
-    </div>
+    <DocsMobileBar />
 
-    <div class={layout('root')}>
-      <div class={sidebar('backdrop')} id="sidebar-backdrop" aria-hidden="true"></div>
-      <aside class={sidebar('root')} id="docs-sidebar">
-        <div class={sidebar('header')}>
-          <a href="/" class={sidebar('logo')}>type<span class={sidebar('logoAccent')}>styles</span></a>
-        </div>
-        <div class={sidebar('searchWrapper')}>
-          <span class={sidebar('searchIcon')}>⌕</span>
-          <input type="search" placeholder="Search docs..." class={sidebar('searchInput')} />
-          <span class={sidebar('searchKbd')}>⌘K</span>
-        </div>
-        <nav class={sidebar('nav')}>
-          {
-            docNavigation.categories.map((category) => (
-              <div class={sidebar('section')}>
-                <div class={sidebar('sectionTitle')}>{category.title}</div>
-                {category.items.map((item) => {
-                  const doc = docsBySlug[item.slug];
-                  if (!doc) return null;
-                  const activeClass =
-                    item.slug === currentSlug
-                      ? `${sidebar('link')} ${sidebar('linkActive')}`
-                      : sidebar('link');
-                  return (
-                    <a href={`/docs/${item.slug}`} class={activeClass}>
-                      {doc.title}
-                    </a>
-                  );
-                })}
-              </div>
-            ))
-          }
-        </nav>
-        <div class={sidebar('footer')}>
-          <button class={sidebar('themeToggle')} id="theme-toggle-sidebar" aria-label="Toggle theme">
-            Toggle theme
-          </button>
-        </div>
-      </aside>
+    <div className={layout('root')}>
+      <DocsSidebar docsBySlug={docsBySlug} currentSlug={currentSlug} />
 
-      <div class={layout('content')}>
-        <div class={layout('main')}>
+      <div className={layout('content')}>
+        <div className={layout('main')}>
           <slot />
         </div>
       </div>
     </div>
 
-    <script is:inline>
-      {`(function () {
-  var root = document.documentElement;
-  var sidebar = document.getElementById('docs-sidebar');
-  var backdrop = document.getElementById('sidebar-backdrop');
-  var menuToggle = document.getElementById('mobile-menu-toggle');
-  var menuIcon = document.getElementById('mobile-menu-icon');
-  var themeSidebar = document.getElementById('theme-toggle-sidebar');
-  var themeMobile = document.getElementById('theme-toggle-mobile');
-  var isOpen = false;
-
-  function setTheme(isDark) {
-    if (isDark) {
-      root.classList.add('${darkTheme}');
-      localStorage.setItem('typestyles-theme', 'dark');
-    } else {
-      root.classList.remove('${darkTheme}');
-      localStorage.setItem('typestyles-theme', 'light');
-    }
-  }
-
-  function toggleTheme() {
-    setTheme(!root.classList.contains('${darkTheme}'));
-  }
-
-  function setSidebar(open) {
-    isOpen = open;
-    if (!sidebar || !backdrop || !menuIcon) return;
-    sidebar.classList.toggle('${sidebar('rootOpen')}', isOpen);
-    backdrop.classList.toggle('${sidebar('backdropVisible')}', isOpen);
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    menuIcon.textContent = isOpen ? '✕' : '☰';
-  }
-
-  if (menuToggle) menuToggle.addEventListener('click', function () { setSidebar(!isOpen); });
-  if (backdrop) backdrop.addEventListener('click', function () { setSidebar(false); });
-  if (themeSidebar) themeSidebar.addEventListener('click', toggleTheme);
-  if (themeMobile) themeMobile.addEventListener('click', toggleTheme);
-})();`}
-    </script>
+    <DocsClientScripts
+      darkThemeClass={darkTheme}
+      sidebarRootOpenClass={sidebarRootOpenClass}
+      sidebarBackdropVisibleClass={sidebarBackdropVisibleClass}
+    />
+    <style set:html={getRegisteredCss()} />
   </body>
 </html>

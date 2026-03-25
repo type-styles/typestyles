@@ -1,0 +1,56 @@
+---
+type Props = {
+  darkThemeClass: string;
+  sidebarRootOpenClass: string;
+  sidebarBackdropVisibleClass: string;
+};
+
+const { darkThemeClass, sidebarRootOpenClass, sidebarBackdropVisibleClass } = Astro.props;
+---
+
+<script
+  define:vars={{
+    darkThemeClass,
+    sidebarRootOpenClass,
+    sidebarBackdropVisibleClass,
+  }}
+>
+  const root = document.documentElement;
+  const sidebarElement = document.getElementById('docs-sidebar');
+  const backdropElement = document.getElementById('sidebar-backdrop');
+  const menuToggleElement = document.getElementById('mobile-menu-toggle');
+  const menuIconElement = document.getElementById('mobile-menu-icon');
+  const sidebarThemeToggleElement = document.getElementById('theme-toggle-sidebar');
+  const mobileThemeToggleElement = document.getElementById('theme-toggle-mobile');
+
+  let isOpen = false;
+
+  function setTheme(isDark) {
+    if (isDark) {
+      root.classList.add(darkThemeClass);
+      localStorage.setItem('typestyles-theme', 'dark');
+    } else {
+      root.classList.remove(darkThemeClass);
+      localStorage.setItem('typestyles-theme', 'light');
+    }
+  }
+
+  function toggleTheme() {
+    setTheme(!root.classList.contains(darkThemeClass));
+  }
+
+  function setSidebar(open) {
+    isOpen = open;
+    if (!sidebarElement || !backdropElement || !menuIconElement) return;
+
+    sidebarElement.classList.toggle(sidebarRootOpenClass, isOpen);
+    backdropElement.classList.toggle(sidebarBackdropVisibleClass, isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    menuIconElement.textContent = isOpen ? '✕' : '☰';
+  }
+
+  menuToggleElement?.addEventListener('click', () => setSidebar(!isOpen));
+  backdropElement?.addEventListener('click', () => setSidebar(false));
+  sidebarThemeToggleElement?.addEventListener('click', toggleTheme);
+  mobileThemeToggleElement?.addEventListener('click', toggleTheme);
+</script>
