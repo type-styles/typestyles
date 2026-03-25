@@ -3,6 +3,7 @@ import { join, relative } from 'node:path';
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
+import { codeBlock } from '@examples/design-system';
 import { docNavigation } from '../navigation';
 
 export type DocMeta = {
@@ -27,6 +28,32 @@ const marked = new Marked(
     },
   }),
 );
+
+function wrapCodeBlocks(html: string): string {
+  // Marked emits <pre><code class="hljs language-xyz">…</code></pre> for fenced blocks.
+  // We wrap that structure so the docs site can share a framework-agnostic CodeBlock recipe.
+  return html.replace(
+    /<pre><code class="hljs language-([^"]*)">([\s\S]*?)<\/code><\/pre>/g,
+    (_match, lang: string, highlighted: string) => {
+      const safeLang = (lang || 'text').toLowerCase();
+      return [
+        `<div class="${codeBlock('root')}" data-codeblock>`,
+        `  <div class="${codeBlock('header')}">`,
+        `    <div class="${codeBlock('title')}">`,
+        `      <span class="${codeBlock('language')}">${safeLang}</span>`,
+        `    </div>`,
+        `    <div class="${codeBlock('actions')}">`,
+        `      <button type="button" class="${codeBlock('copyButton')}" data-codeblock-copy aria-label="Copy code">Copy</button>`,
+        `    </div>`,
+        `  </div>`,
+        `  <div class="${codeBlock('body')}">`,
+        `    <pre class="${codeBlock('pre')}"><code class="hljs language-${safeLang} ${codeBlock('code')}">${highlighted}</code></pre>`,
+        `  </div>`,
+        `</div>`,
+      ].join('\n');
+    },
+  );
+}
 
 function parseFrontmatter(markdown: string): { data: Record<string, string>; body: string } {
   if (!markdown.startsWith('---\n')) {
@@ -76,13 +103,14 @@ async function loadDocByPath(filePath: string): Promise<DocEntry> {
   const markdown = await readFile(filePath, 'utf8');
   const { data, body } = parseFrontmatter(markdown);
   const slug = slugFromAbsolutePath(filePath);
+  const html = wrapCodeBlocks(marked.parse(body) as string);
 
   return {
     slug,
     title: data.title ?? slug,
     description: data.description,
     content: body,
-    html: marked.parse(body) as string,
+    html,
   };
 }
 

@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Tab, TabList, TabPanel, Tabs as AriaTabs } from 'react-aria-components';
-import { dsTabs } from '@examples/design-system';
+import { tabs as tabsStyles } from '@examples/design-system';
 
 type TabDefinition = {
   id: string;
@@ -14,16 +14,16 @@ export type TabsProps = Omit<ComponentProps<typeof AriaTabs>, 'children'> & {
 
 export function Tabs({ tabs, ...props }: TabsProps) {
   return (
-    <AriaTabs {...props} className={dsTabs('root')}>
-      <TabList className={dsTabs('list')}>
+    <AriaTabs {...props} className={tabsStyles('root')}>
+      <TabList className={tabsStyles('list')}>
         {tabs.map((tab) => (
-          <Tab key={tab.id} id={tab.id} className={dsTabs('tab')}>
+          <Tab key={tab.id} id={tab.id} className={tabsStyles('tab')}>
             {tab.label}
           </Tab>
         ))}
       </TabList>
       {tabs.map((tab) => (
-        <TabPanel key={tab.id} id={tab.id} className={dsTabs('panel')}>
+        <TabPanel key={tab.id} id={tab.id} className={tabsStyles('panel')}>
           {tab.content}
         </TabPanel>
       ))}

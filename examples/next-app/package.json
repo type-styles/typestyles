@@ -1,10 +1,10 @@
 {
-  "name": "next-app",
+  "name": "@examples/next",
   "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm typestyles:build && next dev",
     "build": "pnpm typestyles:build && pnpm typestyles:verify && next build",
     "build:runtime": "next build",
     "typestyles:build": "tsx ./scripts/typestyles-build.mts",

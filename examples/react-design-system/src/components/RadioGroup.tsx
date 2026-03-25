@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { Label, Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components';
-import { dsRadio } from '@examples/design-system';
+import { radio } from '@examples/design-system';
 
 export type RadioGroupOption = {
   value: string;
@@ -14,14 +14,14 @@ export type RadioGroupProps = Omit<ComponentProps<typeof AriaRadioGroup>, 'child
 
 export function RadioGroup({ label, options, ...props }: RadioGroupProps) {
   return (
-    <AriaRadioGroup {...props} className={dsRadio('group')}>
-      {label ? <Label className={dsRadio('groupLabel')}>{label}</Label> : null}
+    <AriaRadioGroup {...props} className={radio('group')}>
+      {label ? <Label className={radio('groupLabel')}>{label}</Label> : null}
       {options.map((option) => (
-        <AriaRadio key={option.value} value={option.value} className={dsRadio('item')}>
+        <AriaRadio key={option.value} value={option.value} className={radio('item')}>
           {({ isSelected }) => (
             <>
-              <span className={dsRadio('control')} data-selected={isSelected || undefined} />
-              <span className={dsRadio('label')}>{option.label}</span>
+              <span className={radio('control')} data-selected={isSelected || undefined} />
+              <span className={radio('label')}>{option.label}</span>
             </>
           )}
         </AriaRadio>

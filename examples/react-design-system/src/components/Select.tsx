@@ -8,7 +8,7 @@ import {
   Select as AriaSelect,
   SelectValue,
 } from 'react-aria-components';
-import { dsSelect } from '@examples/design-system';
+import { select } from '@examples/design-system';
 
 export type SelectOption = {
   id: string;
@@ -23,15 +23,15 @@ export type SelectProps = Omit<ComponentProps<typeof AriaSelect>, 'children'> & 
 
 export function Select({ label, options, placeholder = 'Select…', ...props }: SelectProps) {
   return (
-    <AriaSelect {...props} className={dsSelect('root')}>
-      {label ? <Label className={dsSelect('label')}>{label}</Label> : null}
-      <AriaButton className={dsSelect('trigger')}>
+    <AriaSelect {...props} className={select('root')}>
+      {label ? <Label className={select('label')}>{label}</Label> : null}
+      <AriaButton className={select('trigger')}>
         <SelectValue>{({ defaultChildren }) => defaultChildren ?? placeholder}</SelectValue>
       </AriaButton>
-      <Popover className={dsSelect('popover')}>
+      <Popover className={select('popover')}>
         <ListBox>
           {options.map((option) => (
-            <ListBoxItem key={option.id} id={option.id} className={dsSelect('item')}>
+            <ListBoxItem key={option.id} id={option.id} className={select('item')}>
               {option.label}
             </ListBoxItem>
           ))}

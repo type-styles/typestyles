@@ -10,7 +10,7 @@
   "ignore": [
     "@examples/design-system",
     "@examples/react-design-system",
-    "next-app",
+    "@examples/next",
     "typestyles-docs",
     "typestyles-rolldown-example",
     "typestyles-rollup-example",

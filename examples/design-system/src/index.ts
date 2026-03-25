@@ -11,14 +11,15 @@ export {
 } from './tokens';
 export { dsLayout, dsText } from './styles';
 export { dsButton } from './recipes';
+export { codeBlock } from './codeBlock';
 export {
-  dsCheckbox,
-  dsDialog,
-  dsLink,
-  dsRadio,
-  dsSelect,
-  dsSwitch,
-  dsTabs,
-  dsTextAreaField,
-  dsTextField,
+  checkbox,
+  dialog,
+  link,
+  radio,
+  select,
+  switchStyles,
+  tabs,
+  textAreaField,
+  textField,
 } from './components';

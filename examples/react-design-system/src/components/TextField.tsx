@@ -1,5 +1,5 @@
 import { FieldError, Input, Label, TextField as AriaTextField } from 'react-aria-components';
-import { dsTextField } from '@examples/design-system';
+import { textField } from '@examples/design-system';
 import type { BaseTextFieldProps } from './utils';
 
 export type TextFieldProps = BaseTextFieldProps & {
@@ -8,11 +8,11 @@ export type TextFieldProps = BaseTextFieldProps & {
 
 export function TextField({ label, description, errorMessage, placeholder, ...props }: TextFieldProps) {
   return (
-    <AriaTextField {...props} className={dsTextField('root')}>
-      {label ? <Label className={dsTextField('label')}>{label}</Label> : null}
-      <Input className={dsTextField('input')} placeholder={placeholder} />
-      {description ? <p className={dsTextField('description')}>{description}</p> : null}
-      <FieldError className={dsTextField('error')}>{errorMessage ?? ''}</FieldError>
+    <AriaTextField {...props} className={textField('root')}>
+      {label ? <Label className={textField('label')}>{label}</Label> : null}
+      <Input className={textField('input')} placeholder={placeholder} />
+      {description ? <p className={textField('description')}>{description}</p> : null}
+      <FieldError className={textField('error')}>{errorMessage ?? ''}</FieldError>
     </AriaTextField>
   );
 }

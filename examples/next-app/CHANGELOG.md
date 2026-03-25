@@ -1,4 +1,4 @@
-# next-app
+# @examples/next
 
 ## 0.1.1
 
