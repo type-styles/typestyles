@@ -1,4 +1,9 @@
 import { tokens, color as c } from 'typestyles';
+import {
+  codeSyntaxBrandPalettes,
+  codeSyntaxDarkValues,
+  designColorDarkValues,
+} from '@examples/design-system';
 
 const oklch = (l: number, ch: number, h: number) => c.oklch(`${l}%`, ch, h);
 
@@ -332,40 +337,8 @@ export const primaryA = {
   12: primary[12],
 };
 
-export const codeTheme = {
-  light: {
-    base: neutral[12],
-    keyword: purple[9],
-    title: blue[9],
-    attr: amber[10],
-    string: green[10],
-    builtIn: orange[9],
-    comment: neutral[8],
-    name: red[9],
-    section: indigo[9],
-    bullet: amber[9],
-    addition: green[9],
-    additionBg: green[1],
-    deletion: red[9],
-    deletionBg: red[1],
-  },
-  dark: {
-    base: oklch(90, 0.002, 264),
-    keyword: purple[6],
-    title: blue[6],
-    attr: amber[6],
-    string: green[6],
-    builtIn: orange[6],
-    comment: neutral[7],
-    name: red[6],
-    section: indigo[6],
-    bullet: amber[7],
-    addition: green[6],
-    additionBg: oklch(18, 0.04, 170),
-    deletion: red[6],
-    deletionBg: oklch(18, 0.04, 30),
-  },
-};
+/** Syntax highlighting ramps — source of truth is `@examples/design-system` (`ds-code-syntax`). */
+export const codeTheme = codeSyntaxBrandPalettes;
 
 export const colorLightValues = {
   primary: primary[9],
@@ -439,4 +412,6 @@ export const colorDarkValues = {
 
 export const darkTheme = tokens.createTheme('docs-dark', {
   'docs-color': colorDarkValues,
+  'ds-color': designColorDarkValues as Record<string, string>,
+  'ds-code-syntax': codeSyntaxDarkValues as Record<string, string>,
 });

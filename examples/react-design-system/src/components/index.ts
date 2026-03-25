@@ -8,3 +8,5 @@ export { RadioGroup, type RadioGroupOption, type RadioGroupProps } from './Radio
 export { Select, type SelectOption, type SelectProps } from './Select';
 export { Tabs, type TabsProps } from './Tabs';
 export { Dialog, type DialogProps } from './Dialog';
+export { CodeBlock, type CodeBlockProps } from './CodeBlock';
+export { Alert, type AlertAppearance, type AlertProps, type AlertVariant } from './Alert';

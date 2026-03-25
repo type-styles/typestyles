@@ -1,13 +1,14 @@
 ---
 // @ts-nocheck
-import { getRegisteredCss } from 'typestyles';
 import { layout, sidebar } from '../styles';
 import { darkTheme } from '../tokens';
 import type { DocMeta } from '../lib/docs';
 import DocsHead from '../components/docs/DocsHead.astro';
 import DocsMobileBar from '../components/docs/DocsMobileBar.astro';
 import DocsSidebar from '../components/docs/DocsSidebar.astro';
-import DocsClientScripts from '../components/docs/DocsClientScripts.astro';
+import DocsCodeBlockCopy from '../components/docs/DocsCodeBlockCopy.astro';
+import DocsThemeToggle from '../components/docs/DocsThemeToggle.astro';
+import DocsMobileSidebar from '../components/docs/DocsMobileSidebar.astro';
 import '@examples/design-system/codeHighlight';
 
 type Props = {
@@ -19,6 +20,9 @@ type Props = {
 const { title = 'typestyles - CSS-in-TypeScript', currentSlug = '', docsBySlug } = Astro.props;
 const sidebarRootOpenClass = sidebar('rootOpen');
 const sidebarBackdropVisibleClass = sidebar('backdropVisible');
+
+/** Vite/Astro `BASE_URL` ends with `/` when set. */
+const typestylesCssHref = `${import.meta.env.BASE_URL}typestyles.css`;
 ---
 
 <html lang="en">
@@ -38,11 +42,12 @@ const sidebarBackdropVisibleClass = sidebar('backdropVisible');
       </div>
     </div>
 
-    <DocsClientScripts
-      darkThemeClass={darkTheme}
+    <DocsCodeBlockCopy />
+    <DocsThemeToggle darkThemeClass={darkTheme} />
+    <DocsMobileSidebar
       sidebarRootOpenClass={sidebarRootOpenClass}
       sidebarBackdropVisibleClass={sidebarBackdropVisibleClass}
     />
-    <style set:html={getRegisteredCss()} />
+    {import.meta.env.PROD && <link rel="stylesheet" href={typestylesCssHref} />}
   </body>
 </html>

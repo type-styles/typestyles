@@ -2,9 +2,10 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
-import hljs from 'highlight.js';
-import { codeBlock } from '@examples/design-system';
+import { proseContent } from '@examples/design-system';
 import { docNavigation } from '../navigation';
+import { highlightDocCode } from './highlightDocCode';
+import { markdownCodeBlockHtml } from './markdownCodeBlockHtml';
 
 export type DocMeta = {
   slug: string;
@@ -23,8 +24,7 @@ const marked = new Marked(
   markedHighlight({
     langPrefix: 'hljs language-',
     highlight(code, lang) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, { language }).value;
+      return highlightDocCode(code, lang).highlighted;
     },
   }),
 );
@@ -36,21 +36,47 @@ function wrapCodeBlocks(html: string): string {
     /<pre><code class="hljs language-([^"]*)">([\s\S]*?)<\/code><\/pre>/g,
     (_match, lang: string, highlighted: string) => {
       const safeLang = (lang || 'text').toLowerCase();
-      return [
-        `<div class="${codeBlock('root')}" data-codeblock>`,
-        `  <div class="${codeBlock('header')}">`,
-        `    <div class="${codeBlock('title')}">`,
-        `      <span class="${codeBlock('language')}">${safeLang}</span>`,
-        `    </div>`,
-        `    <div class="${codeBlock('actions')}">`,
-        `      <button type="button" class="${codeBlock('copyButton')}" data-codeblock-copy aria-label="Copy code">Copy</button>`,
-        `    </div>`,
-        `  </div>`,
-        `  <div class="${codeBlock('body')}">`,
-        `    <pre class="${codeBlock('pre')}"><code class="hljs language-${safeLang} ${codeBlock('code')}">${highlighted}</code></pre>`,
-        `  </div>`,
-        `</div>`,
-      ].join('\n');
+      return markdownCodeBlockHtml(safeLang, highlighted);
+    },
+  );
+}
+
+function stripHtmlTags(html: string): string {
+  return html.replace(/<[^>]+>/g, '').trim();
+}
+
+function slugifyHeading(text: string): string {
+  const s = stripHtmlTags(text)
+    .toLowerCase()
+    .replace(/[^\w\u00C0-\u024f]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return s || 'section';
+}
+
+/** Permalink control for h1–h6; pairs with `proseContent` heading anchor styles. */
+function withHeadingAnchors(html: string): string {
+  const slugCounts = new Map<string, number>();
+  const anchorClass = proseContent('headingAnchor');
+
+  return html.replace(
+    /<h([1-6])([^>]*)>([\s\S]*?)<\/h\1>/gi,
+    (_full, level: string, attrs: string, inner: string) => {
+      if (inner.includes('data-prose-heading-anchor')) {
+        return `<h${level}${attrs}>${inner}</h${level}>`;
+      }
+      const idExisting = /\sid\s*=\s*["']([^"']+)["']/.exec(attrs);
+      let id = idExisting?.[1];
+      let openAttrs = attrs;
+      if (!id) {
+        const base = slugifyHeading(inner);
+        id = base;
+        const n = slugCounts.get(base) ?? 0;
+        slugCounts.set(base, n + 1);
+        if (n > 0) id = `${base}-${n + 1}`;
+        openAttrs = attrs.trim() ? `${attrs} id="${id}"` : ` id="${id}"`;
+      }
+      const anchor = `<a href="#${id}" class="${anchorClass}" data-prose-heading-anchor="true" aria-label="Link to this heading"></a>`;
+      return `<h${level}${openAttrs}>${inner}${anchor}</h${level}>`;
     },
   );
 }
@@ -103,7 +129,7 @@ async function loadDocByPath(filePath: string): Promise<DocEntry> {
   const markdown = await readFile(filePath, 'utf8');
   const { data, body } = parseFrontmatter(markdown);
   const slug = slugFromAbsolutePath(filePath);
-  const html = wrapCodeBlocks(marked.parse(body) as string);
+  const html = withHeadingAnchors(wrapCodeBlocks(marked.parse(body) as string));
 
   return {
     slug,

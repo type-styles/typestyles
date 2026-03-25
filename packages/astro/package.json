@@ -1,0 +1,51 @@
+{
+  "name": "@typestyles/astro",
+  "version": "0.2.0",
+  "description": "Astro integration for typestyles (dev HMR, production CSS extraction)",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --external astro,@typestyles/vite",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "typestyles",
+    "css-in-js"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dbanksdesign/typestyles",
+    "directory": "packages/astro"
+  },
+  "peerDependencies": {
+    "astro": ">=4.0.0"
+  },
+  "dependencies": {
+    "@typestyles/vite": "workspace:*"
+  },
+  "devDependencies": {
+    "astro": "^5.6.1",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}
