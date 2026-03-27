@@ -177,6 +177,166 @@ export const designColorDarkValues = {
   overlay: 'rgb(2 6 23 / 0.65)',
 } as const satisfies Partial<Record<keyof typeof colorValues, string>>;
 
+const forestLight = {
+  bg: '#f4faf7',
+  surface: '#ffffff',
+  surfaceMuted: '#e8f5ef',
+  text: '#0f1f17',
+  textMuted: '#3f5d4f',
+  border: '#b8d4c4',
+  borderStrong: '#6b9a82',
+  accent: '#059669',
+  accentHover: '#047857',
+  accentForeground: '#ffffff',
+  danger: '#dc2626',
+  success: '#15803d',
+  warning: '#ca8a04',
+  warningForeground: '#422006',
+  tip: '#7c3aed',
+  tipForeground: '#ffffff',
+  alertSuccessFill: '#15803d',
+  alertDangerFill: '#b91c1c',
+  focusRing: '#34d399',
+  overlay: 'rgb(15 31 23 / 0.55)',
+} as const satisfies Record<keyof typeof colorValues, string>;
+
+const forestDark = {
+  bg: '#051c14',
+  surface: '#0d281c',
+  surfaceMuted: '#143d2c',
+  text: '#ecfdf5',
+  textMuted: '#86efac',
+  border: '#166534',
+  borderStrong: '#22c55e',
+  accent: '#34d399',
+  accentHover: '#6ee7b7',
+  accentForeground: '#022c22',
+  danger: '#fca5a5',
+  success: '#4ade80',
+  warning: '#fbbf24',
+  warningForeground: '#1c1917',
+  tip: '#c4b5fd',
+  tipForeground: '#1e1b4b',
+  alertSuccessFill: '#166534',
+  alertDangerFill: '#991b1b',
+  focusRing: '#6ee7b7',
+  overlay: 'rgb(5 28 20 / 0.65)',
+} as const satisfies Record<keyof typeof colorValues, string>;
+
+const roseLight = {
+  bg: '#fff5f6',
+  surface: '#ffffff',
+  surfaceMuted: '#ffe4e9',
+  text: '#1c0a0f',
+  textMuted: '#6b3d4a',
+  border: '#f0b6c4',
+  borderStrong: '#e17a8f',
+  accent: '#e11d48',
+  accentHover: '#be123c',
+  accentForeground: '#ffffff',
+  danger: '#b91c1c',
+  success: '#15803d',
+  warning: '#ca8a04',
+  warningForeground: '#422006',
+  tip: '#7c3aed',
+  tipForeground: '#ffffff',
+  alertSuccessFill: '#15803d',
+  alertDangerFill: '#991b1b',
+  focusRing: '#fb7185',
+  overlay: 'rgb(28 10 15 / 0.5)',
+} as const satisfies Record<keyof typeof colorValues, string>;
+
+const roseDark = {
+  bg: '#14080d',
+  surface: '#2a121c',
+  surfaceMuted: '#3d1d2a',
+  text: '#fff1f2',
+  textMuted: '#fda4af',
+  border: '#831843',
+  borderStrong: '#a21caf',
+  accent: '#fb7185',
+  accentHover: '#fda4af',
+  accentForeground: '#4c0519',
+  danger: '#fca5a5',
+  success: '#4ade80',
+  warning: '#fbbf24',
+  warningForeground: '#1c1917',
+  tip: '#ddd6fe',
+  tipForeground: '#1e1b4b',
+  alertSuccessFill: '#166534',
+  alertDangerFill: '#991b1b',
+  focusRing: '#fb7185',
+  overlay: 'rgb(20 8 13 / 0.65)',
+} as const satisfies Record<keyof typeof colorValues, string>;
+
+const amberLight = {
+  bg: '#fffbeb',
+  surface: '#ffffff',
+  surfaceMuted: '#fef3c7',
+  text: '#1c1410',
+  textMuted: '#57534e',
+  border: '#e7d4b8',
+  borderStrong: '#bfa27a',
+  accent: '#d97706',
+  accentHover: '#b45309',
+  accentForeground: '#ffffff',
+  danger: '#dc2626',
+  success: '#15803d',
+  warning: '#b45309',
+  warningForeground: '#422006',
+  tip: '#7c3aed',
+  tipForeground: '#ffffff',
+  alertSuccessFill: '#15803d',
+  alertDangerFill: '#b91c1c',
+  focusRing: '#f59e0b',
+  overlay: 'rgb(28 20 16 / 0.55)',
+} as const satisfies Record<keyof typeof colorValues, string>;
+
+const amberDark = {
+  bg: '#0f0a06',
+  surface: '#1c1410',
+  surfaceMuted: '#29221c',
+  text: '#fffbeb',
+  textMuted: '#d6d3d1',
+  border: '#57534e',
+  borderStrong: '#78716c',
+  accent: '#fbbf24',
+  accentHover: '#fcd34d',
+  accentForeground: '#422006',
+  danger: '#fca5a5',
+  success: '#4ade80',
+  warning: '#fcd34d',
+  warningForeground: '#1c1917',
+  tip: '#c4b5fd',
+  tipForeground: '#1e1b4b',
+  alertSuccessFill: '#166534',
+  alertDangerFill: '#991b1b',
+  focusRing: '#fbbf24',
+  overlay: 'rgb(15 10 6 / 0.65)',
+} as const satisfies Record<keyof typeof colorValues, string>;
+
+/**
+ * Named color modes for demos / docs — each entry is a full `ds-color` map for light and dark UI.
+ */
+export const designColorPalettes = {
+  default: {
+    light: colorValues,
+    dark: designColorDarkValues,
+  },
+  forest: { light: forestLight, dark: forestDark },
+  rose: { light: roseLight, dark: roseDark },
+  amber: { light: amberLight, dark: amberDark },
+} as const;
+
+export type DesignPaletteId = keyof typeof designColorPalettes;
+
+export const designPaletteList = [
+  { id: 'default' as const, label: 'Slate' },
+  { id: 'forest' as const, label: 'Forest' },
+  { id: 'rose' as const, label: 'Rose' },
+  { id: 'amber' as const, label: 'Amber' },
+] satisfies ReadonlyArray<{ id: DesignPaletteId; label: string }>;
+
 export const darkThemeClass = createDesignSystemTheme('dark', {
   color: designColorDarkValues,
   codeSyntax: codeSyntaxDarkValues,

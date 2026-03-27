@@ -8,7 +8,5 @@ import DocsLogo from './DocsLogo.astro';
     <span id="mobile-menu-icon">☰</span>
   </button>
   <DocsLogo className={mobileBar('logo')} accentClassName={mobileBar('logoAccent')} />
-  <div className={mobileBar('actions')}>
-    <button className={mobileBar('themeBtn')} id="theme-toggle-mobile" aria-label="Toggle theme">◐</button>
-  </div>
+  <span className={mobileBar('headerSpacer')} aria-hidden="true"></span>
 </div>

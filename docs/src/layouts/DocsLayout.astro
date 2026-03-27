@@ -1,14 +1,18 @@
 ---
 // @ts-nocheck
 import { layout, sidebar } from '../styles';
-import { darkTheme } from '../tokens';
+import {
+  designPaletteList,
+  docsAppearanceClassesToClear,
+  getDocsAppearanceClass,
+  type DesignPaletteId,
+} from '../tokens';
 import type { DocHeading } from '../lib/docs';
 import DocsHead from '../components/docs/DocsHead.astro';
 import DocsSkipLink from '../components/docs/DocsSkipLink.astro';
 import DocsMobileBar from '../components/docs/DocsMobileBar.astro';
 import DocsSidebar from '../components/docs/DocsSidebar.astro';
 import DocsCodeBlockCopy from '../components/docs/DocsCodeBlockCopy.astro';
-import DocsThemeToggle from '../components/docs/DocsThemeToggle.astro';
 import DocsMobileSidebar from '../components/docs/DocsMobileSidebar.astro';
 import DocsToc from '../components/docs/DocsToc.astro';
 import { codeHljsScope } from '@examples/design-system';
@@ -28,18 +32,37 @@ const hasToc = tocHeadings.length > 0;
 
 /** Vite/Astro `BASE_URL` ends with `/` when set. */
 const typestylesCssHref = `${import.meta.env.BASE_URL}typestyles.css`;
+
+const appearanceMap = Object.fromEntries(
+  designPaletteList.map(({ id }) => [
+    id,
+    {
+      light: getDocsAppearanceClass(id, 'light'),
+      dark: getDocsAppearanceClass(id, 'dark'),
+    },
+  ])
+) as Record<DesignPaletteId, { light: string; dark: string }>;
+
+const appearanceBootstrap = {
+  clear: docsAppearanceClassesToClear.filter(Boolean),
+  map: appearanceMap,
+};
 ---
 
 <html lang="en">
   <head>
-    <DocsHead title={title} darkThemeClass={darkTheme} />
+    <DocsHead title={title} appearanceBootstrap={appearanceBootstrap} />
   </head>
   <body>
     <DocsSkipLink />
     <DocsMobileBar />
 
     <div class:list={[layout('root'), codeHljsScope('root')]}>
-      <DocsSidebar docsBySlug={docsBySlug} currentSlug={currentSlug} />
+      <DocsSidebar
+        docsBySlug={docsBySlug}
+        currentSlug={currentSlug}
+        appearanceBootstrap={appearanceBootstrap}
+      />
 
       <div className={layout('content')}>
         {
@@ -64,7 +87,6 @@ const typestylesCssHref = `${import.meta.env.BASE_URL}typestyles.css`;
     </div>
 
     <DocsCodeBlockCopy />
-    <DocsThemeToggle darkThemeClass={darkTheme} />
     <DocsMobileSidebar
       sidebarRootOpenClass={sidebarRootOpenClass}
       sidebarBackdropVisibleClass={sidebarBackdropVisibleClass}

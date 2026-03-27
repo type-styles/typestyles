@@ -1,5 +1,11 @@
 import { tokens } from 'typestyles';
-import { codeSyntaxDarkValues, designColorDarkValues } from '@examples/design-system';
+import {
+  codeSyntaxDarkValues,
+  codeSyntaxLightValues,
+  designColorPalettes,
+  designPaletteList,
+  type DesignPaletteId,
+} from '@examples/design-system';
 
 export const space = tokens.create('docs-space', {
   xs: '4px',
@@ -15,8 +21,72 @@ export const font = tokens.create('docs-font', {
   mono: '"Fira Code", ui-monospace, "Cascadia Code", monospace',
 });
 
-/** Dark mode: only design-system semantic tokens (`ds-color`, `ds-code-syntax`). */
+/** Default dark mode — same class name as before (`theme-docs-dark`). */
 export const darkTheme = tokens.createTheme('docs-dark', {
-  'ds-color': designColorDarkValues as Record<string, string>,
+  'ds-color': designColorPalettes.default.dark as Record<string, string>,
   'ds-code-syntax': codeSyntaxDarkValues as Record<string, string>,
 });
+
+const forestLightTheme = tokens.createTheme('docs-palette-forest', {
+  'ds-color': designColorPalettes.forest.light as Record<string, string>,
+  'ds-code-syntax': codeSyntaxLightValues as Record<string, string>,
+});
+
+const forestDarkTheme = tokens.createTheme('docs-palette-forest-dark', {
+  'ds-color': designColorPalettes.forest.dark as Record<string, string>,
+  'ds-code-syntax': codeSyntaxDarkValues as Record<string, string>,
+});
+
+const roseLightTheme = tokens.createTheme('docs-palette-rose', {
+  'ds-color': designColorPalettes.rose.light as Record<string, string>,
+  'ds-code-syntax': codeSyntaxLightValues as Record<string, string>,
+});
+
+const roseDarkTheme = tokens.createTheme('docs-palette-rose-dark', {
+  'ds-color': designColorPalettes.rose.dark as Record<string, string>,
+  'ds-code-syntax': codeSyntaxDarkValues as Record<string, string>,
+});
+
+const amberLightTheme = tokens.createTheme('docs-palette-amber', {
+  'ds-color': designColorPalettes.amber.light as Record<string, string>,
+  'ds-code-syntax': codeSyntaxLightValues as Record<string, string>,
+});
+
+const amberDarkTheme = tokens.createTheme('docs-palette-amber-dark', {
+  'ds-color': designColorPalettes.amber.dark as Record<string, string>,
+  'ds-code-syntax': codeSyntaxDarkValues as Record<string, string>,
+});
+
+const paletteLightClass: Record<DesignPaletteId, string> = {
+  default: '',
+  forest: forestLightTheme,
+  rose: roseLightTheme,
+  amber: amberLightTheme,
+};
+
+const paletteDarkClass: Record<DesignPaletteId, string> = {
+  default: darkTheme,
+  forest: forestDarkTheme,
+  rose: roseDarkTheme,
+  amber: amberDarkTheme,
+};
+
+/** Strip these from `<html>` before applying a new appearance. */
+export const docsAppearanceClassesToClear = [
+  darkTheme,
+  forestLightTheme,
+  forestDarkTheme,
+  roseLightTheme,
+  roseDarkTheme,
+  amberLightTheme,
+  amberDarkTheme,
+];
+
+export type DocsColorMode = 'light' | 'dark';
+
+export function getDocsAppearanceClass(palette: DesignPaletteId, mode: DocsColorMode): string {
+  return mode === 'light' ? paletteLightClass[palette] : paletteDarkClass[palette];
+}
+
+export { designPaletteList };
+export type { DesignPaletteId };

@@ -1,0 +1,103 @@
+---
+import { sidebar } from '../../styles';
+import { designPaletteList } from '../../tokens';
+import type { AppearanceBootstrap } from '../../lib/docsAppearanceRuntime';
+
+type Props = {
+  appearanceBootstrap: AppearanceBootstrap;
+};
+
+const { appearanceBootstrap } = Astro.props;
+---
+
+<div
+  class:list={[sidebar('footer')]}
+  data-appearance-controls
+  data-appearance-config={JSON.stringify(appearanceBootstrap)}
+>
+  <label class:list={[sidebar('themeFieldLabel')]} for="docs-palette-select">Palette</label>
+  <select
+    id="docs-palette-select"
+    class:list={[sidebar('themeSelect')]}
+    aria-label="Color palette"
+    data-appearance-palette
+  >
+    {designPaletteList.map(({ id, label }) => (
+      <option value={id}>{label}</option>
+    ))}
+  </select>
+  <span class:list={[sidebar('themeFieldLabel')]}>Color mode</span>
+  <button
+    type="button"
+    class:list={[sidebar('themeToggle')]}
+    data-appearance-mode-toggle
+  >
+    Dark
+  </button>
+</div>
+
+<script>
+  import {
+    type AppearanceBootstrap,
+    persistAppearance,
+    readStoredMode,
+    readStoredPalette,
+    syncDocumentClass,
+  } from '../../lib/docsAppearanceRuntime';
+
+  function parseConfig(el: HTMLElement): AppearanceBootstrap | null {
+    const raw = el.getAttribute('data-appearance-config');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as AppearanceBootstrap;
+    } catch {
+      return null;
+    }
+  }
+
+  function initAppearanceControls() {
+    const root = document.querySelector<HTMLElement>('[data-appearance-controls]');
+    if (!root) return;
+
+    const parsed = parseConfig(root);
+    if (!parsed) return;
+    const appearanceConfig = parsed;
+
+    const paletteSelect = root.querySelector<HTMLSelectElement>('[data-appearance-palette]');
+    const modeButton = root.querySelector<HTMLButtonElement>('[data-appearance-mode-toggle]');
+
+    function syncUI() {
+      const palette = readStoredPalette(appearanceConfig);
+      const mode = readStoredMode();
+      if (paletteSelect) paletteSelect.value = palette;
+      if (modeButton) {
+        modeButton.textContent = mode === 'dark' ? 'Light' : 'Dark';
+        modeButton.setAttribute(
+          'aria-label',
+          mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+        );
+      }
+    }
+
+    function apply(palette: string, mode: 'light' | 'dark') {
+      syncDocumentClass(appearanceConfig, palette, mode);
+      persistAppearance(palette, mode);
+      syncUI();
+    }
+
+    paletteSelect?.addEventListener('change', () => {
+      const value = paletteSelect.value;
+      if (!appearanceConfig.map[value]) return;
+      apply(value, readStoredMode());
+    });
+
+    modeButton?.addEventListener('click', () => {
+      const nextMode = readStoredMode() === 'dark' ? 'light' : 'dark';
+      apply(readStoredPalette(appearanceConfig), nextMode);
+    });
+
+    syncUI();
+  }
+
+  initAppearanceControls();
+</script>

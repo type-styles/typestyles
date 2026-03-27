@@ -3,14 +3,17 @@ import { Search } from '@lucide/astro';
 import { sidebar } from '../../styles';
 import { docNavigation } from '../../navigation';
 import type { DocMeta } from '../../lib/docs';
+import type { AppearanceBootstrap } from '../../lib/docsAppearanceRuntime';
 import DocsLogo from './DocsLogo.astro';
+import DocsAppearanceControls from './DocsAppearanceControls.astro';
 
 type Props = {
   docsBySlug: Record<string, DocMeta>;
   currentSlug: string;
+  appearanceBootstrap: AppearanceBootstrap;
 };
 
-const { docsBySlug, currentSlug } = Astro.props;
+const { docsBySlug, currentSlug, appearanceBootstrap } = Astro.props;
 ---
 
 <div className={sidebar('backdrop')} id="sidebar-backdrop" aria-hidden="true"></div>
@@ -47,9 +50,5 @@ const { docsBySlug, currentSlug } = Astro.props;
       ))
     }
   </nav>
-  <div className={sidebar('footer')}>
-    <button className={sidebar('themeToggle')} id="theme-toggle-sidebar" aria-label="Toggle theme">
-      Toggle theme
-    </button>
-  </div>
+  <DocsAppearanceControls appearanceBootstrap={appearanceBootstrap} />
 </aside>

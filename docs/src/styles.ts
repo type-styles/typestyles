@@ -245,6 +245,30 @@ const sidebarBase = styles.create('docs-sidebar', {
     padding: `${space.md} ${space.lg}`,
     borderTop: `1px solid ${c.border}`,
     transition: 'border-color 0.2s ease',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space.sm,
+  },
+  themeFieldLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    color: textQuiet,
+  },
+  themeSelect: {
+    width: '100%',
+    padding: `8px ${space.md}`,
+    fontSize: '13px',
+    fontFamily: font.sans,
+    backgroundColor: c.surfaceMuted,
+    border: `1px solid ${c.border}`,
+    borderRadius: '8px',
+    color: c.text,
+    cursor: 'pointer',
+    outline: 'none',
+    transition: 'border-color 0.15s ease, background-color 0.2s ease',
+    '&:focus': { borderColor: c.accent },
   },
   themeToggle: {
     display: 'flex',
@@ -316,28 +340,10 @@ export const mobileBar = styles.create('docs-mobile-bar', {
   logoAccent: {
     color: c.accent,
   },
-  actions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: space.xs,
-  },
-  themeBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  /** Balances the menu button so the logo stays centered on small screens. */
+  headerSpacer: {
     width: '36px',
-    height: '36px',
-    padding: 0,
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: '6px',
-    color: c.textMuted,
-    cursor: 'pointer',
-    transition: 'color 0.12s ease, background-color 0.12s ease',
-    '&:hover': {
-      color: c.text,
-      backgroundColor: c.surfaceMuted,
-    },
+    flexShrink: 0,
   },
 });
 
