@@ -1,7 +1,5 @@
 const COPIED_MS = 1200;
 
-let attached = false;
-
 function setupCopyButton(button: HTMLButtonElement): void {
   const root = button.closest('[data-codeblock]');
   if (!root) return;
@@ -19,17 +17,8 @@ function setupCopyButton(button: HTMLButtonElement): void {
     delete button.dataset.error;
   };
 
-  button.addEventListener('click', () => {
+  if (navigator.clipboard?.writeText) {
     const text = codeEl.textContent ?? '';
-    if (!navigator.clipboard?.writeText) {
-      button.textContent = 'Error';
-      button.disabled = true;
-      button.setAttribute('aria-label', 'Copy failed');
-      button.dataset.error = 'true';
-      window.setTimeout(reset, COPIED_MS);
-      return;
-    }
-
     navigator.clipboard.writeText(text).then(
       () => {
         button.textContent = copiedLabel;
@@ -44,16 +33,27 @@ function setupCopyButton(button: HTMLButtonElement): void {
         button.disabled = true;
         button.setAttribute('aria-label', 'Copy failed');
         button.dataset.error = 'true';
-        delete button.dataset.copied;
         window.setTimeout(reset, COPIED_MS);
       },
     );
-  });
+  } else {
+    button.textContent = 'Error';
+    button.disabled = true;
+    button.setAttribute('aria-label', 'Copy failed');
+    button.dataset.error = 'true';
+    window.setTimeout(reset, COPIED_MS);
+  }
 }
 
-/** One-shot setup for all doc code blocks (Markdown + {@link ../components/docs/Code.astro}). */
+let delegated = false;
+
+/** Copy buttons work after View Transition swaps (delegated click). */
 export function attachDocsCodeBlockCopyListeners(): void {
-  if (attached || typeof document === 'undefined') return;
-  attached = true;
-  document.querySelectorAll<HTMLButtonElement>('[data-codeblock-copy]').forEach(setupCopyButton);
+  if (delegated || typeof document === 'undefined') return;
+  delegated = true;
+  document.addEventListener('click', (e) => {
+    const button = (e.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-codeblock-copy]');
+    if (!button) return;
+    setupCopyButton(button);
+  });
 }

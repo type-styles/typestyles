@@ -1,55 +1,73 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import type { AppearanceBootstrap } from '../../lib/docsAppearanceRuntime';
 
 type Props = {
   title: string;
   /** Used by the blocking boot script to prevent palette flash. */
   appearanceBootstrap: AppearanceBootstrap;
+  /** Pre-extracted Typestyles stylesheet emitted in production builds. */
+  typestylesCssHref?: string;
 };
 
-const { title, appearanceBootstrap } = Astro.props;
+const { title, appearanceBootstrap, typestylesCssHref } = Astro.props;
 ---
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{title}</title>
+<ClientRouter />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 <link
   rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
 />
+{typestylesCssHref && <link rel="stylesheet" href={typestylesCssHref} />}
 <style
   set:html="*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; background-color: var(--ds-color-bg); } body { margin: 0; background-color: var(--ds-color-bg); } a { color: inherit; text-decoration: none; } input, button { font: inherit; }"
 />
 <script type="application/json" id="appearance-bootstrap" set:html={JSON.stringify(appearanceBootstrap)} />
 <script is:inline>
   (function () {
-    try {
-      var el = document.getElementById('appearance-bootstrap');
-      if (!el || !el.textContent || !el.textContent.trim()) return;
+    function applyDocsAppearanceFromStorage(rootEl, bootstrapDoc) {
+      try {
+        var el = bootstrapDoc.getElementById('appearance-bootstrap');
+        if (!el || !el.textContent || !el.textContent.trim()) return;
 
-      var P = JSON.parse(el.textContent);
-      var palette = localStorage.getItem('typestyles-palette') || 'default';
-      if (!P.map[palette]) palette = 'default';
+        var P = JSON.parse(el.textContent);
+        var palette = localStorage.getItem('typestyles-palette') || 'default';
+        if (!P.map[palette]) palette = 'default';
 
-      var mode = localStorage.getItem('typestyles-theme');
-      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (mode !== 'light' && mode !== 'dark') {
-        mode = prefersDark ? 'dark' : 'light';
+        var mode = localStorage.getItem('typestyles-theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (mode !== 'light' && mode !== 'dark') {
+          mode = prefersDark ? 'dark' : 'light';
+        }
+
+        for (var i = 0; i < P.clear.length; i++) {
+          var cls = P.clear[i];
+          if (cls) rootEl.classList.remove(cls);
+        }
+
+        var nextClass = P.map[palette][mode];
+        if (nextClass) rootEl.classList.add(nextClass);
+      } catch (e) {
+        /* ignore invalid stored state or JSON */
       }
-
-      var docEl = document.documentElement;
-      for (var i = 0; i < P.clear.length; i++) {
-        var cls = P.clear[i];
-        if (cls) docEl.classList.remove(cls);
-      }
-
-      var nextClass = P.map[palette][mode];
-      if (nextClass) docEl.classList.add(nextClass);
-    } catch (e) {
-      /* ignore invalid stored state or JSON */
     }
+
+    function applyToLiveDocument() {
+      applyDocsAppearanceFromStorage(document.documentElement, document);
+    }
+
+    applyToLiveDocument();
+
+    document.addEventListener('astro:before-swap', function (event) {
+      applyDocsAppearanceFromStorage(event.newDocument.documentElement, event.newDocument);
+    });
+
+    document.addEventListener('astro:after-swap', applyToLiveDocument);
   })();
 </script>
 <script>

@@ -51,20 +51,30 @@ const appearanceBootstrap = {
 
 <html lang="en">
   <head>
-    <DocsHead title={title} appearanceBootstrap={appearanceBootstrap} />
+    <DocsHead
+      title={title}
+      appearanceBootstrap={appearanceBootstrap}
+      typestylesCssHref={import.meta.env.PROD ? typestylesCssHref : undefined}
+    />
   </head>
   <body>
-    <DocsSkipLink />
-    <DocsMobileBar />
+    <div transition:persist="docs-skip">
+      <DocsSkipLink />
+    </div>
+    <div transition:persist="docs-mobile-bar">
+      <DocsMobileBar />
+    </div>
 
     <div class:list={[layout('root'), codeHljsScope('root')]}>
-      <DocsSidebar
-        docsBySlug={docsBySlug}
-        currentSlug={currentSlug}
-        appearanceBootstrap={appearanceBootstrap}
-      />
+      <div transition:persist="docs-sidebar-shell" style="flex-shrink: 0; align-self: stretch">
+        <DocsSidebar
+          docsBySlug={docsBySlug}
+          currentSlug={currentSlug}
+          appearanceBootstrap={appearanceBootstrap}
+        />
+      </div>
 
-      <div className={layout('content')}>
+      <div className={layout('content')} transition:name="docs-main">
         {
           hasToc ? (
             <div class:list={[layout('docPageWrap'), layout('docPageWrapWithToc')]}>
@@ -91,6 +101,5 @@ const appearanceBootstrap = {
       sidebarRootOpenClass={sidebarRootOpenClass}
       sidebarBackdropVisibleClass={sidebarBackdropVisibleClass}
     />
-    {import.meta.env.PROD && <link rel="stylesheet" href={typestylesCssHref} />}
   </body>
 </html>

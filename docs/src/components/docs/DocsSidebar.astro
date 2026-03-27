@@ -28,7 +28,12 @@ const { docsBySlug, currentSlug, appearanceBootstrap } = Astro.props;
     <input type="search" placeholder="Search docs..." className={sidebar('searchInput')} />
     <span className={sidebar('searchKbd')}>⌘K</span>
   </div>
-  <nav className={sidebar('nav')}>
+  <nav
+    className={sidebar('nav')}
+    data-docs-nav
+    data-link-class={sidebar('link')}
+    data-link-active-class={sidebar('linkActive')}
+  >
     {
       docNavigation.categories.map((category) => (
         <div className={sidebar('section')}>
@@ -52,3 +57,32 @@ const { docsBySlug, currentSlug, appearanceBootstrap } = Astro.props;
   </nav>
   <DocsAppearanceControls appearanceBootstrap={appearanceBootstrap} />
 </aside>
+
+<script>
+  function currentDocsSlugFromPath(): string {
+    const path = window.location.pathname.replace(/\/$/, '');
+    if (path === '/docs' || path === '') return '';
+    const m = path.match(/^\/docs\/([^/]+)/);
+    return m ? m[1] : '';
+  }
+
+  function syncDocsNavActive(): void {
+    const nav = document.querySelector<HTMLElement>('[data-docs-nav]');
+    if (!nav) return;
+    const linkBase = nav.dataset.linkClass;
+    const linkActive = nav.dataset.linkActiveClass;
+    if (!linkBase || !linkActive) return;
+    const slug = currentDocsSlugFromPath();
+    nav.querySelectorAll<HTMLAnchorElement>('a[href^="/docs/"]').forEach((a) => {
+      const href = (a.getAttribute('href') ?? '').replace(/\/$/, '');
+      const hrefSlug = href.replace(/^\/docs\//, '');
+      const isActive = hrefSlug === slug && slug !== '';
+      a.className = isActive ? `${linkBase} ${linkActive}` : linkBase;
+      if (isActive) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+
+  document.addEventListener('astro:page-load', syncDocsNavActive);
+  syncDocsNavActive();
+</script>
