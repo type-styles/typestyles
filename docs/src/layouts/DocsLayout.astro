@@ -2,24 +2,29 @@
 // @ts-nocheck
 import { layout, sidebar } from '../styles';
 import { darkTheme } from '../tokens';
-import type { DocMeta } from '../lib/docs';
+import type { DocHeading } from '../lib/docs';
 import DocsHead from '../components/docs/DocsHead.astro';
+import DocsSkipLink from '../components/docs/DocsSkipLink.astro';
 import DocsMobileBar from '../components/docs/DocsMobileBar.astro';
 import DocsSidebar from '../components/docs/DocsSidebar.astro';
 import DocsCodeBlockCopy from '../components/docs/DocsCodeBlockCopy.astro';
 import DocsThemeToggle from '../components/docs/DocsThemeToggle.astro';
 import DocsMobileSidebar from '../components/docs/DocsMobileSidebar.astro';
-import '@examples/design-system/codeHighlight';
+import DocsToc from '../components/docs/DocsToc.astro';
+import { codeHljsScope } from '@examples/design-system';
 
 type Props = {
   title?: string;
   currentSlug?: string;
-  docsBySlug: Record<string, DocMeta>;
+  docsBySlug: Record<string, import('../lib/docs').DocMeta>;
+  tocHeadings?: DocHeading[];
 };
 
-const { title = 'typestyles - CSS-in-TypeScript', currentSlug = '', docsBySlug } = Astro.props;
+const { title = 'typestyles - CSS-in-TypeScript', currentSlug = '', docsBySlug, tocHeadings = [] } =
+  Astro.props;
 const sidebarRootOpenClass = sidebar('rootOpen');
 const sidebarBackdropVisibleClass = sidebar('backdropVisible');
+const hasToc = tocHeadings.length > 0;
 
 /** Vite/Astro `BASE_URL` ends with `/` when set. */
 const typestylesCssHref = `${import.meta.env.BASE_URL}typestyles.css`;
@@ -30,15 +35,31 @@ const typestylesCssHref = `${import.meta.env.BASE_URL}typestyles.css`;
     <DocsHead title={title} darkThemeClass={darkTheme} />
   </head>
   <body>
+    <DocsSkipLink />
     <DocsMobileBar />
 
-    <div className={layout('root')}>
+    <div class:list={[layout('root'), codeHljsScope('root')]}>
       <DocsSidebar docsBySlug={docsBySlug} currentSlug={currentSlug} />
 
       <div className={layout('content')}>
-        <div className={layout('main')}>
-          <slot />
-        </div>
+        {
+          hasToc ? (
+            <div class:list={[layout('docPageWrap'), layout('docPageWrapWithToc')]}>
+              <aside class={layout('tocAside')} aria-label="On this page">
+                <DocsToc headings={tocHeadings} />
+              </aside>
+              <div class={layout('mainColumn')}>
+                <main id="main-content" tabindex="-1" class={layout('main')}>
+                  <slot />
+                </main>
+              </div>
+            </div>
+          ) : (
+            <main id="main-content" tabindex="-1" class={layout('main')}>
+              <slot />
+            </main>
+          )
+        }
       </div>
     </div>
 

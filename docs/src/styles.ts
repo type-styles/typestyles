@@ -1,25 +1,31 @@
 import { styles } from 'typestyles';
-import { proseContent } from '@examples/design-system';
-import { color, space, font } from './tokens';
+import { designTokens as ds, proseContent } from '@examples/design-system';
+import { space, font } from './tokens';
+
+const c = ds.color;
+/** Accent wash for nav / TOC current — only `ds-color` references. */
+const accentSurfaceMuted = `color-mix(in srgb, ${c.accent} 14%, ${c.surface})`;
+const textQuiet = `color-mix(in srgb, ${c.textMuted} 70%, ${c.surface})`;
 
 /** Compose with `doc('content')` on markdown bodies — registers prose CSS before doc overrides. */
 export const docProseRoot = proseContent('root');
 
 const bp = '@media (max-width: 768px)';
+const tocBp = '@media (min-width: 1024px)';
+const belowTocBp = '@media (max-width: 1023px)';
 
 const layoutBase = styles.create('docs-layout', {
   root: {
     display: 'flex',
     minHeight: '100vh',
     fontFamily: font.sans,
-    color: color.text,
-    backgroundColor: color.surface,
+    color: c.text,
+    backgroundColor: c.bg,
     transition: 'background-color 0.2s ease, color 0.2s ease',
   },
   content: {
     flex: 1,
     minWidth: 0,
-    overflowY: 'auto',
     [bp]: {
       paddingTop: '56px',
     },
@@ -29,6 +35,41 @@ const layoutBase = styles.create('docs-layout', {
     padding: space.xxl,
     [bp]: {
       padding: `${space.lg} ${space.md}`,
+    },
+  },
+  /** Grid wrapper when `tocHeadings` are present (desktop TOC column). */
+  docPageWrap: {
+    maxWidth: '1100px',
+    margin: '0 auto',
+    width: '100%',
+  },
+  docPageWrapWithToc: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gridTemplateAreas: '"toc" "main"',
+    [tocBp]: {
+      gridTemplateColumns: 'minmax(0, 1fr) 200px',
+      gridTemplateAreas: '"main toc"',
+      gap: space.xxl,
+      alignItems: 'start',
+    },
+  },
+  mainColumn: {
+    gridArea: 'main',
+    minWidth: 0,
+  },
+  tocAside: {
+    gridArea: 'toc',
+    minWidth: 0,
+    [tocBp]: {
+      justifySelf: 'end',
+      width: '200px',
+      position: 'sticky',
+      top: space.lg,
+      maxHeight: `calc(100vh - ${space.lg} - ${space.sm})`,
+      overflowY: 'auto',
+      paddingTop: space.sm,
+      paddingRight: space.xs,
     },
   },
 });
@@ -44,8 +85,8 @@ const sidebarBase = styles.create('docs-sidebar', {
     top: 0,
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: color.sidebarBg,
-    borderRight: `1px solid ${color.sidebarBorder}`,
+    backgroundColor: c.surfaceMuted,
+    borderRight: `1px solid ${c.border}`,
     transition: 'background-color 0.2s ease, border-color 0.2s ease',
     [bp]: {
       position: 'fixed',
@@ -73,7 +114,7 @@ const sidebarBase = styles.create('docs-sidebar', {
       position: 'fixed',
       inset: 0,
       zIndex: 100,
-      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      backgroundColor: c.overlay,
       opacity: 0,
       visibility: 'hidden',
       transition: 'opacity 0.25s ease, visibility 0.25s ease',
@@ -93,28 +134,28 @@ const sidebarBase = styles.create('docs-sidebar', {
   logo: {
     fontSize: '18px',
     fontWeight: 700,
-    color: color.text,
+    color: c.text,
     textDecoration: 'none',
     letterSpacing: '-0.03em',
     transition: 'color 0.15s ease',
-    '&:hover': { color: color.primary },
+    '&:hover': { color: c.accent },
   },
   logoAccent: {
-    color: color.primary,
+    color: c.accent,
   },
   search: {
     margin: `0 ${space.md} ${space.md}`,
     padding: `8px ${space.md}`,
     fontSize: '13px',
     fontFamily: font.sans,
-    backgroundColor: color.searchBg,
-    border: `1px solid ${color.searchBorder}`,
+    backgroundColor: c.surfaceMuted,
+    border: `1px solid ${c.border}`,
     borderRadius: '8px',
-    color: color.searchText,
+    color: c.textMuted,
     outline: 'none',
     transition: 'border-color 0.15s ease, background-color 0.2s ease',
-    '&:focus': { borderColor: color.primary },
-    '&::placeholder': { color: color.textFaint },
+    '&:focus': { borderColor: c.accent },
+    '&::placeholder': { color: textQuiet },
   },
   searchWrapper: {
     position: 'relative',
@@ -125,24 +166,26 @@ const sidebarBase = styles.create('docs-sidebar', {
     left: '10px',
     top: '50%',
     transform: 'translateY(-50%)',
-    color: color.textFaint,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: textQuiet,
     pointerEvents: 'none',
-    fontSize: '14px',
-    lineHeight: 1,
+    lineHeight: 0,
   },
   searchInput: {
     width: '100%',
     padding: `8px ${space.md} 8px 32px`,
     fontSize: '13px',
     fontFamily: font.sans,
-    backgroundColor: color.searchBg,
-    border: `1px solid ${color.searchBorder}`,
+    backgroundColor: c.surfaceMuted,
+    border: `1px solid ${c.border}`,
     borderRadius: '8px',
-    color: color.searchText,
+    color: c.textMuted,
     outline: 'none',
     transition: 'border-color 0.15s ease, background-color 0.2s ease',
-    '&:focus': { borderColor: color.primary },
-    '&::placeholder': { color: color.textFaint },
+    '&:focus': { borderColor: c.accent },
+    '&::placeholder': { color: textQuiet },
   },
   searchKbd: {
     position: 'absolute',
@@ -150,9 +193,9 @@ const sidebarBase = styles.create('docs-sidebar', {
     top: '50%',
     transform: 'translateY(-50%)',
     fontSize: '11px',
-    color: color.textFaint,
-    backgroundColor: color.surface,
-    border: `1px solid ${color.border}`,
+    color: textQuiet,
+    backgroundColor: c.surface,
+    border: `1px solid ${c.border}`,
     borderRadius: '4px',
     padding: '1px 5px',
     fontFamily: font.sans,
@@ -172,35 +215,35 @@ const sidebarBase = styles.create('docs-sidebar', {
     fontWeight: 600,
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
-    color: color.textFaint,
+    color: textQuiet,
     padding: `${space.sm} ${space.sm}`,
     marginTop: space.sm,
   },
   link: {
     display: 'block',
     fontSize: '13.5px',
-    color: color.textMuted,
+    color: c.textMuted,
     textDecoration: 'none',
     padding: `6px ${space.sm}`,
     borderRadius: '6px',
     transition: 'color 0.12s ease, background-color 0.12s ease',
     '&:hover': {
-      color: color.text,
-      backgroundColor: color.searchBg,
+      color: c.text,
+      backgroundColor: c.surfaceMuted,
     },
   },
   linkActive: {
-    color: color.primary,
+    color: c.accent,
     fontWeight: 500,
-    backgroundColor: color.primarySubtle,
+    backgroundColor: accentSurfaceMuted,
     '&:hover': {
-      color: color.primary,
-      backgroundColor: color.primarySubtle,
+      color: c.accent,
+      backgroundColor: accentSurfaceMuted,
     },
   },
   footer: {
     padding: `${space.md} ${space.lg}`,
-    borderTop: `1px solid ${color.sidebarBorder}`,
+    borderTop: `1px solid ${c.border}`,
     transition: 'border-color 0.2s ease',
   },
   themeToggle: {
@@ -211,16 +254,16 @@ const sidebarBase = styles.create('docs-sidebar', {
     width: '100%',
     padding: `7px ${space.md}`,
     fontSize: '13px',
-    color: color.textMuted,
-    backgroundColor: color.searchBg,
-    border: `1px solid ${color.border}`,
+    color: c.textMuted,
+    backgroundColor: c.surfaceMuted,
+    border: `1px solid ${c.border}`,
     borderRadius: '8px',
     cursor: 'pointer',
     fontFamily: font.sans,
     transition: 'color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease',
     '&:hover': {
-      color: color.text,
-      borderColor: color.textMuted,
+      color: c.text,
+      borderColor: c.textMuted,
     },
   },
 });
@@ -241,8 +284,8 @@ export const mobileBar = styles.create('docs-mobile-bar', {
       height: '56px',
       zIndex: 300,
       padding: `0 ${space.md}`,
-      backgroundColor: color.sidebarBg,
-      borderBottom: `1px solid ${color.sidebarBorder}`,
+      backgroundColor: c.surfaceMuted,
+      borderBottom: `1px solid ${c.border}`,
       transition: 'background-color 0.2s ease, border-color 0.2s ease',
     },
   },
@@ -256,22 +299,22 @@ export const mobileBar = styles.create('docs-mobile-bar', {
     backgroundColor: 'transparent',
     border: 'none',
     borderRadius: '6px',
-    color: color.text,
+    color: c.text,
     cursor: 'pointer',
     transition: 'background-color 0.12s ease',
     '&:hover': {
-      backgroundColor: color.searchBg,
+      backgroundColor: c.surfaceMuted,
     },
   },
   logo: {
     fontSize: '16px',
     fontWeight: 700,
-    color: color.text,
+    color: c.text,
     textDecoration: 'none',
     letterSpacing: '-0.03em',
   },
   logoAccent: {
-    color: color.primary,
+    color: c.accent,
   },
   actions: {
     display: 'flex',
@@ -288,12 +331,12 @@ export const mobileBar = styles.create('docs-mobile-bar', {
     backgroundColor: 'transparent',
     border: 'none',
     borderRadius: '6px',
-    color: color.textMuted,
+    color: c.textMuted,
     cursor: 'pointer',
     transition: 'color 0.12s ease, background-color 0.12s ease',
     '&:hover': {
-      color: color.text,
-      backgroundColor: color.searchBg,
+      color: c.text,
+      backgroundColor: c.surfaceMuted,
     },
   },
 });
@@ -307,28 +350,28 @@ export const doc = styles.create('docs-doc', {
     fontSize: '32px',
     fontWeight: 700,
     marginBottom: space.sm,
-    color: color.text,
+    color: c.text,
     letterSpacing: '-0.025em',
     lineHeight: 1.2,
   },
   description: {
     fontSize: '16px',
-    color: color.textMuted,
+    color: c.textMuted,
     marginBottom: space.xl,
     lineHeight: 1.6,
   },
   content: {
     '& a:not([data-prose-heading-anchor]):not([data-alert-action])': {
-      color: color.link,
+      color: c.accent,
       textDecoration: 'none',
       transition: 'color 0.12s ease',
-      '&:hover': { color: color.linkHover, textDecoration: 'underline' },
+      '&:hover': { color: c.accentHover, textDecoration: 'underline' },
     },
     '& a[data-prose-heading-anchor]': {
-      color: color.textMuted,
+      color: c.textMuted,
       fontWeight: 500,
       '&:hover': {
-        color: color.link,
+        color: c.accent,
       },
     },
     '& a[data-alert-action]': {
@@ -343,19 +386,19 @@ export const doc = styles.create('docs-doc', {
     '& code': {
       fontFamily: font.mono,
       fontSize: '13px',
-      backgroundColor: color.codeBg,
+      backgroundColor: c.surfaceMuted,
       padding: '2px 6px',
       borderRadius: '4px',
-      border: `1px solid ${color.codeBorder}`,
+      border: `1px solid ${c.border}`,
     },
     '& pre:not([data-codeblock-pre])': {
       fontFamily: font.mono,
       fontSize: '13px',
       lineHeight: 1.6,
-      backgroundColor: color.codeBg,
+      backgroundColor: c.surfaceMuted,
       padding: space.md,
       borderRadius: '8px',
-      border: `1px solid ${color.codeBorder}`,
+      border: `1px solid ${c.border}`,
       overflow: 'auto',
       marginBottom: space.md,
     },
@@ -367,26 +410,163 @@ export const doc = styles.create('docs-doc', {
   },
 });
 
+export const skipLink = styles.create('docs-skip', {
+  root: {
+    position: 'absolute',
+    left: space.md,
+    top: space.md,
+    zIndex: 10000,
+    padding: `${space.sm} ${space.md}`,
+    backgroundColor: c.accent,
+    color: c.accentForeground,
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 600,
+    textDecoration: 'none',
+    transform: 'translateY(-160%)',
+    transition: 'transform 0.15s ease',
+    '&:focus': {
+      transform: 'translateY(0)',
+      outline: `2px solid ${c.accent}`,
+      outlineOffset: '2px',
+    },
+  },
+});
+
+export const toc = styles.create('docs-toc', {
+  nav: {
+    fontFamily: font.sans,
+  },
+  title: {
+    margin: `0 0 ${space.sm}`,
+    fontSize: '11px',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: textQuiet,
+    [belowTocBp]: {
+      display: 'none',
+    },
+  },
+  list: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+  },
+  item: {
+    margin: 0,
+    marginBottom: '2px',
+  },
+  link: {
+    display: 'block',
+    fontSize: '13px',
+    lineHeight: 1.35,
+    color: c.textMuted,
+    textDecoration: 'none',
+    padding: `4px ${space.sm}`,
+    borderLeft: '2px solid transparent',
+    transition: 'color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease',
+    '&:hover': {
+      color: c.text,
+      backgroundColor: c.surfaceMuted,
+    },
+    '&[aria-current="location"]': {
+      color: c.accent,
+      fontWeight: 500,
+      backgroundColor: accentSurfaceMuted,
+      borderLeftColor: c.accent,
+      '&:hover': {
+        color: c.accent,
+        backgroundColor: accentSurfaceMuted,
+      },
+    },
+  },
+  root: {
+    marginBottom: space.lg,
+    border: `1px solid ${c.border}`,
+    borderRadius: '8px',
+    backgroundColor: c.surfaceMuted,
+    overflow: 'hidden',
+    position: 'sticky',
+    top: '64px',
+    zIndex: 20,
+    [tocBp]: {
+      marginBottom: 0,
+      border: 'none',
+      borderRadius: 0,
+      backgroundColor: 'transparent',
+      overflow: 'visible',
+      position: 'static',
+      top: 'auto',
+      zIndex: 'auto',
+    },
+  },
+  details: {
+    margin: 0,
+  },
+  summary: {
+    listStyle: 'none',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: c.text,
+    padding: `${space.sm} ${space.md}`,
+    '&::-webkit-details-marker': {
+      display: 'none',
+    },
+    [tocBp]: {
+      display: 'none',
+    },
+  },
+  panel: {
+    padding: `0 ${space.md} ${space.md}`,
+    borderTop: `1px solid ${c.border}`,
+    [tocBp]: {
+      padding: 0,
+      borderTop: 'none',
+    },
+  },
+});
+
 export const docPage = styles.create('docs-doc-page', {
+  footer: {
+    marginTop: space.lg,
+    paddingTop: space.md,
+    borderTop: `1px solid ${c.border}`,
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: `${space.md} ${space.lg}`,
+    fontSize: '13px',
+    color: c.textMuted,
+  },
+  editLink: {
+    color: c.accent,
+    textDecoration: 'none',
+    fontWeight: 500,
+    '&:hover': {
+      textDecoration: 'underline',
+    },
+  },
   pagination: {
     display: 'flex',
     justifyContent: 'space-between',
     marginTop: space.xl,
     paddingTop: space.lg,
-    borderTop: `1px solid ${color.border}`,
+    borderTop: `1px solid ${c.border}`,
     gap: space.md,
   },
   paginationLink: {
     fontSize: '14px',
-    color: color.primary,
+    color: c.accent,
     textDecoration: 'none',
     padding: `${space.sm} ${space.md}`,
     borderRadius: '8px',
-    border: `1px solid ${color.border}`,
+    border: `1px solid ${c.border}`,
     transition: 'background-color 0.15s ease, border-color 0.15s ease',
     '&:hover': {
-      backgroundColor: color.surfaceRaised,
-      borderColor: color.primary,
+      backgroundColor: c.surfaceMuted,
+      borderColor: c.accent,
     },
   },
 });
@@ -402,17 +582,17 @@ export const home = styles.create('docs-home', {
     letterSpacing: '-0.035em',
     lineHeight: 1.15,
     marginBottom: space.md,
-    color: color.text,
+    color: c.text,
     [bp]: {
       fontSize: '32px',
     },
   },
   titleAccent: {
-    color: color.primary,
+    color: c.accent,
   },
   subtitle: {
     fontSize: '18px',
-    color: color.textMuted,
+    color: c.textMuted,
     lineHeight: 1.6,
     maxWidth: '540px',
     marginBottom: space.xl,
@@ -429,15 +609,15 @@ export const home = styles.create('docs-home', {
     fontSize: '15px',
     fontWeight: 500,
     fontFamily: font.sans,
-    color: '#ffffff',
-    backgroundColor: color.primary,
+    color: c.accentForeground,
+    backgroundColor: c.accent,
     padding: `10px ${space.lg}`,
     borderRadius: '8px',
     textDecoration: 'none',
     transition: 'background-color 0.15s ease',
     border: 'none',
     cursor: 'pointer',
-    '&:hover': { backgroundColor: color.primaryHover },
+    '&:hover': { backgroundColor: c.accentHover },
   },
   ctaSecondary: {
     display: 'inline-flex',
@@ -446,17 +626,17 @@ export const home = styles.create('docs-home', {
     fontSize: '15px',
     fontWeight: 500,
     fontFamily: font.sans,
-    color: color.text,
+    color: c.text,
     backgroundColor: 'transparent',
     padding: `10px ${space.lg}`,
     borderRadius: '8px',
     textDecoration: 'none',
-    border: `1px solid ${color.border}`,
+    border: `1px solid ${c.border}`,
     transition: 'border-color 0.15s ease, background-color 0.15s ease',
     cursor: 'pointer',
     '&:hover': {
-      borderColor: color.textMuted,
-      backgroundColor: color.surfaceRaised,
+      borderColor: c.textMuted,
+      backgroundColor: c.surfaceMuted,
     },
   },
 });

@@ -2,8 +2,19 @@
 // @ts-nocheck
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import Alert from '../../components/docs/Alert.astro';
-import { doc, docPage, docProseRoot } from '../../styles';
-import { getAllDocs, getDocBySlug, getDocNeighbors } from '../../lib/docs';
+import Aside from '../../components/docs/Aside.astro';
+import Badge from '../../components/docs/Badge.astro';
+import Card from '../../components/docs/Card.astro';
+import CardGrid from '../../components/docs/CardGrid.astro';
+import LinkCard from '../../components/docs/LinkCard.astro';
+import Steps from '../../components/docs/Steps.astro';
+import FileTree from '../../components/docs/FileTree.astro';
+import DocsDocFooter from '../../components/docs/DocsDocFooter.astro';
+import DocsPagination from '../../components/docs/DocsPagination.astro';
+import { doc, docProseRoot } from '../../styles';
+import { fileTree as fileTreeRecipe, linkButton } from '@examples/design-system';
+import { extractDocHeadings, getAllDocs, getDocBySlug, getDocNeighbors } from '../../lib/docs';
+import { editUrlForDocSlug } from '../../lib/site';
 
 export async function getStaticPaths() {
   const docs = await getAllDocs();
@@ -26,12 +37,15 @@ if (!entry) {
 }
 
 const neighbors = getDocNeighbors(slug);
+const tocHeadings = extractDocHeadings(entry.html);
+const editHref = editUrlForDocSlug(slug);
 ---
 
 <DocsLayout
   docsBySlug={docsBySlug}
   currentSlug={slug}
   title={`${entry.title} - typestyles documentation`}
+  tocHeadings={tocHeadings}
 >
   <article class={doc('root')}>
     <h1 class={doc('title')}>{entry.title}</h1>
@@ -41,10 +55,93 @@ const neighbors = getDocNeighbors(slug);
     {
       slug === 'component-library' ? (
         <div class:list={[docProseRoot, doc('content')]}>
-          <h2>Alert / callout</h2>
+          <h2>Aside (Starlight-style)</h2>
+          <p>
+            Thin wrapper over the design-system <code>alert</code> recipe; use <code>Aside</code> for
+            Starlight-like <code>note</code> / <code>tip</code> / <code>caution</code> /{' '}
+            <code>danger</code> types.
+          </p>
+          <Aside type="note">Neutral context with the default “Note” label.</Aside>
+          <Aside type="tip" title="Pro tip">
+            Optional custom titles still map to the same visual variants.
+          </Aside>
+          <Aside type="caution">Caution maps to the warning palette.</Aside>
+          <Aside type="danger">Danger maps to the danger palette.</Aside>
+
+          <h2>Badge</h2>
+          <p>
+            <Badge>neutral</Badge>{' '}
+            <Badge variant="accent">accent</Badge>{' '}
+            <Badge variant="success">success</Badge>{' '}
+            <Badge variant="warning">warning</Badge>{' '}
+            <Badge variant="danger">danger</Badge>{' '}
+            <Badge variant="tip">tip</Badge>
+          </p>
+
+          <h2>Cards & link card</h2>
+          <CardGrid>
+            <Card title="Card title">
+              Static card body using the <code>card</code> recipe from <code>@examples/design-system</code>.
+            </Card>
+            <LinkCard
+              href="/docs/recipes"
+              title="Recipes"
+              description="Compose style recipes and reuse them across UI."
+            />
+          </CardGrid>
+
+          <h2>Steps</h2>
+          <p>Numbered procedure — pass <code>&lt;li&gt;</code> children in order:</p>
+          <Steps>
+            <li>
+              <p>Install dependencies with your package manager.</p>
+            </li>
+            <li>
+              <p>
+                Register styles in a side-effect entry so build extraction can emit CSS (<code>
+                  typestyles-entry.ts
+                </code>).
+              </p>
+            </li>
+            <li>
+              <p>Run the dev server and open the docs.</p>
+            </li>
+          </Steps>
+
+          <h2>Link button (CTA)</h2>
+          <p>
+            <a class:list={[linkButton.base, linkButton.primary]} href="/docs/getting-started">
+              Primary CTA
+            </a>{' '}
+            <a class:list={[linkButton.base, linkButton.secondary]} href="/docs/recipes">
+              Secondary
+            </a>{' '}
+            <a class:list={[linkButton.base, linkButton.ghost]} href="/docs/tokens">
+              Ghost
+            </a>
+          </p>
+
+          <h2>File tree</h2>
+          <FileTree>
+            <ul class={fileTreeRecipe('list')}>
+              <li class={fileTreeRecipe('item')}>
+                <div class:list={[fileTreeRecipe('row'), fileTreeRecipe('folder')]}>src/</div>
+                <ul class={fileTreeRecipe('listNested')}>
+                  <li class={fileTreeRecipe('item')}>
+                    <div class:list={[fileTreeRecipe('row'), fileTreeRecipe('file')]}>index.ts</div>
+                  </li>
+                  <li class={fileTreeRecipe('item')}>
+                    <div class:list={[fileTreeRecipe('row'), fileTreeRecipe('file')]}>styles.ts</div>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </FileTree>
+
+          <h2>Alert / callout (direct)</h2>
           <p>
             The docs use the same alert recipe as <code>@examples/design-system</code> (see{' '}
-            <code>Alert.astro</code> and the React <code>Alert</code> wrapper).
+            <code>Alert.astro</code>).
           </p>
           <Alert variant="info" title="Info">
             Use informational callouts for neutral context that supports the main content.
@@ -69,19 +166,7 @@ const neighbors = getDocNeighbors(slug);
       ) : null
     }
 
-    <div class={docPage('pagination')}>
-      {neighbors.prev ? (
-        <a href={`/docs/${neighbors.prev.slug}`} class={docPage('paginationLink')}>
-          &larr; {neighbors.prev.title}
-        </a>
-      ) : (
-        <span />
-      )}
-      {neighbors.next && (
-        <a href={`/docs/${neighbors.next.slug}`} class={docPage('paginationLink')} style="margin-left:auto;">
-          {neighbors.next.title} &rarr;
-        </a>
-      )}
-    </div>
+    <DocsDocFooter lastModified={entry.lastModified} editHref={editHref} />
+    <DocsPagination prev={neighbors.prev} next={neighbors.next} />
   </article>
 </DocsLayout>

@@ -10,8 +10,9 @@
   },
   "dependencies": {
     "@examples/design-system": "workspace:*",
-    "astro": "^5.6.1",
+    "@lucide/astro": "^1.7.0",
     "@typestyles/props": "workspace:*",
+    "astro": "^5.6.1",
     "highlight.js": "^11.11.1",
     "marked": "^15.0.0",
     "marked-highlight": "^2.2.3",

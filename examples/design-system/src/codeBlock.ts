@@ -30,8 +30,8 @@ export const codeBlock = styles.create('code-block', {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: t.space.md,
-    padding: `${t.space.sm} ${t.space.md}`,
+    gap: t.space.sm,
+    padding: `${t.space.xs} ${t.space.md}`,
     borderBottom: `1px solid ${t.color.border}`,
     backgroundColor: t.color.surfaceMuted,
   },
@@ -133,7 +133,8 @@ export const codeBlock = styles.create('code-block', {
     color: t.color.danger,
   },
   body: {
-    padding: t.space.md,
+    padding: 0,
+    backgroundColor: t.color.surface,
   },
   bodyTerminal: {
     color: t.color.accentForeground,
@@ -143,10 +144,14 @@ export const codeBlock = styles.create('code-block', {
   },
   pre: {
     margin: 0,
+    padding: t.space.md,
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     fontSize: '13px',
     lineHeight: 1.6,
     overflow: 'auto',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: 0,
   },
   preTerminal: {
     color: t.color.accentForeground,

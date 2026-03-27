@@ -1,4 +1,5 @@
 ---
+import { Search } from '@lucide/astro';
 import { sidebar } from '../../styles';
 import { docNavigation } from '../../navigation';
 import type { DocMeta } from '../../lib/docs';
@@ -18,7 +19,9 @@ const { docsBySlug, currentSlug } = Astro.props;
     <DocsLogo className={sidebar('logo')} accentClassName={sidebar('logoAccent')} />
   </div>
   <div className={sidebar('searchWrapper')}>
-    <span className={sidebar('searchIcon')}>⌕</span>
+    <span className={sidebar('searchIcon')} aria-hidden="true">
+      <Search size={16} stroke-width={2} />
+    </span>
     <input type="search" placeholder="Search docs..." className={sidebar('searchInput')} />
     <span className={sidebar('searchKbd')}>⌘K</span>
   </div>

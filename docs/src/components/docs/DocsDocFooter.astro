@@ -1,0 +1,33 @@
+---
+// @ts-nocheck
+import { docPage } from '../../styles';
+
+interface Props {
+  lastModified?: string;
+  editHref?: string;
+}
+
+const { lastModified, editHref } = Astro.props as Props;
+
+const formatted =
+  lastModified != null
+    ? new Date(lastModified).toLocaleDateString('en', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
+---
+
+{
+  (formatted || editHref) && (
+    <div class={docPage('footer')}>
+      {formatted ? <span>Last updated {formatted}</span> : null}
+      {editHref ? (
+        <a class={docPage('editLink')} href={editHref} target="_blank" rel="noopener noreferrer">
+          Edit this page
+        </a>
+      ) : null}
+    </div>
+  )
+}

@@ -56,7 +56,7 @@ const shadowValues = {
   md: '0 8px 30px rgb(15 23 42 / 0.16)',
 } as const;
 
-/** Semantic colors for syntax highlighting — aligned with docs `codeTheme` (oklch ramp). */
+/** Semantic colors for syntax highlighting (oklch ramps). */
 export const codeSyntaxLightValues = {
   base: 'oklch(24.8% 0.008 264)',
   keyword: 'oklch(54.5% 0.24 301)',

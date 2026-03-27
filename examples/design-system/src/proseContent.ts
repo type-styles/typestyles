@@ -106,7 +106,7 @@ export const proseContent = styles.create('docs-prose', {
       borderRadius: t.radius.sm,
       border: `1px solid ${t.color.border}`,
     },
-    '& pre': {
+    '& pre:not([data-codeblock-pre])': {
       fontFamily:
         'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       fontSize: t.font.sizeSm,

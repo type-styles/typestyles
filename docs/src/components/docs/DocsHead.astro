@@ -16,7 +16,9 @@ const { title, darkThemeClass } = Astro.props;
   rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
 />
-<style set:html="*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; } body { margin: 0; } a { color: inherit; text-decoration: none; } input, button { font: inherit; }" />
+<style
+  set:html="*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; background-color: var(--ds-color-bg); } body { margin: 0; background-color: var(--ds-color-bg); } a { color: inherit; text-decoration: none; } input, button { font: inherit; }"
+/>
 <script
   set:html={`(function(){try{var s=localStorage.getItem('typestyles-theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(!s&&p)){document.documentElement.classList.add('${darkThemeClass}')}}catch(e){}})();`}
 />

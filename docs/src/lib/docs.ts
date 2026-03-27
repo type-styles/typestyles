@@ -1,4 +1,4 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
@@ -7,10 +7,18 @@ import { docNavigation } from '../navigation';
 import { highlightDocCode } from './highlightDocCode';
 import { markdownCodeBlockHtml } from './markdownCodeBlockHtml';
 
+export type DocHeading = {
+  depth: number;
+  id: string;
+  text: string;
+};
+
 export type DocMeta = {
   slug: string;
   title: string;
   description?: string;
+  /** Source file mtime at build time — for “last updated” display. */
+  lastModified?: string;
 };
 
 export type DocEntry = DocMeta & {
@@ -43,6 +51,21 @@ function wrapCodeBlocks(html: string): string {
 
 function stripHtmlTags(html: string): string {
   return html.replace(/<[^>]+>/g, '').trim();
+}
+
+/** H2–H6 headings with `id` (matches pipeline after `withHeadingAnchors`). */
+export function extractDocHeadings(html: string): DocHeading[] {
+  const headings: DocHeading[] = [];
+  const re = /<h([2-6])\s+[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const depth = Number.parseInt(m[1], 10);
+    const id = m[2];
+    const inner = m[3];
+    const text = stripHtmlTags(inner).replace(/\s+/g, ' ').trim();
+    if (text) headings.push({ depth, id, text });
+  }
+  return headings;
 }
 
 function slugifyHeading(text: string): string {
@@ -130,11 +153,19 @@ async function loadDocByPath(filePath: string): Promise<DocEntry> {
   const { data, body } = parseFrontmatter(markdown);
   const slug = slugFromAbsolutePath(filePath);
   const html = withHeadingAnchors(wrapCodeBlocks(marked.parse(body) as string));
+  let lastModified: string | undefined;
+  try {
+    const st = await stat(filePath);
+    lastModified = st.mtime.toISOString();
+  } catch {
+    /* ignore */
+  }
 
   return {
     slug,
     title: data.title ?? slug,
     description: data.description,
+    lastModified,
     content: body,
     html,
   };
