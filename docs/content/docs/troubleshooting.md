@@ -188,6 +188,8 @@ const { html, css } = collectStyles(() => renderToString(<App />));
 // Include css in your HTML response
 ```
 
+For Next.js, follow the [SSR guide](/docs/ssr) and use `@typestyles/next` (`getRegisteredCss`, `TypestylesStylesheet`, or `@typestyles/next/server` helpers) so the document matches what App Router streams.
+
 ### Hydration mismatch
 
 **Symptom:** React warning about hydration mismatch or styles appearing twice.
@@ -535,29 +537,16 @@ function Component() {
 }
 ```
 
-## Debug mode
+## Inspecting registered CSS
 
-Enable debug logging to see what's happening:
-
-```ts
-// Set in your app entry point
-if (typeof window !== 'undefined') {
-  (window as any).TYPESTYLES_DEBUG = true;
-}
-```
-
-This will log:
-
-- When styles are created
-- When CSS is injected
-- Any warnings or errors
+To verify what the runtime has registered (for example in a route handler or test), call `getRegisteredCss()` from `typestyles`. For SSR-specific collection, use `collectStyles()` from `typestyles/server` as described in the [SSR guide](/docs/ssr).
 
 ## Getting help
 
 If you're still stuck:
 
 1. **Check the documentation:** Review the relevant guide for your use case
-2. **Search issues:** Look for similar problems in GitHub issues
+2. **Search issues:** Look for similar problems in [GitHub issues](https://github.com/dbanksdesign/typestyles/issues)
 3. **Create a minimal reproduction:**
    - Create the smallest possible example that shows the issue
    - Share the code and expected vs actual behavior

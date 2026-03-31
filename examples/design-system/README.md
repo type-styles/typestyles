@@ -2,6 +2,82 @@
 
 Framework-agnostic design tokens and recipes used by the docs and example apps.
 
+## Token layers
+
+Tokens are grouped for clarity; recipes consume the flat `designTokens` object (unchanged ergonomics).
+
+| Export | Role | CSS namespaces |
+| --- | --- | --- |
+| `designPrimitiveTokens` | Spacing, radii, typography scale, shadows, motion curves | `space`, `radius`, `font`, `shadow`, `duration`, `easing`, `transition` |
+| `designSemanticTokens` | Product colors, syntax palette, docs semantics | `color`, `codeSyntax`, `doc` |
+| `designComponentTokens` | Per-component surfaces (code blocks today) | `codeBlock` |
+
+**`doc`** maps prose, nav, table, callout, and code-shell roles to `var(--color-*)`. Override `--doc-*` in a theme to retune docs chrome without touching every recipe.
+
+**`codeBlock`** defaults through `doc` so code blocks track prose; override `--codeBlock-*` alone for a distinct code-block palette.
+
+**`designMotion`** is a convenience handle: `designMotion.duration.fast`, `designMotion.transition.panelEnter`, etc. New presets include `transition.colorShift` (links) and `transition.controlSurface` (buttons).
+
+## Theme classes
+
+First-class theme classes (all are strings you add to a root element, typically `<html>`):
+
+| Export | Class | Purpose |
+| --- | --- | --- |
+| `lightThemeClass` | `theme-ds-light` | Explicit light palette + light syntax (matches `:root` defaults) |
+| `darkThemeClass` | `theme-ds-dark` | Default dark `color` tokens + dark syntax |
+| `highContrastLightThemeClass` | `theme-ds-hc-light` | Stronger borders and body contrast on light surfaces |
+| `highContrastDarkThemeClass` | `theme-ds-hc-dark` | Stronger borders and body contrast on dark surfaces |
+
+Strip conflicting classes before applying another (the docs app keeps a fixed list for palette/mode switching).
+
+### Astro (no React context)
+
+Use a tiny inline script or a client island to flip classes on `document.documentElement`. Persist mode in `localStorage` if you want it sticky:
+
+```astro
+---
+import { lightThemeClass, darkThemeClass } from '@examples/design-system';
+---
+<script is:inline define:vars={{ lightThemeClass, darkThemeClass }}>
+  const key = 'theme-mode';
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const stored = localStorage.getItem(key);
+  const mode = stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
+  document.documentElement.classList.remove(lightThemeClass, darkThemeClass);
+  document.documentElement.classList.add(mode === 'dark' ? darkThemeClass : lightThemeClass);
+</script>
+```
+
+`import.meta.env.SSR` stays irrelevant: the snippet runs in the browser only. Adjust class lists if you also use palette themes (see `docs/src/tokens.ts` in this repo).
+
+## Theming helpers
+
+```ts
+import { mergeDesignThemeOverrides, createBrandAccentOverrides } from '@examples/design-system';
+import { tokens } from 'typestyles';
+
+const brand = createBrandAccentOverrides({
+  accent: '#7c3aed',
+  accentHover: '#6d28d9',
+  accentForeground: '#ffffff',
+});
+
+const subtleCodeBlock = mergeDesignThemeOverrides(brand, {
+  codeBlock: { rootBg: '#0c1222', headerBg: '#111827' },
+});
+
+export const themeAcme = tokens.createTheme('ds-acme', subtleCodeBlock);
+```
+
+Use `tokens.createTheme('ds-<name>', overrides)` with the same namespace keys as `DesignThemeOverrides`: `color`, `codeSyntax`, `doc`, `codeBlock`, plus primitives.
+
+## Extending tokens safely
+
+1. **New primitive or semantic keys** — Add to the corresponding `*Values` file under `src/tokens/` (e.g. `primitive-values.ts`, `color-values.ts`), then extend `DesignThemeOverrides` in `theme-api.ts` if themes should override them.
+2. **Docs-only tweaks** — Prefer `doc` or `codeBlock` overrides so `color` stays the single source for core brand neutrals.
+3. **Breaking renames** — Avoid renaming existing CSS custom properties; add aliases if you must migrate consumers gradually.
+
 ## CodeBlock copy helper pattern
 
 Use the `codeBlock` recipe with `data-*` hooks so any framework (or vanilla JS) can attach clipboard behavior:
@@ -47,7 +123,7 @@ Import the stylesheet side effect once (it registers `ds-hljs` rules):
 import '@examples/design-system/codeHighlight';
 ```
 
-### Semantic tokens (`ds-code-syntax`)
+### Semantic tokens (`codeSyntax`)
 
 | Token | Meaning |
 | --- | --- |
@@ -64,7 +140,7 @@ import '@examples/design-system/codeHighlight';
 | `addition` / `additionBg` | Diff additions (foreground / wash) |
 | `deletion` / `deletionBg` | Diff deletions (foreground / wash) |
 
-Values default to the docs site oklch ramps (`codeSyntaxLightValues`). Dark mode: override `--ds-code-syntax-*` in your theme class (the docs app merges `codeSyntaxDarkValues` into `theme-docs-dark`).
+Values default to the docs site oklch ramps (`codeSyntaxLightValues`). Dark mode: override `--codeSyntax-*` in your theme class (the docs app merges `codeSyntaxDarkValues` into `theme-docs-dark`).
 
 ### highlight.js class mapping
 
@@ -94,7 +170,7 @@ Covered primitives:
 | **Divider** | `---` → `<hr>` | Themed horizontal rule |
 | **Heading links** | `h1`–`h6` | Apps can inject `<a data-prose-heading-anchor>` permalinks (see docs site) |
 
-**Docs site** composes `proseContent('root')` with site overrides and merges `designColorDarkValues` into the dark theme so `--ds-color-*` tracks the shell.
+**Docs site** composes `proseContent('root')` with site overrides and merges `designColorDarkValues` into the dark theme so `--color-*` tracks the shell.
 
 ### Admonition-style callouts (markdown-only)
 

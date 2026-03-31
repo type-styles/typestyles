@@ -2,7 +2,7 @@
 import { home } from '../styles';
 import DocsLayout from '../layouts/DocsLayout.astro';
 import { getAllDocs } from '../lib/docs';
-import { dsButton } from '@examples/design-system';
+import { button } from '@examples/design-system';
 
 const docs = await getAllDocs();
 const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.slug, title: doc.title }]));
@@ -20,13 +20,13 @@ const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.s
       overhead, no magic, just types.
     </p>
     <div class={home('actions')}>
-      <a href="/docs/getting-started" class={`${home('cta')} ${dsButton.base} ${dsButton.primary}`}>
+      <a href="/docs/getting-started" class={`${home('cta')} ${button.base} ${button.primary}`}>
         Get started
         <span aria-hidden="true">&rarr;</span>
       </a>
       <a
         href="https://github.com/typestyles/typestyles"
-        class={`${home('ctaSecondary')} ${dsButton.base}`}
+        class={`${home('ctaSecondary')} ${button.base}`}
         target="_blank"
         rel="noopener noreferrer"
       >

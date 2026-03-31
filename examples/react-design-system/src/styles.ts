@@ -1,1 +1,1 @@
-export { dsLayout, dsText } from '@examples/design-system';
+export { layout, text } from '@examples/design-system';

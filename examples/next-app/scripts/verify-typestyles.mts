@@ -18,7 +18,7 @@ const css = readFileSync(cssPath, 'utf8');
 if (css.length < 500) fail(`CSS file unexpectedly small (${css.length} bytes).`);
 
 const requiredSubstrings = [
-  ':root { --ds-color-bg:',
+  ':root { --color-bg:',
   '.ds-button {',
   '.theme-ds-dark {',
   '.ds-layout-base {',

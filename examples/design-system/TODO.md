@@ -31,19 +31,19 @@ This checklist focuses on making `@examples/design-system` complete enough to po
 
 ## Phase 2 - Theming and tokens
 
-- [ ] **Token architecture hardening**
-  - [ ] Split tokens into `primitive`, `semantic`, and `component` groups.
-  - [ ] Add docs-specific semantic token set (prose, code, nav, callout, table).
-  - [ ] Add standardized motion tokens (duration/easing) for interaction feedback.
-- [ ] **Theme system**
-  - [ ] Add first-class light/dark theme exports (not just dark override class).
-  - [ ] Add high-contrast theme variant.
-  - [ ] Add per-component token override support (e.g. code block palette).
-  - [ ] Add theme switching guidance for Astro without React context dependency.
-- [ ] **Theming ergonomics**
-  - [ ] Provide helper APIs for creating custom themes from partial overrides.
-  - [ ] Add docs examples for brand theming and "single-accent override".
-  - [ ] Add migration guide for extending tokens safely.
+- [x] **Token architecture hardening**
+  - [x] Split tokens into `primitive`, `semantic`, and `component` groups.
+  - [x] Add docs-specific semantic token set (prose, code, nav, callout, table).
+  - [x] Add standardized motion tokens (duration/easing) for interaction feedback.
+- [x] **Theme system**
+  - [x] Add first-class light/dark theme exports (not just dark override class).
+  - [x] Add high-contrast theme variant.
+  - [x] Add per-component token override support (e.g. code block palette).
+  - [x] Add theme switching guidance for Astro without React context dependency.
+- [x] **Theming ergonomics**
+  - [x] Provide helper APIs for creating custom themes from partial overrides.
+  - [x] Add docs examples for brand theming and "single-accent override".
+  - [x] Add migration guide for extending tokens safely.
 
 ## Phase 3 - Accessibility and quality
 

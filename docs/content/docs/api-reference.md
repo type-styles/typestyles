@@ -5,7 +5,7 @@ description: Complete API reference for typestyles
 
 # API Reference
 
-Auto-generated documentation for all typestyles APIs.
+Reference for the main typestyles APIs (kept in sync with the published package).
 
 ## Core Exports
 
@@ -15,7 +15,9 @@ Style creation and composition API.
 
 **Methods:**
 
-- `styles.create(namespace, definitions)`: Creates style variants
+- `styles.create(namespace, definitions)`: Creates style variants (flat named keys)
+- `styles.class(name, style)`: Creates a single registered class from one style object
+- `styles.hashClass(styles, label?)`: Emits a hashed class from a style object (see [Class naming](/docs/class-naming))
 - `styles.withUtils(utils)`: Returns utility-aware `create`, `class`, and `hashClass` helpers
 - `styles.compose(...selectors)`: Combines multiple selector functions or class strings
 - `styles.component(namespace, config)`: Creates variant-based component styles
@@ -36,9 +38,30 @@ Design token API using CSS custom properties.
 
 **Methods:**
 
-- `tokens.create(namespace, values)`: Creates CSS custom properties
-- `tokens.use(namespace)`: References existing tokens
-- `tokens.createTheme(name, overrides)`: Creates theme class
+- `tokens.create(namespace, values)`: Registers tokens on `:root` and returns `var(--namespace-key)` references
+- `tokens.use(namespace)`: Returns `var(--namespace-key)` references without emitting CSS (for shared tokens defined elsewhere)
+- `tokens.createTheme(name, overrides)`: Registers a `.theme-{name}` class that overrides token custom properties for a subtree
+
+### `global`
+
+Global CSS helpers (not scoped to a component class):
+
+- `global.style(selector, styles)`: Insert rules for an arbitrary selector
+- `global.fontFace(family, props)`: Register `@font-face`
+
+### `color`
+
+Type-safe helpers that return CSS color strings (`rgb`, `hsl`, `oklch`, `mix`, `alpha`, `lightDark`, etc.). See [Color](/docs/color).
+
+### CSS variables (advanced)
+
+- `createVar(name, fallback?)`, `assignVars(vars)`: Typed custom property helpers for advanced patterns
+
+### Sheet and testing utilities
+
+- `getRegisteredCss()`: Returns all CSS registered so far (useful with SSR or diagnostics)
+- `reset()`, `flushSync()`, `ensureDocumentStylesAttached()`: Primarily for tests and advanced setup; see [Testing](/docs/testing)
+- `insertRules(rules)`: Low-level rule insertion (mainly for library authors)
 
 ### `keyframes`
 
@@ -173,5 +196,4 @@ atoms({
 
 ---
 
-*This API reference was auto-generated from source code.*
-*Last updated: 2026-02-15*
+*Last reviewed: 2026-03-27*

@@ -16,6 +16,7 @@ npm install @typestyles/open-props
 ## Quick Start
 
 ```ts
+import { styles } from 'typestyles';
 import { sizes, radius, color, font } from '@typestyles/open-props';
 
 const card = styles.create('card', {

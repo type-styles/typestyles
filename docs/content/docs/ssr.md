@@ -72,88 +72,81 @@ On the client:
 2. **Reuse**: If found, it reuses that element and avoids re-injecting the CSS
 3. **Seamless transition**: No flicker or style recalculation during hydration
 
-## Framework-specific examples
+## Next.js
 
-### Next.js (App Router)
+Install the official integration so App Router, `useServerInsertedHTML`, and server helpers stay aligned:
+
+```bash
+pnpm add @typestyles/next typestyles
+```
+
+See the [`@typestyles/next` package README](https://github.com/dbanksdesign/typestyles/tree/main/packages/next) for build-time extraction (`withTypestylesExtract`) and Turbopack notes.
+
+### App Router (recommended)
+
+**Option A — server layout + `getRegisteredCss`:** simplest when your typestyles modules are loaded on the server before layout runs. Outputs the full registered stylesheet (everything in `allRules` after imports and any sync registration).
 
 ```tsx
 // app/layout.tsx
-import { collectStyles } from 'typestyles/server';
-import { Stylesheet } from './stylesheet';
+import { getRegisteredCss } from '@typestyles/next';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const css = getRegisteredCss();
+
   return (
-    <html>
+    <html lang="en">
       <head>
-        <Stylesheet />
+        {css ? <style id="typestyles" dangerouslySetInnerHTML={{ __html: css }} /> : null}
       </head>
       <body>{children}</body>
     </html>
   );
 }
-
-// app/stylesheet.tsx
-import { collectStyles } from 'typestyles/server';
-import { renderToString } from 'react-dom/server';
-import { YourAppContent } from './your-app-content';
-
-export function Stylesheet() {
-  // Collect styles from your app
-  const { css } = collectStyles(() => renderToString(<YourAppContent />));
-
-  return <style id="typestyles" dangerouslySetInnerHTML={{ __html: css }} />;
-}
 ```
 
-### Next.js (Pages Router)
+**Option B — `TypestylesStylesheet` (client):** uses Next’s `useServerInsertedHTML` so CSS collected during the real SSR pass is injected into the streamed document. Prefer this when you rely on the same render tree as `{children}` (for example lazy boundaries or patterns where Option A would miss rules).
 
 ```tsx
-// pages/_document.tsx
-import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
-import { collectStyles } from 'typestyles/server';
-import { renderToString } from 'react-dom/server';
+// app/layout.tsx
+import { TypestylesStylesheet } from '@typestyles/next/client';
 
-class MyDocument extends Document {
-  static async getInitialProps(ctx: DocumentContext) {
-    const originalRenderPage = ctx.renderPage;
-
-    let css = '';
-    ctx.renderPage = () => {
-      const { css: collectedCss } = collectStyles(() => originalRenderPage());
-      css = collectedCss;
-      return {} as any;
-    };
-
-    const initialProps = await Document.getInitialProps(ctx);
-
-    return {
-      ...initialProps,
-      styles: (
-        <>
-          {initialProps.styles}
-          <style id="typestyles">{css}</style>
-        </>
-      ),
-    };
-  }
-
-  render() {
-    return (
-      <Html>
-        <Head />
-        <body>
-          <Main />
-          <NextScript />
-        </body>
-      </Html>
-    );
-  }
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <TypestylesStylesheet />
+        {children}
+      </body>
+    </html>
+  );
 }
-
-export default MyDocument;
 ```
 
-### Remix
+**Subtree-only CSS (advanced):** `collectStylesFromComponent` / `getTypestylesMetadata` from `@typestyles/next/server` run `renderToString` on a specific element and return CSS registered during that pass. Use when you intentionally scope extraction to a component tree; you still need to place the returned string in `<head>` yourself (Next `metadata` cannot carry arbitrary `<style>` bodies).
+
+### Pages Router
+
+Wrap the page tree with `TypestylesStylesheet` so collection lines up with what Next renders:
+
+```tsx
+// pages/_app.tsx
+import { TypestylesStylesheet } from '@typestyles/next';
+import type { AppProps } from 'next/app';
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <TypestylesStylesheet>
+      <Component {...pageProps} />
+    </TypestylesStylesheet>
+  );
+}
+```
+
+Custom `pages/_document.tsx` with `collectStyles(() => ctx.renderPage())` is fragile because `renderPage` can be asynchronous and does not return a React element. Prefer the `_app` pattern above unless you maintain a custom synchronous pipeline.
+
+## Remix
+
+`renderToString(<RemixServer />)` usually returns your `app/root.tsx` tree, which in the default template already includes `<head>…</head>`. Collect CSS from that same render, inject the tag before `</head>`, then prefix `<!DOCTYPE html>` if the string does not already include it:
 
 ```tsx
 // app/entry.server.tsx
@@ -172,49 +165,58 @@ export default function handleRequest(
     renderToString(<RemixServer context={remixContext} url={request.url} />),
   );
 
-  // Inject CSS before Remix handles the response
-  const markup = html.replace('</head>', `<style id="typestyles">${css}</style></head>`);
+  responseHeaders.set('Content-Type', 'text/html; charset=utf-8');
 
-  return new Response('<!DOCTYPE html>' + markup, {
-    headers: { 'Content-Type': 'text/html' },
-    status: responseStatusCode,
-  });
+  if (!html.includes('</head>')) {
+    throw new Error(
+      'typestyles SSR: expected </head> in Remix output. Ensure app/root.tsx renders a <head> (default Remix template does).',
+    );
+  }
+
+  let documentHtml = html.replace('</head>', `<style id="typestyles">${css}</style></head>`);
+  if (!documentHtml.trimStart().toLowerCase().startsWith('<!doctype')) {
+    documentHtml = `<!DOCTYPE html>${documentHtml}`;
+  }
+
+  return new Response(documentHtml, { status: responseStatusCode, headers: responseHeaders });
 }
 ```
 
-## Streaming SSR
+**Streaming:** the stock Remix `entry.server.tsx` uses `renderToPipeableStream` and never builds a single HTML string, so the pattern above targets **synchronous** document responses (for example the bot path in Remix’s default entry, or a custom non-streaming entry). To keep streaming, you still need a strategy for CSS: a prior `collectStyles(() => renderToString(<RemixServer … />))` pass, build-time CSS extraction, or adapting the streaming pipeline—see [Remix streaming](https://remix.run/docs/en/main/guides/streaming) and [entry.server](https://remix.run/docs/en/main/file-conventions/entry.server).
 
-For streaming SSR, you need to collect styles before the stream starts:
+## Streaming SSR (Express / Node)
+
+You need CSS before the streamed shell is sent. That usually means **one synchronous `renderToString` pass** inside `collectStyles`, then a **second** pass with `renderToPipeableStream` for the same UI (two renders, same trade-off as above).
+
+Open your HTML shell (including `<style id="typestyles">…</style>`) **before** `pipe(res)`, then finish the document when React says the stream is done. Exact callbacks depend on whether you use Suspense—see [React `renderToPipeableStream`](https://react.dev/reference/react-dom/server/renderToPipeableStream).
 
 ```tsx
-import { renderToPipeableStream } from 'react-dom/server';
+import { renderToString, renderToPipeableStream } from 'react-dom/server';
+import type { Response } from 'express';
 import { collectStyles } from 'typestyles/server';
 
-app.get('/', (req, res) => {
-  // Pre-render to collect styles
+app.get('/', (req, res: Response) => {
   const { css } = collectStyles(() => renderToString(<App />));
 
-  // Write the head with styles
-  res.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style id="typestyles">${css}</style>
-      </head>
-      <body>
-        <div id="root">
-  `);
-
-  // Stream the actual content
-  const stream = renderToPipeableStream(<App />, {
+  const { pipe } = renderToPipeableStream(<App />, {
     onShellReady() {
-      stream.pipe(res);
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.write(
+        `<!DOCTYPE html><html><head><meta charset="utf-8"/><style id="typestyles">${css}</style></head><body>`,
+      );
+      pipe(res);
+    },
+    onShellError(error) {
+      res.statusCode = 500;
+      console.error(error);
+      res.end();
     },
   });
 });
 ```
 
-Note: This does render twice (once for styles, once for streaming), but it's necessary because styles are only known after the render completes.
+If your shell opens wrappers around `<App />`, add the matching closing tags in the appropriate callback (`onAllReady` when streaming deferred content, or follow the full pattern in the React docs) so you never write to `res` after it has ended.
 
 ## Important considerations
 

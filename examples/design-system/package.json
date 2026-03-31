@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./codeHighlight": "./src/codeHighlight.ts"
+    "./codeHighlight": "./src/components/codeHighlight.ts"
   },
   "types": "./src/index.ts",
   "dependencies": {

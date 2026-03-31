@@ -35,6 +35,10 @@ padding: space.md,        // var(--space-md)
 backgroundColor: color.primary,  // var(--color-primary)
 ```
 
+## Referencing tokens defined elsewhere
+
+When tokens are created in another module or package, use `tokens.use(namespace)` to get the same `var(--namespace-key)` references **without** emitting another `:root` rule. The namespace must already be registered (via `tokens.create`) before those variables exist in CSS.
+
 ## Theming
 
 Use `tokens.createTheme(name, overrides)` to define a theme that overrides token values:

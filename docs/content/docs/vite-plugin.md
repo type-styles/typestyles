@@ -192,7 +192,7 @@ export default defineConfig({
 
 ## SSR with Vite
 
-The plugin is development-only and doesn't affect SSR. For SSR, use `collectStyles()` from `typestyles/server` as described in the [SSR guide](./ssr).
+The plugin is development-only and doesn't affect SSR. For SSR, use `collectStyles()` from `typestyles/server` as described in the [SSR guide](/docs/ssr).
 
 ## Troubleshooting
 
@@ -244,4 +244,4 @@ Planned enhancements (not yet implemented):
 - **Build-time extraction**: Optionally extract static styles to CSS files for production
 - **Source maps**: Map generated CSS back to your style definitions
 
-Stay tuned to the [GitHub repository](https://github.com/yourusername/typestyles) for updates.
+Stay tuned to the [GitHub repository](https://github.com/dbanksdesign/typestyles) for updates.

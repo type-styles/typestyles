@@ -37,12 +37,9 @@ const typestylesCssHref = `${import.meta.env.BASE_URL}typestyles.css`;
 const appearanceMap = Object.fromEntries(
   designPaletteList.map(({ id }) => [
     id,
-    {
-      light: getDocsAppearanceClass(id, 'light'),
-      dark: getDocsAppearanceClass(id, 'dark'),
-    },
+    getDocsAppearanceClass(id, 'light'),
   ])
-) as Record<DesignPaletteId, { light: string; dark: string }>;
+) as Record<DesignPaletteId, { className: string; dataMode: 'light' | 'dark' | undefined }>;
 
 const appearanceBootstrap = {
   clear: docsAppearanceClassesToClear.filter(Boolean),

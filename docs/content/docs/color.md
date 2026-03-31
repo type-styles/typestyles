@@ -135,15 +135,17 @@ Note: This requires the browser to support `light-dark()` and the element to hav
 All color functions accept token references since tokens are just CSS `var()` strings:
 
 ```ts
-const color = tokens.create('color', {
+import { styles, tokens, color as colorFn } from 'typestyles';
+
+const themeColor = tokens.create('color', {
   primary: '#0066ff',
   secondary: '#6b7280',
 });
 
-const styles = styles.create('card', {
+const card = styles.create('card', {
   base: {
-    backgroundColor: color.mix(color.primary, 'white', 10),
-    borderColor: color.alpha(color.secondary, 0.3),
+    backgroundColor: colorFn.mix(themeColor.primary, 'white', 10),
+    borderColor: colorFn.alpha(themeColor.secondary, 0.3),
   },
 });
 ```

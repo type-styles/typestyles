@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { darkThemeClass } from './tokens';
+import { defaultTheme as baseTheme } from './tokens';
 
 type ThemeName = 'light' | 'dark';
 
@@ -49,11 +49,15 @@ export function DesignSystemProvider({
     [theme],
   );
 
-  const themeClass = theme === 'dark' ? darkThemeClass : undefined;
+  const dataMode = theme;
 
   return (
     <ThemeContext.Provider value={value}>
-      <div className={cx(themeClass, customThemeClassName)} style={{ display: 'contents' }}>
+      <div
+        className={cx(baseTheme.className, customThemeClassName)}
+        data-mode={dataMode}
+        style={{ display: 'contents' }}
+      >
         {children}
       </div>
     </ThemeContext.Provider>

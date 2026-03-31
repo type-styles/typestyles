@@ -148,20 +148,9 @@ function Button({ variant = 'primary', size = 'medium', children }: ButtonProps)
 }
 ```
 
-### Strict variant checking
+### Stricter object literals
 
-Use `as const` for stricter variant checking:
-
-```ts
-const button = styles.create('button', {
-  base: { ... },
-  primary: { ... },
-  secondary: { ... },
-} as const);
-
-// Without as const: variant accepts any string
-// With as const: variant only accepts 'base' | 'primary' | 'secondary'
-```
+You can add `as const` to **nested values** when you want literal types preserved (for example token-like maps). Variant keys for `styles.create` are already inferred from the definitions object; use explicit component prop types when you need a narrower public API than the style keys alone.
 
 ## Utility types
 
@@ -188,7 +177,9 @@ type CardProps = {
 ### Token type extraction
 
 ```ts
-const tokens = {
+import { tokens } from 'typestyles';
+
+const themeTokens = {
   color: tokens.create('color', {
     primary: '#0066ff',
     secondary: '#6b7280',
@@ -200,10 +191,10 @@ const tokens = {
 };
 
 // Extract specific token types
-type ColorToken = keyof typeof tokens.color;
+type ColorToken = keyof typeof themeTokens.color;
 //   ^? 'primary' | 'secondary'
 
-type SpaceToken = keyof typeof tokens.space;
+type SpaceToken = keyof typeof themeTokens.space;
 //   ^? 'sm' | 'md'
 ```
 
@@ -241,18 +232,31 @@ export const color = tokens.create('color', {
 ### Theme-aware components
 
 ```ts
+import { tokens } from 'typestyles';
+
+const themeTokens = {
+  color: tokens.create('color', {
+    primary: '#0066ff',
+    secondary: '#6b7280',
+  }),
+  space: tokens.create('space', {
+    sm: '8px',
+    md: '16px',
+  }),
+};
+
 interface ThemedComponentProps {
-  color: keyof typeof tokens.color;
-  space: keyof typeof tokens.space;
+  color: keyof typeof themeTokens.color;
+  space: keyof typeof themeTokens.space;
 }
 
 function ThemedComponent({ color, space }: ThemedComponentProps) {
-  const styles = {
-    color: tokens.color[color],
-    padding: tokens.space[space],
+  const inline = {
+    color: themeTokens.color[color],
+    padding: themeTokens.space[space],
   };
 
-  return <div style={styles}>Content</div>;
+  return <div style={inline}>Content</div>;
 }
 
 // Usage with autocomplete:
@@ -422,7 +426,7 @@ function Button({ variant: variantProp }: { variant?: string }) {
 
 1. **Let types be inferred** when possible
 2. **Define explicit interfaces** for component props
-3. **Use `as const`** for stricter variant checking
+3. **Use `as const`** on nested maps when you need literal types
 4. **Extract shared types** to avoid duplication
 5. **Leverage `keyof`** for token-based props
 6. **Use strict mode** for best type safety

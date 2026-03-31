@@ -11,13 +11,13 @@ TypeStyles is designed to be fast. This guide explains how it works under the ho
 
 ### Runtime cost
 
-TypeStyles operates at runtime with minimal overhead:
+TypeStyles operates at runtime with minimal overhead. The timings below are **rough orders of magnitude** and will vary by device and bundle.
 
-| Operation                            | Cost     | Frequency                 |
-| ------------------------------------ | -------- | ------------------------- |
-| `styles.create()`                    | ~0.1ms   | Once per style definition |
-| Selector function (`button('base')`) | ~0.001ms | Every render              |
-| CSS injection                        | ~0.5ms   | Once per unique rule      |
+| Operation                            | Cost (typical) | Frequency                 |
+| ------------------------------------ | -------------- | ------------------------- |
+| `styles.create()`                    | sub-ms         | Once per style definition |
+| Selector function (`button('base')`) | very small     | Every render              |
+| CSS injection                        | sub-ms         | Once per unique rule      |
 
 **What this means:**
 
@@ -33,29 +33,23 @@ TypeStyles stores:
 - **CSS rules**: One string per variant
 - **Token values**: One object per token namespace
 
-Typical memory footprint: ~50KB for a medium-sized application (hundreds of components).
+Memory use scales with how many namespaces and rules you register; profile your own app if it becomes a concern.
 
 ## Bundle size
 
 ### Minified + gzipped sizes
 
+Approximate sizes (measure your own bundle with your toolchain):
+
 ```
-typestyles (core): ~3.2KB
-typestyles/server: +0.8KB (SSR support)
-@typestyles/vite: +2.1KB (dev only)
+typestyles (core): on the order of a few KB gzipped
+typestyles/server: additional small chunk for SSR helpers
+@typestyles/vite: dev dependency only
 ```
 
 ### Comparison with alternatives
 
-| Library                | Runtime Size | Total CSS-in-JS overhead |
-| ---------------------- | ------------ | ------------------------ |
-| styled-components      | ~12KB        | ~45KB (includes parser)  |
-| Emotion                | ~7KB         | ~25KB                    |
-| Linaria (zero-runtime) | 0KB          | 0KB (build-time only)    |
-| StyleX                 | ~0KB         | ~0KB (build-time only)   |
-| **TypeStyles**         | **~3.2KB**   | **~3.2KB**               |
-
-TypeStyles sits between full runtime libraries and zero-runtime solutions.
+Other libraries’ numbers change frequently; compare using [bundlephobia](https://bundlephobia.com/) or your bundler’s analyzer. TypeStyles aims for a small runtime that injects plain CSS, versus larger runtimes that parse CSS in JS.
 
 ## Lazy injection
 
@@ -367,15 +361,11 @@ The `collectStyles` call:
 
 - Cache SSR output when possible
 - Use streaming SSR with care (requires two renders for style collection)
-- The CSS string is typically small (< 10KB gzipped)
+- The collected CSS string is often modest, but measure it for your app
 
 ### CSS size
 
-Typical CSS output sizes:
-
-- Small app (10-20 components): ~5KB
-- Medium app (50-100 components): ~15KB
-- Large app (200+ components): ~40KB
+Reported CSS weight depends entirely on how many variants and utilities you register. In many apps it stays smaller than a hand-maintained global stylesheet because unused definitions are never hit.
 
 These are usually smaller than equivalent CSS files because:
 
@@ -411,7 +401,7 @@ These are usually smaller than equivalent CSS files because:
 
 **Cons:**
 
-- Small runtime (~3KB)
+- Small runtime (see your bundle analyzer)
 - Runtime CSS injection (one-time cost)
 - Requires JavaScript
 
@@ -458,7 +448,7 @@ Track these metrics in production:
 - **LCP (Largest Contentful Paint):** Should be < 2.5s
   - TypeStyles doesn't block rendering (lazy injection)
 - **INP (Interaction to Next Paint):** Should be < 200ms
-  - Selector calls are fast (< 0.01ms)
+  - Selector calls are very cheap (string concatenation)
 - **CLS (Cumulative Layout Shift):** Should be < 0.1
   - Styles are available before paint (if using SSR)
 
@@ -479,11 +469,11 @@ getTTFB(console.log);
 
 TypeStyles performance characteristics:
 
-- **Bundle size:** ~3.2KB (one of the smallest CSS-in-JS libraries)
+- **Bundle size:** Small core; measure with your bundler
 - **Runtime cost:** Minimal (string concatenation + batched DOM inserts)
-- **Memory:** Low (~50KB for typical app)
+- **Memory:** Scales with registered rules; usually modest
 - **Rendering:** No blocking, lazy injection
-- **SSR:** Fast extraction, minimal overhead
+- **SSR:** Style collection is synchronous around your render
 
 To maintain good performance:
 

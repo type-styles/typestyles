@@ -836,7 +836,7 @@ After migration, your JavaScript bundle may be slightly smaller (no CSS parsing 
 | ------------------ | ---------------------------- | ------------------------- | ------------------- | --------------------- |
 | **Basic styling**  | `styled.div`...`             | `css`...`                 | `className="p-4"`   | `styles.create()`     |
 | **Variants**       | Props + template literals    | Props + template literals | Conditional strings | Multiple variant args |
-| **Pseudo-classes** | `&:hover` in template        | `&:hover` in template     | `hover:` prefix     | `&hover` in object    |
+| **Pseudo-classes** | `&:hover` in template        | `&:hover` in template     | `hover:` prefix     | `&:hover` in object   |
 | **Media queries**  | `@media` in template         | `@media` in template      | Responsive prefixes | `@media` in object    |
 | **Theme values**   | `${props => props.theme...}` | `${theme...}`             | Config-based        | Token references      |
 | **Dynamic values** | Template literals            | Template literals         | Arbitrary values    | Inline styles         |
@@ -896,4 +896,4 @@ Useful options:
 - Use tokens instead of recreating values
 - Static styles only—dynamic values should use inline styles
 
-If you hit any issues during migration, check the [troubleshooting guide](./troubleshooting) or [open an issue](https://github.com/yourusername/typestyles/issues).
+If you hit any issues during migration, check the [troubleshooting guide](/docs/troubleshooting) or [open an issue](https://github.com/dbanksdesign/typestyles/issues).

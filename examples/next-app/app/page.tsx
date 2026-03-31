@@ -4,11 +4,10 @@ import { useMemo, useState } from 'react';
 import {
   Button,
   Checkbox,
-  createDesignSystemTheme,
   DesignSystemProvider,
   Dialog,
-  dsLayout,
-  dsText,
+  layout,
+  text,
   Link,
   RadioGroup,
   Select,
@@ -17,8 +16,9 @@ import {
   TextAreaField,
   TextField,
 } from '@examples/react-design-system';
+import { tokens } from 'typestyles';
 
-const sunsetThemeClass = createDesignSystemTheme('sunset', {
+const sunsetThemeClass = tokens.createTheme('ds-sunset', {
   color: {
     accent: '#ea580c',
     accentHover: '#c2410c',
@@ -41,7 +41,7 @@ export default function Home() {
     () => [
       { id: 'consume', label: 'Consume', content: 'Apps import one package and use the same accessible components.' },
       { id: 'tokens', label: 'Token API', content: 'Token references stay stable while themes only override CSS vars.' },
-      { id: 'theme', label: 'Theme API', content: 'createDesignSystemTheme enables per-app brand theming with partial overrides.' },
+      { id: 'theme', label: 'Theme API', content: 'tokens.createTheme enables per-app brand theming with partial overrides.' },
     ],
     [],
   );
@@ -51,13 +51,13 @@ export default function Home() {
 
   return (
     <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
-      <main className={dsLayout('stack')} style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
-        <header className={dsLayout('stack')} style={{ gap: 10 }}>
-          <h1 className={dsText('title')}>Next.js consuming shared typestyles design system</h1>
-          <p className={dsText('subtitle')}>
+      <main className={layout('stack')} style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
+        <header className={layout('stack')} style={{ gap: 10 }}>
+          <h1 className={text('title')}>Next.js consuming shared typestyles design system</h1>
+          <p className={text('subtitle')}>
             This example consumes the same React library as Vite and applies app-level custom theming.
           </p>
-          <div className={dsLayout('row')}>
+          <div className={layout('row')}>
             <Button intent={themeMode === 'light' ? 'primary' : 'secondary'} onPress={() => setThemeMode('light')}>
               Light
             </Button>
@@ -70,9 +70,9 @@ export default function Home() {
           </div>
         </header>
 
-        <section className={dsLayout('section')}>
-          <h2 className={dsText('sectionTitle')}>10 Common Components</h2>
-          <div className={dsLayout('row')}>
+        <section className={layout('section')}>
+          <h2 className={text('sectionTitle')}>10 Common Components</h2>
+          <div className={layout('row')}>
             <Button intent="primary">Button</Button>
             <Link href="https://react-spectrum.adobe.com/react-aria/">Link</Link>
             <Dialog
@@ -81,7 +81,7 @@ export default function Home() {
               description="Underlying accessibility behavior comes from react-aria-components."
             />
           </div>
-          <div className={dsLayout('row')}>
+          <div className={layout('row')}>
             <TextField
               label="Repository name"
               placeholder="design-system"
@@ -103,7 +103,7 @@ export default function Home() {
             placeholder="Document brand token overrides..."
             description="Token customization still uses typestyles vars under the hood."
           />
-          <div className={dsLayout('row')}>
+          <div className={layout('row')}>
             <Checkbox isSelected={accepted} onChange={setAccepted}>
               Checkbox
             </Checkbox>

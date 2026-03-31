@@ -2,11 +2,10 @@ import { useMemo, useState } from 'react';
 import {
   Button,
   Checkbox,
-  createDesignSystemTheme,
   DesignSystemProvider,
   Dialog,
-  dsLayout,
-  dsText,
+  layout,
+  text,
   Link,
   RadioGroup,
   Select,
@@ -15,8 +14,9 @@ import {
   TextAreaField,
   TextField,
 } from '@examples/react-design-system';
+import { tokens } from 'typestyles';
 
-const oceanThemeClass = createDesignSystemTheme('ocean', {
+const oceanThemeClass = tokens.createTheme('ds-ocean', {
   color: {
     accent: '#0284c7',
     accentHover: '#0369a1',
@@ -49,13 +49,13 @@ export function App() {
 
   return (
     <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
-      <main className={dsLayout('stack')} style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
-        <header className={dsLayout('stack')} style={{ gap: 10 }}>
-          <h1 className={dsText('title')}>Vite consuming shared typestyles design system</h1>
-          <p className={dsText('subtitle')}>
+      <main className={layout('stack')} style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
+        <header className={layout('stack')} style={{ gap: 10 }}>
+          <h1 className={text('title')}>Vite consuming shared typestyles design system</h1>
+          <p className={text('subtitle')}>
             This page uses one shared React library and switches between default, dark, and custom themes.
           </p>
-          <div className={dsLayout('row')}>
+          <div className={layout('row')}>
             <Button intent={themeMode === 'light' ? 'primary' : 'secondary'} onPress={() => setThemeMode('light')}>
               Light
             </Button>
@@ -68,9 +68,9 @@ export function App() {
           </div>
         </header>
 
-        <section className={dsLayout('section')}>
-          <h2 className={dsText('sectionTitle')}>10 Common Components</h2>
-          <div className={dsLayout('row')}>
+        <section className={layout('section')}>
+          <h2 className={text('sectionTitle')}>10 Common Components</h2>
+          <div className={layout('row')}>
             <Button intent="primary">Button</Button>
             <Link href="https://react-spectrum.adobe.com/react-aria/">Link</Link>
             <Dialog
@@ -79,7 +79,7 @@ export function App() {
               description="Modal behavior and focus management come from react-aria-components."
             />
           </div>
-          <div className={dsLayout('row')}>
+          <div className={layout('row')}>
             <TextField label="Project name" placeholder="typestyles-ui" description="TextField + Input + Label + FieldError" />
             <Select
               label="Plan"
@@ -93,7 +93,7 @@ export function App() {
             />
           </div>
           <TextAreaField label="Notes" placeholder="Describe your theming needs…" description="TextArea field for longer input." />
-          <div className={dsLayout('row')}>
+          <div className={layout('row')}>
             <Checkbox isSelected={agreed} onChange={setAgreed}>
               Checkbox
             </Checkbox>

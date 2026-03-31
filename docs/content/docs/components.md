@@ -156,36 +156,6 @@ const accordionTrigger = styles.component('accordion-trigger', {
 
 ## Migration quick-start
 
-### Variant API
-
-`styles.component` uses the `base`, `variants`, `compoundVariants`, and `defaultVariants` config shape.
-
-```ts
-// Before
-const button = styles.component('button', {
-  base: { padding: '8px 12px' },
-  variants: {
-    intent: {
-      primary: { backgroundColor: '#2563eb' },
-      ghost: { backgroundColor: 'transparent' },
-    },
-  },
-  defaultVariants: { intent: 'primary' },
-});
-
-// Single API
-const button = styles.component('button', {
-  base: { padding: '8px 12px' },
-  variants: {
-    intent: {
-      primary: { backgroundColor: '#2563eb' },
-      ghost: { backgroundColor: 'transparent' },
-    },
-  },
-  defaultVariants: { intent: 'primary' },
-});
-```
-
 ### From CVA
 
 CVA config maps directly:

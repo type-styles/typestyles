@@ -1,0 +1,27 @@
+---
+import DocsLayout from '../layouts/DocsLayout.astro';
+import Badge from '../components/docs/Badge.astro';
+import { doc, home } from '../styles';
+import { getAllDocs } from '../lib/docs';
+import { linkButton } from '@examples/design-system';
+
+const docs = await getAllDocs();
+const docsBySlug = Object.fromEntries(docs.map((d) => [d.slug, { slug: d.slug, title: d.title }]));
+---
+
+<DocsLayout title="Page not found — typestyles" docsBySlug={docsBySlug}>
+  <div class={doc('root')}>
+    <div class={doc('eyebrowRow')}>
+      <Badge variant="neutral">404</Badge>
+    </div>
+    <h1 class={doc('title')}>Page not found</h1>
+    <p class={doc('description')}>
+      The page you requested does not exist, or it may have been moved. Try the home page or the docs
+      index.
+    </p>
+    <div class={home('actions')}>
+      <a href="/" class:list={[linkButton.base, linkButton.primary]}>Home</a>
+      <a href="/docs" class:list={[linkButton.base, linkButton.secondary]}>Documentation</a>
+    </div>
+  </div>
+</DocsLayout>

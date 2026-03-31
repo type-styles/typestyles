@@ -30,11 +30,13 @@ export {
 } from './components';
 export {
   designTokens,
-  darkThemeClass,
-  createDesignSystemTheme,
-  type DesignThemeOverrides,
+  defaultTheme,
   type DesignColorValues,
-  type DesignFontValues,
+  type DesignCodeBlockValues,
+  type DesignFontFamilyValues,
+  type DesignFontSizeValues,
+  type DesignFontWeightValues,
+  type DesignLineHeightValues,
   type DesignRadiusValues,
   type DesignShadowValues,
   type DesignSpaceValues,
@@ -44,5 +46,5 @@ export {
   useDesignSystemTheme,
   type DesignSystemProviderProps,
 } from './theme';
-export { dsLayout, dsText } from './styles';
+export { layout, text } from './styles';
 export * from './hooks';
