@@ -23,6 +23,7 @@
     "next-app": "pnpm --filter @examples/next",
     "design-system": "pnpm --filter @examples/design-system",
     "react-design-system": "pnpm --filter @examples/react-design-system",
+    "typewind": "pnpm --filter @examples/typewind",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
