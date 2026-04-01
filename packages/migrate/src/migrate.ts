@@ -6,10 +6,7 @@ import { collectTargetFiles } from './files.js';
 import { migrateSource } from './transform.js';
 
 function renderPatch(filePath: string, before: string, after: string): string {
-  return createPatch(filePath, before, after, 'before', 'after')
-    .split('\n')
-    .slice(2)
-    .join('\n');
+  return createPatch(filePath, before, after, 'before', 'after').split('\n').slice(2).join('\n');
 }
 
 export async function runMigration(cwd: string, options: CliOptions): Promise<MigrationReport> {

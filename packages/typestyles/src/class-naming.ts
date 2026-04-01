@@ -68,7 +68,10 @@ export function hashString(input: string): string {
 }
 
 export function sanitizeClassSegment(label: string): string {
-  const normalized = label.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const normalized = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-');
   return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '') || 'style';
 }
 

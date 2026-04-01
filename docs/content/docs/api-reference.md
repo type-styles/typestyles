@@ -110,7 +110,7 @@ const fadeIn = keyframes.create('fadeIn', {
 });
 
 // Use in styles
-animation: `${fadeIn} 300ms ease`
+animation: `${fadeIn} 300ms ease`;
 ```
 
 ### Composing Styles
@@ -196,4 +196,4 @@ atoms({
 
 ---
 
-*Last reviewed: 2026-03-27*
+_Last reviewed: 2026-03-27_

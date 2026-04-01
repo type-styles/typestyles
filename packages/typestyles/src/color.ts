@@ -137,7 +137,7 @@ export function mix(
   color1: string,
   color2: string,
   percentage?: number,
-  colorSpace: ColorMixSpace = 'srgb'
+  colorSpace: ColorMixSpace = 'srgb',
 ): string {
   const c1 = percentage != null ? `${color1} ${percentage}%` : color1;
   return `color-mix(in ${colorSpace}, ${c1}, ${color2})`;
@@ -175,7 +175,7 @@ export function lightDark(lightColor: string, darkColor: string): string {
 export function alpha(
   colorValue: string,
   opacity: number,
-  colorSpace: ColorMixSpace = 'srgb'
+  colorSpace: ColorMixSpace = 'srgb',
 ): string {
   const percentage = Math.round(opacity * 100);
   return `color-mix(in ${colorSpace}, ${colorValue} ${percentage}%, transparent)`;

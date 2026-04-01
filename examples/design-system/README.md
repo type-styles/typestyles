@@ -6,11 +6,11 @@ Framework-agnostic design tokens and recipes used by the docs and example apps.
 
 Tokens are grouped for clarity; recipes consume the flat `designTokens` object (unchanged ergonomics).
 
-| Export | Role | CSS namespaces |
-| --- | --- | --- |
+| Export                  | Role                                                     | CSS namespaces                                                          |
+| ----------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `designPrimitiveTokens` | Spacing, radii, typography scale, shadows, motion curves | `space`, `radius`, `font`, `shadow`, `duration`, `easing`, `transition` |
-| `designSemanticTokens` | Product colors, syntax palette, docs semantics | `color`, `codeSyntax`, `doc` |
-| `designComponentTokens` | Per-component surfaces (code blocks today) | `codeBlock` |
+| `designSemanticTokens`  | Product colors, syntax palette, docs semantics           | `color`, `codeSyntax`, `doc`                                            |
+| `designComponentTokens` | Per-component surfaces (code blocks today)               | `codeBlock`                                                             |
 
 **`doc`** maps prose, nav, table, callout, and code-shell roles to `var(--color-*)`. Override `--doc-*` in a theme to retune docs chrome without touching every recipe.
 
@@ -22,12 +22,12 @@ Tokens are grouped for clarity; recipes consume the flat `designTokens` object (
 
 First-class theme classes (all are strings you add to a root element, typically `<html>`):
 
-| Export | Class | Purpose |
-| --- | --- | --- |
-| `lightThemeClass` | `theme-ds-light` | Explicit light palette + light syntax (matches `:root` defaults) |
-| `darkThemeClass` | `theme-ds-dark` | Default dark `color` tokens + dark syntax |
-| `highContrastLightThemeClass` | `theme-ds-hc-light` | Stronger borders and body contrast on light surfaces |
-| `highContrastDarkThemeClass` | `theme-ds-hc-dark` | Stronger borders and body contrast on dark surfaces |
+| Export                        | Class               | Purpose                                                          |
+| ----------------------------- | ------------------- | ---------------------------------------------------------------- |
+| `lightThemeClass`             | `theme-ds-light`    | Explicit light palette + light syntax (matches `:root` defaults) |
+| `darkThemeClass`              | `theme-ds-dark`     | Default dark `color` tokens + dark syntax                        |
+| `highContrastLightThemeClass` | `theme-ds-hc-light` | Stronger borders and body contrast on light surfaces             |
+| `highContrastDarkThemeClass`  | `theme-ds-hc-dark`  | Stronger borders and body contrast on dark surfaces              |
 
 Strip conflicting classes before applying another (the docs app keeps a fixed list for palette/mode switching).
 
@@ -125,20 +125,20 @@ import '@examples/design-system/codeHighlight';
 
 ### Semantic tokens (`codeSyntax`)
 
-| Token | Meaning |
-| --- | --- |
-| `base` | Default foreground |
-| `keyword` | Keywords, types, `language_*` |
-| `title` | Titles, class names, function names |
-| `attr` | Attributes, numbers, operators, variables, selectors |
-| `string` | Strings, regexps |
-| `builtIn` | Built-ins, symbols |
-| `comment` | Comments, doc formulas |
-| `name` | XML tags, pseudo-selectors |
-| `section` | Headings |
-| `bullet` | List bullets |
-| `addition` / `additionBg` | Diff additions (foreground / wash) |
-| `deletion` / `deletionBg` | Diff deletions (foreground / wash) |
+| Token                     | Meaning                                              |
+| ------------------------- | ---------------------------------------------------- |
+| `base`                    | Default foreground                                   |
+| `keyword`                 | Keywords, types, `language_*`                        |
+| `title`                   | Titles, class names, function names                  |
+| `attr`                    | Attributes, numbers, operators, variables, selectors |
+| `string`                  | Strings, regexps                                     |
+| `builtIn`                 | Built-ins, symbols                                   |
+| `comment`                 | Comments, doc formulas                               |
+| `name`                    | XML tags, pseudo-selectors                           |
+| `section`                 | Headings                                             |
+| `bullet`                  | List bullets                                         |
+| `addition` / `additionBg` | Diff additions (foreground / wash)                   |
+| `deletion` / `deletionBg` | Diff deletions (foreground / wash)                   |
 
 Values default to the docs site oklch ramps (`codeSyntaxLightValues`). Dark mode: override `--codeSyntax-*` in your theme class (the docs app merges `codeSyntaxDarkValues` into `theme-docs-dark`).
 
@@ -161,14 +161,14 @@ Long-form markdown helpers live in `proseContent` from `@examples/design-system`
 
 Covered primitives:
 
-| Primitive | Markdown / HTML | Notes |
-| --- | --- | --- |
-| **Blockquote** | `> …` | Tinted panel + accent border |
-| **`kbd`** | `<kbd>Ctrl</kbd>` | Keyboard cap styling |
-| **Badge** | `<span data-docs-badge>New</span>` | Optional `data-docs-badge-tone`: `success`, `warning`, `danger`, `info` |
-| **Table** | GFM tables | For wide tables wrap with `<div class="…proseContent('tableWrap')">` |
-| **Divider** | `---` → `<hr>` | Themed horizontal rule |
-| **Heading links** | `h1`–`h6` | Apps can inject `<a data-prose-heading-anchor>` permalinks (see docs site) |
+| Primitive         | Markdown / HTML                    | Notes                                                                      |
+| ----------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| **Blockquote**    | `> …`                              | Tinted panel + accent border                                               |
+| **`kbd`**         | `<kbd>Ctrl</kbd>`                  | Keyboard cap styling                                                       |
+| **Badge**         | `<span data-docs-badge>New</span>` | Optional `data-docs-badge-tone`: `success`, `warning`, `danger`, `info`    |
+| **Table**         | GFM tables                         | For wide tables wrap with `<div class="…proseContent('tableWrap')">`       |
+| **Divider**       | `---` → `<hr>`                     | Themed horizontal rule                                                     |
+| **Heading links** | `h1`–`h6`                          | Apps can inject `<a data-prose-heading-anchor>` permalinks (see docs site) |
 
 **Docs site** composes `proseContent('root')` with site overrides and merges `designColorDarkValues` into the dark theme so `--color-*` tracks the shell.
 

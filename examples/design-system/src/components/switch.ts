@@ -36,4 +36,3 @@ export const switchStyles = styles.create('switch', {
     fontSize: t.fontSize.md,
   },
 });
-

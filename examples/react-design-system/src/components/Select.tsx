@@ -21,7 +21,12 @@ export type SelectProps = Omit<ComponentProps<typeof AriaSelect>, 'children'> & 
   placeholder?: string;
 };
 
-export function Select({ label, options, placeholder = 'Select…', ...props }: SelectProps): JSX.Element {
+export function Select({
+  label,
+  options,
+  placeholder = 'Select…',
+  ...props
+}: SelectProps): JSX.Element {
   return (
     <AriaSelect {...props} className={select('root')}>
       {label ? <Label className={select('label')}>{label}</Label> : null}

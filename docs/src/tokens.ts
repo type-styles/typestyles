@@ -26,7 +26,7 @@ export type DocsColorMode = 'light' | 'dark' | 'system';
 
 export function getDocsAppearanceClass(
   palette: DesignPaletteId,
-  mode: DocsColorMode
+  mode: DocsColorMode,
 ): { className: string; dataMode: 'light' | 'dark' | undefined } {
   const theme = docsThemeByPalette[palette] ?? defaultTheme;
   return {

@@ -56,8 +56,12 @@ export function createComponent<S extends string, V extends SlotVariantDefinitio
 ): SlotComponentFunction<S, V>;
 export function createComponent(
   namespace: string,
-  config: ComponentConfig<VariantDefinitions> | SlotComponentConfig<string, SlotVariantDefinitions<string>>,
-): ComponentFunction<VariantDefinitions> | SlotComponentFunction<string, SlotVariantDefinitions<string>> {
+  config:
+    | ComponentConfig<VariantDefinitions>
+    | SlotComponentConfig<string, SlotVariantDefinitions<string>>,
+):
+  | ComponentFunction<VariantDefinitions>
+  | SlotComponentFunction<string, SlotVariantDefinitions<string>> {
   if ('slots' in config) {
     return createSlotComponent(
       namespace,
@@ -78,7 +82,7 @@ function createSingleComponent<V extends VariantDefinitions>(
     if (registeredNamespaces.has(namespace)) {
       console.warn(
         `[typestyles] styles.component('${namespace}', ...) called more than once. ` +
-          `This will cause class name collisions. Each namespace should be unique.`
+          `This will cause class name collisions. Each namespace should be unique.`,
       );
     }
   }
@@ -112,7 +116,7 @@ function createSingleComponent<V extends VariantDefinitions>(
       const className = buildComponentClassName(namespace, `compound-${index}`, cv.style);
       compoundClassByIndex[index] = className;
       rules.push(...serializeStyle(`.${className}`, cv.style));
-    }
+    },
   );
 
   insertRules(rules);
@@ -145,36 +149,33 @@ function createSingleComponent<V extends VariantDefinitions>(
     }
 
     // Apply compound variant classes
-    (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
-      (cv, index) => {
-        const matches = Object.entries(cv.variants).every(([k, expected]) => {
-          const options = (variants as Record<string, Record<string, CSSProperties>>)[k];
-          if (!options) return false;
+    (
+      compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>
+    ).forEach((cv, index) => {
+      const matches = Object.entries(cv.variants).every(([k, expected]) => {
+        const options = (variants as Record<string, Record<string, CSSProperties>>)[k];
+        if (!options) return false;
 
-          const selected = normalizeSelection(resolvedSelections[k], options);
-          if (selected == null) return false;
+        const selected = normalizeSelection(resolvedSelections[k], options);
+        if (selected == null) return false;
 
-          if (Array.isArray(expected)) {
-            return expected.some((value) => normalizeSelection(value, options) === selected);
-          }
-
-          return normalizeSelection(expected, options) === selected;
-        });
-        if (matches) {
-          const cn = compoundClassByIndex[index];
-          if (cn) classes.push(cn);
+        if (Array.isArray(expected)) {
+          return expected.some((value) => normalizeSelection(value, options) === selected);
         }
+
+        return normalizeSelection(expected, options) === selected;
+      });
+      if (matches) {
+        const cn = compoundClassByIndex[index];
+        if (cn) classes.push(cn);
       }
-    );
+    });
 
     return classes.join(' ');
   }) as ComponentFunction<V>;
 }
 
-function normalizeSelection(
-  value: unknown,
-  options: Record<string, unknown>,
-): string | undefined {
+function normalizeSelection(value: unknown, options: Record<string, unknown>): string | undefined {
   if (value == null) return undefined;
 
   if (typeof value === 'boolean') {
@@ -192,14 +193,20 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
   namespace: string,
   config: SlotComponentConfig<S, V>,
 ): SlotComponentFunction<S, V> {
-  const { slots, base = {}, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
+  const {
+    slots,
+    base = {},
+    variants = {} as V,
+    compoundVariants = [],
+    defaultVariants = {},
+  } = config;
 
   // Development-mode duplicate detection
   if (process.env.NODE_ENV !== 'production') {
     if (registeredNamespaces.has(namespace)) {
       console.warn(
         `[typestyles] styles.component('${namespace}', ...) called more than once. ` +
-          `This will cause class name collisions. Each namespace should be unique.`
+          `This will cause class name collisions. Each namespace should be unique.`,
       );
     }
   }
@@ -216,7 +223,9 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
 
   const variantClassByKey: Record<string, string> = {};
   for (const [dimension, options] of Object.entries(variants)) {
-    for (const [option, slotStyles] of Object.entries(options as Record<string, Record<string, CSSProperties>>)) {
+    for (const [option, slotStyles] of Object.entries(
+      options as Record<string, Record<string, CSSProperties>>,
+    )) {
       for (const [slot, properties] of Object.entries(slotStyles)) {
         const segment = `${slot}-${dimension}-${option}`;
         const className = buildComponentClassName(namespace, segment, properties);
@@ -227,24 +236,26 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
   }
 
   const slotCompoundClassByKey: Record<string, string> = {};
-  (compoundVariants as Array<{ variants: Record<string, unknown>; style: Record<string, CSSProperties> }>).forEach(
-    (cv, index) => {
-      for (const [slot, properties] of Object.entries(cv.style)) {
-        const segment = `${slot}-compound-${index}`;
-        const className = buildComponentClassName(namespace, segment, properties);
-        slotCompoundClassByKey[`${slot}::${index}`] = className;
-        rules.push(...serializeStyle(`.${className}`, properties));
-      }
+  (
+    compoundVariants as Array<{
+      variants: Record<string, unknown>;
+      style: Record<string, CSSProperties>;
+    }>
+  ).forEach((cv, index) => {
+    for (const [slot, properties] of Object.entries(cv.style)) {
+      const segment = `${slot}-compound-${index}`;
+      const className = buildComponentClassName(namespace, segment, properties);
+      slotCompoundClassByKey[`${slot}::${index}`] = className;
+      rules.push(...serializeStyle(`.${className}`, properties));
     }
-  );
+  });
 
   insertRules(rules);
 
   return ((selections: Record<string, unknown> = {}) => {
-    const classes = Object.fromEntries((slots as readonly string[]).map((slot) => [slot, [] as string[]])) as Record<
-      string,
-      string[]
-    >;
+    const classes = Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [slot, [] as string[]]),
+    ) as Record<string, string[]>;
 
     const resolvedSelections: Record<string, unknown> = {};
     for (const [dimension, options] of Object.entries(variants)) {
@@ -273,33 +284,36 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
       }
     }
 
-    (compoundVariants as Array<{ variants: Record<string, unknown>; style: Record<string, CSSProperties> }>).forEach(
-      (cv, index) => {
-        const matches = Object.entries(cv.variants).every(([k, expected]) => {
-          const options = (variants as Record<string, Record<string, unknown>>)[k];
-          if (!options) return false;
+    (
+      compoundVariants as Array<{
+        variants: Record<string, unknown>;
+        style: Record<string, CSSProperties>;
+      }>
+    ).forEach((cv, index) => {
+      const matches = Object.entries(cv.variants).every(([k, expected]) => {
+        const options = (variants as Record<string, Record<string, unknown>>)[k];
+        if (!options) return false;
 
-          const selected = normalizeSelection(resolvedSelections[k], options);
-          if (selected == null) return false;
+        const selected = normalizeSelection(resolvedSelections[k], options);
+        if (selected == null) return false;
 
-          if (Array.isArray(expected)) {
-            return expected.some((value) => normalizeSelection(value, options) === selected);
-          }
-
-          return normalizeSelection(expected, options) === selected;
-        });
-
-        if (!matches) return;
-
-        for (const slot of Object.keys(cv.style)) {
-          const cn = slotCompoundClassByKey[`${slot}::${index}`];
-          if (cn && classes[slot]) classes[slot].push(cn);
+        if (Array.isArray(expected)) {
+          return expected.some((value) => normalizeSelection(value, options) === selected);
         }
+
+        return normalizeSelection(expected, options) === selected;
+      });
+
+      if (!matches) return;
+
+      for (const slot of Object.keys(cv.style)) {
+        const cn = slotCompoundClassByKey[`${slot}::${index}`];
+        if (cn && classes[slot]) classes[slot].push(cn);
       }
-    );
+    });
 
     return Object.fromEntries(
-      (slots as readonly string[]).map((slot) => [slot, classes[slot].join(' ')])
+      (slots as readonly string[]).map((slot) => [slot, classes[slot].join(' ')]),
     ) as Record<S, string>;
   }) as SlotComponentFunction<S, V>;
 }

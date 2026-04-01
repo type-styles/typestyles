@@ -31,7 +31,9 @@ function memberExpressionToJsxName(
 
   if (t.isMemberExpression(expression) && !expression.computed) {
     const left = memberExpressionToJsxName(expression.object as t.Expression);
-    const right = t.isIdentifier(expression.property) ? t.jsxIdentifier(expression.property.name) : null;
+    const right = t.isIdentifier(expression.property)
+      ? t.jsxIdentifier(expression.property.name)
+      : null;
     if (!left || !right) return null;
     return t.jsxMemberExpression(left, right);
   }
@@ -67,12 +69,19 @@ function addWarning(warnings: MigrationWarning[], message: string, nodeName?: st
   warnings.push({ message, nodeName });
 }
 
-function createMergedClassExpression(existing: t.Expression, classNameIdentifier: t.Identifier): t.Expression {
+function createMergedClassExpression(
+  existing: t.Expression,
+  classNameIdentifier: t.Identifier,
+): t.Expression {
   return t.callExpression(
     t.memberExpression(
-      t.callExpression(t.memberExpression(t.arrayExpression([existing, classNameIdentifier]), t.identifier('filter')), [
-        t.identifier('Boolean'),
-      ]),
+      t.callExpression(
+        t.memberExpression(
+          t.arrayExpression([existing, classNameIdentifier]),
+          t.identifier('filter'),
+        ),
+        [t.identifier('Boolean')],
+      ),
       t.identifier('join'),
     ),
     [t.stringLiteral(' ')],
@@ -109,7 +118,10 @@ function updateClassNameAttribute(
 
   if (t.isJSXExpressionContainer(existingAttr.value)) {
     existingAttr.value = t.jsxExpressionContainer(
-      createMergedClassExpression(existingAttr.value.expression as t.Expression, classNameIdentifier),
+      createMergedClassExpression(
+        existingAttr.value.expression as t.Expression,
+        classNameIdentifier,
+      ),
     );
   }
 }
@@ -169,7 +181,9 @@ function cleanupUnusedImports(ast: t.File): void {
 
       if (unusedLocals.length === 0) return;
 
-      path.node.specifiers = path.node.specifiers.filter((specifier) => !unusedLocals.includes(specifier));
+      path.node.specifiers = path.node.specifiers.filter(
+        (specifier) => !unusedLocals.includes(specifier),
+      );
       if (path.node.specifiers.length === 0) {
         path.remove();
       }
@@ -177,7 +191,9 @@ function cleanupUnusedImports(ast: t.File): void {
   });
 }
 
-function isOnlyJsxReferences(binding: NodePath<t.VariableDeclarator>['scope']['bindings'][string]): boolean {
+function isOnlyJsxReferences(
+  binding: NodePath<t.VariableDeclarator>['scope']['bindings'][string],
+): boolean {
   return binding.referencePaths.every((referencePath) => {
     const parent = referencePath.parentPath;
     if (!parent) return false;
@@ -203,7 +219,10 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
 
   traverse(ast, {
     ImportDeclaration(path) {
-      if (path.node.source.value === 'styled-components' || path.node.source.value === '@emotion/styled') {
+      if (
+        path.node.source.value === 'styled-components' ||
+        path.node.source.value === '@emotion/styled'
+      ) {
         for (const specifier of path.node.specifiers) {
           if (t.isImportDefaultSpecifier(specifier)) {
             styledNames.add(specifier.local.name);
@@ -217,7 +236,10 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
         }
       }
 
-      if (path.node.source.value === '@emotion/react' || path.node.source.value === '@emotion/css') {
+      if (
+        path.node.source.value === '@emotion/react' ||
+        path.node.source.value === '@emotion/css'
+      ) {
         for (const specifier of path.node.specifiers) {
           if (
             t.isImportSpecifier(specifier) &&
@@ -272,11 +294,7 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
         }
 
         if (!isOnlyJsxReferences(binding)) {
-          addWarning(
-            warnings,
-            'Skipped styled component with non-JSX references.',
-            variableName,
-          );
+          addWarning(warnings, 'Skipped styled component with non-JSX references.', variableName);
           return;
         }
 

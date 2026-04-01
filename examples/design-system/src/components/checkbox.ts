@@ -29,4 +29,3 @@ export const checkbox = styles.create('checkbox', {
     fontSize: t.fontSize.md,
   },
 });
-

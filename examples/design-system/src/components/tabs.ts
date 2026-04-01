@@ -32,4 +32,3 @@ export const tabs = styles.create('tabs', {
     border: `1px solid ${t.color.border.default}`,
   },
 });
-

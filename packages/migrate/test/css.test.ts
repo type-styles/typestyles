@@ -76,10 +76,7 @@ describe('cssToObjectExpression', () => {
 
   it('converts nested rules (selectors) to nested objects', () => {
     const warnings: MigrationWarning[] = [];
-    const result = cssToObjectExpression(
-      'color: red; &:hover { opacity: 0.8; }',
-      warnings,
-    );
+    const result = cssToObjectExpression('color: red; &:hover { opacity: 0.8; }', warnings);
     expect(result).not.toBeNull();
     const obj = toPlainObject(result!);
     expect(obj.color).toBe('red');

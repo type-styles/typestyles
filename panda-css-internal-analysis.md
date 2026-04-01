@@ -4,21 +4,21 @@ Internal planning notes for product/docs strategy. This file is intentionally ou
 
 ## Feature Parity Matrix
 
-| Panda CSS concept | Panda API | TypeStyles equivalent | Status |
-| --- | --- | --- | --- |
-| Single class from style object | `css({...})` | `styles.class(name, {...})` or `styles.hashClass({...})` | Full |
-| Variant recipes | `cva({...})` / `defineRecipe({...})` | `styles.component(name, {...})` | Full |
-| Compound variants | `compoundVariants` | `compoundVariants` in `styles.component` | Full |
-| Design tokens | `theme.tokens` | `tokens.create(namespace, values)` | Full |
-| Theme overrides | semantic token conditions / themes | `tokens.createTheme(name, overrides)` | Partial (manual semantics) |
-| Atomic utilities | generated utility props | `defineProperties` + `createProps` from `@typestyles/props` | Full |
-| Conditional utilities (breakpoints/selectors) | `conditions` | `conditions` in `defineProperties` | Full |
-| Global CSS | `globalCss` config | `global.style(selector, style)` | Full |
-| Preflight/reset | `preflight` config | custom reset via `global.style` | Partial (no built-in preflight preset) |
-| Slot recipes / multipart | `sva({...})` | `styles.component` with `slots` | Full |
-| Build-time extraction | Panda CLI/codegen/extract | runtime + SSR today; extraction is planned | Gap today |
-| JSX style factory (`styled-system/jsx`) | `Box`, `Stack`, `styled(...)` | standard JSX + `className` composition | Partial (no first-party JSX factory package) |
-| Hashing mode config | `hash` in config | `styles.hashClass` per class | Partial (no project-wide hash mode toggle) |
+| Panda CSS concept                             | Panda API                            | TypeStyles equivalent                                       | Status                                       |
+| --------------------------------------------- | ------------------------------------ | ----------------------------------------------------------- | -------------------------------------------- |
+| Single class from style object                | `css({...})`                         | `styles.class(name, {...})` or `styles.hashClass({...})`    | Full                                         |
+| Variant recipes                               | `cva({...})` / `defineRecipe({...})` | `styles.component(name, {...})`                             | Full                                         |
+| Compound variants                             | `compoundVariants`                   | `compoundVariants` in `styles.component`                    | Full                                         |
+| Design tokens                                 | `theme.tokens`                       | `tokens.create(namespace, values)`                          | Full                                         |
+| Theme overrides                               | semantic token conditions / themes   | `tokens.createTheme(name, overrides)`                       | Partial (manual semantics)                   |
+| Atomic utilities                              | generated utility props              | `defineProperties` + `createProps` from `@typestyles/props` | Full                                         |
+| Conditional utilities (breakpoints/selectors) | `conditions`                         | `conditions` in `defineProperties`                          | Full                                         |
+| Global CSS                                    | `globalCss` config                   | `global.style(selector, style)`                             | Full                                         |
+| Preflight/reset                               | `preflight` config                   | custom reset via `global.style`                             | Partial (no built-in preflight preset)       |
+| Slot recipes / multipart                      | `sva({...})`                         | `styles.component` with `slots`                             | Full                                         |
+| Build-time extraction                         | Panda CLI/codegen/extract            | runtime + SSR today; extraction is planned                  | Gap today                                    |
+| JSX style factory (`styled-system/jsx`)       | `Box`, `Stack`, `styled(...)`        | standard JSX + `className` composition                      | Partial (no first-party JSX factory package) |
+| Hashing mode config                           | `hash` in config                     | `styles.hashClass` per class                                | Partial (no project-wide hash mode toggle)   |
 
 ## Panda Migration Plan (Internal)
 
@@ -50,11 +50,13 @@ Internal planning notes for product/docs strategy. This file is intentionally ou
 Complex components often have multiple parts ("slots") that need to share one variant contract.
 
 Examples:
+
 - Tabs: `root`, `list`, `trigger`, `content`
 - Select: `root`, `control`, `icon`, `menu`, `option`
 - Accordion: `root`, `item`, `trigger`, `content`
 
 Without a slot-level abstraction, teams usually end up with:
+
 - duplicated variant logic per slot
 - inconsistent defaults between slots
 - manual string composition in component code
@@ -98,11 +100,13 @@ Chosen approach: unify on one primitive, `styles.component`.
   - returns a slot class map
 
 Implemented class naming strategy:
+
 - base: `{ns}-{slot}`
 - variant: `{ns}-{slot}-{dimension}-{option}`
 - compound: `{ns}-{slot}-compound-{index}`
 
 Implemented output behavior:
+
 - always returns every declared slot key
 - slot with no matching styles resolves to `''`
 

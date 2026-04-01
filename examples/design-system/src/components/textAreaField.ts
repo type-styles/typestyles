@@ -38,4 +38,3 @@ export const textAreaField = styles.create('text-area-field', {
     color: t.color.danger.default,
   },
 });
-

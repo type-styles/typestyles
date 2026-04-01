@@ -35,10 +35,7 @@ function createTokenProxy<T extends TokenValues>(namespace: string): TokenRef<T>
  * color.primary  // "var(--color-primary)"
  * ```
  */
-export function createTokens<T extends TokenValues>(
-  namespace: string,
-  values: T
-): TokenRef<T> {
+export function createTokens<T extends TokenValues>(namespace: string, values: T): TokenRef<T> {
   registeredNamespaces.add(namespace);
 
   // Generate CSS custom property declarations
@@ -64,9 +61,7 @@ export function createTokens<T extends TokenValues>(
  * color.primary  // "var(--color-primary)"
  * ```
  */
-export function useTokens<T extends TokenValues = TokenValues>(
-  namespace: string
-): TokenRef<T> {
+export function useTokens<T extends TokenValues = TokenValues>(namespace: string): TokenRef<T> {
   if (
     process.env.NODE_ENV !== 'production' &&
     registeredNamespaces.size > 0 &&
@@ -74,7 +69,7 @@ export function useTokens<T extends TokenValues = TokenValues>(
   ) {
     console.warn(
       `[typestyles] tokens.use('${namespace}') references a namespace that hasn't been created yet. ` +
-        `Make sure tokens.create('${namespace}', ...) is called before using these tokens.`
+        `Make sure tokens.create('${namespace}', ...) is called before using these tokens.`,
     );
   }
 

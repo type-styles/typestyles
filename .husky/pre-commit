@@ -5,3 +5,5 @@ if [ "$branch" = "main" ]; then
   echo "   Please create a feature branch and open a pull request."
   exit 1
 fi
+
+npx lint-staged

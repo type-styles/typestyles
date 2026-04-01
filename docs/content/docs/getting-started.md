@@ -32,12 +32,12 @@ const button = styles.create('button', {
 
 ## Which API should I use?
 
-| You want to... | Use | Why |
-| --- | --- | --- |
-| Create a simple named style group (`base`, `primary`, `large`) | `styles.create` | Lowest ceremony and very readable class output |
+| You want to...                                                                        | Use                | Why                                                                          |
+| ------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------- |
+| Create a simple named style group (`base`, `primary`, `large`)                        | `styles.create`    | Lowest ceremony and very readable class output                               |
 | Build typed variant dimensions (`intent`, `size`, `tone`) with defaults and compounds | `styles.component` | First-class variant model: `variants`, `compoundVariants`, `defaultVariants` |
-| Make one standalone class from one style object | `styles.class` | Best for one-off reusable classes |
-| Compose multiple selectors/classes together | `styles.compose` | Reuse and merge style groups cleanly |
+| Make one standalone class from one style object                                       | `styles.class`     | Best for one-off reusable classes                                            |
+| Compose multiple selectors/classes together                                           | `styles.compose`   | Reuse and merge style groups cleanly                                         |
 
 Quick rule of thumb:
 

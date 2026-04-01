@@ -48,4 +48,3 @@ export const select = styles.create('select', {
     },
   },
 });
-

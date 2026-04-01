@@ -42,9 +42,7 @@ export function createVar(): CSSVarRef {
  * // → { '--ts-1': '#ff0099' }
  * ```
  */
-export function assignVars(
-  vars: Partial<Record<CSSVarRef, string>>
-): Record<string, string> {
+export function assignVars(vars: Partial<Record<CSSVarRef, string>>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [varRef, value] of Object.entries(vars)) {
     if (value == null) continue;

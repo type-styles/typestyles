@@ -15,4 +15,3 @@ export const link = styles.class('link', {
     borderRadius: t.radius.sm,
   },
 });
-

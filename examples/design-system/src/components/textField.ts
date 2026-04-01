@@ -37,4 +37,3 @@ export const textField = styles.create('text-field', {
     color: t.color.danger.default,
   },
 });
-

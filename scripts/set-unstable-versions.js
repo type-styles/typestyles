@@ -1,17 +1,15 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const workspaceRoot = path.resolve(__dirname, "..");
-const packagesDirectory = path.join(workspaceRoot, "packages");
+const workspaceRoot = path.resolve(__dirname, '..');
+const packagesDirectory = path.join(workspaceRoot, 'packages');
 
 const gitSha = process.env.GITHUB_SHA ?? process.argv[2];
 if (!gitSha) {
-  throw new Error(
-    "Missing commit SHA. Provide GITHUB_SHA or pass a SHA as the first argument.",
-  );
+  throw new Error('Missing commit SHA. Provide GITHUB_SHA or pass a SHA as the first argument.');
 }
 
 const shortSha = gitSha.slice(0, 12).toLowerCase();
@@ -23,12 +21,12 @@ const packageDirEntries = await fs.readdir(packagesDirectory, {
 
 const packageJsonPaths = packageDirEntries
   .filter((entry) => entry.isDirectory())
-  .map((entry) => path.join(packagesDirectory, entry.name, "package.json"));
+  .map((entry) => path.join(packagesDirectory, entry.name, 'package.json'));
 
 const packageInfos = [];
 
 for (const packageJsonPath of packageJsonPaths) {
-  const raw = await fs.readFile(packageJsonPath, "utf8");
+  const raw = await fs.readFile(packageJsonPath, 'utf8');
   const pkg = JSON.parse(raw);
 
   if (!pkg.private) {
@@ -39,40 +37,38 @@ for (const packageJsonPath of packageJsonPaths) {
   }
 }
 
-const workspacePackageNames = new Set(
-  packageInfos.map((info) => info.packageJson.name),
-);
+const workspacePackageNames = new Set(packageInfos.map((info) => info.packageJson.name));
 
 for (const info of packageInfos) {
   info.packageJson.version = unstableVersion;
 }
 
 const dependencyFields = [
-  "dependencies",
-  "devDependencies",
-  "peerDependencies",
-  "optionalDependencies",
+  'dependencies',
+  'devDependencies',
+  'peerDependencies',
+  'optionalDependencies',
 ];
 
 function convertWorkspaceRange(workspaceRange, resolvedVersion) {
-  if (workspaceRange === "workspace:*") {
+  if (workspaceRange === 'workspace:*') {
     return resolvedVersion;
   }
 
-  if (workspaceRange === "workspace:^") {
+  if (workspaceRange === 'workspace:^') {
     return `^${resolvedVersion}`;
   }
 
-  if (workspaceRange === "workspace:~") {
+  if (workspaceRange === 'workspace:~') {
     return `~${resolvedVersion}`;
   }
 
-  if (workspaceRange.startsWith("workspace:")) {
-    const remainder = workspaceRange.slice("workspace:".length);
-    if (remainder.startsWith("^")) {
+  if (workspaceRange.startsWith('workspace:')) {
+    const remainder = workspaceRange.slice('workspace:'.length);
+    if (remainder.startsWith('^')) {
       return `^${resolvedVersion}`;
     }
-    if (remainder.startsWith("~")) {
+    if (remainder.startsWith('~')) {
       return `~${resolvedVersion}`;
     }
     return resolvedVersion;
@@ -88,18 +84,13 @@ for (const info of packageInfos) {
       continue;
     }
 
-    for (const [dependencyName, dependencyRange] of Object.entries(
-      dependencyMap,
-    )) {
+    for (const [dependencyName, dependencyRange] of Object.entries(dependencyMap)) {
       if (
-        typeof dependencyRange === "string" &&
-        dependencyRange.startsWith("workspace:") &&
+        typeof dependencyRange === 'string' &&
+        dependencyRange.startsWith('workspace:') &&
         workspacePackageNames.has(dependencyName)
       ) {
-        dependencyMap[dependencyName] = convertWorkspaceRange(
-          dependencyRange,
-          unstableVersion,
-        );
+        dependencyMap[dependencyName] = convertWorkspaceRange(dependencyRange, unstableVersion);
       }
     }
   }
@@ -107,14 +98,8 @@ for (const info of packageInfos) {
 
 await Promise.all(
   packageInfos.map(({ path: packageJsonPath, packageJson }) =>
-    fs.writeFile(
-      packageJsonPath,
-      `${JSON.stringify(packageJson, null, 2)}\n`,
-      "utf8",
-    ),
+    fs.writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`, 'utf8'),
   ),
 );
 
-console.log(
-  `Set ${packageInfos.length} packages to unstable version ${unstableVersion}.`,
-);
+console.log(`Set ${packageInfos.length} packages to unstable version ${unstableVersion}.`);

@@ -95,7 +95,10 @@ export type KeyframeStops = Record<string, CSSProperties>;
 type VariantDimensions = Record<string, Record<string, unknown>>;
 export type VariantDefinitions = Record<string, Record<string, CSSProperties>>;
 export type SlotStyles<S extends string> = Partial<Record<S, CSSProperties>>;
-export type SlotVariantDefinitions<S extends string> = Record<string, Record<string, SlotStyles<S>>>;
+export type SlotVariantDefinitions<S extends string> = Record<
+  string,
+  Record<string, SlotStyles<S>>
+>;
 
 type VariantOptionKey<V extends VariantDimensions, K extends keyof V> = Extract<keyof V[K], string>;
 
@@ -170,8 +173,9 @@ export type CSSVarRef = `var(--${string})`;
  * // { intent?: 'primary' | 'ghost'; size?: 'sm' | 'lg' }
  * ```
  */
-export type ComponentVariants<T> =
-  T extends (selections?: ComponentSelections<infer V>) => unknown ? { [K in keyof V]?: keyof V[K] } : never;
+export type ComponentVariants<T> = T extends (selections?: ComponentSelections<infer V>) => unknown
+  ? { [K in keyof V]?: keyof V[K] }
+  : never;
 
 /**
  * Font face property declarations.

@@ -85,25 +85,17 @@ describe('mix', () => {
   });
 
   it('supports custom color spaces', () => {
-    expect(mix('red', 'blue', 50, 'oklch')).toBe(
-      'color-mix(in oklch, red 50%, blue)'
-    );
+    expect(mix('red', 'blue', 50, 'oklch')).toBe('color-mix(in oklch, red 50%, blue)');
   });
 
   it('works with token references (var() strings)', () => {
     const tokenRef = 'var(--color-primary)';
-    expect(mix(tokenRef, 'white', 20)).toBe(
-      'color-mix(in srgb, var(--color-primary) 20%, white)'
-    );
+    expect(mix(tokenRef, 'white', 20)).toBe('color-mix(in srgb, var(--color-primary) 20%, white)');
   });
 
   it('supports all modern color spaces', () => {
-    expect(mix('red', 'blue', 50, 'oklab')).toBe(
-      'color-mix(in oklab, red 50%, blue)'
-    );
-    expect(mix('red', 'blue', 50, 'display-p3')).toBe(
-      'color-mix(in display-p3, red 50%, blue)'
-    );
+    expect(mix('red', 'blue', 50, 'oklab')).toBe('color-mix(in oklab, red 50%, blue)');
+    expect(mix('red', 'blue', 50, 'display-p3')).toBe('color-mix(in display-p3, red 50%, blue)');
   });
 });
 
@@ -113,40 +105,30 @@ describe('lightDark', () => {
   });
 
   it('works with token references', () => {
-    expect(lightDark('var(--light)', 'var(--dark)')).toBe(
-      'light-dark(var(--light), var(--dark))'
-    );
+    expect(lightDark('var(--light)', 'var(--dark)')).toBe('light-dark(var(--light), var(--dark))');
   });
 });
 
 describe('alpha', () => {
   it('adjusts opacity using color-mix with transparent', () => {
-    expect(alpha('red', 0.5)).toBe(
-      'color-mix(in srgb, red 50%, transparent)'
-    );
+    expect(alpha('red', 0.5)).toBe('color-mix(in srgb, red 50%, transparent)');
   });
 
   it('works with token references', () => {
     expect(alpha('var(--color-primary)', 0.2)).toBe(
-      'color-mix(in srgb, var(--color-primary) 20%, transparent)'
+      'color-mix(in srgb, var(--color-primary) 20%, transparent)',
     );
   });
 
   it('supports custom color spaces', () => {
-    expect(alpha('#0066ff', 0.8, 'oklch')).toBe(
-      'color-mix(in oklch, #0066ff 80%, transparent)'
-    );
+    expect(alpha('#0066ff', 0.8, 'oklch')).toBe('color-mix(in oklch, #0066ff 80%, transparent)');
   });
 
   it('handles full opacity', () => {
-    expect(alpha('red', 1)).toBe(
-      'color-mix(in srgb, red 100%, transparent)'
-    );
+    expect(alpha('red', 1)).toBe('color-mix(in srgb, red 100%, transparent)');
   });
 
   it('handles zero opacity', () => {
-    expect(alpha('red', 0)).toBe(
-      'color-mix(in srgb, red 0%, transparent)'
-    );
+    expect(alpha('red', 0)).toBe('color-mix(in srgb, red 0%, transparent)');
   });
 });

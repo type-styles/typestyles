@@ -163,10 +163,11 @@ export function createStyles(
   // Return the selector function
   const selectorFn = (...variants: (string | false | null | undefined)[]): string => {
     const filtered = variants.filter(Boolean);
-    const classes = withBase
-      ? ['base', ...filtered.filter((v) => v !== 'base')]
-      : filtered;
-    return classes.map((v) => variantToClass[v as string] ?? '').filter(Boolean).join(' ');
+    const classes = withBase ? ['base', ...filtered.filter((v) => v !== 'base')] : filtered;
+    return classes
+      .map((v) => variantToClass[v as string] ?? '')
+      .filter(Boolean)
+      .join(' ');
   };
 
   return selectorFn as SelectorFunction<string>;
@@ -267,12 +268,17 @@ export function createStylesWithUtils<U extends StyleUtils>(utils: U): StylesWit
       const transformedVariants = Object.fromEntries(
         Object.entries(variants).map(([variant, properties]) => [variant, apply(properties)]),
       );
-      return createStyles(namespace, apply(baseOrDefinitions as CSSPropertiesWithUtils<U>), transformedVariants);
+      return createStyles(
+        namespace,
+        apply(baseOrDefinitions as CSSPropertiesWithUtils<U>),
+        transformedVariants,
+      );
     }
 
     const transformedDefinitions = Object.fromEntries(
       Object.entries(
-        baseOrDefinitions as StyleDefinitionsWithUtils<U> & Record<string, CSSPropertiesWithUtils<U>>,
+        baseOrDefinitions as StyleDefinitionsWithUtils<U> &
+          Record<string, CSSPropertiesWithUtils<U>>,
       ).map(([variant, properties]) => [variant, apply(properties)]),
     ) as StyleDefinitions & Record<string, CSSProperties>;
 
@@ -329,10 +335,7 @@ function assignStyleEntry(target: CSSProperties, key: string, value: unknown): v
   if (isObject(value)) {
     const existing = targetRecord[key];
     if (isObject(existing)) {
-      targetRecord[key] = mergeStyleObjects(
-        existing as CSSProperties,
-        value as CSSProperties,
-      );
+      targetRecord[key] = mergeStyleObjects(existing as CSSProperties, value as CSSProperties);
       return;
     }
     targetRecord[key] = value;

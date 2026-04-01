@@ -51,11 +51,9 @@ describe('createComponent', () => {
     });
 
     expect(btn({ intent: 'primary', size: 'sm' })).toBe(
-      'vbtn-base vbtn-intent-primary vbtn-size-sm'
+      'vbtn-base vbtn-intent-primary vbtn-size-sm',
     );
-    expect(btn({ intent: 'ghost', size: 'lg' })).toBe(
-      'vbtn-base vbtn-intent-ghost vbtn-size-lg'
-    );
+    expect(btn({ intent: 'ghost', size: 'lg' })).toBe('vbtn-base vbtn-intent-ghost vbtn-size-lg');
   });
 
   it('applies defaultVariants when selection is omitted', () => {

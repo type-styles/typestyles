@@ -19,8 +19,7 @@ function serializeDeclarations(properties: CSSProperties): string {
     if (prop.startsWith('&') || prop.startsWith('@')) continue;
 
     const kebabProp = toKebabCase(prop);
-    const serialized =
-      typeof value === 'number' ? (value === 0 ? '0' : value + 'px') : value;
+    const serialized = typeof value === 'number' ? (value === 0 ? '0' : value + 'px') : value;
     declarations.push(`${kebabProp}: ${serialized}`);
   }
 

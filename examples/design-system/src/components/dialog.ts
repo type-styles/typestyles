@@ -33,4 +33,3 @@ export const dialog = styles.create('dialog', {
     color: t.color.text.secondary,
   },
 });
-

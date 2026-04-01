@@ -50,6 +50,15 @@ export default defineConfig([
     loader: {
       '.ts': 'ts',
     },
-    external: ['typestyles', 'typestyles/build', 'next', 'webpack', 'node:fs/promises', 'node:path', 'node:url', 'node:module'],
+    external: [
+      'typestyles',
+      'typestyles/build',
+      'next',
+      'webpack',
+      'node:fs/promises',
+      'node:path',
+      'node:url',
+      'node:module',
+    ],
   },
 ]);

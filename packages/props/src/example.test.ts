@@ -30,7 +30,7 @@ describe('real-world example', () => {
         shorthands: {
           p: ['padding'],
         },
-      })
+      }),
     );
 
     // Define component styles
@@ -63,7 +63,7 @@ describe('real-world example', () => {
         p: 4,
         fontSize: { sm: 'sm', md: 'base' },
         fontWeight: 'semibold',
-      })
+      }),
     );
 
     const className = primaryButton('base', 'primary');
@@ -103,7 +103,7 @@ describe('real-world example', () => {
             4: 'repeat(4, 1fr)',
           },
         },
-      })
+      }),
     );
 
     const gridContainer = layout({

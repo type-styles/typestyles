@@ -116,11 +116,11 @@ export const baseColorPalettes = Object.fromEntries(
   PALETTE_FAMILIES.map((family) => {
     const { h, cMax } = FAMILY_SPECS[family];
     return [family, buildScale(h, cMax)] as const;
-  })
+  }),
 ) as { readonly [K in PaletteFamily]: BaseColorPalette };
 
 export const basePaletteTokenValues = Object.fromEntries(
   PALETTE_FAMILIES.flatMap((family) =>
-    PALETTE_STEPS.map((step) => [`${family}-${step}`, baseColorPalettes[family][step]] as const)
-  )
+    PALETTE_STEPS.map((step) => [`${family}-${step}`, baseColorPalettes[family][step]] as const),
+  ),
 ) as Record<PaletteTokenKey, string>;

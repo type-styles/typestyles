@@ -28,7 +28,9 @@ export interface BuildTypestylesForNextOptions {
  * Extract TypeStyles CSS for a Next.js app (run from a script before `next build`, or in CI).
  * Loads each module path (relative to `root`) so side-effect registrations run, then writes CSS.
  */
-export async function buildTypestylesForNext(options: BuildTypestylesForNextOptions): Promise<void> {
+export async function buildTypestylesForNext(
+  options: BuildTypestylesForNextOptions,
+): Promise<void> {
   const { root, modules, cssOutFile, manifestOutFile, manifestCssPath } = options;
   const loaders = modules.map((mod) => {
     const abs = resolve(root, mod);

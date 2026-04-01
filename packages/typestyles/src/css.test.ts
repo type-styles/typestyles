@@ -168,6 +168,8 @@ describe('serializeStyle', () => {
     });
 
     expect(rules).toHaveLength(1);
-    expect(rules[0].css).toBe('.item[data-state="open"], .item[aria-expanded="true"] { opacity: 1; }');
+    expect(rules[0].css).toBe(
+      '.item[data-state="open"], .item[aria-expanded="true"] { opacity: 1; }',
+    );
   });
 });

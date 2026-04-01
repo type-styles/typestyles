@@ -57,11 +57,7 @@ const elevated = styles.create('elevated', {
 const isElevated = true;
 const isDark = false;
 
-const composed = styles.compose(
-  base,
-  isElevated && elevated,
-  isDark && 'dark-mode'
-);
+const composed = styles.compose(base, isElevated && elevated, isDark && 'dark-mode');
 
 composed('root'); // "base-root elevated-root"
 ```
@@ -104,7 +100,7 @@ const atoms = createProps(
       display: ['flex', 'block', 'grid'],
       gap: { 0: '0', 1: '4px', 2: '8px', 3: '16px' },
     },
-  })
+  }),
 );
 
 const card = styles.create('card', {
@@ -112,10 +108,7 @@ const card = styles.create('card', {
 });
 
 // Compose component styles with atomic utilities
-const flexCard = styles.compose(
-  card,
-  atoms({ display: 'flex', gap: 2 })
-);
+const flexCard = styles.compose(card, atoms({ display: 'flex', gap: 2 }));
 
 flexCard('base'); // "card-base atom-display-flex atom-gap-2"
 ```
@@ -141,14 +134,14 @@ const primaryButton = styles.compose(
   baseButton,
   styles.create('btn-primary', {
     root: { backgroundColor: '#0066ff', color: 'white' },
-  })
+  }),
 );
 
 const secondaryButton = styles.compose(
   baseButton,
   styles.create('btn-secondary', {
     root: { backgroundColor: '#e5e7eb', color: '#1f2937' },
-  })
+  }),
 );
 ```
 
@@ -164,10 +157,7 @@ const customCard = styles.create('custom-card', {
   },
 });
 
-const featureCard = styles.compose(
-  customCard,
-  atoms({ padding: 3, borderRadius: 2 })
-);
+const featureCard = styles.compose(customCard, atoms({ padding: 3, borderRadius: 2 }));
 ```
 
 ### Multi-Layer Composition

@@ -66,7 +66,8 @@ export const easingValues = {
 } as const;
 
 export const transitionValues = {
-  overlayFade: 'opacity var(--duration-slow) var(--easing-standard), visibility var(--duration-slow) var(--easing-standard)',
+  overlayFade:
+    'opacity var(--duration-slow) var(--easing-standard), visibility var(--duration-slow) var(--easing-standard)',
   panelEnter: 'opacity var(--duration-slow) var(--easing-emphasized)',
   backdrop: 'opacity var(--duration-slow) var(--easing-standard)',
   surfaceFast: 'background-color var(--duration-fast) var(--easing-standard)',

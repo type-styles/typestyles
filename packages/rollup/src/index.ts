@@ -82,7 +82,7 @@ export function extractNamespaces(code: string): {
  * as a starting integration there.
  */
 export default function typestylesRollupPlugin(
-  options: TypestylesRollupPluginOptions = {}
+  options: TypestylesRollupPluginOptions = {},
 ): Plugin {
   const { warnDuplicates = true, mode = 'runtime', extract, root = process.cwd() } = options;
   const moduleNamespaces = new Map<string, { keys: string[]; prefixes: string[] }>();
@@ -93,7 +93,10 @@ export default function typestylesRollupPlugin(
     transform(code, id) {
       // Disable typestyles runtime insertion in production bundles by replacing
       // compile-time constant checks in typestyles internals.
-      if ((mode === 'build' || mode === 'hybrid') && code.includes('__TYPESTYLES_RUNTIME_DISABLED__')) {
+      if (
+        (mode === 'build' || mode === 'hybrid') &&
+        code.includes('__TYPESTYLES_RUNTIME_DISABLED__')
+      ) {
         return {
           code: code.replace(/__TYPESTYLES_RUNTIME_DISABLED__/g, '"true"'),
           map: null,
@@ -115,7 +118,7 @@ export default function typestylesRollupPlugin(
               const ns = prefix.slice(1, -1);
               this.warn(
                 `Style namespace "${ns}" is also used in ${otherId}. ` +
-                  `Duplicate namespaces cause class name collisions.`
+                  `Duplicate namespaces cause class name collisions.`,
               );
             }
           }
@@ -142,7 +145,7 @@ export default function typestylesRollupPlugin(
         });
       } catch (error) {
         this.error(
-          `[typestyles] Failed to extract CSS: ${error instanceof Error ? error.message : String(error)}`
+          `[typestyles] Failed to extract CSS: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     },

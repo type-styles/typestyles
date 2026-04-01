@@ -16,7 +16,12 @@ export type DialogProps = {
   closeLabel?: string;
 };
 
-export function Dialog({ triggerLabel, title, description, closeLabel = 'Close' }: DialogProps): JSX.Element {
+export function Dialog({
+  triggerLabel,
+  title,
+  description,
+  closeLabel = 'Close',
+}: DialogProps): JSX.Element {
   return (
     <DialogTrigger>
       <Button intent="secondary">{triggerLabel}</Button>

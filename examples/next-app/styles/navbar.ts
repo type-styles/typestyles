@@ -173,6 +173,6 @@ export const navStyles = {
       outline: {
         color: colors.foreground,
       },
-    }
+    },
   ),
 };

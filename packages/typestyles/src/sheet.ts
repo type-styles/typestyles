@@ -54,8 +54,7 @@ let ssrBuffer: string[] | null = null;
 /**
  * Whether we're running in a browser environment.
  */
-const isBrowser =
-  typeof document !== 'undefined' && typeof window !== 'undefined';
+const isBrowser = typeof document !== 'undefined' && typeof window !== 'undefined';
 
 /**
  * Re-insert every registered rule into a (usually fresh) <style> element.
@@ -86,9 +85,7 @@ function getStyleElement(): HTMLStyleElement {
   if (styleElement) return styleElement;
 
   // Prefer an element actually in the document (SSR or another copy on the page).
-  const existing = document.getElementById(
-    STYLE_ELEMENT_ID,
-  ) as HTMLStyleElement | null;
+  const existing = document.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null;
   if (existing?.isConnected) {
     styleElement = existing;
     return styleElement;
@@ -358,9 +355,7 @@ function ruleMatchesPrefix(rule: CSSRule, prefix: string): boolean {
     const family = prefix.slice('font-face:'.length).split(':')[0];
     // CSSFontFaceRule has type 5 and cssText contains @font-face
     if (rule.cssText.includes('@font-face')) {
-      return (
-        rule.cssText.includes(`"${family}"`) || rule.cssText.includes(`'${family}'`)
-      );
+      return rule.cssText.includes(`"${family}"`) || rule.cssText.includes(`'${family}'`);
     }
     return false;
   }

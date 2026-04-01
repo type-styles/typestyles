@@ -145,7 +145,8 @@ export const codeBlock = styles.create('code-block', {
   pre: {
     margin: 0,
     padding: t.space[3],
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontFamily:
+      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     fontSize: '13px',
     lineHeight: 1.6,
     overflow: 'auto',
@@ -201,4 +202,3 @@ export const codeBlock = styles.create('code-block', {
     backgroundColor: 'rgb(248 113 113 / 0.12)',
   },
 });
-

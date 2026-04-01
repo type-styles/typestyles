@@ -73,7 +73,7 @@ export async function runTypestylesBuild({
     }
     if (result.status !== 0) {
       throw new Error(
-        `[typestyles] Extraction script failed:\n${result.stderr || result.stdout || 'unknown error'}`
+        `[typestyles] Extraction script failed:\n${result.stderr || result.stdout || 'unknown error'}`,
       );
     }
 

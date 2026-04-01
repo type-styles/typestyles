@@ -52,7 +52,9 @@ export function attachDocsCodeBlockCopyListeners(): void {
   if (delegated || typeof document === 'undefined') return;
   delegated = true;
   document.addEventListener('click', (e) => {
-    const button = (e.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-codeblock-copy]');
+    const button = (e.target as HTMLElement | null)?.closest<HTMLButtonElement>(
+      '[data-codeblock-copy]',
+    );
     if (!button) return;
     setupCopyButton(button);
   });

@@ -12,21 +12,22 @@ type FlatThemeOverrides = Record<string, Record<string, string>>;
 
 function flattenSemanticValues(semantic: DeepPartial<DesignSemanticValues>): FlatThemeOverrides {
   const out: FlatThemeOverrides = {};
-  if (semantic.color) out.color = flattenColorValues(semantic.color as Record<string, Record<string, string>>);
+  if (semantic.color)
+    out.color = flattenColorValues(semantic.color as Record<string, Record<string, string>>);
   if (semantic.syntax) out.syntax = { ...semantic.syntax };
   return out;
 }
 
 function flattenPrimitiveOverrides(primitives: DesignPrimitiveOverrides): FlatThemeOverrides {
   return Object.fromEntries(
-    Object.entries(primitives).filter(([, values]) => values && Object.keys(values).length > 0)
+    Object.entries(primitives).filter(([, values]) => values && Object.keys(values).length > 0),
   ) as FlatThemeOverrides;
 }
 
 function buildVarDeclString(overrides: FlatThemeOverrides): string {
   return Object.entries(overrides)
     .flatMap(([namespace, values]) =>
-      Object.entries(values).map(([key, value]) => `--${namespace}-${key}: ${value};`)
+      Object.entries(values).map(([key, value]) => `--${namespace}-${key}: ${value};`),
     )
     .join(' ');
 }

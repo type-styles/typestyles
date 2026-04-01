@@ -67,11 +67,7 @@ const button = styles.create('button', {
 
 // Use in JSX — clean, readable class names in the DOM
 function Button({ variant, size, children }) {
-  return (
-    <button className={button('base', variant, size)}>
-      {children}
-    </button>
-  );
+  return <button className={button('base', variant, size)}>{children}</button>;
 }
 
 // Renders: <button class="button-base button-outlined button-small">
@@ -114,8 +110,8 @@ const spacing = tokens.create('spacing', {
 // Use in TypeStyles — fully typed, autocomplete works
 const layout = styles.create('layout', {
   container: {
-    padding: spacing.md,        // var(--spacing-md)
-    gap: spacing.lg,            // var(--spacing-lg)
+    padding: spacing.md, // var(--spacing-md)
+    gap: spacing.lg, // var(--spacing-lg)
   },
 });
 
@@ -138,9 +134,7 @@ const theme = tokens.createTheme('dark', {
 });
 
 // Apply the theme to any subtree
-<div className={theme}>
-  {/* All children use dark theme values */}
-</div>
+<div className={theme}>{/* All children use dark theme values */}</div>;
 ```
 
 ### Incremental Adoption
@@ -153,15 +147,15 @@ import './legacy-styles.css';
 import { styles } from 'typestyles';
 
 const newComponent = styles.create('new-component', {
-  root: { /* ... */ },
+  root: {
+    /* ... */
+  },
 });
 
 function MyComponent() {
   return (
     <div className="legacy-class">
-      <div className={newComponent('root')}>
-        {/* New component using TypeStyles */}
-      </div>
+      <div className={newComponent('root')}>{/* New component using TypeStyles */}</div>
     </div>
   );
 }
@@ -251,7 +245,9 @@ Or keep styles separate:
 ```tsx
 // button.styles.ts
 import { styles } from 'typestyles';
-export const button = styles.create('button', { /* ... */ });
+export const button = styles.create('button', {
+  /* ... */
+});
 
 // Button.tsx
 import { button } from './button.styles';
@@ -291,13 +287,17 @@ Creates a style group and returns a selector function.
 
 ```tsx
 const card = styles.create('card', {
-  root: { /* CSSProperties */ },
-  title: { /* CSSProperties */ },
+  root: {
+    /* CSSProperties */
+  },
+  title: {
+    /* CSSProperties */
+  },
 });
 
-card('root');              // "card-root"
-card('root', 'title');     // "card-root card-title"
-card('root', condition && 'title');  // conditional application
+card('root'); // "card-root"
+card('root', 'title'); // "card-root card-title"
+card('root', condition && 'title'); // conditional application
 ```
 
 ### `tokens.create(namespace, values)`
@@ -310,8 +310,8 @@ const spacing = tokens.create('spacing', {
   md: '16px',
 });
 
-spacing.sm   // "var(--spacing-sm)" (typed as a CSS value)
-spacing.md   // "var(--spacing-md)"
+spacing.sm; // "var(--spacing-sm)" (typed as a CSS value)
+spacing.md; // "var(--spacing-md)"
 ```
 
 ### `tokens.createTheme(name, overrides)`
@@ -335,21 +335,21 @@ References tokens defined elsewhere. Useful for consuming shared tokens without 
 
 ```tsx
 const color = tokens.use('color');
-color.primary  // "var(--color-primary)"
+color.primary; // "var(--color-primary)"
 ```
 
 ## Comparison
 
-| Feature | TypeStyles | StyleX | styled-components | Tailwind |
-|---|---|---|---|---|
-| Readable class names | Yes | No | No | Utility classes |
-| Type-safe | Yes | Yes | Partial | No |
-| No build step required | Yes | No | Yes | No |
-| Works with plain CSS | Yes | Limited | Limited | Yes |
-| Incremental adoption | Yes | Difficult | Yes | Yes |
-| CSS custom property tokens | First-class | Limited | Manual | Via config |
-| SSR support | Yes | Yes | Yes | Yes |
-| Runtime overhead | Minimal | None | Moderate | None |
+| Feature                    | TypeStyles  | StyleX    | styled-components | Tailwind        |
+| -------------------------- | ----------- | --------- | ----------------- | --------------- |
+| Readable class names       | Yes         | No        | No                | Utility classes |
+| Type-safe                  | Yes         | Yes       | Partial           | No              |
+| No build step required     | Yes         | No        | Yes               | No              |
+| Works with plain CSS       | Yes         | Limited   | Limited           | Yes             |
+| Incremental adoption       | Yes         | Difficult | Yes               | Yes             |
+| CSS custom property tokens | First-class | Limited   | Manual            | Via config      |
+| SSR support                | Yes         | Yes       | Yes               | Yes             |
+| Runtime overhead           | Minimal     | None      | Moderate          | None            |
 
 ## Installation
 

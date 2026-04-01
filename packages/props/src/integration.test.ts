@@ -18,7 +18,7 @@ describe('integration with typestyles', () => {
         properties: {
           display: ['flex', 'block'],
         },
-      })
+      }),
     );
 
     // Compose with string result from props function
@@ -37,7 +37,7 @@ describe('integration with typestyles', () => {
           display: ['flex', 'block'],
           padding: { 0: '0', 1: '4px', 2: '8px' },
         },
-      })
+      }),
     );
 
     atoms({ display: 'flex', padding: 1 });
@@ -63,7 +63,7 @@ describe('integration with typestyles', () => {
         properties: {
           display: ['flex', 'block', 'grid'],
         },
-      })
+      }),
     );
 
     // Compose with string result from props function

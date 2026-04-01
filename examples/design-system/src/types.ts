@@ -1,8 +1,5 @@
 import type { DesignComponentValues } from './tokens/component';
-import type {
-  DesignColorValues,
-  DesignSyntaxValues,
-} from './tokens/semantic';
+import type { DesignColorValues, DesignSyntaxValues } from './tokens/semantic';
 import type {
   DesignDurationValues,
   DesignEasingValues,

@@ -1,4 +1,10 @@
-import { createStyles, createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
+import {
+  createStyles,
+  createClass,
+  createHashClass,
+  compose,
+  createStylesWithUtils,
+} from './styles.js';
 import { createTokens, useTokens, createTheme } from './tokens.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';

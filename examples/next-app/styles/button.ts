@@ -89,5 +89,5 @@ export const button = styles.create(
       width: '2rem',
       padding: '0',
     },
-  }
+  },
 );

@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStyles, createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
+import {
+  createStyles,
+  createClass,
+  createHashClass,
+  compose,
+  createStylesWithUtils,
+} from './styles.js';
 import { resetClassNaming } from './class-naming.js';
 import { reset, flushSync } from './sheet.js';
 
@@ -21,7 +27,7 @@ describe('createClass', () => {
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     expect(style).not.toBeNull();
     const rule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.class-test'
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.class-test',
     ) as CSSStyleRule;
     expect(rule).toBeDefined();
     expect(rule.style.color).toBe('red');
@@ -157,7 +163,7 @@ describe('createStyles', () => {
           default: { backgroundColor: '#0066ff', color: '#fff' },
           outline: { border: '1px solid', backgroundColor: 'transparent' },
           large: { padding: '12px 24px' },
-        }
+        },
       );
 
       expect(button()).toBe('btn-base');
@@ -169,13 +175,11 @@ describe('createStyles', () => {
       const button = createStyles(
         'btn2',
         { padding: '8px' },
-        { primary: { color: 'blue' }, disabled: { opacity: 0.5 } }
+        { primary: { color: 'blue' }, disabled: { opacity: 0.5 } },
       );
 
       const isDisabled = false;
-      expect(button('primary', isDisabled && 'disabled')).toBe(
-        'btn2-base btn2-primary'
-      );
+      expect(button('primary', isDisabled && 'disabled')).toBe('btn2-base btn2-primary');
     });
   });
 });
@@ -358,11 +362,7 @@ describe('createStylesWithUtils', () => {
       marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),
     });
 
-    const card = u.create(
-      'util-create-three',
-      { marginX: 10 },
-      { active: { marginX: 20 } },
-    );
+    const card = u.create('util-create-three', { marginX: 10 }, { active: { marginX: 20 } });
 
     expect(card()).toBe('util-create-three-base');
     expect(card('active')).toBe('util-create-three-base util-create-three-active');

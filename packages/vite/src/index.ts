@@ -116,10 +116,7 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
     config(config: UserConfig, env) {
       isBuildCommand = env.command === 'build';
 
-      if (
-        env.command === 'build' &&
-        (mode === 'build' || mode === 'hybrid')
-      ) {
+      if (env.command === 'build' && (mode === 'build' || mode === 'hybrid')) {
         config.define = {
           ...(config.define ?? {}),
           // Inlined by the bundler so typestyles sheet skips creating <style> in production
@@ -156,7 +153,7 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
               const ns = prefix.slice(1, -1); // strip leading "." and trailing "-"
               this.warn(
                 `Style namespace "${ns}" is also used in ${otherId}. ` +
-                  `Duplicate namespaces cause class name collisions.`
+                  `Duplicate namespaces cause class name collisions.`,
               );
             }
           }
@@ -207,7 +204,7 @@ if (import.meta.hot) {
         });
       } catch (err) {
         this.error(
-          `[typestyles] Failed to extract CSS: ${err instanceof Error ? err.message : String(err)}`
+          `[typestyles] Failed to extract CSS: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     },

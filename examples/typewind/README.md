@@ -29,14 +29,14 @@ CSS is extracted via `@typestyles/vite` into `typestyles.css` (see `vite.config.
 
 ## Layout
 
-| Path | Purpose |
-| --- | --- |
-| `src/typewind/theme.ts` | Spacing + slate + brand tokens, `darkShell` theme, global `body` reset |
-| `src/typewind/utilities.ts` | Atomic utility registrations (re-exported as `u` from `index.ts`) |
-| `src/typewind/cn.ts` | `cn()` to join class strings |
-| `src/typewind/index.ts` | `cn`, theme tokens, `darkShell`, and `u` (namespace of all utilities) |
-| `src/App.tsx` | Demo UI |
-| `src/typestyles-entry.ts` | Side-effect imports for CSS extraction |
+| Path                        | Purpose                                                                |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `src/typewind/theme.ts`     | Spacing + slate + brand tokens, `darkShell` theme, global `body` reset |
+| `src/typewind/utilities.ts` | Atomic utility registrations (re-exported as `u` from `index.ts`)      |
+| `src/typewind/cn.ts`        | `cn()` to join class strings                                           |
+| `src/typewind/index.ts`     | `cn`, theme tokens, `darkShell`, and `u` (namespace of all utilities)  |
+| `src/App.tsx`               | Demo UI                                                                |
+| `src/typestyles-entry.ts`   | Side-effect imports for CSS extraction                                 |
 
 Import from the barrel; utilities are grouped as `u`:
 

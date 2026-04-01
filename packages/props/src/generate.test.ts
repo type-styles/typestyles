@@ -16,12 +16,7 @@ describe('generateAllAtomicClasses', () => {
   });
 
   it('generates classes using object-format values', () => {
-    const rules = generateAllAtomicClasses(
-      'ts',
-      { padding: { sm: '4px', md: '8px' } },
-      {},
-      false,
-    );
+    const rules = generateAllAtomicClasses('ts', { padding: { sm: '4px', md: '8px' } }, {}, false);
     expect(rules).toHaveLength(2);
     expect(rules.some((r) => r.key === '.ts-padding-sm')).toBe(true);
     expect(rules.some((r) => r.key === '.ts-padding-md')).toBe(true);
@@ -127,7 +122,12 @@ describe('generateAllAtomicClasses', () => {
 describe('generateFromCollections', () => {
   it('combines rules from multiple collections', () => {
     const rules = generateFromCollections('ts', [
-      { properties: { display: ['flex'] }, conditions: {}, defaultCondition: false, shorthands: {} },
+      {
+        properties: { display: ['flex'] },
+        conditions: {},
+        defaultCondition: false,
+        shorthands: {},
+      },
       { properties: { color: ['red'] }, conditions: {}, defaultCondition: false, shorthands: {} },
     ]);
     expect(rules).toHaveLength(2);

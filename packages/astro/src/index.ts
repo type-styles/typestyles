@@ -18,9 +18,7 @@ export type { TypestylesPluginOptions } from '@typestyles/vite';
  * dynamically imports the same entry (e.g. `if (import.meta.env.DEV) void import('./typestyles-entry')`)
  * and avoid inlining `getRegisteredCss()` in dev, or updates will appear stuck until a full reload.
  */
-export default function typestyles(
-  options: TypestylesPluginOptions = {}
-): AstroIntegration {
+export default function typestyles(options: TypestylesPluginOptions = {}): AstroIntegration {
   return {
     name: 'typestyles',
     hooks: {

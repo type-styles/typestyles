@@ -41,4 +41,3 @@ export const radio = styles.create('radio', {
     color: t.color.text.primary,
   },
 });
-

@@ -37,11 +37,11 @@ Then existing `styles.create` / `styles.component` calls keep the same TypeScrip
 
 Merges into the current global config (partial updates are allowed).
 
-| Option     | Type | Default    | Description |
-| ---------- | ---- | ---------- | ----------- |
-| `mode`     | `'semantic' \| 'hashed' \| 'atomic'` | `'semantic'` | How class strings are built (see below). |
-| `prefix`   | `string` | `'ts'` | Leading segment for hashed/atomic output and for [`styles.hashClass`](#styleshashclass). |
-| `scopeId`  | `string` | `''` | Optional id (package name, app name) mixed into the hash input so two packages can reuse the same logical namespace without sharing the same class string. |
+| Option    | Type                                 | Default      | Description                                                                                                                                                |
+| --------- | ------------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`    | `'semantic' \| 'hashed' \| 'atomic'` | `'semantic'` | How class strings are built (see below).                                                                                                                   |
+| `prefix`  | `string`                             | `'ts'`       | Leading segment for hashed/atomic output and for [`styles.hashClass`](#styleshashclass).                                                                   |
+| `scopeId` | `string`                             | `''`         | Optional id (package name, app name) mixed into the hash input so two packages can reuse the same logical namespace without sharing the same class string. |
 
 ### `getClassNamingConfig()`
 

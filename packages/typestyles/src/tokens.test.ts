@@ -98,7 +98,7 @@ describe('createTheme', () => {
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     const rules = Array.from(style.sheet?.cssRules ?? []);
     const themeRule = rules.find(
-      (r) => (r as CSSStyleRule).selectorText === '.theme-high-contrast'
+      (r) => (r as CSSStyleRule).selectorText === '.theme-high-contrast',
     ) as CSSStyleRule;
 
     expect(themeRule).toBeDefined();

@@ -99,7 +99,7 @@ function readClasses(): SearchClasses {
 async function ensureIndex(): Promise<void> {
   if (indexLoaded) return;
   if (!loadPromise) {
-      loadPromise = fetch(searchIndexUrl())
+    loadPromise = fetch(searchIndexUrl())
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<RawDoc[]>;

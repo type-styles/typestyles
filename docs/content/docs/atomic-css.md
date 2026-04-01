@@ -29,7 +29,7 @@ const atoms = createProps(
       padding: { 0: '0', 1: '4px', 2: '8px', 3: '16px' },
       gap: { 0: '0', 1: '4px', 2: '8px', 3: '16px' },
     },
-  })
+  }),
 );
 
 // Use them with full type safety
@@ -106,7 +106,7 @@ const atoms = createProps('atom', responsive);
 
 // Apply responsive values
 atoms({
-  display: 'block',                    // Base value
+  display: 'block', // Base value
   flexDirection: { mobile: 'column', desktop: 'row' }, // Responsive
 });
 // Returns: "atom-display-block atom-flexDirection-mobile-column atom-flexDirection-desktop-row"
@@ -115,24 +115,36 @@ atoms({
 ### Condition Types
 
 **Media Queries:**
+
 ```ts
 { mobile: { '@media': '(min-width: 768px)' } }
 ```
 
 **Container Queries:**
+
 ```ts
 { wide: { '@container': '(min-width: 400px)' } }
 ```
 
 **Feature Queries:**
+
 ```ts
 { supportsGrid: { '@supports': '(display: grid)' } }
 ```
 
 **Custom Selectors:**
+
 ```ts
-{ hover: { selector: '&:hover' } }
-{ dark: { selector: '[data-theme="dark"] &' } }
+{
+  hover: {
+    selector: '&:hover';
+  }
+}
+{
+  dark: {
+    selector: '[data-theme="dark"] &';
+  }
+}
 ```
 
 ## Shorthands
@@ -236,7 +248,12 @@ CSS is automatically injected and available for SSR:
 import { getRegisteredCss } from 'typestyles';
 
 // Define and create your atoms
-const atoms = createProps('atom', defineProperties({ /* ... */ }));
+const atoms = createProps(
+  'atom',
+  defineProperties({
+    /* ... */
+  }),
+);
 
 // CSS is automatically registered
 const css = getRegisteredCss();
@@ -259,7 +276,7 @@ const atoms = createProps(
       gap: { 0: '0', 1: '4px', 2: '8px' },
       padding: { 0: '0', 1: '4px', 2: '8px', 3: '16px' },
     },
-  })
+  }),
 );
 
 const card = styles.create('card', {
@@ -271,10 +288,7 @@ const card = styles.create('card', {
 });
 
 // Compose together
-const flexCard = styles.compose(
-  card,
-  atoms({ display: 'flex', gap: 2, padding: 3 })
-);
+const flexCard = styles.compose(card, atoms({ display: 'flex', gap: 2, padding: 3 }));
 
 flexCard('base');
 // "card-base atom-display-flex atom-gap-2 atom-padding-3"
@@ -360,6 +374,7 @@ Classes follow a predictable pattern:
 ```
 
 Examples:
+
 - `atom-display-flex`
 - `atom-display-mobile-block`
 - `atom-padding-2`
@@ -368,17 +383,21 @@ Examples:
 ## TypeScript
 
 Full type inference and autocomplete for:
+
 - Property names
 - Property values
 - Condition names
 - Shorthand names
 
 ```ts
-const atoms = createProps('atom', defineProperties({
-  properties: {
-    display: ['flex', 'block'],
-  },
-}));
+const atoms = createProps(
+  'atom',
+  defineProperties({
+    properties: {
+      display: ['flex', 'block'],
+    },
+  }),
+);
 
 atoms({ display: 'flex' }); // ✅
 atoms({ display: 'grid' }); // ❌ Type error: 'grid' not in ['flex', 'block']
@@ -390,10 +409,13 @@ atoms({ fontSize: '16px' }); // ❌ Type error: 'fontSize' not defined
 Check which properties are available:
 
 ```ts
-const atoms = createProps('atom', defineProperties({
-  properties: { display: ['flex', 'block'] },
-  shorthands: { d: ['display'] },
-}));
+const atoms = createProps(
+  'atom',
+  defineProperties({
+    properties: { display: ['flex', 'block'] },
+    shorthands: { d: ['display'] },
+  }),
+);
 
 atoms.properties.has('display'); // true
 atoms.properties.has('d'); // true (shorthand)

@@ -18,7 +18,7 @@ import { startCollection, flushSync } from './sheet.js';
  * ```
  */
 export async function collectStylesFromModules(
-  loaders: Array<() => unknown | Promise<unknown>>
+  loaders: Array<() => unknown | Promise<unknown>>,
 ): Promise<string> {
   const endCollection = startCollection();
 
@@ -33,4 +33,3 @@ export async function collectStylesFromModules(
   flushSync();
   return endCollection();
 }
-

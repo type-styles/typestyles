@@ -59,7 +59,7 @@ export const pageStyles = {
       border: {
         borderTop: `1px solid ${colors.border}`,
       },
-    }
+    },
   ),
 
   sectionHeader: styles.class('section-header', {
@@ -111,7 +111,7 @@ export const pageStyles = {
         color: colors.foreground,
         backgroundColor: colors.muted,
       },
-    }
+    },
   ),
 
   toolbar: styles.class('toolbar', {
@@ -179,7 +179,7 @@ export const pageStyles = {
         backgroundColor: 'hsl(142.1 76.2% 36.3%)',
         color: 'white',
       },
-    }
+    },
   ),
 
   featureTitle: styles.class('feature-title', {

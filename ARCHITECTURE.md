@@ -108,6 +108,7 @@ Generated CSS:
 **Type generation:**
 
 Token objects are typed so that:
+
 - Property access returns `string` (the `var()` reference)
 - Only defined keys are accessible (typos caught at compile time)
 - Values are usable anywhere a CSS string value is expected
@@ -234,6 +235,7 @@ Static extraction (StyleX, Vanilla Extract) offers zero-runtime cost but imposes
 ### Why readable class names?
 
 Hashed/minified class names make debugging painful. TypeStyles uses authored names directly. The tradeoff is potential name collisions, which we handle with:
+
 - Namespace prefixing (the first arg to `styles.create`)
 - Development-mode duplicate detection and warnings
 - Convention: namespace = component/file name
