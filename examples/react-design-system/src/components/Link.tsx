@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { Link as AriaLink } from 'react-aria-components';
 import { link } from '@examples/design-system';
 import { cx } from './utils';
@@ -7,6 +7,6 @@ export type LinkProps = Omit<ComponentProps<typeof AriaLink>, 'className'> & {
   className?: string;
 };
 
-export function Link({ className, ...props }: LinkProps) {
+export function Link({ className, ...props }: LinkProps): JSX.Element {
   return <AriaLink {...props} className={cx(link, className)} />;
 }

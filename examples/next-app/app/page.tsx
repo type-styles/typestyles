@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import {
   Button,
@@ -29,7 +30,7 @@ const sunsetThemeClass = tokens.createTheme('ds-sunset', {
 
 type ThemeMode = 'light' | 'dark' | 'sunset';
 
-export default function Home() {
+export default function Home(): JSX.Element {
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [accepted, setAccepted] = useState(true);
   const [autoDeploy, setAutoDeploy] = useState(false);
@@ -39,9 +40,21 @@ export default function Home() {
 
   const tabs = useMemo(
     () => [
-      { id: 'consume', label: 'Consume', content: 'Apps import one package and use the same accessible components.' },
-      { id: 'tokens', label: 'Token API', content: 'Token references stay stable while themes only override CSS vars.' },
-      { id: 'theme', label: 'Theme API', content: 'tokens.createTheme enables per-app brand theming with partial overrides.' },
+      {
+        id: 'consume',
+        label: 'Consume',
+        content: 'Apps import one package and use the same accessible components.',
+      },
+      {
+        id: 'tokens',
+        label: 'Token API',
+        content: 'Token references stay stable while themes only override CSS vars.',
+      },
+      {
+        id: 'theme',
+        label: 'Theme API',
+        content: 'tokens.createTheme enables per-app brand theming with partial overrides.',
+      },
     ],
     [],
   );
@@ -51,20 +64,33 @@ export default function Home() {
 
   return (
     <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
-      <main className={layout('stack')} style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
+      <main
+        className={layout('stack')}
+        style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}
+      >
         <header className={layout('stack')} style={{ gap: 10 }}>
           <h1 className={text('title')}>Next.js consuming shared typestyles design system</h1>
           <p className={text('subtitle')}>
-            This example consumes the same React library as Vite and applies app-level custom theming.
+            This example consumes the same React library as Vite and applies app-level custom
+            theming.
           </p>
           <div className={layout('row')}>
-            <Button intent={themeMode === 'light' ? 'primary' : 'secondary'} onPress={() => setThemeMode('light')}>
+            <Button
+              intent={themeMode === 'light' ? 'primary' : 'secondary'}
+              onPress={() => setThemeMode('light')}
+            >
               Light
             </Button>
-            <Button intent={themeMode === 'dark' ? 'primary' : 'secondary'} onPress={() => setThemeMode('dark')}>
+            <Button
+              intent={themeMode === 'dark' ? 'primary' : 'secondary'}
+              onPress={() => setThemeMode('dark')}
+            >
               Dark
             </Button>
-            <Button intent={themeMode === 'sunset' ? 'primary' : 'secondary'} onPress={() => setThemeMode('sunset')}>
+            <Button
+              intent={themeMode === 'sunset' ? 'primary' : 'secondary'}
+              onPress={() => setThemeMode('sunset')}
+            >
               Sunset (custom)
             </Button>
           </div>
@@ -121,7 +147,11 @@ export default function Home() {
               { value: 'platform', label: 'Platform Engineer' },
             ]}
           />
-          <Tabs tabs={tabs} selectedKey={tabId} onSelectionChange={(key) => setTabId(String(key))} />
+          <Tabs
+            tabs={tabs}
+            selectedKey={tabId}
+            onSelectionChange={(key) => setTabId(String(key))}
+          />
         </section>
       </main>
     </DesignSystemProvider>

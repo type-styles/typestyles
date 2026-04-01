@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext } from 'react';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { lightTheme, darkTheme } from '../styles/tokens';
 
 type Theme = 'light' | 'dark';
@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggleTheme: () => {},
 });
 
-export function useTheme() {
+export function useTheme(): ThemeContextValue {
   return useContext(ThemeContext);
 }
 
@@ -24,7 +24,7 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+export function ThemeProvider({ children }: ThemeProviderProps): JSX.Element {
   const [theme, setTheme] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
@@ -45,7 +45,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     localStorage.setItem('theme', theme);
   }, [theme, mounted]);
 
-  const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+  const toggleTheme = (): void => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
   const themeClass = theme === 'dark' ? darkTheme : lightTheme;
 

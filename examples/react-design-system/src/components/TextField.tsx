@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { FieldError, Input, Label, TextField as AriaTextField } from 'react-aria-components';
 import { textField } from '@examples/design-system';
 import type { BaseTextFieldProps } from './utils';
@@ -6,7 +7,13 @@ export type TextFieldProps = BaseTextFieldProps & {
   placeholder?: string;
 };
 
-export function TextField({ label, description, errorMessage, placeholder, ...props }: TextFieldProps) {
+export function TextField({
+  label,
+  description,
+  errorMessage,
+  placeholder,
+  ...props
+}: TextFieldProps): JSX.Element {
   return (
     <AriaTextField {...props} className={textField('root')}>
       {label ? <Label className={textField('label')}>{label}</Label> : null}

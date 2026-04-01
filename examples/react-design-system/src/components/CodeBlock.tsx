@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import { codeBlock } from '@examples/design-system';
 import { cx } from './utils';
@@ -40,7 +41,7 @@ export function CodeBlock({
   copyLabel = 'Copy code',
   copiedLabel = 'Copied',
   copyErrorLabel = 'Copy failed',
-}: CodeBlockProps) {
+}: CodeBlockProps): JSX.Element {
   const [isCopied, setIsCopied] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -95,7 +96,10 @@ export function CodeBlock({
 
   return (
     <div className={cx(codeBlock('root'), variantRootClass[variant], className)} data-codeblock>
-      <div className={cx(codeBlock('header'), terminal && codeBlock('headerTerminal'))} data-codeblock-header>
+      <div
+        className={cx(codeBlock('header'), terminal && codeBlock('headerTerminal'))}
+        data-codeblock-header
+      >
         <div className={codeBlock('title')}>
           {filename ? <span className={codeBlock('filename')}>{filename}</span> : null}
           {language ? (

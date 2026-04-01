@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import {
   Dialog as AriaDialog,
   DialogTrigger,
@@ -16,7 +16,7 @@ export type DialogProps = {
   closeLabel?: string;
 };
 
-export function Dialog({ triggerLabel, title, description, closeLabel = 'Close' }: DialogProps) {
+export function Dialog({ triggerLabel, title, description, closeLabel = 'Close' }: DialogProps): JSX.Element {
   return (
     <DialogTrigger>
       <Button intent="secondary">{triggerLabel}</Button>

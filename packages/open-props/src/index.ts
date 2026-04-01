@@ -715,6 +715,6 @@ export const masksCornerCuts = tokens.create('masks-corner-cuts', {
   '6': 'polygon(0 15%, 15% 0, 85% 0, 100% 15%, 100% 100%, 0 100%)',
 });
 
-export function useOpenProps(namespace: string) {
+export function useOpenProps(namespace: string): TokenRef<Record<string, string>> {
   return tokens.use(namespace);
 }

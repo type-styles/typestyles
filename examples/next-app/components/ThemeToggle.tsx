@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { styles } from 'typestyles';
 import { useTheme } from './ThemeProvider';
 
@@ -36,7 +37,7 @@ const option = styles.create('theme-option', {
   },
 });
 
-export function ThemeToggle() {
+export function ThemeToggle(): JSX.Element {
   const { theme, toggleTheme } = useTheme();
 
   return (

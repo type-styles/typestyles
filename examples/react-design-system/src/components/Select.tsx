@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, JSX } from 'react';
 import {
   Button as AriaButton,
   Label,
@@ -21,7 +21,7 @@ export type SelectProps = Omit<ComponentProps<typeof AriaSelect>, 'children'> & 
   placeholder?: string;
 };
 
-export function Select({ label, options, placeholder = 'Select…', ...props }: SelectProps) {
+export function Select({ label, options, placeholder = 'Select…', ...props }: SelectProps): JSX.Element {
   return (
     <AriaSelect {...props} className={select('root')}>
       {label ? <Label className={select('label')}>{label}</Label> : null}

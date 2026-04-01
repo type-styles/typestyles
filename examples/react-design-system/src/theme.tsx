@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import { defaultTheme as baseTheme } from './tokens';
 
 type ThemeName = 'light' | 'dark';
@@ -29,11 +30,11 @@ export function DesignSystemProvider({
   theme: controlledTheme,
   onThemeChange,
   customThemeClassName,
-}: DesignSystemProviderProps) {
+}: DesignSystemProviderProps): JSX.Element {
   const [uncontrolledTheme, setUncontrolledTheme] = useState<ThemeName>(defaultTheme);
 
   const theme = controlledTheme ?? uncontrolledTheme;
-  const setTheme = (nextTheme: ThemeName) => {
+  const setTheme = (nextTheme: ThemeName): void => {
     if (controlledTheme === undefined) {
       setUncontrolledTheme(nextTheme);
     }

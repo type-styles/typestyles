@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "mkdir -p dist && cp index.html dist/index.html && rollup -c"
+    "build": "mkdir -p dist && cp index.html dist/index.html && rollup -c",
+    "lint": "eslint ."
   },
   "dependencies": {
     "typestyles": "workspace:*"
@@ -12,6 +13,7 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@typestyles/rollup": "workspace:*",
+    "eslint": "^9.39.2",
     "rollup": "^4.0.0"
   }
 }

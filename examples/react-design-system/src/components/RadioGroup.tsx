@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { Label, Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components';
 import { radio } from '@examples/design-system';
 
@@ -12,7 +12,7 @@ export type RadioGroupProps = Omit<ComponentProps<typeof AriaRadioGroup>, 'child
   options: RadioGroupOption[];
 };
 
-export function RadioGroup({ label, options, ...props }: RadioGroupProps) {
+export function RadioGroup({ label, options, ...props }: RadioGroupProps): JSX.Element {
   return (
     <AriaRadioGroup {...props} className={radio('group')}>
       {label ? <Label className={radio('groupLabel')}>{label}</Label> : null}

@@ -4,13 +4,15 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "mkdir -p dist && cp index.html dist/index.html && rolldown -c"
+    "build": "mkdir -p dist && cp index.html dist/index.html && rolldown -c",
+    "lint": "eslint ."
   },
   "dependencies": {
     "typestyles": "workspace:*"
   },
   "devDependencies": {
     "@typestyles/rollup": "workspace:*",
+    "eslint": "^9.39.2",
     "rolldown": "^1.0.0-beta.40"
   }
 }

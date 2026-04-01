@@ -8,6 +8,12 @@
     "./codeHighlight": "./src/components/codeHighlight.ts"
   },
   "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^9.39.2"
+  },
   "dependencies": {
     "typestyles": "workspace:*"
   }

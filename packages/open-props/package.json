@@ -26,6 +26,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "typestyles": "workspace:*"
   },
   "devDependencies": {
+    "eslint": "^9.39.2",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3",
     "vitest": "^3.0.0"

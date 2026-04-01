@@ -1,7 +1,8 @@
+import type { JSX } from 'react';
 import { useState } from 'react';
 import { cn, darkShell, utilities as u } from './typewind';
 
-export function App() {
+export function App(): JSX.Element {
   const [dark, setDark] = useState(false);
 
   const shell = cn(

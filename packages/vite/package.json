@@ -24,6 +24,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean --external typestyles,@typestyles/build-runner",
     "test": "vitest run",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -43,6 +44,7 @@
     "vite": ">=5.0.0"
   },
   "devDependencies": {
+    "eslint": "^9.39.2",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
     "typestyles": "workspace:*",

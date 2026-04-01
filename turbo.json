@@ -15,6 +15,17 @@
       "dependsOn": ["^build", "build"],
       "inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
     },
+    "lint": {
+      "inputs": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.js",
+        "**/*.mjs",
+        "**/*.cjs",
+        "eslint.config.js",
+        "eslint.base.js"
+      ]
+    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

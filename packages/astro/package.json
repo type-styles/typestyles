@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean --external astro,@typestyles/vite",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "astro": "^5.6.1",
+    "eslint": "^9.39.2",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
   }

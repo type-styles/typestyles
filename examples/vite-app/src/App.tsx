@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import {
   Button,
@@ -27,7 +28,7 @@ const oceanThemeClass = tokens.createTheme('ds-ocean', {
 
 type ThemeMode = 'light' | 'dark' | 'ocean';
 
-export function App() {
+export function App(): JSX.Element {
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [agreed, setAgreed] = useState(true);
   const [notifications, setNotifications] = useState(false);
@@ -40,29 +41,54 @@ export function App() {
 
   const tabs = useMemo(
     () => [
-      { id: 'overview', label: 'Overview', content: 'Composable, token-driven components for app shells.' },
-      { id: 'tokens', label: 'Tokens', content: 'Token refs stay stable while themes swap values via CSS vars.' },
-      { id: 'a11y', label: 'A11y', content: 'react-aria-components provide robust keyboard and screen-reader behavior.' },
+      {
+        id: 'overview',
+        label: 'Overview',
+        content: 'Composable, token-driven components for app shells.',
+      },
+      {
+        id: 'tokens',
+        label: 'Tokens',
+        content: 'Token refs stay stable while themes swap values via CSS vars.',
+      },
+      {
+        id: 'a11y',
+        label: 'A11y',
+        content: 'react-aria-components provide robust keyboard and screen-reader behavior.',
+      },
     ],
     [],
   );
 
   return (
     <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
-      <main className={layout('stack')} style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}>
+      <main
+        className={layout('stack')}
+        style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}
+      >
         <header className={layout('stack')} style={{ gap: 10 }}>
           <h1 className={text('title')}>Vite consuming shared typestyles design system</h1>
           <p className={text('subtitle')}>
-            This page uses one shared React library and switches between default, dark, and custom themes.
+            This page uses one shared React library and switches between default, dark, and custom
+            themes.
           </p>
           <div className={layout('row')}>
-            <Button intent={themeMode === 'light' ? 'primary' : 'secondary'} onPress={() => setThemeMode('light')}>
+            <Button
+              intent={themeMode === 'light' ? 'primary' : 'secondary'}
+              onPress={() => setThemeMode('light')}
+            >
               Light
             </Button>
-            <Button intent={themeMode === 'dark' ? 'primary' : 'secondary'} onPress={() => setThemeMode('dark')}>
+            <Button
+              intent={themeMode === 'dark' ? 'primary' : 'secondary'}
+              onPress={() => setThemeMode('dark')}
+            >
               Dark
             </Button>
-            <Button intent={themeMode === 'ocean' ? 'primary' : 'secondary'} onPress={() => setThemeMode('ocean')}>
+            <Button
+              intent={themeMode === 'ocean' ? 'primary' : 'secondary'}
+              onPress={() => setThemeMode('ocean')}
+            >
               Ocean (custom)
             </Button>
           </div>
@@ -80,7 +106,11 @@ export function App() {
             />
           </div>
           <div className={layout('row')}>
-            <TextField label="Project name" placeholder="typestyles-ui" description="TextField + Input + Label + FieldError" />
+            <TextField
+              label="Project name"
+              placeholder="typestyles-ui"
+              description="TextField + Input + Label + FieldError"
+            />
             <Select
               label="Plan"
               selectedKey={plan}
@@ -92,7 +122,11 @@ export function App() {
               ]}
             />
           </div>
-          <TextAreaField label="Notes" placeholder="Describe your theming needs…" description="TextArea field for longer input." />
+          <TextAreaField
+            label="Notes"
+            placeholder="Describe your theming needs…"
+            description="TextArea field for longer input."
+          />
           <div className={layout('row')}>
             <Checkbox isSelected={agreed} onChange={setAgreed}>
               Checkbox
@@ -111,7 +145,11 @@ export function App() {
               { value: 'pm', label: 'Product Manager' },
             ]}
           />
-          <Tabs tabs={tabs} selectedKey={tabId} onSelectionChange={(key) => setTabId(String(key))} />
+          <Tabs
+            tabs={tabs}
+            selectedKey={tabId}
+            onSelectionChange={(key) => setTabId(String(key))}
+          />
         </section>
       </main>
     </DesignSystemProvider>

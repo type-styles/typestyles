@@ -1,9 +1,10 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useTheme } from './ThemeProvider';
 import { navStyles } from '../styles/navbar';
 
-function SunIcon() {
+function SunIcon(): JSX.Element {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -29,7 +30,7 @@ function SunIcon() {
   );
 }
 
-function MoonIcon() {
+function MoonIcon(): JSX.Element {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -47,7 +48,7 @@ function MoonIcon() {
   );
 }
 
-function GithubIcon() {
+function GithubIcon(): JSX.Element {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -66,7 +67,7 @@ function GithubIcon() {
   );
 }
 
-export function Navbar() {
+export function Navbar(): JSX.Element {
   const { theme, toggleTheme } = useTheme();
 
   return (

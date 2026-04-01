@@ -1,9 +1,10 @@
 'use client';
 
+import type { JSX, ReactNode } from 'react';
 import { getRegisteredCss } from 'typestyles/server';
 import { useEffect, useState } from 'react';
 
-export function TypestylesProvider({ children }: { children?: React.ReactNode }) {
+export function TypestylesProvider({ children }: { children?: ReactNode }): JSX.Element {
   const [css, setCss] = useState('');
   const [mounted, setMounted] = useState(false);
 

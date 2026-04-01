@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, JSX, ReactNode } from 'react';
 import { Tab, TabList, TabPanel, Tabs as AriaTabs } from 'react-aria-components';
 import { tabs as tabsStyles } from '@examples/design-system';
 
@@ -12,7 +12,7 @@ export type TabsProps = Omit<ComponentProps<typeof AriaTabs>, 'children'> & {
   tabs: TabDefinition[];
 };
 
-export function Tabs({ tabs, ...props }: TabsProps) {
+export function Tabs({ tabs, ...props }: TabsProps): JSX.Element {
   return (
     <AriaTabs {...props} className={tabsStyles('root')}>
       <TabList className={tabsStyles('list')}>

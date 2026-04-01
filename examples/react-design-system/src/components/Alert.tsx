@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { alert } from '@examples/design-system';
 import { cx } from './utils';
 
@@ -47,7 +47,7 @@ export function Alert({
   icon,
   children,
   className,
-}: AlertProps) {
+}: AlertProps): JSX.Element {
   const toneClass = appearance === 'solid' ? solidTone[variant] : subtleTone[variant];
   const titleAccentClass = appearance === 'subtle' ? titleAccent[variant] : '';
 
@@ -65,10 +65,7 @@ export function Alert({
       ) : null}
       <div className={alert('body')}>
         {title ? <p className={cx(alert('title'), titleAccentClass)}>{title}</p> : null}
-        <div
-          className={cx(alert('content'), !title && alert('contentFlush'))}
-          data-alert-content
-        >
+        <div className={cx(alert('content'), !title && alert('contentFlush'))} data-alert-content>
           {children}
         </div>
         {action ? (
