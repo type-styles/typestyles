@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -166,8 +166,6 @@ const button = css\`color: red;\`;
 `.trim();
     const result = migrateSource('already-styles.ts', source);
     expect(result.changed).toBe(true);
-    // Only one styles import specifier
-    const stylesCount = (result.code.match(/\bstyles\b/g) ?? []).length;
     // There should not be duplicate 'styles, styles' patterns
     expect(result.code).not.toContain('styles, styles');
   });
