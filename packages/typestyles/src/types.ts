@@ -80,6 +80,19 @@ export type TokenRef<T extends TokenValues> = {
 };
 
 /**
+ * A theme contract reference returned by `tokens.createContract()`.
+ *
+ * Extends `TokenRef<T>` so it can be used anywhere token var-references are
+ * needed, and also carries the namespace and key metadata required for
+ * compile-time theme enforcement when passed to `tokens.createTheme()`.
+ */
+export type ThemeContractRef<T extends TokenValues> = TokenRef<T> & {
+  readonly __contract: true;
+  readonly __namespace: string;
+  readonly __keys: readonly (keyof T & string)[];
+};
+
+/**
  * Theme overrides: a map of token namespaces to partial value overrides.
  */
 export type ThemeOverrides = Record<string, Partial<TokenValues>>;
@@ -104,12 +117,26 @@ type VariantSelectionValue<OptionKey extends string> =
   | (Extract<OptionKey, 'true'> extends never ? never : true)
   | (Extract<OptionKey, 'false'> extends never ? never : false);
 
+/**
+ * A responsive variant selection: either a plain value or a map of
+ * breakpoint name → value where `'initial'` is the base (no media query).
+ *
+ * @example
+ * ```ts
+ * button({ size: 'sm' })                         // plain
+ * button({ size: { initial: 'sm', md: 'lg' } }) // responsive
+ * ```
+ */
+export type ResponsiveVariantValue<OptionKey extends string> =
+  | VariantSelectionValue<OptionKey>
+  | { initial?: VariantSelectionValue<OptionKey>; [bp: string]: VariantSelectionValue<OptionKey> | undefined };
+
 type CompoundSelectionValue<OptionKey extends string> =
   | VariantSelectionValue<OptionKey>
   | readonly VariantSelectionValue<OptionKey>[];
 
 export type ComponentSelections<V extends VariantDimensions> = {
-  [K in keyof V]?: VariantSelectionValue<VariantOptionKey<V, K>> | null | undefined;
+  [K in keyof V]?: ResponsiveVariantValue<VariantOptionKey<V, K>> | null | undefined;
 };
 
 /**

@@ -11,6 +11,7 @@ import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 import { buildComponentClassName } from './class-naming.js';
+import { getBreakpoints, buildBreakpointClassName } from './breakpoints.js';
 
 /**
  * Create a multi-variant component style and return a selector function.
@@ -88,6 +89,8 @@ function createSingleComponent<V extends VariantDefinitions>(
 
   let baseClassName: string | undefined;
   const variantClassByKey: Record<string, string> = {};
+  // Map of "bp:dimension-option" → breakpoint-prefixed class name
+  const responsiveClassByKey: Record<string, string> = {};
   const compoundClassByIndex: string[] = [];
 
   // 1. Inject CSS for base
@@ -96,13 +99,27 @@ function createSingleComponent<V extends VariantDefinitions>(
     rules.push(...serializeStyle(`.${baseClassName}`, base));
   }
 
-  // 2. Inject CSS for each variant option
+  // 2. Inject CSS for each variant option, plus breakpoint-responsive variants
+  const breakpoints = getBreakpoints();
   for (const [dimension, options] of Object.entries(variants)) {
     for (const [option, properties] of Object.entries(options as Record<string, CSSProperties>)) {
       const segment = `${dimension}-${option}`;
       const className = buildComponentClassName(namespace, segment, properties);
       variantClassByKey[segment] = className;
       rules.push(...serializeStyle(`.${className}`, properties));
+
+      // Generate a media-query-wrapped class for each configured breakpoint
+      for (const [bp, minWidth] of Object.entries(breakpoints)) {
+        const bpClassName = buildBreakpointClassName(bp, className);
+        responsiveClassByKey[`${bp}:${segment}`] = bpClassName;
+        const innerRules = serializeStyle(`.${bpClassName}`, properties);
+        for (const inner of innerRules) {
+          rules.push({
+            key: `bp:${bp}:${inner.key}`,
+            css: `@media (min-width: ${minWidth}) { ${inner.css} }`,
+          });
+        }
+      }
     }
   }
 
@@ -123,28 +140,53 @@ function createSingleComponent<V extends VariantDefinitions>(
 
     if (base && baseClassName) classes.push(baseClassName);
 
-    // Resolve final selections (explicit overrides defaultVariants)
+    // Resolve final selections (explicit overrides defaultVariants).
+    // A selection can be a plain value or a responsive object like
+    // { initial: 'sm', md: 'lg' }.
     const resolvedSelections: Record<string, unknown> = {};
     for (const [dimension, options] of Object.entries(variants)) {
       const optionMap = options as Record<string, CSSProperties>;
       const explicit = selections[dimension];
       const fallback = (defaultVariants as Record<string, unknown>)[dimension];
-      resolvedSelections[dimension] = normalizeSelection(explicit ?? fallback, optionMap);
+      const raw = explicit ?? fallback;
+      // Normalize responsive objects: extract the 'initial' key as the base value
+      resolvedSelections[dimension] = isResponsiveObject(raw)
+        ? normalizeSelection(raw['initial'], optionMap)
+        : normalizeSelection(raw, optionMap);
     }
 
     // Apply variant classes
     for (const [dimension, options] of Object.entries(variants)) {
-      const selected = resolvedSelections[dimension];
       const optionMap = options as Record<string, CSSProperties>;
-      const selectedKey = normalizeSelection(selected, optionMap);
-      if (selectedKey != null) {
-        const variantKey = `${dimension}-${selectedKey}`;
-        const cn = variantClassByKey[variantKey];
-        if (cn) classes.push(cn);
+      const raw = (selections[dimension] ?? (defaultVariants as Record<string, unknown>)[dimension]);
+
+      if (isResponsiveObject(raw)) {
+        // Apply initial (base) class if present
+        const initialKey = normalizeSelection(raw['initial'], optionMap);
+        if (initialKey != null) {
+          const cn = variantClassByKey[`${dimension}-${initialKey}`];
+          if (cn) classes.push(cn);
+        }
+        // Apply breakpoint-specific classes
+        for (const [bp, bpValue] of Object.entries(raw)) {
+          if (bp === 'initial') continue;
+          const bpKey = normalizeSelection(bpValue, optionMap);
+          if (bpKey != null) {
+            const cn = responsiveClassByKey[`${bp}:${dimension}-${bpKey}`];
+            if (cn) classes.push(cn);
+          }
+        }
+      } else {
+        const selectedKey = normalizeSelection(resolvedSelections[dimension], optionMap);
+        if (selectedKey != null) {
+          const variantKey = `${dimension}-${selectedKey}`;
+          const cn = variantClassByKey[variantKey];
+          if (cn) classes.push(cn);
+        }
       }
     }
 
-    // Apply compound variant classes
+    // Apply compound variant classes (uses the resolved initial value for matching)
     (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
       (cv, index) => {
         const matches = Object.entries(cv.variants).every(([k, expected]) => {
@@ -170,6 +212,22 @@ function createSingleComponent<V extends VariantDefinitions>(
     return classes.join(' ');
   }) as ComponentFunction<V>;
 }
+
+/**
+ * Check whether a variant selection is a responsive object
+ * (e.g. `{ initial: 'sm', md: 'lg' }`) vs a plain scalar value.
+ */
+function isResponsiveObject(
+  value: unknown,
+): value is Record<string, string | boolean | null | undefined> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !(value instanceof RegExp)
+  );
+}
+
 
 function normalizeSelection(
   value: unknown,

@@ -6,7 +6,7 @@ import type {
   StyleDefinitionsWithUtils,
   StyleUtils,
 } from './types.js';
-import { serializeStyle } from './css.js';
+import { serializeStyle, serializeAtomicStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 import {
@@ -354,4 +354,38 @@ function mergeStyleObjects(base: CSSProperties, next: CSSProperties): CSSPropert
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Apply atomic CSS decomposition to a single style object.
+ *
+ * Each CSS declaration is split into its own class, identified by a stable
+ * hash of `property:value`. Identical declarations across different components
+ * share the same class, so CSS file size plateaus as the codebase grows.
+ *
+ * Returns the composed class-name string (space-separated atomic classes).
+ * The generated CSS rules are registered immediately.
+ *
+ * @param properties - The style object to decompose atomically.
+ * @param prefix     - Class name prefix. Defaults to the configured class naming prefix (`"ts"`).
+ *
+ * @example
+ * ```ts
+ * // These two calls produce the SAME CSS — the `.ts-abc1` class is only
+ * // emitted once even though two components use `color: red`.
+ * const a = styles.atomic({ color: 'red', fontSize: '14px' });
+ * const b = styles.atomic({ color: 'red', fontWeight: 700 });
+ *
+ * // a → "ts-abc1 ts-def2"
+ * // b → "ts-abc1 ts-ghi3"  (ts-abc1 reused — no duplicate CSS)
+ * ```
+ */
+export function atomicStyles(
+  properties: CSSProperties,
+  prefix?: string,
+): string {
+  const cfg = getClassNamingConfig();
+  const { classes, rules } = serializeAtomicStyle(properties, prefix ?? cfg.prefix);
+  insertRules(rules);
+  return classes.join(' ');
 }

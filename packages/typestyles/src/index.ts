@@ -1,5 +1,5 @@
-import { createStyles, createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
-import { createTokens, useTokens, createTheme } from './tokens.js';
+import { createStyles, createClass, createHashClass, compose, createStylesWithUtils, atomicStyles } from './styles.js';
+import { createTokens, useTokens, createTheme, createThemeContract } from './tokens.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
 import {
@@ -17,6 +17,9 @@ import { createVar, assignVars } from './vars.js';
 export type { ClassNamingConfig, ClassNamingMode } from './class-naming.js';
 export { configureClassNaming, getClassNamingConfig, resetClassNaming } from './class-naming.js';
 
+export type { BreakpointConfig } from './breakpoints.js';
+export { configureBreakpoints, getBreakpoints, resetBreakpoints } from './breakpoints.js';
+
 export type {
   CSSProperties,
   CSSValue,
@@ -27,11 +30,14 @@ export type {
   SelectorFunction,
   TokenValues,
   TokenRef,
+  ThemeContractRef,
   ThemeOverrides,
   KeyframeStops,
   VariantDefinitions,
   ComponentConfig,
   ComponentFunction,
+  ComponentSelections,
+  ResponsiveVariantValue,
   SlotStyles,
   SlotVariantDefinitions,
   SlotComponentConfig,
@@ -67,6 +73,7 @@ export const styles = {
   component: createComponent,
   withUtils: createStylesWithUtils,
   compose,
+  atomic: atomicStyles,
 } as const;
 
 /**
@@ -99,6 +106,7 @@ export const tokens = {
   create: createTokens,
   use: useTokens,
   createTheme,
+  createContract: createThemeContract,
 } as const;
 
 /**
