@@ -6,6 +6,51 @@ const STYLE_ELEMENT_ID = 'typestyles';
 const insertedRules = new Set<string>();
 
 /**
+ * The configured CSS @layer name, or null if layer wrapping is disabled.
+ * When set, all injected rules are wrapped in `@layer <name> { ... }`.
+ */
+let configuredLayerName: string | null = null;
+
+/**
+ * Configure CSS @layer wrapping for all injected styles.
+ *
+ * When enabled, every generated CSS rule is wrapped inside a named cascade
+ * layer (`@layer <name> { ... }`). This prevents typestyles rules from
+ * accidentally overriding user styles that have no layer, since unlayered
+ * styles always win over layered ones regardless of specificity.
+ *
+ * Call this once before any styles are registered (typically at the top of
+ * your entry module, alongside `configureClassNaming`).
+ *
+ * @param name - The CSS layer name. Defaults to `"typestyles"`.
+ *
+ * @example
+ * ```ts
+ * import { configureLayer } from 'typestyles';
+ *
+ * configureLayer(); // uses "@layer typestyles { ... }"
+ * // or:
+ * configureLayer('ui'); // uses "@layer ui { ... }"
+ * ```
+ */
+export function configureLayer(name = 'typestyles'): void {
+  configuredLayerName = name;
+  // Insert a bare layer declaration so the layer is established in the
+  // cascade before any rules are inserted into it. This ensures that the
+  // layer order is predictable even when styles load out of sequence.
+  const layerDecl = `@layer ${name};`;
+  insertRule(`__layer-decl__:${name}`, layerDecl);
+}
+
+/**
+ * Wrap a CSS rule string in the configured @layer block, if any.
+ */
+function wrapInLayer(css: string): string {
+  if (!configuredLayerName) return css;
+  return `@layer ${configuredLayerName} { ${css} }`;
+}
+
+/**
  * Whether runtime DOM insertion is disabled (for build-time/zero-runtime mode).
  * The Vite plugin (mode: 'build') defines __TYPESTYLES_RUNTIME_DISABLED__ as the
  * string "true" at build time, so this is true in production and no <style> is created.
@@ -165,13 +210,16 @@ function scheduleFlush(): void {
 
 /**
  * Insert a CSS rule. Deduplicates by rule key.
+ * Layer-declaration rules (key starting with `__layer-decl__:`) bypass wrapping
+ * so the bare `@layer name;` is always emitted before any rules inside the layer.
  */
 export function insertRule(key: string, css: string): void {
   if (insertedRules.has(key)) return;
   insertedRules.add(key);
-  allRules.push(css);
+  const finalCss = key.startsWith('__layer-decl__:') ? css : wrapInLayer(css);
+  allRules.push(finalCss);
   if (RUNTIME_DISABLED && !ssrBuffer) return;
-  pendingRules.push(css);
+  pendingRules.push(finalCss);
   scheduleFlush();
 }
 
@@ -183,9 +231,10 @@ export function insertRules(rules: Array<{ key: string; css: string }>): void {
   for (const { key, css } of rules) {
     if (insertedRules.has(key)) continue;
     insertedRules.add(key);
-    allRules.push(css);
+    const finalCss = key.startsWith('__layer-decl__:') ? css : wrapInLayer(css);
+    allRules.push(finalCss);
     if (!RUNTIME_DISABLED || ssrBuffer) {
-      pendingRules.push(css);
+      pendingRules.push(finalCss);
       added = true;
     }
   }
@@ -258,6 +307,7 @@ export function reset(): void {
   allRules.length = 0;
   flushScheduled = false;
   ssrBuffer = null;
+  configuredLayerName = null;
   if (isBrowser && styleElement) {
     styleElement.remove();
     styleElement = null;

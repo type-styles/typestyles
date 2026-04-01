@@ -8,6 +8,7 @@ import {
   reset,
   flushSync,
   ensureDocumentStylesAttached,
+  configureLayer,
 } from './sheet.js';
 import { createComponent } from './component.js';
 import { globalStyle, globalFontFace } from './global.js';
@@ -195,4 +196,4 @@ export { insertRules };
  * flushSync();
  * ```
  */
-export { reset, flushSync, ensureDocumentStylesAttached };
+export { reset, flushSync, ensureDocumentStylesAttached, configureLayer };
