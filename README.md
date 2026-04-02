@@ -176,12 +176,18 @@ const text = styles.create('text', {
 // Compose multiple variants
 <h1 className={text('base', 'heading', 'bold')}>
   {/* class="text-base text-heading text-bold" */}
-</h1>
+</h1>;
+```
 
-// Mix with plain CSS classes
-<p className={text('base', 'muted') + ' legacy-margin'}>
-  {/* class="text-base text-muted legacy-margin" */}
-</p>
+Use the built-in `cx` utility to combine classes from different sources:
+
+```tsx
+import { cx, styles } from 'typestyles';
+
+const card = styles.class('card', { padding: '16px' });
+
+// Combine TypeStyles classes with external classes, conditionally
+<div className={cx(card, text('base', 'muted'), isActive && 'active', externalClassName)} />;
 ```
 
 ### Selectors and Nesting

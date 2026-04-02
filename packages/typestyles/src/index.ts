@@ -18,6 +18,7 @@ import {
 import { createComponent } from './component.js';
 import { globalStyle, globalFontFace } from './global.js';
 import { createVar, assignVars } from './vars.js';
+import { cx } from './cx.js';
 
 export type { ClassNamingConfig, ClassNamingMode } from './class-naming.js';
 export { configureClassNaming, getClassNamingConfig, resetClassNaming } from './class-naming.js';
@@ -202,3 +203,19 @@ export { insertRules };
  * ```
  */
 export { reset, flushSync, ensureDocumentStylesAttached };
+
+/**
+ * Join class name parts, filtering out falsy values.
+ *
+ * A lightweight utility for combining TypeStyles classes, external class
+ * strings, and conditional expressions into a single `className` string.
+ *
+ * @example
+ * ```ts
+ * import { cx } from 'typestyles';
+ *
+ * cx(card('root'), isActive && 'active', externalClassName);
+ * // => "card-root active my-external-class"
+ * ```
+ */
+export { cx };

@@ -1,5 +1,6 @@
 import type { JSX, ReactNode } from 'react';
 import { createContext, useContext, useMemo, useState } from 'react';
+import { cx } from 'typestyles';
 import { defaultTheme as baseTheme } from './tokens';
 
 type ThemeName = 'light' | 'dark';
@@ -11,10 +12,6 @@ type ThemeContextValue = {
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-function cx(...parts: Array<string | undefined | false>): string {
-  return parts.filter(Boolean).join(' ');
-}
 
 export type DesignSystemProviderProps = {
   children: ReactNode;

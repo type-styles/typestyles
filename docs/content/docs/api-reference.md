@@ -53,6 +53,24 @@ Global CSS helpers (not scoped to a component class):
 
 Type-safe helpers that return CSS color strings (`rgb`, `hsl`, `oklch`, `mix`, `alpha`, `lightDark`, etc.). See [Color](/docs/color).
 
+### `cx(...parts)`
+
+Joins class name parts into a single string, filtering out falsy values (`false`, `undefined`, `null`, `0`, `''`).
+
+Use `cx` to combine TypeStyles classes with external class strings and conditional expressions.
+
+```ts
+import { cx, styles } from 'typestyles';
+
+const card = styles.create('card', {
+  base: { padding: '16px' },
+  active: { borderColor: 'blue' },
+});
+
+cx(card('base'), isActive && card('active'), externalClassName);
+// => "card-base card-active my-external-class"
+```
+
 ### CSS variables (advanced)
 
 - `createVar(name, fallback?)`, `assignVars(vars)`: Typed custom property helpers for advanced patterns
