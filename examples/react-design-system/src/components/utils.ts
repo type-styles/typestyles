@@ -1,8 +1,5 @@
 import type { TextFieldProps as AriaTextFieldProps } from 'react-aria-components';
-
-export function cx(...parts: Array<string | undefined | false>): string {
-  return parts.filter(Boolean).join(' ');
-}
+export { cx } from 'typestyles';
 
 export type FieldMeta = {
   label?: string;

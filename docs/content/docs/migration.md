@@ -316,6 +316,8 @@ className={cx(base, isPrimary && primary, isLarge && large)}
 
 **After:**
 
+When all classes come from one `styles.create` call, the selector function handles conditional class names directly:
+
 ```tsx
 import { styles, cx } from 'typestyles';
 
@@ -339,7 +341,19 @@ const { base, ...variants } = button;
 className={cx(base, isPrimary && 'button-intent-primary', isLarge && 'button-size-large')}
 ```
 
-typestyles includes a built-in `cx()` utility exported from `'typestyles'` for conditional class joining.
+When you need to combine classes from different sources (multiple style groups, external class strings, or conditional expressions), use the built-in `cx` utility:
+
+```tsx
+import { cx, styles } from 'typestyles';
+
+const card = styles.class('card', { padding: '16px' });
+const button = styles.create('button', {
+  base: { padding: '8px' },
+  primary: { backgroundColor: 'blue' },
+});
+
+className={cx(card, button('base', 'primary'), isActive && 'active', externalClassName)}
+```
 
 ## From CVA (Class Variance Authority)
 
