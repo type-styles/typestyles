@@ -10,13 +10,13 @@ import type {
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
-import { buildComponentClassName } from './class-naming.js';
+import { buildComponentClassName, buildSingleClassName } from './class-naming.js';
 
 /**
  * Create a multi-variant component style and return a selector function.
  *
  * Class naming convention (default `semantic` mode; see `configureClassNaming`):
- *   base                         → `{namespace}-base`
+ *   base                         → `{namespace}`
  *   variants.intent.primary      → `{namespace}-intent-primary`
  *   compoundVariants[0]          → `{namespace}-compound-0`
  *
@@ -35,13 +35,13 @@ import { buildComponentClassName } from './class-naming.js';
  *     },
  *   },
  *   compoundVariants: [
- *     { variants: { intent: 'primary', size: 'lg' }, style: { fontWeight: 700 } },
+ *     { intent: 'primary', size: 'lg', css: { fontWeight: 700 } },
  *   ],
  *   defaultVariants: { intent: 'primary', size: 'sm' },
  * });
  *
- * button()                        // "button-base button-intent-primary button-size-sm"
- * button({ intent: 'ghost' })     // "button-base button-intent-ghost button-size-sm"
+ * button()                        // "button button-intent-primary button-size-sm"
+ * button({ intent: 'ghost' })     // "button button-intent-ghost button-size-sm"
  * button({ intent: 'primary', size: 'lg' }) // includes compound class
  * ```
  */
@@ -94,9 +94,12 @@ function createSingleComponent<V extends VariantDefinitions>(
   const variantClassByKey: Record<string, string> = {};
   const compoundClassByIndex: string[] = [];
 
-  // 1. Inject CSS for base
+  // Collect variant dimension keys for compound variant extraction
+  const variantKeys = new Set(Object.keys(variants));
+
+  // 1. Inject CSS for base (uses namespace as class name, e.g. "button")
   if (base) {
-    baseClassName = buildComponentClassName(namespace, 'base', base);
+    baseClassName = buildSingleClassName(namespace, base);
     rules.push(...serializeStyle(`.${baseClassName}`, base));
   }
 
@@ -111,13 +114,12 @@ function createSingleComponent<V extends VariantDefinitions>(
   }
 
   // 3. Inject CSS for each compound variant
-  (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
-    (cv, index) => {
-      const className = buildComponentClassName(namespace, `compound-${index}`, cv.style);
-      compoundClassByIndex[index] = className;
-      rules.push(...serializeStyle(`.${className}`, cv.style));
-    },
-  );
+  (compoundVariants as Array<Record<string, unknown>>).forEach((cv, index) => {
+    const style = cv.css as CSSProperties;
+    const className = buildComponentClassName(namespace, `compound-${index}`, style);
+    compoundClassByIndex[index] = className;
+    rules.push(...serializeStyle(`.${className}`, style));
+  });
 
   insertRules(rules);
 
@@ -149,22 +151,22 @@ function createSingleComponent<V extends VariantDefinitions>(
     }
 
     // Apply compound variant classes
-    (
-      compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>
-    ).forEach((cv, index) => {
-      const matches = Object.entries(cv.variants).every(([k, expected]) => {
-        const options = (variants as Record<string, Record<string, CSSProperties>>)[k];
-        if (!options) return false;
+    (compoundVariants as Array<Record<string, unknown>>).forEach((cv, index) => {
+      const matches = Object.entries(cv)
+        .filter(([k]) => k !== 'css' && variantKeys.has(k))
+        .every(([k, expected]) => {
+          const options = (variants as Record<string, Record<string, CSSProperties>>)[k];
+          if (!options) return false;
 
-        const selected = normalizeSelection(resolvedSelections[k], options);
-        if (selected == null) return false;
+          const selected = normalizeSelection(resolvedSelections[k], options);
+          if (selected == null) return false;
 
-        if (Array.isArray(expected)) {
-          return expected.some((value) => normalizeSelection(value, options) === selected);
-        }
+          if (Array.isArray(expected)) {
+            return expected.some((value) => normalizeSelection(value, options) === selected);
+          }
 
-        return normalizeSelection(expected, options) === selected;
-      });
+          return normalizeSelection(expected, options) === selected;
+        });
       if (matches) {
         const cn = compoundClassByIndex[index];
         if (cn) classes.push(cn);
@@ -214,6 +216,9 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
 
   const rules: Array<{ key: string; css: string }> = [];
 
+  // Collect variant dimension keys for compound variant extraction
+  const variantKeys = new Set(Object.keys(variants));
+
   const baseClassBySlot: Record<string, string> = {};
   for (const [slot, properties] of Object.entries(base as Record<string, CSSProperties>)) {
     const className = buildComponentClassName(namespace, slot, properties);
@@ -236,13 +241,9 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
   }
 
   const slotCompoundClassByKey: Record<string, string> = {};
-  (
-    compoundVariants as Array<{
-      variants: Record<string, unknown>;
-      style: Record<string, CSSProperties>;
-    }>
-  ).forEach((cv, index) => {
-    for (const [slot, properties] of Object.entries(cv.style)) {
+  (compoundVariants as Array<Record<string, unknown>>).forEach((cv, index) => {
+    const slotStyles = cv.css as Record<string, CSSProperties>;
+    for (const [slot, properties] of Object.entries(slotStyles)) {
       const segment = `${slot}-compound-${index}`;
       const className = buildComponentClassName(namespace, segment, properties);
       slotCompoundClassByKey[`${slot}::${index}`] = className;
@@ -284,29 +285,27 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
       }
     }
 
-    (
-      compoundVariants as Array<{
-        variants: Record<string, unknown>;
-        style: Record<string, CSSProperties>;
-      }>
-    ).forEach((cv, index) => {
-      const matches = Object.entries(cv.variants).every(([k, expected]) => {
-        const options = (variants as Record<string, Record<string, unknown>>)[k];
-        if (!options) return false;
+    (compoundVariants as Array<Record<string, unknown>>).forEach((cv, index) => {
+      const matches = Object.entries(cv)
+        .filter(([k]) => k !== 'css' && variantKeys.has(k))
+        .every(([k, expected]) => {
+          const options = (variants as Record<string, Record<string, unknown>>)[k];
+          if (!options) return false;
 
-        const selected = normalizeSelection(resolvedSelections[k], options);
-        if (selected == null) return false;
+          const selected = normalizeSelection(resolvedSelections[k], options);
+          if (selected == null) return false;
 
-        if (Array.isArray(expected)) {
-          return expected.some((value) => normalizeSelection(value, options) === selected);
-        }
+          if (Array.isArray(expected)) {
+            return expected.some((value) => normalizeSelection(value, options) === selected);
+          }
 
-        return normalizeSelection(expected, options) === selected;
-      });
+          return normalizeSelection(expected, options) === selected;
+        });
 
       if (!matches) return;
 
-      for (const slot of Object.keys(cv.style)) {
+      const slotStyles = cv.css as Record<string, CSSProperties>;
+      for (const slot of Object.keys(slotStyles)) {
         const cn = slotCompoundClassByKey[`${slot}::${index}`];
         if (cn && classes[slot]) classes[slot].push(cn);
       }

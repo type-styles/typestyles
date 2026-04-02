@@ -1,10 +1,4 @@
-import {
-  createStyles,
-  createClass,
-  createHashClass,
-  compose,
-  createStylesWithUtils,
-} from './styles.js';
+import { createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
 import { createTokens, useTokens, createTheme } from './tokens.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
@@ -25,11 +19,8 @@ export { configureClassNaming, getClassNamingConfig, resetClassNaming } from './
 export type {
   CSSProperties,
   CSSValue,
-  StyleDefinitions,
-  StyleDefinitionsWithUtils,
   CSSPropertiesWithUtils,
   StyleUtils,
-  SelectorFunction,
   TokenValues,
   TokenRef,
   ThemeOverrides,
@@ -37,6 +28,7 @@ export type {
   VariantDefinitions,
   ComponentConfig,
   ComponentFunction,
+  ComponentSelections,
   SlotStyles,
   SlotVariantDefinitions,
   SlotComponentConfig,
@@ -50,23 +42,36 @@ export { createVar, assignVars };
 
 export type { ColorMixSpace } from './color.js';
 
+export type { StylesWithUtilsApi } from './styles.js';
+
 /**
  * Style creation API.
  *
  * @example
  * ```ts
- * const button = styles.create('button', {
- *   base: { padding: '8px 16px' },
- *   primary: { backgroundColor: '#0066ff' },
+ * // Single class (no variants)
+ * const card = styles.class('card', { padding: '16px', borderRadius: '8px' });
+ *
+ * // Multi-variant component
+ * const button = styles.component('button', {
+ *   base: { padding: '8px 16px', borderRadius: '6px' },
+ *   variants: {
+ *     intent: {
+ *       primary: { backgroundColor: '#0066ff', color: '#fff' },
+ *       secondary: { backgroundColor: '#e5e7eb' },
+ *     },
+ *     size: {
+ *       sm: { fontSize: '14px' },
+ *       lg: { fontSize: '18px', padding: '12px 24px' },
+ *     },
+ *   },
+ *   defaultVariants: { intent: 'primary', size: 'sm' },
  * });
  *
- * const hashed = styles.hashClass({ display: 'inline-flex' }, 'button');
- *
- * <button className={`${button('base', 'primary')} ${hashed}`}>
+ * button({ intent: 'primary', size: 'lg' }); // "button button-intent-primary button-size-lg"
  * ```
  */
 export const styles = {
-  create: createStyles,
   class: createClass,
   hashClass: createHashClass,
   component: createComponent,
@@ -116,7 +121,7 @@ export const tokens = {
  *   to: { opacity: 1 },
  * });
  *
- * const card = styles.create('card', {
+ * const card = styles.component('card', {
  *   base: { animation: `${fadeIn} 300ms ease` },
  * });
  * ```
@@ -145,7 +150,7 @@ export const color = colorFns;
 /**
  * Return all registered CSS as a string (for SSR).
  *
- * Returns every CSS rule registered via `styles.create`, `tokens.create`,
+ * Returns every CSS rule registered via `styles.component`, `tokens.create`,
  * `keyframes.create`, etc. Use this in your SSR head/meta function to
  * inject styles into the document.
  *

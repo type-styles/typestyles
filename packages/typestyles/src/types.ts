@@ -46,28 +46,6 @@ export type CSSPropertiesWithUtils<U extends StyleUtils> = CSS.Properties<CSSVal
 };
 
 /**
- * A map of style names to utility-aware CSS property definitions.
- */
-export type StyleDefinitionsWithUtils<U extends StyleUtils> = Record<
-  string,
-  CSSPropertiesWithUtils<U>
->;
-
-/**
- * A map of variant names to their CSS property definitions.
- */
-export type StyleDefinitions = Record<string, CSSProperties>;
-
-/**
- * A selector function returned by styles.create().
- * Accepts variant names (or falsy values for conditional application)
- * and returns a composed class name string.
- */
-export interface SelectorFunction<K extends string = string> {
-  (...variants: (K | false | null | undefined)[]): string;
-}
-
-/**
  * A flat map of token names to their values.
  */
 export type TokenValues = Record<string, string>;
@@ -121,10 +99,9 @@ export type ComponentSelections<V extends VariantDimensions> = {
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
   variants?: V;
-  compoundVariants?: Array<{
-    variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
-    style: CSSProperties;
-  }>;
+  compoundVariants?: Array<
+    { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> } & { css: CSSProperties }
+  >;
   defaultVariants?: ComponentSelections<V>;
 };
 
@@ -139,10 +116,9 @@ export type SlotComponentConfig<S extends string, V extends SlotVariantDefinitio
   slots: readonly S[];
   base?: SlotStyles<S>;
   variants?: V;
-  compoundVariants?: Array<{
-    variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
-    style: SlotStyles<S>;
-  }>;
+  compoundVariants?: Array<
+    { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> } & { css: SlotStyles<S> }
+  >;
   defaultVariants?: ComponentSelections<V>;
 };
 

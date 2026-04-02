@@ -1,10 +1,10 @@
 import type { CSSProperties } from './types.js';
 
 /**
- * How generated class names are formed for `styles.create`, `styles.class`,
- * `styles.component`, and related APIs.
+ * How generated class names are formed for `styles.component`, `styles.class`,
+ * and related APIs.
  *
- * - `semantic` — readable names like `button-base`, `button-intent-primary` (default).
+ * - `semantic` — readable names like `button`, `button-intent-primary` (default).
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
  * - `atomic` — hash-only names (shortest); same collision properties as `hashed` when `scopeId` differs.
  */
@@ -75,7 +75,7 @@ export function sanitizeClassSegment(label: string): string {
   return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '') || 'style';
 }
 
-/** `styles.class(name, …)` */
+/** `styles.class(name, …)` and base class for `styles.component(name, …)` */
 export function buildSingleClassName(name: string, properties: CSSProperties): string {
   const cfg = getClassNamingConfig();
   if (cfg.mode === 'semantic') return name;
@@ -92,8 +92,8 @@ export function buildSingleClassName(name: string, properties: CSSProperties): s
 }
 
 /**
- * `styles.create` / `styles.component` / components with `slots`: logical namespace plus
- * a variant segment (`base`, `intent-primary`, `root-trigger-primary`, …).
+ * `styles.component` variant classes: logical namespace plus
+ * a variant segment (`intent-primary`, `root-trigger-primary`, …).
  */
 export function buildComponentClassName(
   namespace: string,
