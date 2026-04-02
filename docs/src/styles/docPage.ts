@@ -1,8 +1,8 @@
 import { designTokens as t } from '@examples/design-system';
 import { styles } from 'typestyles';
 
-export const docPage = styles.create('docs-doc-page', {
-  footer: {
+export const docPage = {
+  footer: styles.class('docs-doc-page-footer', {
     marginTop: t.space[5],
     paddingTop: t.space[4],
     borderTop: `1px solid ${t.color.border.default}`,
@@ -12,24 +12,24 @@ export const docPage = styles.create('docs-doc-page', {
     gap: `${t.space[4]} ${t.space[5]}`,
     fontSize: t.fontSize.sm,
     color: t.color.text.secondary,
-  },
-  editLink: {
+  }),
+  editLink: styles.class('docs-doc-page-editLink', {
     color: t.color.accent.default,
     textDecoration: 'none',
     fontWeight: t.fontWeight.medium,
     '&:hover': {
       textDecoration: 'underline',
     },
-  },
-  pagination: {
+  }),
+  pagination: styles.class('docs-doc-page-pagination', {
     display: 'flex',
     justifyContent: 'space-between',
     marginTop: t.space[6],
     paddingTop: t.space[5],
     borderTop: `1px solid ${t.color.border.default}`,
     gap: t.space[4],
-  },
-  paginationLink: {
+  }),
+  paginationLink: styles.class('docs-doc-page-paginationLink', {
     fontSize: t.fontSize.md,
     color: t.color.accent.default,
     textDecoration: 'none',
@@ -41,5 +41,5 @@ export const docPage = styles.create('docs-doc-page', {
       backgroundColor: t.color.background.subtle,
       borderColor: t.color.accent.default,
     },
-  },
-});
+  }),
+};

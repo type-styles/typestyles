@@ -3,8 +3,8 @@ import { styles } from 'typestyles';
 
 const bp = '@media (max-width: 768px)';
 
-export const mobileBar = styles.create('docs-mobile-bar', {
-  root: {
+export const mobileBar = {
+  root: styles.class('docs-mobile-bar-root', {
     display: 'none',
     [bp]: {
       display: 'flex',
@@ -21,8 +21,8 @@ export const mobileBar = styles.create('docs-mobile-bar', {
       borderBottom: `1px solid ${t.color.border.default}`,
       transition: 'background-color 0.2s ease, border-color 0.2s ease',
     },
-  },
-  menuBtn: {
+  }),
+  menuBtn: styles.class('docs-mobile-bar-menuBtn', {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -38,20 +38,20 @@ export const mobileBar = styles.create('docs-mobile-bar', {
     '&:hover': {
       backgroundColor: t.color.background.subtle,
     },
-  },
-  logo: {
+  }),
+  logo: styles.class('docs-mobile-bar-logo', {
     fontSize: t.fontSize.lg,
     fontWeight: t.fontWeight.bold,
     color: t.color.text.primary,
     textDecoration: 'none',
     letterSpacing: '-0.03em',
-  },
-  logoAccent: {
+  }),
+  logoAccent: styles.class('docs-mobile-bar-logoAccent', {
     color: t.color.accent.default,
-  },
+  }),
   /** Balances the menu button so the logo stays centered on small screens. */
-  headerSpacer: {
+  headerSpacer: styles.class('docs-mobile-bar-headerSpacer', {
     width: '36px',
     flexShrink: 0,
-  },
-});
+  }),
+};
