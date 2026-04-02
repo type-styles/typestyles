@@ -15,16 +15,26 @@ Style creation and composition API.
 
 **Methods:**
 
-- `styles.create(namespace, definitions)`: Creates style variants (flat named keys)
+- `styles.component(namespace, config)`: Creates component styles (flat or dimensioned). Returns a CVA-style object that is both callable and destructurable.
 - `styles.class(name, style)`: Creates a single registered class from one style object
 - `styles.hashClass(styles, label?)`: Emits a hashed class from a style object (see [Class naming](/docs/class-naming))
-- `styles.withUtils(utils)`: Returns utility-aware `create`, `class`, and `hashClass` helpers
+- `styles.withUtils(utils)`: Returns utility-aware `component`, `class`, and `hashClass` helpers
 - `styles.compose(...selectors)`: Combines multiple selector functions or class strings
-- `styles.component(namespace, config)`: Creates variant-based component styles
+
+### `cx`
+
+Built-in class joining utility:
+
+```ts
+import { cx } from 'typestyles';
+
+cx('class-a', isActive && 'class-b', undefined, 'class-c');
+// "class-a class-b class-c" (falsy values are filtered out)
+```
 
 ### Class naming
 
-Global options for emitted class strings (used by `styles.create`, `styles.class`, and `styles.component`):
+Global options for emitted class strings (used by `styles.component`, `styles.class`):
 
 - `configureClassNaming(options)`: Set `mode` (`'semantic' | 'hashed' | 'atomic'`), optional `prefix`, optional `scopeId`
 - `getClassNamingConfig()`: Read current config
@@ -91,17 +101,51 @@ Keyframe animation API.
 
 ## Usage Examples
 
-### Creating Styles
+### Creating Component Styles (flat config)
 
 ```ts
 import { styles } from 'typestyles';
 
-const button = styles.create('button', {
-  base: { padding: '8px 16px' },
-  primary: { backgroundColor: '#0066ff' },
+const card = styles.component('card', {
+  base: { padding: '16px', borderRadius: '8px' },
+  elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
 });
 
-button('base', 'primary'); // "button-base button-primary"
+// Call as function (base auto-applied):
+card();
+
+// Destructure:
+const { base, elevated } = card;
+```
+
+### Creating Component Styles (dimensioned config)
+
+```ts
+import { styles } from 'typestyles';
+
+const button = styles.component('button', {
+  base: { borderRadius: '8px' },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#2563eb', color: 'white' },
+      ghost: { backgroundColor: 'transparent', color: '#111827' },
+    },
+  },
+  defaultVariants: {
+    intent: 'primary',
+  },
+});
+
+button(); // "button-base button-intent-primary"
+button({ intent: 'ghost' }); // "button-base button-intent-ghost"
+```
+
+### Joining Classes with cx()
+
+```ts
+import { cx } from 'typestyles';
+
+const className = cx('base-class', isActive && 'active', isPrimary && 'primary');
 ```
 
 ### Creating Tokens
@@ -136,38 +180,15 @@ animation: `${fadeIn} 300ms ease`;
 ```ts
 import { styles } from 'typestyles';
 
-const base = styles.create('base', {
-  root: { padding: '8px' },
+const base = styles.component('base', {
+  base: { padding: '8px' },
 });
 
-const primary = styles.create('primary', {
-  root: { color: 'blue' },
+const primary = styles.component('primary', {
+  base: { color: 'blue' },
 });
 
 const button = styles.compose(base, primary);
-button('root'); // "base-root primary-root"
-```
-
-### Creating Variant Components
-
-```ts
-import { styles } from 'typestyles';
-
-const button = styles.component('button', {
-  base: { borderRadius: '8px' },
-  variants: {
-    intent: {
-      primary: { backgroundColor: '#2563eb', color: 'white' },
-      ghost: { backgroundColor: 'transparent', color: '#111827' },
-    },
-  },
-  defaultVariants: {
-    intent: 'primary',
-  },
-});
-
-button(); // "button-base button-intent-primary"
-button({ intent: 'ghost' }); // "button-base button-intent-ghost"
 ```
 
 ## @typestyles/props
@@ -214,4 +235,4 @@ atoms({
 
 ---
 
-_Last reviewed: 2026-03-27_
+_Last reviewed: 2026-04-02_

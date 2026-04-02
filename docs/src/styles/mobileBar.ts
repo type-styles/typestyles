@@ -3,7 +3,7 @@ import { styles } from 'typestyles';
 
 const bp = '@media (max-width: 768px)';
 
-export const mobileBar = styles.create('docs-mobile-bar', {
+export const mobileBar = styles.component('docs-mobile-bar', {
   root: {
     display: 'none',
     [bp]: {

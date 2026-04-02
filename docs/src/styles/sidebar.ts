@@ -3,7 +3,7 @@ import { styles } from 'typestyles';
 
 const bp = '@media (max-width: 768px)';
 
-const sidebarBase = styles.create('docs-sidebar', {
+const sidebarBase = styles.component('docs-sidebar', {
   root: {
     width: '280px',
     flexShrink: 0,

@@ -115,7 +115,11 @@ Auto-generated documentation for all typestyles APIs.
   if (stylesDoc) {
     apiDoc += `### \`styles\`\n\n${stylesDoc.description}\n\n`;
     apiDoc += `**Methods:**\n\n`;
-    apiDoc += `- \`styles.create(namespace, definitions)\`: ${stylesDoc.description.split('.')[0]}\n\n`;
+    apiDoc += `- \`styles.component(namespace, config)\`: Create multi-variant component styles (CVA-style)\n`;
+    apiDoc += `- \`styles.class(name, properties)\`: Create a single class\n`;
+    apiDoc += `- \`styles.hashClass(properties, label?)\`: Create a deterministic hashed class\n`;
+    apiDoc += `- \`styles.compose(...fns)\`: Compose multiple style functions\n`;
+    apiDoc += `- \`styles.withUtils(utils)\`: Create utility-aware styles API\n\n`;
     apiDoc += `\n`;
   }
 
@@ -161,11 +165,16 @@ Auto-generated documentation for all typestyles APIs.
   apiDoc += `## Usage Examples\n\n`;
   apiDoc += `### Creating Styles\n\n\`\`\`ts\n`;
   apiDoc += `import { styles } from 'typestyles';\n\n`;
-  apiDoc += `const button = styles.create('button', {\n`;
+  apiDoc += `const button = styles.component('button', {\n`;
   apiDoc += `  base: { padding: '8px 16px' },\n`;
-  apiDoc += `  primary: { backgroundColor: '#0066ff' },\n`;
+  apiDoc += `  variants: {\n`;
+  apiDoc += `    intent: { primary: { backgroundColor: '#0066ff' } },\n`;
+  apiDoc += `  },\n`;
+  apiDoc += `  defaultVariants: { intent: 'primary' },\n`;
   apiDoc += `});\n\n`;
-  apiDoc += `button('base', 'primary'); // "button-base button-primary"\n`;
+  apiDoc += `button(); // "button-base button-intent-primary"\n`;
+  apiDoc += `button({ intent: 'primary' }); // same\n`;
+  apiDoc += `const { base } = button; // destructure class strings\n`;
   apiDoc += `\`\`\`\n\n`;
 
   apiDoc += `### Creating Tokens\n\n\`\`\`ts\n`;

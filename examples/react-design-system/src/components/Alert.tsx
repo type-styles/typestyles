@@ -16,27 +16,27 @@ export type AlertProps = {
 };
 
 const subtleTone: Record<AlertVariant, string> = {
-  info: alert('subtleInfo'),
-  success: alert('subtleSuccess'),
-  warning: alert('subtleWarning'),
-  danger: alert('subtleDanger'),
-  tip: alert('subtleTip'),
+  info: alert.subtleInfo,
+  success: alert.subtleSuccess,
+  warning: alert.subtleWarning,
+  danger: alert.subtleDanger,
+  tip: alert.subtleTip,
 };
 
 const solidTone: Record<AlertVariant, string> = {
-  info: alert('solidInfo'),
-  success: alert('solidSuccess'),
-  warning: alert('solidWarning'),
-  danger: alert('solidDanger'),
-  tip: alert('solidTip'),
+  info: alert.solidInfo,
+  success: alert.solidSuccess,
+  warning: alert.solidWarning,
+  danger: alert.solidDanger,
+  tip: alert.solidTip,
 };
 
 const titleAccent: Record<AlertVariant, string> = {
-  info: alert('titleAccentInfo'),
-  success: alert('titleAccentSuccess'),
-  warning: alert('titleAccentWarning'),
-  danger: alert('titleAccentDanger'),
-  tip: alert('titleAccentTip'),
+  info: alert.titleAccentInfo,
+  success: alert.titleAccentSuccess,
+  warning: alert.titleAccentWarning,
+  danger: alert.titleAccentDanger,
+  tip: alert.titleAccentTip,
 };
 
 export function Alert({
@@ -53,24 +53,24 @@ export function Alert({
 
   return (
     <div
-      className={cx(alert('root'), toneClass, className)}
+      className={cx(alert.root, toneClass, className)}
       data-alert
       data-alert-variant={variant}
       data-alert-appearance={appearance}
     >
       {icon ? (
-        <div className={alert('icon')} data-alert-icon>
+        <div className={alert.icon} data-alert-icon>
           {icon}
         </div>
       ) : null}
-      <div className={alert('body')}>
-        {title ? <p className={cx(alert('title'), titleAccentClass)}>{title}</p> : null}
-        <div className={cx(alert('content'), !title && alert('contentFlush'))} data-alert-content>
+      <div className={alert.body}>
+        {title ? <p className={cx(alert.title, titleAccentClass)}>{title}</p> : null}
+        <div className={cx(alert.content, !title && alert.contentFlush)} data-alert-content>
           {children}
         </div>
         {action ? (
-          <div className={alert('action')}>
-            <a className={alert('actionLink')} href={action.href} data-alert-action>
+          <div className={alert.action}>
+            <a className={alert.actionLink} href={action.href} data-alert-action>
               {action.label}
             </a>
           </div>

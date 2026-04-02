@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const alert = styles.create('alert', {
+export const alert = styles.component('alert', {
   root: {
     display: 'flex',
     alignItems: 'flex-start',

@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const switchStyles = styles.create('switch', {
+export const switchStyles = styles.component('switch', {
   root: {
     display: 'inline-flex',
     alignItems: 'center',

@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const tabs = styles.create('tabs', {
+export const tabs = styles.component('tabs', {
   root: {
     display: 'grid',
     gap: t.space[3],

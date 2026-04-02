@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const card = styles.create('card', {
+export const card = styles.component('card', {
   root: {
     display: 'flex',
     flexDirection: 'column',

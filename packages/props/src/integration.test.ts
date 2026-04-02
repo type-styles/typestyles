@@ -8,8 +8,8 @@ describe('integration with typestyles', () => {
   });
 
   it('works with styles.compose()', () => {
-    const base = styles.create('base', {
-      root: { padding: '8px' },
+    const base = styles.component('base', {
+      base: { padding: '8px' },
     });
 
     const atoms = createProps(
@@ -24,9 +24,9 @@ describe('integration with typestyles', () => {
     // Compose with string result from props function
     const atomClasses = atoms({ display: 'flex' });
     const composed = styles.compose(base, atomClasses);
-    const result = composed('root');
+    const result = composed();
 
-    expect(result).toBe('base-root atoms-display-flex');
+    expect(result).toBe('base-base atoms-display-flex');
   });
 
   it('generates CSS that appears in getRegisteredCss()', () => {
@@ -50,8 +50,8 @@ describe('integration with typestyles', () => {
   });
 
   it('handles responsive props with styles.compose()', () => {
-    const layout = styles.create('layout', {
-      container: { maxWidth: '1200px' },
+    const layout = styles.component('layout', {
+      base: { maxWidth: '1200px' },
     });
 
     const responsive = createProps(
@@ -69,8 +69,8 @@ describe('integration with typestyles', () => {
     // Compose with string result from props function
     const responsiveClasses = responsive({ display: { mobile: 'grid' } });
     const composed = styles.compose(layout, responsiveClasses);
-    const result = composed('container');
+    const result = composed();
 
-    expect(result).toBe('layout-container responsive-display-mobile-grid');
+    expect(result).toBe('layout-base responsive-display-mobile-grid');
   });
 });

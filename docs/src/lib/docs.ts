@@ -79,7 +79,7 @@ function slugifyHeading(text: string): string {
 /** Permalink control for h1–h6; pairs with `proseContent` heading anchor styles. */
 function withHeadingAnchors(html: string): string {
   const slugCounts = new Map<string, number>();
-  const anchorClass = proseContent('headingAnchor');
+  const anchorClass = proseContent.headingAnchor;
 
   return html.replace(
     /<h([1-6])([^>]*)>([\s\S]*?)<\/h\1>/gi,

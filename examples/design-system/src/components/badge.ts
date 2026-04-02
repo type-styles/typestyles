@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const badge = styles.create('badge', {
+export const badge = styles.component('badge', {
   root: {
     display: 'inline-flex',
     alignItems: 'center',

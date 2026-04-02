@@ -25,15 +25,15 @@ export function Dialog({
   return (
     <DialogTrigger>
       <Button intent="secondary">{triggerLabel}</Button>
-      <ModalOverlay className={dialog('overlay')}>
-        <Modal className={dialog('modal')}>
+      <ModalOverlay className={dialog.overlay}>
+        <Modal className={dialog.modal}>
           <AriaDialog>
             {({ close }) => (
-              <div className={dialog('content')}>
-                <Heading slot="title" className={dialog('heading')}>
+              <div className={dialog.content}>
+                <Heading slot="title" className={dialog.heading}>
                   {title}
                 </Heading>
-                <p className={dialog('description')}>{description}</p>
+                <p className={dialog.description}>{description}</p>
                 <Button onPress={close}>{closeLabel}</Button>
               </div>
             )}

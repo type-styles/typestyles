@@ -22,10 +22,10 @@ export type CodeBlockProps = {
 };
 
 const variantRootClass: Record<CodeBlockVariant, string> = {
-  default: codeBlock('rootDefault'),
-  inline: codeBlock('rootInline'),
-  diff: codeBlock('rootDiff'),
-  terminal: codeBlock('rootTerminal'),
+  default: codeBlock.rootDefault,
+  inline: codeBlock.rootInline,
+  diff: codeBlock.rootDiff,
+  terminal: codeBlock.rootTerminal,
 };
 
 export function CodeBlock({
@@ -53,10 +53,10 @@ export function CodeBlock({
   const inline = variant === 'inline';
 
   const feedbackClassName = cx(
-    codeBlock('feedback'),
-    codeBlock('feedbackInline'),
-    feedbackTone === 'success' && codeBlock('feedbackSuccess'),
-    feedbackTone === 'error' && codeBlock('feedbackError'),
+    codeBlock.feedback,
+    codeBlock.feedbackInline,
+    feedbackTone === 'success' && codeBlock.feedbackSuccess,
+    feedbackTone === 'error' && codeBlock.feedbackError,
   );
 
   const resetCopyState = () => {
@@ -86,7 +86,7 @@ export function CodeBlock({
   if (inline) {
     return (
       <code
-        className={cx(codeBlock('root'), variantRootClass[variant], codeBlock('code'), className)}
+        className={cx(codeBlock.root, variantRootClass[variant], codeBlock.code, className)}
         data-codeblock
       >
         {code}
@@ -95,28 +95,28 @@ export function CodeBlock({
   }
 
   return (
-    <div className={cx(codeBlock('root'), variantRootClass[variant], className)} data-codeblock>
+    <div className={cx(codeBlock.root, variantRootClass[variant], className)} data-codeblock>
       <div
-        className={cx(codeBlock('header'), terminal && codeBlock('headerTerminal'))}
+        className={cx(codeBlock.header, terminal && codeBlock.headerTerminal)}
         data-codeblock-header
       >
-        <div className={codeBlock('title')}>
-          {filename ? <span className={codeBlock('filename')}>{filename}</span> : null}
+        <div className={codeBlock.title}>
+          {filename ? <span className={codeBlock.filename}>{filename}</span> : null}
           {language ? (
-            <span className={cx(codeBlock('language'), terminal && codeBlock('languageTerminal'))}>
+            <span className={cx(codeBlock.language, terminal && codeBlock.languageTerminal)}>
               {language}
             </span>
           ) : null}
         </div>
         {copyable ? (
-          <div className={codeBlock('actions')}>
+          <div className={codeBlock.actions}>
             <button
               type="button"
               className={cx(
-                codeBlock('copyButton'),
-                !isCopied && !hasError && codeBlock('copyButtonIdle'),
-                isCopied && codeBlock('copyButtonCopied'),
-                hasError && codeBlock('copyButtonError'),
+                codeBlock.copyButton,
+                !isCopied && !hasError && codeBlock.copyButtonIdle,
+                isCopied && codeBlock.copyButtonCopied,
+                hasError && codeBlock.copyButtonError,
               )}
               data-copied={isCopied || undefined}
               data-error={hasError || undefined}
@@ -133,43 +133,39 @@ export function CodeBlock({
       </div>
 
       <div
-        className={cx(
-          codeBlock('body'),
-          codeBlock('bodyScrollable'),
-          terminal && codeBlock('bodyTerminal'),
-        )}
+        className={cx(codeBlock.body, codeBlock.bodyScrollable, terminal && codeBlock.bodyTerminal)}
         data-codeblock-body
       >
         <pre
           className={cx(
-            codeBlock('pre'),
-            wrapLongLines ? codeBlock('preWrap') : codeBlock('preScrollX'),
-            terminal && codeBlock('preTerminal'),
+            codeBlock.pre,
+            wrapLongLines ? codeBlock.preWrap : codeBlock.preScrollX,
+            terminal && codeBlock.preTerminal,
           )}
           data-codeblock-pre
         >
           {showLineNumbers ? (
-            <code className={cx(codeBlock('code'), codeBlock('lines'))}>
+            <code className={cx(codeBlock.code, codeBlock.lines)}>
               {lines.map((line, index) => {
                 const lineNumber = index + 1;
                 return (
                   <span
                     key={lineNumber}
                     className={cx(
-                      codeBlock('line'),
-                      highlightedSet.has(lineNumber) && codeBlock('lineHighlighted'),
+                      codeBlock.line,
+                      highlightedSet.has(lineNumber) && codeBlock.lineHighlighted,
                     )}
                   >
-                    <span className={codeBlock('lineNumber')} aria-hidden="true">
+                    <span className={codeBlock.lineNumber} aria-hidden="true">
                       {lineNumber}
                     </span>
-                    <span className={codeBlock('lineContent')}>{line || ' '}</span>
+                    <span className={codeBlock.lineContent}>{line || ' '}</span>
                   </span>
                 );
               })}
             </code>
           ) : (
-            <code className={codeBlock('code')}>{code}</code>
+            <code className={codeBlock.code}>{code}</code>
           )}
         </pre>
       </div>

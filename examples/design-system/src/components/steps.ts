@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const steps = styles.create('steps', {
+export const steps = styles.component('steps', {
   /** Use with `<ol class={steps('root')}><li>…</li></ol>` (see `Steps.astro`). */
   root: {
     listStyle: 'none',

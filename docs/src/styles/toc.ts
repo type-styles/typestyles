@@ -4,7 +4,7 @@ import { styles } from 'typestyles';
 const belowTocBp = '@media (max-width: 1023px)';
 const tocBp = '@media (min-width: 1024px)';
 
-export const toc = styles.create('docs-toc', {
+export const toc = styles.component('docs-toc', {
   nav: {
     fontFamily: t.fontFamily.sans,
   },

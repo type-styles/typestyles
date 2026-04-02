@@ -1,22 +1,27 @@
 import type {
   CSSProperties,
   CSSPropertiesWithUtils,
-  SelectorFunction,
-  StyleDefinitions,
-  StyleDefinitionsWithUtils,
   StyleUtils,
+  VariantDefinitions,
+  ComponentConfig,
+  ComponentReturn,
+  FlatComponentConfig,
+  FlatComponentReturn,
+  SlotVariantDefinitions,
+  SlotComponentConfig,
+  SlotComponentFunction,
 } from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 import {
-  buildComponentClassName,
   buildSingleClassName,
   getClassNamingConfig,
   hashString,
   sanitizeClassSegment,
   stableSerialize,
 } from './class-naming.js';
+import { createComponent } from './component.js';
 
 /**
  * Create a single class with the given styles. Returns the class name string.
@@ -89,101 +94,16 @@ export function createHashClass(properties: CSSProperties, label?: string): stri
 }
 
 /**
- * Create a style group and return a selector function.
- *
- * **Two-argument form** (definitions object with 'base' and variants):
- * ```ts
- * const button = styles.create('button', {
- *   base: { padding: '8px 16px' },
- *   primary: { backgroundColor: '#0066ff' },
- * });
- * button('base', 'primary')  // "button-base button-primary"
- * ```
- *
- * **Three-argument form** (base styles + variants, no 'base' key needed):
- * ```ts
- * const button = styles.create('button',
- *   { padding: '8px 16px', borderRadius: '6px' },  // base styles
- *   {
- *     default: { backgroundColor: '#0066ff', color: '#fff' },
- *     outline: { border: '1px solid', backgroundColor: 'transparent' },
- *     large: { padding: '12px 24px' },
- *   }
- * );
- * button('default')           // "button-base button-default" — base always included
- * button('outline', 'large')   // "button-base button-outline button-large"
- * ```
- */
-export function createStyles<K extends string>(
-  namespace: string,
-  definitions: StyleDefinitions & Record<K, CSSProperties>,
-): SelectorFunction<K>;
-export function createStyles(
-  namespace: string,
-  base: CSSProperties,
-  variants: Record<string, CSSProperties>,
-): SelectorFunction<string>;
-export function createStyles(
-  namespace: string,
-  baseOrDefinitions: CSSProperties | (StyleDefinitions & Record<string, CSSProperties>),
-  variants?: Record<string, CSSProperties>,
-): SelectorFunction<string> {
-  const definitions: StyleDefinitions & Record<string, CSSProperties> =
-    variants !== undefined
-      ? { base: baseOrDefinitions as CSSProperties, ...variants }
-      : (baseOrDefinitions as StyleDefinitions & Record<string, CSSProperties>);
-
-  const withBase = variants !== undefined;
-  // Development-mode duplicate detection
-  if (process.env.NODE_ENV !== 'production') {
-    if (registeredNamespaces.has(namespace)) {
-      console.warn(
-        `[typestyles] styles.create('${namespace}', ...) called more than once. ` +
-          `This will cause class name collisions. Each namespace should be unique.`,
-      );
-    }
-  }
-  registeredNamespaces.add(namespace);
-
-  // Generate and inject CSS for all variants
-  const rules: Array<{ key: string; css: string }> = [];
-  const variantToClass: Record<string, string> = {};
-
-  for (const [variant, properties] of Object.entries(definitions)) {
-    const props = properties as CSSProperties;
-    const className = buildComponentClassName(namespace, variant, props);
-    variantToClass[variant] = className;
-    const selector = `.${className}`;
-    const variantRules = serializeStyle(selector, props);
-    rules.push(...variantRules);
-  }
-
-  insertRules(rules);
-
-  // Return the selector function
-  const selectorFn = (...variants: (string | false | null | undefined)[]): string => {
-    const filtered = variants.filter(Boolean);
-    const classes = withBase ? ['base', ...filtered.filter((v) => v !== 'base')] : filtered;
-    return classes
-      .map((v) => variantToClass[v as string] ?? '')
-      .filter(Boolean)
-      .join(' ');
-  };
-
-  return selectorFn as SelectorFunction<string>;
-}
-
-/**
- * Compose multiple selector functions or class strings into one.
- * Returns a new SelectorFunction that calls all inputs and joins results.
+ * Compose multiple component functions or class strings into one.
+ * Returns a new function that calls all inputs and joins results.
  *
  * @example
  * ```ts
- * const base = styles.create('base', { padding: '8px' });
- * const primary = styles.create('primary', { color: 'blue' });
+ * const base = styles.component('base', { base: { padding: '8px' } });
+ * const primary = styles.component('primary', { base: { color: 'blue' } });
  * const button = styles.compose(base, primary);
  *
- * button('padding', 'color'); // "base-padding primary-color"
+ * button(); // "base-base primary-base"
  * ```
  */
 type AnySelectorFunction = {
@@ -211,19 +131,23 @@ export function compose(
   };
 }
 
+// ---------------------------------------------------------------------------
+// withUtils
+// ---------------------------------------------------------------------------
+
 export type StylesWithUtilsApi<U extends StyleUtils> = {
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
-  create: {
-    <K extends string>(
+  component: {
+    <V extends VariantDefinitions>(
       namespace: string,
-      definitions: StyleDefinitionsWithUtils<U> & Record<K, CSSPropertiesWithUtils<U>>,
-    ): SelectorFunction<K>;
-    (
+      config: ComponentConfig<V>,
+    ): ComponentReturn<V>;
+    <K extends string>(namespace: string, config: FlatComponentConfig<K>): FlatComponentReturn<K>;
+    <S extends string, V extends SlotVariantDefinitions<S>>(
       namespace: string,
-      base: CSSPropertiesWithUtils<U>,
-      variants: Record<string, CSSPropertiesWithUtils<U>>,
-    ): SelectorFunction<string>;
+      config: SlotComponentConfig<S, V>,
+    ): SlotComponentFunction<S, V>;
   };
   compose: typeof compose;
 };
@@ -233,14 +157,13 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
  *
  * @example
  * ```ts
- * const u = createStylesWithUtils({
+ * const u = styles.withUtils({
  *   marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),
  *   size: (value: string | number) => ({ width: value, height: value }),
  * });
  *
- * const card = u.class('card', {
- *   size: 40,
- *   marginX: 16,
+ * const card = u.component('card', {
+ *   base: { size: 40, marginX: 16 },
  * });
  * ```
  */
@@ -248,47 +171,49 @@ export function createStylesWithUtils<U extends StyleUtils>(utils: U): StylesWit
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
 
-  function create<K extends string>(
-    namespace: string,
-    definitions: StyleDefinitionsWithUtils<U> & Record<K, CSSPropertiesWithUtils<U>>,
-  ): SelectorFunction<K>;
-  function create(
-    namespace: string,
-    base: CSSPropertiesWithUtils<U>,
-    variants: Record<string, CSSPropertiesWithUtils<U>>,
-  ): SelectorFunction<string>;
-  function create(
-    namespace: string,
-    baseOrDefinitions:
-      | CSSPropertiesWithUtils<U>
-      | (StyleDefinitionsWithUtils<U> & Record<string, CSSPropertiesWithUtils<U>>),
-    variants?: Record<string, CSSPropertiesWithUtils<U>>,
-  ): SelectorFunction<string> {
-    if (variants !== undefined) {
-      const transformedVariants = Object.fromEntries(
-        Object.entries(variants).map(([variant, properties]) => [variant, apply(properties)]),
-      );
-      return createStyles(
-        namespace,
-        apply(baseOrDefinitions as CSSPropertiesWithUtils<U>),
-        transformedVariants,
-      );
+  function component(namespace: string, config: Record<string, unknown>): unknown {
+    const transformed: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(config)) {
+      if (key === 'base' && value && typeof value === 'object') {
+        transformed[key] = apply(value as CSSPropertiesWithUtils<U>);
+      } else if (key === 'variants' && value && typeof value === 'object') {
+        const variants: Record<string, Record<string, CSSProperties>> = {};
+        for (const [dim, options] of Object.entries(value as Record<string, unknown>)) {
+          variants[dim] = {};
+          for (const [opt, props] of Object.entries(options as Record<string, unknown>)) {
+            variants[dim][opt] = apply(props as CSSPropertiesWithUtils<U>);
+          }
+        }
+        transformed[key] = variants;
+      } else if (key === 'compoundVariants' && Array.isArray(value)) {
+        transformed[key] = value.map(
+          (cv: { variants: Record<string, unknown>; style: CSSPropertiesWithUtils<U> }) => ({
+            ...cv,
+            style: apply(cv.style),
+          }),
+        );
+      } else if (
+        key !== 'defaultVariants' &&
+        key !== 'slots' &&
+        value &&
+        typeof value === 'object' &&
+        !Array.isArray(value)
+      ) {
+        // Flat variant — apply utils to the CSS properties
+        transformed[key] = apply(value as CSSPropertiesWithUtils<U>);
+      } else {
+        transformed[key] = value;
+      }
     }
 
-    const transformedDefinitions = Object.fromEntries(
-      Object.entries(
-        baseOrDefinitions as StyleDefinitionsWithUtils<U> &
-          Record<string, CSSPropertiesWithUtils<U>>,
-      ).map(([variant, properties]) => [variant, apply(properties)]),
-    ) as StyleDefinitions & Record<string, CSSProperties>;
-
-    return createStyles(namespace, transformedDefinitions);
+    return createComponent(namespace, transformed as ComponentConfig<VariantDefinitions>);
   }
 
   return {
     class: (name, properties) => createClass(name, apply(properties)),
     hashClass: (properties, label) => createHashClass(apply(properties), label),
-    create,
+    component: component as StylesWithUtilsApi<U>['component'],
     compose,
   };
 }

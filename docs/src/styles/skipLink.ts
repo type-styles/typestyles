@@ -1,7 +1,7 @@
 import { designTokens as t } from '@examples/design-system';
 import { styles } from 'typestyles';
 
-export const skipLink = styles.create('docs-skip', {
+export const skipLink = styles.component('docs-skip', {
   root: {
     position: 'absolute',
     left: t.space[4],

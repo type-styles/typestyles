@@ -2,7 +2,7 @@ import { styles } from 'typestyles';
 import { color, space } from './tokens';
 import { fadeIn, spin } from './animations';
 
-export const layout = styles.create('layout', {
+export const layout = styles.component('layout', {
   page: {
     maxWidth: '720px',
     margin: '0 auto',
@@ -43,7 +43,7 @@ export const layout = styles.create('layout', {
   },
 });
 
-export const button = styles.create('button', {
+export const button = styles.component('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -87,7 +87,7 @@ export const button = styles.create('button', {
   },
 });
 
-export const card = styles.create('card', {
+export const card = styles.component('card', {
   base: {
     padding: space.lg,
     borderRadius: '8px',
@@ -101,7 +101,7 @@ export const card = styles.create('card', {
   },
 });
 
-export const spinner = styles.create('spinner', {
+export const spinner = styles.component('spinner', {
   base: {
     display: 'inline-block',
     width: '24px',
@@ -113,7 +113,7 @@ export const spinner = styles.create('spinner', {
   },
 });
 
-export const badge = styles.create('badge', {
+export const badge = styles.component('badge', {
   base: {
     display: 'inline-block',
     padding: `${space.xs} ${space.sm}`,
@@ -131,7 +131,7 @@ export const badge = styles.create('badge', {
   },
 });
 
-export const hint = styles.create('hint', {
+export const hint = styles.component('hint', {
   base: {
     marginTop: space.xl,
     padding: space.md,

@@ -1,10 +1,4 @@
-import {
-  createStyles,
-  createClass,
-  createHashClass,
-  compose,
-  createStylesWithUtils,
-} from './styles.js';
+import { createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
 import { createTokens, useTokens, createTheme } from './tokens.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
@@ -30,14 +24,17 @@ export type {
   StyleDefinitionsWithUtils,
   CSSPropertiesWithUtils,
   StyleUtils,
-  SelectorFunction,
   TokenValues,
   TokenRef,
   ThemeOverrides,
   KeyframeStops,
   VariantDefinitions,
   ComponentConfig,
-  ComponentFunction,
+  ComponentReturn,
+  FlatComponentConfig,
+  FlatComponentReturn,
+  FlatComponentSelections,
+  ComponentSelections,
   SlotStyles,
   SlotVariantDefinitions,
   SlotComponentConfig,
@@ -56,21 +53,30 @@ export type { ColorMixSpace } from './color.js';
  *
  * @example
  * ```ts
- * const button = styles.create('button', {
+ * // Multi-variant component (CVA-style)
+ * const button = styles.component('button', {
  *   base: { padding: '8px 16px' },
- *   primary: { backgroundColor: '#0066ff' },
+ *   variants: {
+ *     intent: { primary: { backgroundColor: '#0066ff' } },
+ *     size: { sm: { fontSize: '14px' }, lg: { fontSize: '18px' } },
+ *   },
+ *   defaultVariants: { intent: 'primary', size: 'sm' },
  * });
  *
- * const hashed = styles.hashClass({ display: 'inline-flex' }, 'button');
+ * // Call as function — base always included
+ * button({ intent: 'primary', size: 'lg' })
  *
- * <button className={`${button('base', 'primary')} ${hashed}`}>
+ * // Destructure individual class strings
+ * const { base, 'intent-primary': primary } = button;
+ *
+ * // Single class (no variants)
+ * const card = styles.class('card', { padding: '1rem' });
  * ```
  */
 export const styles = {
-  create: createStyles,
+  component: createComponent,
   class: createClass,
   hashClass: createHashClass,
-  component: createComponent,
   withUtils: createStylesWithUtils,
   compose,
 } as const;
@@ -117,7 +123,7 @@ export const tokens = {
  *   to: { opacity: 1 },
  * });
  *
- * const card = styles.create('card', {
+ * const card = styles.component('card', {
  *   base: { animation: `${fadeIn} 300ms ease` },
  * });
  * ```
@@ -145,62 +151,17 @@ export const color = colorFns;
 
 /**
  * Return all registered CSS as a string (for SSR).
- *
- * Returns every CSS rule registered via `styles.create`, `tokens.create`,
- * `keyframes.create`, etc. Use this in your SSR head/meta function to
- * inject styles into the document.
- *
- * This is safe to import on the client — it has no server-specific
- * dependencies and will simply return whatever CSS has been registered.
- *
- * @example
- * ```ts
- * import { getRegisteredCss } from 'typestyles';
- *
- * // In a route's head function (e.g. TanStack Start):
- * export const Route = createRootRoute({
- *   head: () => ({
- *     styles: [{ id: 'typestyles', children: getRegisteredCss() }],
- *   }),
- * });
- * ```
  */
 export { getRegisteredCss };
 
 /**
  * Insert multiple CSS rules into the stylesheet.
- *
- * This is a low-level API used internally by typestyles and by packages
- * like @typestyles/props. You typically won't need to use this directly.
- *
- * @example
- * ```ts
- * import { insertRules } from 'typestyles';
- *
- * insertRules([
- *   { key: '.my-class', css: '.my-class { color: red; }' },
- *   { key: '.another', css: '.another { padding: 8px; }' },
- * ]);
- * ```
+ * Low-level API used internally and by packages like @typestyles/props.
  */
 export { insertRules };
 
 /**
  * Testing utilities for clearing the stylesheet and flushing pending rules.
- * These are primarily intended for use in tests.
- *
- * @example
- * ```ts
- * import { reset, flushSync } from 'typestyles';
- *
- * // In a test beforeEach:
- * beforeEach(() => {
- *   reset(); // Clear all registered CSS
- * });
- *
- * // To synchronously flush pending rules:
- * flushSync();
- * ```
  */
 export { reset, flushSync, ensureDocumentStylesAttached };
 

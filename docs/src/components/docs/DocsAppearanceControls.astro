@@ -11,14 +11,14 @@ const { appearanceBootstrap } = Astro.props;
 ---
 
 <div
-  class:list={[sidebar('footer')]}
+  class:list={[sidebar.footer]}
   data-appearance-controls
   data-appearance-config={JSON.stringify(appearanceBootstrap)}
 >
-  <label class:list={[sidebar('themeFieldLabel')]} for="docs-palette-select">Palette</label>
+  <label class:list={[sidebar.themeFieldLabel]} for="docs-palette-select">Palette</label>
   <select
     id="docs-palette-select"
-    class:list={[sidebar('themeSelect')]}
+    class:list={[sidebar.themeSelect]}
     aria-label="Color palette"
     data-appearance-palette
   >
@@ -26,10 +26,10 @@ const { appearanceBootstrap } = Astro.props;
       <option value={id}>{label}</option>
     ))}
   </select>
-  <span class:list={[sidebar('themeFieldLabel')]}>Color mode</span>
+  <span class:list={[sidebar.themeFieldLabel]}>Color mode</span>
   <button
     type="button"
-    class:list={[sidebar('themeToggle')]}
+    class:list={[sidebar.themeToggle]}
     data-appearance-mode-toggle
   >
     Dark

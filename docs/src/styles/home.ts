@@ -3,7 +3,7 @@ import { styles } from 'typestyles';
 
 const bp = '@media (max-width: 768px)';
 
-export const home = styles.create('docs-home', {
+export const home = styles.component('docs-home', {
   hero: {
     paddingTop: t.space[8],
     paddingBottom: t.space[8],

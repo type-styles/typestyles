@@ -4,19 +4,22 @@ import { resetClassNaming } from './class-naming.js';
 import { reset, flushSync, getRegisteredCss } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
-describe('createComponent', () => {
+describe('createComponent — dimensioned variants', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
     resetClassNaming();
   });
 
-  it('returns a function', () => {
-    const btn = createComponent('btn', {});
+  it('returns a callable function', () => {
+    const btn = createComponent('btn', {
+      base: { padding: '8px' },
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
     expect(typeof btn).toBe('function');
   });
 
-  it('includes base class when base is defined', () => {
+  it('includes base class when called with no args', () => {
     const btn = createComponent('btn', {
       base: { padding: '8px' },
     });
@@ -24,18 +27,60 @@ describe('createComponent', () => {
     expect(btn({})).toBe('btn-base');
   });
 
+  it('is destructurable — base property returns the base class string', () => {
+    const btn = createComponent('btn', {
+      base: { padding: '8px' },
+      variants: {
+        intent: { primary: { color: 'blue' } },
+      },
+    });
+    expect(btn.base).toBe('btn-base');
+  });
+
+  it('is destructurable — variant properties return individual class strings', () => {
+    const btn = createComponent('btn', {
+      base: { padding: '8px' },
+      variants: {
+        intent: {
+          primary: { backgroundColor: 'blue' },
+          ghost: { backgroundColor: 'transparent' },
+        },
+        size: {
+          sm: { fontSize: '12px' },
+          lg: { fontSize: '18px' },
+        },
+      },
+    });
+
+    expect(btn['intent-primary']).toBe('btn-intent-primary');
+    expect(btn['intent-ghost']).toBe('btn-intent-ghost');
+    expect(btn['size-sm']).toBe('btn-size-sm');
+    expect(btn['size-lg']).toBe('btn-size-lg');
+  });
+
+  it('supports Object.keys() for enumeration', () => {
+    const btn = createComponent('btn', {
+      base: { padding: '8px' },
+      variants: {
+        intent: { primary: { color: 'blue' } },
+      },
+    });
+
+    const keys = Object.keys(btn);
+    expect(keys).toContain('base');
+    expect(keys).toContain('intent-primary');
+  });
+
   it('does not include base class when base is not defined', () => {
     const btn = createComponent('btn-nobase', {
       variants: {
-        intent: {
-          primary: { color: 'blue' },
-        },
+        intent: { primary: { color: 'blue' } },
       },
     });
     expect(btn({ intent: 'primary' })).toBe('btn-nobase-intent-primary');
   });
 
-  it('applies variant classes', () => {
+  it('applies variant classes from selections', () => {
     const btn = createComponent('vbtn', {
       base: { padding: '8px' },
       variants: {
@@ -113,11 +158,9 @@ describe('createComponent', () => {
       defaultVariants: { intent: 'primary', size: 'sm' },
     });
 
-    // No compound match (size is sm by default)
     const noCompound = btn();
     expect(noCompound).not.toContain('cbtn-compound-0');
 
-    // Compound match
     const withCompound = btn({ intent: 'primary', size: 'lg' });
     expect(withCompound).toContain('cbtn-compound-0');
     expect(withCompound).toContain('cbtn-base');
@@ -153,14 +196,11 @@ describe('createComponent', () => {
     createComponent('style-test', {
       base: { display: 'flex' },
       variants: {
-        intent: {
-          primary: { color: 'blue' },
-        },
+        intent: { primary: { color: 'blue' } },
       },
     });
 
     flushSync();
-
     const css = getRegisteredCss();
     expect(css).toContain('.style-test-base');
     expect(css).toContain('.style-test-intent-primary');
@@ -178,7 +218,6 @@ describe('createComponent', () => {
     });
 
     flushSync();
-
     const css = getRegisteredCss();
     expect(css).toContain('.cv-test-compound-0');
   });
@@ -226,10 +265,89 @@ describe('createComponent', () => {
   });
 });
 
+describe('createComponent — flat variants', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+    resetClassNaming();
+  });
+
+  it('returns a callable function', () => {
+    const card = createComponent('card', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+    expect(typeof card).toBe('function');
+  });
+
+  it('base always auto-applied on function call', () => {
+    const card = createComponent('card', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+    expect(card()).toBe('card-base');
+  });
+
+  it('applies flat variants via boolean selections', () => {
+    const card = createComponent('card', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+      compact: { padding: '8px' },
+    });
+
+    expect(card({ elevated: true })).toBe('card-base card-elevated');
+    expect(card({ elevated: true, compact: true })).toBe('card-base card-elevated card-compact');
+    expect(card({ elevated: false })).toBe('card-base');
+  });
+
+  it('is destructurable', () => {
+    const card = createComponent('card', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+
+    expect(card.base).toBe('card-base');
+    expect(card.elevated).toBe('card-elevated');
+  });
+
+  it('supports Object.keys() for enumeration', () => {
+    const card = createComponent('card', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+
+    const keys = Object.keys(card);
+    expect(keys).toContain('base');
+    expect(keys).toContain('elevated');
+  });
+
+  it('injects CSS for all flat variants', () => {
+    createComponent('flatcss', {
+      base: { display: 'block' },
+      active: { borderColor: 'blue' },
+    });
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.flatcss-base');
+    expect(css).toContain('.flatcss-active');
+  });
+
+  it('works without base', () => {
+    const card = createComponent('nobase', {
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+
+    expect(card()).toBe('');
+    expect(card({ elevated: true })).toBe('nobase-elevated');
+  });
+});
+
 describe('createComponent with slots', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
+    resetClassNaming();
   });
 
   it('returns per-slot class maps with defaults', () => {
@@ -269,28 +387,18 @@ describe('createComponent with slots', () => {
       slots: ['root', 'trigger', 'content'] as const,
       variants: {
         intent: {
-          primary: {
-            trigger: { color: 'blue' },
-          },
-          ghost: {
-            trigger: { color: 'gray' },
-          },
+          primary: { trigger: { color: 'blue' } },
+          ghost: { trigger: { color: 'gray' } },
         },
         size: {
-          sm: {
-            content: { padding: '8px' },
-          },
-          lg: {
-            content: { padding: '12px' },
-          },
+          sm: { content: { padding: '8px' } },
+          lg: { content: { padding: '12px' } },
         },
       },
       compoundVariants: [
         {
           variants: { intent: ['primary', 'ghost'], size: 'lg' },
-          style: {
-            trigger: { fontWeight: 700 },
-          },
+          style: { trigger: { fontWeight: 700 } },
         },
       ],
       defaultVariants: { intent: 'primary', size: 'sm' },
@@ -312,17 +420,13 @@ describe('createComponent with slots', () => {
       },
       variants: {
         intent: {
-          primary: {
-            trigger: { color: 'blue' },
-          },
+          primary: { trigger: { color: 'blue' } },
         },
       },
       compoundVariants: [
         {
           variants: { intent: 'primary' },
-          style: {
-            trigger: { fontWeight: 600 },
-          },
+          style: { trigger: { fontWeight: 600 } },
         },
       ],
       defaultVariants: { intent: 'primary' },

@@ -15,11 +15,11 @@ export function TextAreaField({
   ...props
 }: TextAreaFieldProps): JSX.Element {
   return (
-    <AriaTextField {...props} className={textAreaField('root')}>
-      {label ? <Label className={textAreaField('label')}>{label}</Label> : null}
-      <TextArea className={textAreaField('input')} placeholder={placeholder} />
-      {description ? <p className={textAreaField('description')}>{description}</p> : null}
-      <FieldError className={textAreaField('error')}>{errorMessage ?? ''}</FieldError>
+    <AriaTextField {...props} className={textAreaField.root}>
+      {label ? <Label className={textAreaField.label}>{label}</Label> : null}
+      <TextArea className={textAreaField.input} placeholder={placeholder} />
+      {description ? <p className={textAreaField.description}>{description}</p> : null}
+      <FieldError className={textAreaField.error}>{errorMessage ?? ''}</FieldError>
     </AriaTextField>
   );
 }

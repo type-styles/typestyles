@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const textAreaField = styles.create('text-area-field', {
+export const textAreaField = styles.component('text-area-field', {
   root: {
     display: 'grid',
     gap: t.space[1],

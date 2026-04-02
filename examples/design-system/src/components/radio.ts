@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const radio = styles.create('radio', {
+export const radio = styles.component('radio', {
   group: {
     display: 'grid',
     gap: t.space[1],

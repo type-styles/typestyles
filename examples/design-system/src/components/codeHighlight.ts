@@ -20,7 +20,7 @@ function scopeSelectorList(list: string): string {
  * Compose **`codeHljsScope('root')`** on a page shell (e.g. docs layout root) so selectors apply
  * inside `[data-codeblock]` wrappers.
  */
-export const codeHljsScope = styles.create('ds-hljs', {
+export const codeHljsScope = styles.component('ds-hljs', {
   root: {
     [`& ${cb} .hljs`]: {
       color: s.base,

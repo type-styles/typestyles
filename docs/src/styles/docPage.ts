@@ -1,7 +1,7 @@
 import { designTokens as t } from '@examples/design-system';
 import { styles } from 'typestyles';
 
-export const docPage = styles.create('docs-doc-page', {
+export const docPage = styles.component('docs-doc-page', {
   footer: {
     marginTop: t.space[5],
     paddingTop: t.space[4],

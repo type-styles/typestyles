@@ -47,14 +47,14 @@ const editHref = editUrlForDocSlug(slug);
   title={`${entry.title} - typestyles documentation`}
   tocHeadings={tocHeadings}
 >
-  <article class={doc('root')}>
-    <h1 class={doc('title')}>{entry.title}</h1>
-    {entry.description && <p class={doc('description')}>{entry.description}</p>}
-    <div class:list={[docProseRoot, doc('content')]} set:html={entry.html} />
+  <article class={doc.root}>
+    <h1 class={doc.title}>{entry.title}</h1>
+    {entry.description && <p class={doc.description}>{entry.description}</p>}
+    <div class:list={[docProseRoot, doc.content]} set:html={entry.html} />
 
     {
       slug === 'component-library' ? (
-        <div class:list={[docProseRoot, doc('content')]}>
+        <div class:list={[docProseRoot, doc.content]}>
           <h2>Aside (Starlight-style)</h2>
           <p>
             Thin wrapper over the design-system <code>alert</code> styles; use <code>Aside</code> for
@@ -123,15 +123,15 @@ const editHref = editUrlForDocSlug(slug);
 
           <h2>File tree</h2>
           <FileTree>
-            <ul class={fileTreeStyles('list')}>
-              <li class={fileTreeStyles('item')}>
-                <div class:list={[fileTreeStyles('row'), fileTreeStyles('folder')]}>src/</div>
-                <ul class={fileTreeStyles('listNested')}>
-                  <li class={fileTreeStyles('item')}>
-                    <div class:list={[fileTreeStyles('row'), fileTreeStyles('file')]}>index.ts</div>
+            <ul class={fileTreeStyles.list}>
+              <li class={fileTreeStyles.item}>
+                <div class:list={[fileTreeStyles.row, fileTreeStyles.folder]}>src/</div>
+                <ul class={fileTreeStyles.listNested}>
+                  <li class={fileTreeStyles.item}>
+                    <div class:list={[fileTreeStyles.row, fileTreeStyles.file]}>index.ts</div>
                   </li>
-                  <li class={fileTreeStyles('item')}>
-                    <div class:list={[fileTreeStyles('row'), fileTreeStyles('file')]}>styles.ts</div>
+                  <li class={fileTreeStyles.item}>
+                    <div class:list={[fileTreeStyles.row, fileTreeStyles.file]}>styles.ts</div>
                   </li>
                 </ul>
               </li>

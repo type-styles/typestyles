@@ -2,7 +2,7 @@ import { styles } from 'typestyles';
 import { color, space } from './tokens.js';
 import { fadeIn, spin } from './animations.js';
 
-export const layout = styles.create('layout', {
+export const layout = styles.component('layout', {
   page: {
     maxWidth: '720px',
     margin: '0 auto',
@@ -30,7 +30,7 @@ export const layout = styles.create('layout', {
   },
 });
 
-export const button = styles.create('button', {
+export const button = styles.component('button', {
   base: {
     padding: `${space.sm} ${space.md}`,
     borderRadius: '6px',
@@ -46,7 +46,7 @@ export const button = styles.create('button', {
   },
 });
 
-export const card = styles.create('card', {
+export const card = styles.component('card', {
   base: {
     padding: space.lg,
     borderRadius: '8px',
@@ -55,7 +55,7 @@ export const card = styles.create('card', {
   },
 });
 
-export const spinner = styles.create('spinner', {
+export const spinner = styles.component('spinner', {
   base: {
     width: '24px',
     height: '24px',

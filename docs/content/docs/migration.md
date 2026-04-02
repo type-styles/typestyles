@@ -7,13 +7,13 @@ description: Migrate to typestyles from other CSS-in-JS libraries
 
 Switching to typestyles from other styling solutions is straightforward. This guide covers the most common migration paths.
 
-If you are adopting the new variant API, start with [Components](/docs/components).
+If you are adopting the variant API, start with [Components](/docs/components).
 
 ## From Panda CSS
 
 Panda and typestyles share many concepts (component variants, tokens, utilities), so migration is mostly API shape changes rather than a full styling rewrite.
 
-### `css()` to `styles.class()` or `styles.create()`
+### `css()` to `styles.class()` or `styles.component()`
 
 **Before (Panda CSS):**
 
@@ -39,7 +39,7 @@ const className = styles.class('card', {
 });
 ```
 
-For reusable variant families, prefer `styles.create()` instead of a single class.
+For reusable variant families, prefer `styles.component()` instead of a single class.
 
 ### `cva()` / `defineRecipe()` to `styles.component()`
 
@@ -75,6 +75,13 @@ const button = styles.component('button', {
   },
   defaultVariants: { intent: 'solid' },
 });
+
+// Call as function (base auto-applied):
+button(); // base + solid
+button({ intent: 'ghost' }); // base + ghost
+
+// Or destructure:
+const { base } = button;
 ```
 
 ### `theme.tokens` / semantic tokens to `tokens.create()` + `tokens.createTheme()`
@@ -180,7 +187,7 @@ import { styles, tokens } from 'typestyles';
 
 const color = tokens.use('color');
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -188,16 +195,19 @@ const button = styles.create('button', {
     '&:hover': { opacity: 0.9 },
     '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
   },
-  primary: {
-    backgroundColor: color.primary,
+  variants: {
+    intent: {
+      primary: { backgroundColor: color.primary },
+      secondary: { backgroundColor: color.secondary },
+    },
   },
-  secondary: {
-    backgroundColor: color.secondary,
-  },
+  defaultVariants: { intent: 'primary' },
 });
 
 function Button({ primary, children }) {
-  return <button className={button('base', primary && 'primary')}>{children}</button>;
+  return (
+    <button className={button({ intent: primary ? 'primary' : 'secondary' })}>{children}</button>
+  );
 }
 ```
 
@@ -222,7 +232,7 @@ const Box = styled.div`
 **After:**
 
 ```tsx
-const box = styles.create('box', {
+const box = styles.component('box', {
   base: {
     display: 'inline-block',
   },
@@ -230,7 +240,7 @@ const box = styles.create('box', {
 
 function Box({ width, height, children }) {
   return (
-    <div className={box('base')} style={{ width, height }}>
+    <div className={box()} style={{ width, height }}>
       {children}
     </div>
   );
@@ -274,7 +284,7 @@ function Button({ children }) {
 ```tsx
 import { styles } from 'typestyles';
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 16px',
     backgroundColor: '#0066ff',
@@ -286,7 +296,7 @@ const button = styles.create('button', {
 });
 
 function Button({ children }) {
-  return <button className={button('base')}>{children}</button>;
+  return <button className={button()}>{children}</button>;
 }
 ```
 
@@ -309,15 +319,26 @@ className={cx(base, isPrimary && primary, isLarge && large)}
 When all classes come from one `styles.create` call, the selector function handles conditional class names directly:
 
 ```tsx
-import { styles } from 'typestyles';
+import { styles, cx } from 'typestyles';
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { padding: '8px' },
-  primary: { backgroundColor: 'blue' },
-  large: { fontSize: '18px' },
+  variants: {
+    intent: {
+      primary: { backgroundColor: 'blue' },
+    },
+    size: {
+      large: { fontSize: '18px' },
+    },
+  },
 });
 
-className={button('base', isPrimary && 'primary', isLarge && 'large')}
+// Option 1: Call with variant overrides
+className={button({ intent: isPrimary ? 'primary' : undefined, size: isLarge ? 'large' : undefined })}
+
+// Option 2: Destructure and use cx()
+const { base, ...variants } = button;
+className={cx(base, isPrimary && 'button-intent-primary', isLarge && 'button-size-large')}
 ```
 
 When you need to combine classes from different sources (multiple style groups, external class strings, or conditional expressions), use the built-in `cx` utility:
@@ -411,6 +432,11 @@ export const button = styles.component('button', {
     size: 'sm',
   },
 });
+
+// Usage -- base is auto-applied, defaults kick in:
+button(); // base + primary + sm
+button({ intent: 'ghost' }); // base + ghost + sm
+button({ size: 'lg' }); // base + primary + lg
 ```
 
 ### Key differences
@@ -418,6 +444,7 @@ export const button = styles.component('button', {
 1. CVA returns composed class strings from existing class tokens; typestyles generates and injects CSS from style objects.
 2. CVA `class` in `compoundVariants` becomes typestyles `style`.
 3. You can keep readable deterministic class output (`button-intent-primary`, etc.).
+4. The return is both callable AND destructurable (CVA-style).
 
 ## From Stitches variants
 
@@ -578,31 +605,34 @@ const color = tokens.create('color', {
   secondaryHover: '#4b5563',
 });
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
     fontWeight: 500,
     transition: 'background-color 150ms ease',
   },
-  primary: {
-    backgroundColor: color.primary,
-    color: '#fff',
-    '&:hover': {
-      backgroundColor: color.primaryHover,
+  variants: {
+    intent: {
+      primary: {
+        backgroundColor: color.primary,
+        color: '#fff',
+        '&:hover': { backgroundColor: color.primaryHover },
+      },
+      secondary: {
+        backgroundColor: color.secondary,
+        color: '#fff',
+        '&:hover': { backgroundColor: color.secondaryHover },
+      },
     },
   },
-  secondary: {
-    backgroundColor: color.secondary,
-    color: '#fff',
-    '&:hover': {
-      backgroundColor: color.secondaryHover,
-    },
-  },
+  defaultVariants: { intent: 'primary' },
 });
 
 function Button({ primary, children }) {
-  return <button className={button('base', primary ? 'primary' : 'secondary')}>{children}</button>;
+  return (
+    <button className={button({ intent: primary ? 'primary' : 'secondary' })}>{children}</button>
+  );
 }
 ```
 
@@ -650,9 +680,9 @@ export const space = tokens.create('space', {
 You can use Tailwind and typestyles together during migration:
 
 ```tsx
-import { styles } from 'typestyles';
+import { styles, cx } from 'typestyles';
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     // New styles with typestyles
     boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
@@ -661,8 +691,8 @@ const card = styles.create('card', {
 
 function Card({ children }) {
   return (
-    <div className={card('base') + ' p-4 bg-white rounded'}>
-      {/*                 ^ Tailwind classes still work */}
+    <div className={cx(card(), 'p-4 bg-white rounded')}>
+      {/*                       ^ Tailwind classes still work */}
       {children}
     </div>
   );
@@ -707,19 +737,18 @@ function Button({ variant, children }) {
 ```ts
 import { styles } from 'typestyles';
 
-export const button = styles.create('button', {
+export const button = styles.component('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
   },
-  primary: {
-    backgroundColor: '#0066ff',
-    color: 'white',
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#0066ff', color: 'white' },
+      secondary: { backgroundColor: '#6b7280', color: 'white' },
+    },
   },
-  secondary: {
-    backgroundColor: '#6b7280',
-    color: 'white',
-  },
+  defaultVariants: { intent: 'primary' },
 });
 ```
 
@@ -729,7 +758,7 @@ export const button = styles.create('button', {
 import { button } from './button.styles';
 
 function Button({ variant, children }) {
-  return <button className={button('base', variant)}>{children}</button>;
+  return <button className={button({ intent: variant })}>{children}</button>;
 }
 ```
 
@@ -748,13 +777,13 @@ CSS Modules `:global` becomes typestyles without nesting:
 **After:**
 
 ```ts
-const tooltip = styles.create('tooltip', {
+const tooltip = styles.component('tooltip', {
   base: {
     position: 'absolute',
   },
 });
 
-// Use: tooltip('base')
+// Use: tooltip()
 ```
 
 ## From plain CSS
@@ -791,7 +820,7 @@ Migrating from plain CSS gives you type safety and better organization.
 
    ```ts
    // After
-   const button = styles.create('button', {
+   const button = styles.component('button', {
      base: {
        padding: '8px 16px',
        backgroundColor: color.primary,
@@ -802,9 +831,75 @@ Migrating from plain CSS gives you type safety and better organization.
    });
    ```
 
-4. **Update components** - Replace className strings with selector calls
+4. **Update components** - Replace className strings with function calls
 
 5. **Remove old CSS** - Once fully migrated, delete the CSS files
+
+## From styles.create (previous typestyles API)
+
+If you are migrating from the previous `styles.create()` API:
+
+### Basic migration
+
+**Before:**
+
+```ts
+const button = styles.create('button', {
+  base: { padding: '8px 16px' },
+  primary: { backgroundColor: '#0066ff' },
+  large: { fontSize: '18px' },
+});
+
+// Usage:
+button('base', 'primary', 'large');
+button('base', isPrimary && 'primary');
+```
+
+**After (flat config):**
+
+```ts
+const button = styles.component('button', {
+  base: { padding: '8px 16px' },
+  primary: { backgroundColor: '#0066ff' },
+  large: { fontSize: '18px' },
+});
+
+// Base is auto-applied. Destructure for direct access:
+const { base, primary, large } = button;
+cx(base, primary, large);
+
+// Or use cx() with conditions:
+cx(button(), isPrimary && primary);
+```
+
+**After (dimensioned config -- recommended for variants like intent/size):**
+
+```ts
+const button = styles.component('button', {
+  base: { padding: '8px 16px' },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#0066ff' },
+    },
+    size: {
+      large: { fontSize: '18px' },
+    },
+  },
+  defaultVariants: { intent: 'primary', size: 'large' },
+});
+
+// Base auto-applied, defaults kick in:
+button();
+button({ intent: 'primary', size: 'large' });
+```
+
+### Key changes
+
+1. `styles.create()` is removed; use `styles.component()` instead.
+2. Base styles are auto-applied when calling as a function -- no need to pass `'base'` explicitly.
+3. The return is both callable AND destructurable.
+4. Use `cx()` (exported from `'typestyles'`) for conditional class joining.
+5. Varargs calling patterns like `button('base', 'primary')` are replaced by either the function call with variant object or destructuring.
 
 ## General migration tips
 
@@ -814,7 +909,7 @@ Don't migrate everything at once. Pick one component or one page and convert it.
 
 ### 2. Keep the same names
 
-If you have `.button-primary` in CSS, create a `button` style with a `primary` variant. This makes the migration easier to follow.
+If you have `.button-primary` in CSS, create a `button` component with a `primary` variant. This makes the migration easier to follow.
 
 ### 3. Use tokens early
 
@@ -833,12 +928,12 @@ expect(screen.getByRole('button')).toHaveClass('button-primary');
 **After:**
 
 ```ts
-expect(screen.getByRole('button')).toHaveClass('button-base', 'button-primary');
+expect(screen.getByRole('button')).toHaveClass('button-base', 'button-intent-primary');
 ```
 
 ### 5. DevTools familiarity
 
-Your generated class names will be human-readable (`button-primary`), so DevTools inspection stays familiar—actually more readable than hashed class names from other CSS-in-JS libraries.
+Your generated class names will be human-readable (`button-intent-primary`), so DevTools inspection stays familiar -- actually more readable than hashed class names from other CSS-in-JS libraries.
 
 ### 6. Bundle size check
 
@@ -846,14 +941,15 @@ After migration, your JavaScript bundle may be slightly smaller (no CSS parsing 
 
 ## Common patterns comparison
 
-| Pattern            | styled-components            | Emotion                   | Tailwind            | typestyles            |
-| ------------------ | ---------------------------- | ------------------------- | ------------------- | --------------------- |
-| **Basic styling**  | `styled.div`...`             | `css`...`                 | `className="p-4"`   | `styles.create()`     |
-| **Variants**       | Props + template literals    | Props + template literals | Conditional strings | Multiple variant args |
-| **Pseudo-classes** | `&:hover` in template        | `&:hover` in template     | `hover:` prefix     | `&:hover` in object   |
-| **Media queries**  | `@media` in template         | `@media` in template      | Responsive prefixes | `@media` in object    |
-| **Theme values**   | `${props => props.theme...}` | `${theme...}`             | Config-based        | Token references      |
-| **Dynamic values** | Template literals            | Template literals         | Arbitrary values    | Inline styles         |
+| Pattern            | styled-components            | Emotion                   | Tailwind            | typestyles                    |
+| ------------------ | ---------------------------- | ------------------------- | ------------------- | ----------------------------- |
+| **Basic styling**  | `styled.div`...`             | `css`...`                 | `className="p-4"`   | `styles.component()`          |
+| **Variants**       | Props + template literals    | Props + template literals | Conditional strings | Variant object or destructure |
+| **Pseudo-classes** | `&:hover` in template        | `&:hover` in template     | `hover:` prefix     | `&:hover` in object           |
+| **Media queries**  | `@media` in template         | `@media` in template      | Responsive prefixes | `@media` in object            |
+| **Theme values**   | `${props => props.theme...}` | `${theme...}`             | Config-based        | Token references              |
+| **Dynamic values** | Template literals            | Template literals         | Arbitrary values    | Inline styles                 |
+| **Class joining**  | `className` props            | `cx()` from emotion       | `clsx()`            | `cx()` from typestyles        |
 
 ## Migration CLI (MVP)
 
@@ -894,7 +990,7 @@ Useful options:
 
 ### Styles not applying
 
-- Check that the namespace in `styles.create()` is unique
+- Check that the namespace in `styles.component()` is unique
 - Verify the component is being rendered (lazy injection means CSS only appears when used)
 - Use DevTools to confirm class names are being applied
 
@@ -908,6 +1004,6 @@ Useful options:
 
 - Don't create styles inside components (define them at module level)
 - Use tokens instead of recreating values
-- Static styles only—dynamic values should use inline styles
+- Static styles only -- dynamic values should use inline styles
 
 If you hit any issues during migration, check the [troubleshooting guide](/docs/troubleshooting) or [open an issue](https://github.com/dbanksdesign/typestyles/issues).

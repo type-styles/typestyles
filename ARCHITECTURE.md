@@ -5,20 +5,21 @@
 TypeStyles is a runtime CSS-in-TypeScript library. It has three core subsystems:
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  Public API                      │
-│  styles.create()  tokens.create()  tokens.use()  │
-└──────┬────────────────┬─────────────────┬────────┘
-       │                │                 │
-┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐
-│   Style     │  │   Token     │  │   Theme     │
-│   Registry  │  │   Registry  │  │   Engine    │
-└──────┬──────┘  └──────┬──────┘  └─────────────┘
-       │                │
-┌──────▼────────────────▼──────┐
-│        CSS Injection         │
-│   (StyleSheet Manager)       │
-└──────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                   Public API                        │
+│  styles.component()  tokens.create()  tokens.use()  │
+│  styles.class()      cx()                           │
+└──────┬────────────────────┬─────────────────┬───────┘
+       │                    │                 │
+┌──────▼──────┐  ┌──────────▼──────┐  ┌──────▼──────┐
+│   Style     │  │   Token         │  │   Theme     │
+│   Registry  │  │   Registry      │  │   Engine    │
+└──────┬──────┘  └──────────┬──────┘  └─────────────┘
+       │                    │
+┌──────▼────────────────────▼──────┐
+│        CSS Injection             │
+│   (StyleSheet Manager)           │
+└──────────────────────────────────┘
 ```
 
 ## Package Structure
@@ -27,18 +28,27 @@ TypeStyles is a runtime CSS-in-TypeScript library. It has three core subsystems:
 typestyles/
 ├── src/
 │   ├── index.ts              # Public API exports
-│   ├── styles.ts             # styles.create() — style registration and selector functions
+│   ├── styles.ts             # styles.class(), styles.hashClass(), cx(), compose, withUtils
+│   ├── component.ts          # styles.component() — unified CVA-style component API
 │   ├── tokens.ts             # tokens.create(), tokens.use() — CSS custom properties
-│   ├── theme.ts              # tokens.createTheme() — theme class generation
 │   ├── sheet.ts              # StyleSheet manager — CSS injection and batching
 │   ├── css.ts                # CSS serialization — object → CSS string
-│   ├── types.ts              # TypeScript type definitions for CSS properties
-│   └── server.ts             # SSR support — collectStyles()
+│   ├── class-naming.ts       # Class name generation (semantic, hashed, atomic modes)
+│   ├── types.ts              # TypeScript type definitions
+│   ├── server.ts             # SSR support — collectStyles()
+│   ├── global.ts             # global.style(), global.fontFace()
+│   ├── keyframes.ts          # keyframes.create()
+│   ├── vars.ts               # createVar(), assignVars()
+│   ├── color.ts              # Color function helpers
+│   ├── registry.ts           # Shared namespace duplicate detection
+│   └── hmr.ts                # HMR invalidation helpers
 ├── packages/
-│   └── vite/                 # @typestyles/vite — optional Vite plugin
-│       ├── src/
-│       │   └── index.ts
-│       └── package.json
+│   ├── vite/                 # @typestyles/vite — Vite plugin (HMR + extraction)
+│   ├── next/                 # @typestyles/next — Next.js integration
+│   ├── astro/                # @typestyles/astro — Astro integration
+│   ├── rollup/               # @typestyles/rollup — Rollup/Rolldown plugin
+│   ├── props/                # @typestyles/props — Atomic CSS utilities
+│   └── build-runner/         # @typestyles/build-runner — Build-time CSS extraction
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -46,41 +56,69 @@ typestyles/
 
 ## Core Subsystems
 
-### 1. Style Registry (`styles.ts`)
+### 1. Component API (`component.ts`)
 
-Responsible for registering style definitions and returning selector functions.
+The unified API for creating styled components. Returns a **CVA-style** object that is both callable and destructurable.
 
-**`styles.create(namespace, definitions)`**
+**`styles.component(namespace, config)`**
 
-- Takes a namespace string and a map of variant names → CSS property objects
-- Generates deterministic class names: `{namespace}-{variant}`
-- Lazily serializes CSS and hands it to the StyleSheet Manager
-- Returns a selector function that composes class names
+Supports two config forms:
 
-```
-Input:  styles.create('button', { base: { color: 'red' }, large: { fontSize: '18px' } })
-Output: function(...variants) → "button-base button-large"
-
-Generated CSS:
-  .button-base { color: red; }
-  .button-large { font-size: 18px; }
-```
-
-**Selector function behavior:**
+**Dimensioned variants** (multi-axis):
 
 ```ts
-type SelectorFn = (...variants: (string | false | null | undefined)[]) => string;
+const button = styles.component('button', {
+  base: { padding: '8px 16px' },
+  variants: {
+    intent: { primary: { color: 'blue' }, ghost: { color: 'gray' } },
+    size: { sm: { fontSize: '14px' }, lg: { fontSize: '18px' } },
+  },
+  compoundVariants: [{ variants: { intent: 'primary', size: 'lg' }, style: { fontWeight: 700 } }],
+  defaultVariants: { intent: 'primary', size: 'sm' },
+});
+
+// Call as function — base always auto-applied
+button(); // "button-base button-intent-primary button-size-sm"
+button({ intent: 'ghost' }); // "button-base button-intent-ghost button-size-sm"
+
+// Destructure individual class strings
+button.base; // "button-base"
+button['intent-primary']; // "button-intent-primary"
 ```
 
-- Accepts variant names as arguments
-- Falsy values are filtered out (enables conditional application)
-- Returns a space-separated class name string
+**Flat variants** (boolean toggles):
 
-**Duplicate detection:**
+```ts
+const card = styles.component('card', {
+  base: { padding: '16px' },
+  elevated: { boxShadow: '...' },
+});
 
-If `styles.create()` is called with the same namespace twice, it warns in development and appends a suffix to avoid collisions. The developer should fix this — human-readable names only work if they're unique.
+card(); // "card-base"
+card({ elevated: true }); // "card-base card-elevated"
+card.elevated; // "card-elevated"
+```
 
-### 2. Token Registry (`tokens.ts`)
+**Implementation:**
+
+- Detects config type (dimensioned vs flat vs slot) by presence of `variants`/`slots` keys
+- Generates class names via `buildComponentClassName()`
+- Serializes CSS and injects via StyleSheet Manager
+- Returns a function with class map properties (via `Object.defineProperties`)
+
+### 2. Style Utilities (`styles.ts`)
+
+**`styles.class(name, properties)`** — Single class, no variants. Returns class name string.
+
+**`styles.hashClass(properties, label?)`** — Deterministic hashed class from style object.
+
+**`cx(...classes)`** — Built-in class name joining utility. Filters falsy values.
+
+**`styles.compose(...fns)`** — Compose multiple component functions or strings.
+
+**`styles.withUtils(utils)`** — Create utility-aware styles API (like Stitches' utils).
+
+### 3. Token Registry (`tokens.ts`)
 
 Manages CSS custom properties as typed design tokens.
 
@@ -91,47 +129,9 @@ Manages CSS custom properties as typed design tokens.
 - Injects a `:root` rule via the StyleSheet Manager
 - Returns a proxy object where property access yields `var(--{namespace}-{key})`
 
-```
-Input:  tokens.create('color', { primary: '#0066ff' })
-Output: { primary: 'var(--color-primary)' }  (typed as CSSTokenValue)
+**`tokens.use(namespace)`** — References tokens defined elsewhere (no CSS injection).
 
-Generated CSS:
-  :root { --color-primary: #0066ff; }
-```
-
-**`tokens.use(namespace)`**
-
-- Returns a proxy that produces `var(--{namespace}-{key})` references
-- Does NOT inject CSS — assumes the tokens are defined elsewhere
-- Useful for consuming shared tokens from a different entry point
-
-**Type generation:**
-
-Token objects are typed so that:
-
-- Property access returns `string` (the `var()` reference)
-- Only defined keys are accessible (typos caught at compile time)
-- Values are usable anywhere a CSS string value is expected
-
-### 3. Theme Engine (`theme.ts`)
-
-Handles theme variations via CSS custom property overrides.
-
-**`tokens.createTheme(name, overrides)`**
-
-- Takes a theme name and a map of `{ tokenNamespace: { key: newValue } }`
-- Generates a CSS rule with a class selector that overrides custom properties
-- Returns the class name string
-
-```
-Input:  tokens.createTheme('dark', { color: { primary: '#66b3ff' } })
-Output: "theme-dark"
-
-Generated CSS:
-  .theme-dark { --color-primary: #66b3ff; }
-```
-
-Themes cascade naturally because they use CSS custom properties. Apply a theme class to any element and all descendants pick up the overrides.
+**`tokens.createTheme(name, overrides)`** — Creates theme class with overridden custom properties.
 
 ### 4. StyleSheet Manager (`sheet.ts`)
 
@@ -140,80 +140,48 @@ Handles CSS injection into the document.
 **Responsibilities:**
 
 - Maintains a single `<style>` element in the document `<head>`
-- Batches CSS rule insertions using `requestAnimationFrame` (or microtask)
-- Deduplicates rules (same namespace + variant = skip)
+- Batches CSS rule insertions using microtasks
+- Deduplicates rules by key
 - Provides hooks for SSR collection
-- In development, supports replacing rules for HMR
+- Supports HMR invalidation
 
 **Insertion strategy:**
 
 ```
-1. styles.create() or tokens.create() called
+1. styles.component() or tokens.create() called
 2. CSS string generated by css.ts
 3. Rule queued in insertion buffer
-4. On next frame: all queued rules inserted via CSSStyleSheet.insertRule()
+4. On next microtask: all queued rules inserted via CSSStyleSheet.insertRule()
 ```
-
-Using `insertRule()` rather than textContent manipulation is important for performance — it avoids reparsing the entire stylesheet on each insertion.
-
-**SSR mode:**
-
-When `collectStyles()` wraps a render, the StyleSheet Manager switches to collection mode — rules are captured to a string buffer instead of injected into the DOM.
 
 ### 5. CSS Serialization (`css.ts`)
 
 Converts style objects to CSS strings.
 
-**Handles:**
-
-- camelCase → kebab-case property conversion (`fontSize` → `font-size`)
-- Nested selectors (`'&:hover'`, `'& .child'`)
+- camelCase → kebab-case property conversion
+- Nested selectors (`'&:hover'`, `'& .child'`, `'[data-state]'`)
 - At-rules (`@media`, `@container`, `@supports`)
-- Vendor prefixes (minimal — only where still needed)
+- Selector lists (`'&[data-state="open"], [aria-expanded="true"]'`)
 
-```
-Input:
-{
-  fontSize: '14px',
-  '&:hover': { color: 'blue' },
-  '@media (max-width: 768px)': { display: 'none' }
-}
+### 6. Class Naming (`class-naming.ts`)
 
-Output:
-.button-base { font-size: 14px; }
-.button-base:hover { color: blue; }
-@media (max-width: 768px) { .button-base { display: none; } }
-```
+Three naming modes:
 
-### 6. Type Definitions (`types.ts`)
-
-Provides TypeScript types for CSS properties. This is a key part of the DX.
-
-**Approach:**
-
-- Use `csstype` as the base for CSS property types (widely maintained, tracks the spec)
-- Extend with token-aware types — any property that accepts a string also accepts a token reference
-- Style definition type: `Record<string, CSSProperties>` where `CSSProperties` allows nested selectors
-
-```ts
-interface CSSProperties extends CSS.Properties<string | number> {
-  [selector: `&${string}`]: CSSProperties;
-  [atRule: `@${string}`]: CSSProperties;
-}
-```
+- **Semantic** (default): `button-intent-primary` — human-readable
+- **Hashed**: `ts-button-a1b2c3d` — collision-safe with readable slug
+- **Atomic**: `ts-a1b2c3d` — shortest, best for heavy reuse
 
 ## Data Flow
 
 ### Render Path
 
 ```
-1. Module loads → styles.create('card', { root: { ... } }) called
-2. Style Registry stores definitions, generates CSS via css.ts
-3. CSS queued in StyleSheet Manager
-4. Component renders → card('root') called
-5. Selector function returns "card-root" (string)
-6. React sets className="card-root" on DOM element
-7. On next frame, StyleSheet Manager inserts all queued CSS rules
+1. Module loads → styles.component('card', { base: {...}, ... }) called
+2. Component module generates CSS via css.ts, builds class name map
+3. CSS rules queued in StyleSheet Manager
+4. Component renders → card() or card({ elevated: true }) called
+5. Returns composed class string: "card-base card-elevated"
+6. On next microtask, StyleSheet Manager inserts all queued CSS rules
 ```
 
 ### Token Path
@@ -228,17 +196,17 @@ interface CSSProperties extends CSS.Properties<string | number> {
 
 ## Design Decisions
 
+### Why a unified component API?
+
+Previous versions had `styles.create()` (varargs) and `styles.component()` (object args) as separate APIs. This caused confusion: different calling conventions, different `base` behavior, incompatible composition. The unified `styles.component()` provides one mental model: callable + destructurable, base always auto-applied, typed variants.
+
 ### Why runtime?
 
-Static extraction (StyleX, Vanilla Extract) offers zero-runtime cost but imposes authoring constraints: no dynamic values, specific import patterns, build plugin required. TypeStyles prioritizes DX and flexibility. The runtime cost is minimal — class name composition is string concatenation, and CSS injection happens once per style definition.
+Static extraction (StyleX, Vanilla Extract) offers zero-runtime cost but imposes authoring constraints. TypeStyles prioritizes DX and flexibility. The runtime cost is minimal — class name composition is string concatenation, and CSS injection happens once per style definition.
 
 ### Why readable class names?
 
-Hashed/minified class names make debugging painful. TypeStyles uses authored names directly. The tradeoff is potential name collisions, which we handle with:
-
-- Namespace prefixing (the first arg to `styles.create`)
-- Development-mode duplicate detection and warnings
-- Convention: namespace = component/file name
+Hashed/minified class names make debugging painful. TypeStyles uses authored names directly. The tradeoff is potential name collisions, handled by namespace prefixing and development-mode duplicate detection.
 
 ### Why CSS custom properties for tokens?
 
@@ -246,7 +214,6 @@ Hashed/minified class names make debugging painful. TypeStyles uses authored nam
 - They work in plain CSS files (interop)
 - They're inspectable in DevTools
 - No runtime JS needed to resolve values
-- They bridge the gap between TypeStyles and non-TypeStyles code
 
 ### Why not tagged template literals?
 
@@ -254,37 +221,8 @@ Template literal APIs (`css\`color: red\``) lose type safety. Object syntax enab
 
 ## Performance Considerations
 
-- **Style injection is lazy**: CSS isn't generated or injected until a component using it renders
-- **Selector functions are fast**: they do string concatenation and filtering of falsy values
-- **CSS rules are inserted once**: duplicate calls to `styles.create` with the same namespace are deduplicated
-- **Batch insertion**: multiple rules are batched into a single DOM operation per frame
-- **No CSSOM reads**: TypeStyles only writes to the CSSOM, never reads, avoiding forced style recalculation
-
-## SSR Strategy
-
-```tsx
-// server.ts
-import { collectStyles } from 'typestyles/server';
-import { renderToString } from 'react-dom/server';
-
-const { html, css } = collectStyles(() => renderToString(<App />));
-
-const fullHtml = `
-  <html>
-    <head><style id="typestyles">${css}</style></head>
-    <body>${html}</body>
-  </html>
-`;
-```
-
-On the client, TypeStyles detects the existing `<style id="typestyles">` element and reuses it, avoiding duplicate injection.
-
-## Vite Plugin (Optional)
-
-The `@typestyles/vite` plugin provides:
-
-- **HMR**: When a style file changes, only the affected CSS rules are replaced (no full page reload)
-- **Dead style detection**: Warns when styles are defined but never used (dev mode)
-- **Extraction (future)**: Optional build-time extraction of static styles to a CSS file for production
-
-The plugin is optional. TypeStyles works without it.
+- **Style injection is lazy**: CSS isn't generated or injected until a module is loaded
+- **Callable objects are fast**: class name composition is string concatenation and map lookups
+- **CSS rules are inserted once**: duplicate calls with the same namespace are deduplicated
+- **Batch insertion**: multiple rules are batched into a single DOM operation per microtask
+- **No CSSOM reads**: TypeStyles only writes to the CSSOM, never reads

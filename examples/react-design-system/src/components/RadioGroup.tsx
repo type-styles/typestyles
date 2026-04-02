@@ -14,14 +14,14 @@ export type RadioGroupProps = Omit<ComponentProps<typeof AriaRadioGroup>, 'child
 
 export function RadioGroup({ label, options, ...props }: RadioGroupProps): JSX.Element {
   return (
-    <AriaRadioGroup {...props} className={radio('group')}>
-      {label ? <Label className={radio('groupLabel')}>{label}</Label> : null}
+    <AriaRadioGroup {...props} className={radio.group}>
+      {label ? <Label className={radio.groupLabel}>{label}</Label> : null}
       {options.map((option) => (
-        <AriaRadio key={option.value} value={option.value} className={radio('item')}>
+        <AriaRadio key={option.value} value={option.value} className={radio.item}>
           {({ isSelected }) => (
             <>
-              <span className={radio('control')} data-selected={isSelected || undefined} />
-              <span className={radio('label')}>{option.label}</span>
+              <span className={radio.control} data-selected={isSelected || undefined} />
+              <span className={radio.label}>{option.label}</span>
             </>
           )}
         </AriaRadio>

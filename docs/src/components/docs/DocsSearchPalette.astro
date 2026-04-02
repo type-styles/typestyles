@@ -2,43 +2,28 @@
 import { Search } from '@lucide/astro';
 import { commandPalette } from '@examples/design-system';
 
-const searchClasses = {
-  root: commandPalette('root'),
-  rootOpen: commandPalette('rootOpen'),
-  backdrop: commandPalette('backdrop'),
-  dialog: commandPalette('dialog'),
-  dialogOpen: commandPalette('dialogOpen'),
-  inputRow: commandPalette('inputRow'),
-  inputIcon: commandPalette('inputIcon'),
-  input: commandPalette('input'),
-  results: commandPalette('results'),
-  result: commandPalette('result'),
-  resultLink: commandPalette('resultLink'),
-  resultLinkActive: commandPalette('resultLinkActive'),
-  resultTitle: commandPalette('resultTitle'),
-  resultMeta: commandPalette('resultMeta'),
-  mark: commandPalette('mark'),
-  empty: commandPalette('empty'),
-};
+const cp = commandPalette();
+const cpOpen = commandPalette({ open: true });
+const searchSlotClasses = JSON.stringify({ closed: cp, open: cpOpen });
 ---
 
-<div id="docs-search-palette-root" class={commandPalette('root')} aria-hidden="true">
-  <div id="docs-search-palette-backdrop" class={commandPalette('backdrop')} aria-hidden="true"></div>
+<div id="docs-search-palette-root" class={cp.root} aria-hidden="true">
+  <div id="docs-search-palette-backdrop" class={cp.backdrop} aria-hidden="true"></div>
   <div
     id="docs-search-palette-dialog"
     role="dialog"
     aria-label="Search documentation"
-    class={commandPalette('dialog')}
+    class={cp.dialog}
   >
-    <script type="application/json" id="docs-search-classes" set:html={JSON.stringify(searchClasses)} />
-    <div class={commandPalette('inputRow')}>
-      <span class={commandPalette('inputIcon')} aria-hidden="true">
+    <script type="application/json" id="docs-search-slot-classes" set:html={searchSlotClasses} />
+    <div class={cp.inputRow}>
+      <span class={cp.inputIcon} aria-hidden="true">
         <Search size={20} stroke-width={2} />
       </span>
       <input
         id="docs-palette-input"
         type="search"
-        class={commandPalette('input')}
+        class={cp.input}
         placeholder="Search the docs…"
         autocomplete="off"
         aria-expanded="false"
@@ -49,7 +34,7 @@ const searchClasses = {
     </div>
     <ul
       id="docs-palette-results"
-      class={commandPalette('results')}
+      class={cp.results}
       role="listbox"
       aria-label="Search results"
     >

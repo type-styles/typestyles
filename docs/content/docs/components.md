@@ -7,9 +7,9 @@ description: Build typed variant APIs with styles.component
 
 `styles.component()` is the first-class API for variant-driven component styling.
 
-If you need flat named variants (without a dimensioned `variants` config), see [Styles](/docs/styles).
+`styles.component()` is the unified API for all component styling. For flat configs (no dimensioned `variants`), see [Styles](/docs/styles).
 
-Use it when you want a typed interface with:
+Use the dimensioned config when you want a typed interface with:
 
 - `base` styles
 - `variants` dimensions
@@ -46,9 +46,13 @@ export const button = styles.component('button', {
   },
 });
 
+// Call as a function -- base styles are always auto-applied:
 button(); // "button-base button-intent-primary button-size-sm"
 button({ size: 'lg' }); // "button-base button-intent-primary button-size-lg"
 button({ intent: 'ghost', size: 'lg' }); // "button-base button-intent-ghost button-size-lg"
+
+// Or destructure for direct class access:
+const { base } = button;
 ```
 
 Class strings follow the global [class naming](/docs/class-naming) configuration (`semantic` by default).
@@ -143,7 +147,7 @@ c.content;
 
 ## Data and ARIA selectors
 
-`styles.component` uses the same selector model as `styles.create`.
+`styles.component` supports all CSS selectors:
 
 ```ts
 const accordionTrigger = styles.component('accordion-trigger', {

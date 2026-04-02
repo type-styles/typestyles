@@ -28,15 +28,15 @@ export function Select({
   ...props
 }: SelectProps): JSX.Element {
   return (
-    <AriaSelect {...props} className={select('root')}>
-      {label ? <Label className={select('label')}>{label}</Label> : null}
-      <AriaButton className={select('trigger')}>
+    <AriaSelect {...props} className={select.root}>
+      {label ? <Label className={select.label}>{label}</Label> : null}
+      <AriaButton className={select.trigger}>
         <SelectValue>{({ defaultChildren }) => defaultChildren ?? placeholder}</SelectValue>
       </AriaButton>
-      <Popover className={select('popover')}>
+      <Popover className={select.popover}>
         <ListBox>
           {options.map((option) => (
-            <ListBoxItem key={option.id} id={option.id} className={select('item')}>
+            <ListBoxItem key={option.id} id={option.id} className={select.item}>
               {option.label}
             </ListBoxItem>
           ))}

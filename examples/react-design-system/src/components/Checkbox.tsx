@@ -8,13 +8,13 @@ export type CheckboxProps = Omit<ComponentProps<typeof AriaCheckbox>, 'children'
 
 export function Checkbox({ children, ...props }: CheckboxProps): JSX.Element {
   return (
-    <AriaCheckbox {...props} className={checkbox('root')}>
+    <AriaCheckbox {...props} className={checkbox.root}>
       {({ isSelected }) => (
         <>
-          <span className={checkbox('box')} data-selected={isSelected || undefined}>
+          <span className={checkbox.box} data-selected={isSelected || undefined}>
             {isSelected ? '✓' : ''}
           </span>
-          <span className={checkbox('label')}>{children}</span>
+          <span className={checkbox.label}>{children}</span>
         </>
       )}
     </AriaCheckbox>

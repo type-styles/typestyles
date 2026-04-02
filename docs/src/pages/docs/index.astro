@@ -9,14 +9,14 @@ const docsBySlug = Object.fromEntries(docs.map((entry) => [entry.slug, entry]));
 ---
 
 <DocsLayout docsBySlug={docsBySlug} currentSlug="">
-  <div class={doc('root')}>
-    <h1 class={doc('title')}>Documentation</h1>
-    <p class={doc('description')}>
+  <div class={doc.root}>
+    <h1 class={doc.title}>Documentation</h1>
+    <p class={doc.description}>
       Welcome to the typestyles documentation. Choose a topic from the sidebar or start with{' '}
       <a href="/docs/getting-started">Getting Started</a>.
     </p>
 
-    <div class:list={[docProseRoot, doc('content')]}>
+    <div class:list={[docProseRoot, doc.content]}>
       {
         docNavigation.categories.map((category) => (
           <div>

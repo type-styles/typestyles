@@ -59,15 +59,6 @@ export type StyleDefinitionsWithUtils<U extends StyleUtils> = Record<
 export type StyleDefinitions = Record<string, CSSProperties>;
 
 /**
- * A selector function returned by styles.create().
- * Accepts variant names (or falsy values for conditional application)
- * and returns a composed class name string.
- */
-export interface SelectorFunction<K extends string = string> {
-  (...variants: (K | false | null | undefined)[]): string;
-}
-
-/**
  * A flat map of token names to their values.
  */
 export type TokenValues = Record<string, string>;
@@ -89,10 +80,13 @@ export type ThemeOverrides = Record<string, Partial<TokenValues>>;
  */
 export type KeyframeStops = Record<string, CSSProperties>;
 
+// ---------------------------------------------------------------------------
+// Component API types
+// ---------------------------------------------------------------------------
+
 /**
  * A map of variant dimensions to their options (each option maps to CSSProperties).
  */
-type VariantDimensions = Record<string, Record<string, unknown>>;
 export type VariantDefinitions = Record<string, Record<string, CSSProperties>>;
 export type SlotStyles<S extends string> = Partial<Record<S, CSSProperties>>;
 export type SlotVariantDefinitions<S extends string> = Record<
@@ -100,6 +94,7 @@ export type SlotVariantDefinitions<S extends string> = Record<
   Record<string, SlotStyles<S>>
 >;
 
+type VariantDimensions = Record<string, Record<string, unknown>>;
 type VariantOptionKey<V extends VariantDimensions, K extends keyof V> = Extract<keyof V[K], string>;
 
 type VariantSelectionValue<OptionKey extends string> =
@@ -115,8 +110,12 @@ export type ComponentSelections<V extends VariantDimensions> = {
   [K in keyof V]?: VariantSelectionValue<VariantOptionKey<V, K>> | null | undefined;
 };
 
+// ---------------------------------------------------------------------------
+// Dimensioned variant config (has `variants: { ... }`)
+// ---------------------------------------------------------------------------
+
 /**
- * The full config object passed to styles.component().
+ * The full config object passed to styles.component() with dimensioned variants.
  */
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
@@ -128,12 +127,71 @@ export type ComponentConfig<V extends VariantDefinitions> = {
   defaultVariants?: ComponentSelections<V>;
 };
 
+// ---------------------------------------------------------------------------
+// Flat variant config (no `variants` key — each key besides `base` is a variant)
+// ---------------------------------------------------------------------------
+
 /**
- * The function returned by styles.component().
+ * Config for flat variants: `{ base: {...}, elevated: {...}, compact: {...} }`.
+ * Each key besides `base` is a boolean-style variant.
  */
-export type ComponentFunction<V extends VariantDefinitions> = (
-  selections?: ComponentSelections<V>,
-) => string;
+export type FlatComponentConfig<K extends string> = {
+  base?: CSSProperties;
+} & Record<K, CSSProperties>;
+
+/**
+ * Selection object for flat variants: `{ elevated: true, compact: true }`.
+ */
+export type FlatComponentSelections<K extends string> = {
+  [P in K]?: boolean | null | undefined;
+};
+
+// ---------------------------------------------------------------------------
+// CVA-style return: callable AND destructurable
+// ---------------------------------------------------------------------------
+
+/**
+ * All possible variant class string keys that can be destructured from a
+ * dimensioned component. Includes 'base' plus all `{dimension}-{option}` keys
+ * flattened from the variants config.
+ */
+type DimensionedVariantKeys<V extends VariantDefinitions> = {
+  [D in keyof V]: keyof V[D] extends string ? `${D & string}-${keyof V[D] & string}` : never;
+}[keyof V];
+
+/**
+ * The CVA-style return for dimensioned variants.
+ * Callable as a function, destructurable as an object.
+ */
+export type ComponentReturn<V extends VariantDefinitions> = {
+  /** Call with variant selections to get composed class string (base always included). */
+  (selections?: ComponentSelections<V>): string;
+} & {
+  /** The base class string. */
+  readonly base: string;
+} & {
+  /** Individual variant class strings, keyed as `{dimension}-{option}`. */
+  readonly [K in DimensionedVariantKeys<V>]: string;
+};
+
+/**
+ * The CVA-style return for flat variants.
+ * Callable as a function, destructurable as an object.
+ */
+export type FlatComponentReturn<K extends string> = {
+  /** Call with variant selections to get composed class string (base always included). */
+  (selections?: FlatComponentSelections<Exclude<K, 'base'>>): string;
+} & {
+  /** The base class string. */
+  readonly base: string;
+} & {
+  /** Individual variant class strings. */
+  readonly [P in Exclude<K, 'base'>]: string;
+};
+
+// ---------------------------------------------------------------------------
+// Slot component types
+// ---------------------------------------------------------------------------
 
 export type SlotComponentConfig<S extends string, V extends SlotVariantDefinitions<S>> = {
   slots: readonly S[];
@@ -158,7 +216,7 @@ export type SlotComponentFunction<S extends string, V extends SlotVariantDefinit
 export type CSSVarRef = `var(--${string})`;
 
 /**
- * Extract the variant prop types from a ComponentFunction.
+ * Extract the variant prop types from a ComponentReturn or ComponentFunction.
  *
  * @example
  * ```ts

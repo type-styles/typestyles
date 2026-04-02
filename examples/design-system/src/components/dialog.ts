@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const dialog = styles.create('dialog', {
+export const dialog = styles.component('dialog', {
   overlay: {
     position: 'fixed',
     inset: 0,

@@ -16,43 +16,43 @@ type Props = {
 const { docsBySlug, currentSlug, appearanceBootstrap } = Astro.props;
 ---
 
-<div className={sidebar('backdrop')} id="sidebar-backdrop" aria-hidden="true"></div>
-<aside className={sidebar('root')} id="docs-sidebar">
-  <div className={sidebar('header')}>
-    <DocsLogo className={sidebar('logo')} accentClassName={sidebar('logoAccent')} />
+<div className={sidebar.backdrop} id="sidebar-backdrop" aria-hidden="true"></div>
+<aside className={sidebar.root} id="docs-sidebar">
+  <div className={sidebar.header}>
+    <DocsLogo className={sidebar.logo} accentClassName={sidebar.logoAccent} />
   </div>
-  <div className={sidebar('searchWrapper')}>
-    <span className={sidebar('searchIcon')} aria-hidden="true">
+  <div className={sidebar.searchWrapper}>
+    <span className={sidebar.searchIcon} aria-hidden="true">
       <Search size={16} stroke-width={2} />
     </span>
     <button
       type="button"
       id="docs-search-trigger"
-      className={sidebar('searchTrigger')}
+      className={sidebar.searchTrigger}
       aria-label="Open search (Command+K)"
       aria-keyshortcuts="Meta+K Control+K"
     >
       Search docs…
     </button>
-    <span className={sidebar('searchKbd')} aria-hidden="true">⌘K</span>
+    <span className={sidebar.searchKbd} aria-hidden="true">⌘K</span>
   </div>
   <nav
-    className={sidebar('nav')}
+    className={sidebar.nav}
     data-docs-nav
-    data-link-class={sidebar('link')}
-    data-link-active-class={sidebar('linkActive')}
+    data-link-class={sidebar.link}
+    data-link-active-class={sidebar.linkActive}
   >
     {
       docNavigation.categories.map((category) => (
-        <div className={sidebar('section')}>
-          <div className={sidebar('sectionTitle')}>{category.title}</div>
+        <div className={sidebar.section}>
+          <div className={sidebar.sectionTitle}>{category.title}</div>
           {category.items.map((item) => {
             const doc = docsBySlug[item.slug];
             if (!doc) return null;
             const activeClass =
               item.slug === currentSlug
-                ? `${sidebar('link')} ${sidebar('linkActive')}`
-                : sidebar('link');
+                ? `${sidebar.link} ${sidebar.linkActive}`
+                : sidebar.link;
             return (
               <a href={`/docs/${item.slug}`} className={activeClass}>
                 {doc.title}

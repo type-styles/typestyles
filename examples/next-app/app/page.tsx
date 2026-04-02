@@ -65,16 +65,18 @@ export default function Home(): JSX.Element {
   return (
     <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
       <main
-        className={layout('stack')}
+        className={layout({ stack: true })}
         style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}
       >
-        <header className={layout('stack')} style={{ gap: 10 }}>
-          <h1 className={text('title')}>Next.js consuming shared typestyles design system</h1>
-          <p className={text('subtitle')}>
+        <header className={layout({ stack: true })} style={{ gap: 10 }}>
+          <h1 className={text({ title: true })}>
+            Next.js consuming shared typestyles design system
+          </h1>
+          <p className={text({ subtitle: true })}>
             This example consumes the same React library as Vite and applies app-level custom
             theming.
           </p>
-          <div className={layout('row')}>
+          <div className={layout({ row: true })}>
             <Button
               intent={themeMode === 'light' ? 'primary' : 'secondary'}
               onPress={() => setThemeMode('light')}
@@ -96,9 +98,9 @@ export default function Home(): JSX.Element {
           </div>
         </header>
 
-        <section className={layout('section')}>
-          <h2 className={text('sectionTitle')}>10 Common Components</h2>
-          <div className={layout('row')}>
+        <section className={layout({ section: true })}>
+          <h2 className={text({ sectionTitle: true })}>10 Common Components</h2>
+          <div className={layout({ row: true })}>
             <Button intent="primary">Button</Button>
             <Link href="https://react-spectrum.adobe.com/react-aria/">Link</Link>
             <Dialog
@@ -107,7 +109,7 @@ export default function Home(): JSX.Element {
               description="Underlying accessibility behavior comes from react-aria-components."
             />
           </div>
-          <div className={layout('row')}>
+          <div className={layout({ row: true })}>
             <TextField
               label="Repository name"
               placeholder="design-system"
@@ -129,7 +131,7 @@ export default function Home(): JSX.Element {
             placeholder="Document brand token overrides..."
             description="Token customization still uses typestyles vars under the hood."
           />
-          <div className={layout('row')}>
+          <div className={layout({ row: true })}>
             <Checkbox isSelected={accepted} onChange={setAccepted}>
               Checkbox
             </Checkbox>

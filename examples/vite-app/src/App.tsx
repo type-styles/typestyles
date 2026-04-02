@@ -63,16 +63,16 @@ export function App(): JSX.Element {
   return (
     <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
       <main
-        className={layout('stack')}
+        className={layout.stack}
         style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}
       >
-        <header className={layout('stack')} style={{ gap: 10 }}>
-          <h1 className={text('title')}>Vite consuming shared typestyles design system</h1>
-          <p className={text('subtitle')}>
+        <header className={layout.stack} style={{ gap: 10 }}>
+          <h1 className={text.title}>Vite consuming shared typestyles design system</h1>
+          <p className={text.subtitle}>
             This page uses one shared React library and switches between default, dark, and custom
             themes.
           </p>
-          <div className={layout('row')}>
+          <div className={layout.row}>
             <Button
               intent={themeMode === 'light' ? 'primary' : 'secondary'}
               onPress={() => setThemeMode('light')}
@@ -94,9 +94,9 @@ export function App(): JSX.Element {
           </div>
         </header>
 
-        <section className={layout('section')}>
-          <h2 className={text('sectionTitle')}>10 Common Components</h2>
-          <div className={layout('row')}>
+        <section className={layout.section}>
+          <h2 className={text.sectionTitle}>10 Common Components</h2>
+          <div className={layout.row}>
             <Button intent="primary">Button</Button>
             <Link href="https://react-spectrum.adobe.com/react-aria/">Link</Link>
             <Dialog
@@ -105,7 +105,7 @@ export function App(): JSX.Element {
               description="Modal behavior and focus management come from react-aria-components."
             />
           </div>
-          <div className={layout('row')}>
+          <div className={layout.row}>
             <TextField
               label="Project name"
               placeholder="typestyles-ui"
@@ -127,7 +127,7 @@ export function App(): JSX.Element {
             placeholder="Describe your theming needs…"
             description="TextArea field for longer input."
           />
-          <div className={layout('row')}>
+          <div className={layout.row}>
             <Checkbox isSelected={agreed} onChange={setAgreed}>
               Checkbox
             </Checkbox>

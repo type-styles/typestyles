@@ -3,10 +3,10 @@ import { mobileBar } from '../../styles';
 import DocsLogo from './DocsLogo.astro';
 ---
 
-<div className={mobileBar('root')}>
-  <button className={mobileBar('menuBtn')} id="mobile-menu-toggle" aria-label="Open menu">
+<div class={mobileBar.root}>
+  <button class={mobileBar.menuBtn} id="mobile-menu-toggle" aria-label="Open menu" type="button">
     <span id="mobile-menu-icon">☰</span>
   </button>
-  <DocsLogo className={mobileBar('logo')} accentClassName={mobileBar('logoAccent')} />
-  <span className={mobileBar('headerSpacer')} aria-hidden="true"></span>
+  <DocsLogo className={mobileBar.logo} accentClassName={mobileBar.logoAccent} />
+  <span class={mobileBar.headerSpacer} aria-hidden="true"></span>
 </div>

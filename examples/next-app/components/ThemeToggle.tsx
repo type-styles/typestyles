@@ -4,7 +4,7 @@ import type { JSX } from 'react';
 import { styles } from 'typestyles';
 import { useTheme } from './ThemeProvider';
 
-const toggle = styles.create('theme-toggle', {
+const toggle = styles.component('theme-toggle', {
   base: {
     display: 'flex',
     alignItems: 'center',
@@ -18,7 +18,7 @@ const toggle = styles.create('theme-toggle', {
   },
 });
 
-const option = styles.create('theme-option', {
+const option = styles.component('theme-option', {
   base: {
     padding: '4px 16px',
     borderRadius: '9999px',
@@ -41,9 +41,9 @@ export function ThemeToggle(): JSX.Element {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <button className={toggle('base')} onClick={toggleTheme}>
-      <span className={option('base', theme === 'light' ? 'active' : undefined)}>Light</span>
-      <span className={option('base', theme === 'dark' ? 'active' : undefined)}>Dark</span>
+    <button className={toggle()} onClick={toggleTheme}>
+      <span className={option({ active: theme === 'light' })}>Light</span>
+      <span className={option({ active: theme === 'dark' })}>Dark</span>
     </button>
   );
 }

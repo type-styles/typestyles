@@ -84,14 +84,14 @@ export const colors = tokens.create('color', {
 
 ### Using Styles
 
-Define styles with `styles.create()` and use them with the className:
+Define styles with `styles.component()` and use them with the className:
 
 ```ts
 // styles/button.ts
 import { styles } from 'typestyles';
 import { colors } from './tokens';
 
-export const button = styles.create('button', {
+export const button = styles.component('button', {
   base: {
     padding: '12px 24px',
     backgroundColor: colors.primary,

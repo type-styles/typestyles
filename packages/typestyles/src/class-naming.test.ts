@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { configureClassNaming, resetClassNaming } from './class-naming.js';
-import { createStyles, createClass, createHashClass } from './styles.js';
+import { createClass, createHashClass } from './styles.js';
 import { createComponent } from './component.js';
 import { reset, flushSync } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
@@ -16,47 +16,47 @@ describe('class naming modes', () => {
     resetClassNaming();
   });
 
-  it('semantic mode keeps readable create() class strings', () => {
+  it('semantic mode keeps readable component() class strings', () => {
     configureClassNaming({ mode: 'semantic' });
-    const button = createStyles('btn', {
+    const button = createComponent('btn', {
       base: { color: 'red' },
       primary: { backgroundColor: 'blue' },
     });
-    expect(button('base', 'primary')).toBe('btn-base btn-primary');
+    expect(button.base).toBe('btn-base');
+    expect(button.primary).toBe('btn-primary');
   });
 
-  it('hashed mode yields stable prefixed class names for create()', () => {
+  it('hashed mode yields stable prefixed class names for component()', () => {
     configureClassNaming({ mode: 'hashed', prefix: 'app' });
-    const a = createStyles('card', {
+    const a = createComponent('card', {
       root: { padding: '8px' },
     });
-    const b = createStyles('card', {
+    registeredNamespaces.clear();
+    const b = createComponent('card', {
       root: { padding: '8px' },
     });
-    const ca = a('root');
-    const cb = b('root');
-    expect(ca).toMatch(/^app-card-/);
-    expect(ca).toBe(cb);
+    expect(a.root).toMatch(/^app-card-/);
+    expect(a.root).toBe(b.root);
   });
 
   it('scopeId changes hashed output for the same logical component styles', () => {
     configureClassNaming({ mode: 'hashed', scopeId: 'pkg-a' });
-    const x = createStyles('box', { main: { margin: 0 } })('main');
+    const x = createComponent('box', { main: { margin: 0 } }).main;
     reset();
     registeredNamespaces.clear();
     resetClassNaming();
     configureClassNaming({ mode: 'hashed', scopeId: 'pkg-b' });
-    const y = createStyles('box', { main: { margin: 0 } })('main');
+    const y = createComponent('box', { main: { margin: 0 } }).main;
     expect(x).not.toBe(y);
   });
 
   it('atomic mode omits the namespace slug in class strings', () => {
     configureClassNaming({ mode: 'atomic', prefix: 'x' });
-    const button = createStyles('btn', {
+    const button = createComponent('btn', {
       base: { color: 'red' },
     });
-    expect(button('base')).toMatch(/^x-[a-z0-9]+$/);
-    expect(button('base')).not.toContain('btn');
+    expect(button.base).toMatch(/^x-[a-z0-9]+$/);
+    expect(button.base).not.toContain('btn');
   });
 
   it('styles.class respects naming mode', () => {

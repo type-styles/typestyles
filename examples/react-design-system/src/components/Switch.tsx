@@ -8,13 +8,13 @@ export type SwitchProps = Omit<ComponentProps<typeof AriaSwitch>, 'children'> & 
 
 export function Switch({ children, ...props }: SwitchProps): JSX.Element {
   return (
-    <AriaSwitch {...props} className={switchStyles('root')}>
+    <AriaSwitch {...props} className={switchStyles.root}>
       {({ isSelected }) => (
         <>
-          <span className={switchStyles('track')} data-selected={isSelected || undefined}>
-            <span className={switchStyles('thumb')} data-selected={isSelected || undefined} />
+          <span className={switchStyles.track} data-selected={isSelected || undefined}>
+            <span className={switchStyles.thumb} data-selected={isSelected || undefined} />
           </span>
-          <span className={switchStyles('label')}>{children}</span>
+          <span className={switchStyles.label}>{children}</span>
         </>
       )}
     </AriaSwitch>

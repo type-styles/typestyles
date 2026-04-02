@@ -150,9 +150,8 @@ export const navStyles = {
     },
   }),
 
-  badge: styles.create(
-    'badge',
-    {
+  badge: styles.component('badge', {
+    base: {
       display: 'inline-flex',
       alignItems: 'center',
       borderRadius: '9999px',
@@ -164,15 +163,13 @@ export const navStyles = {
       backgroundColor: 'transparent',
       transition: 'color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease',
     },
-    {
-      secondary: {
-        backgroundColor: colors.muted,
-        color: colors.mutedForeground,
-        borderColor: 'transparent',
-      },
-      outline: {
-        color: colors.foreground,
-      },
+    secondary: {
+      backgroundColor: colors.muted,
+      color: colors.mutedForeground,
+      borderColor: 'transparent',
     },
-  ),
+    outline: {
+      color: colors.foreground,
+    },
+  }),
 };

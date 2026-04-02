@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { collectStyles } from './server.js';
 import { resetClassNaming } from './class-naming.js';
-import { createStyles } from './styles.js';
+import { createComponent } from './component.js';
 import { createTokens } from './tokens.js';
 import { reset } from './sheet.js';
 
@@ -13,7 +13,7 @@ describe('collectStyles', () => {
 
   it('collects CSS from styles created during render', () => {
     const { html, css } = collectStyles(() => {
-      createStyles('ssr-btn', {
+      createComponent('ssr-btn', {
         base: { color: 'red' },
       });
       return '<button class="ssr-btn-base">Click</button>';
@@ -37,7 +37,7 @@ describe('collectStyles', () => {
   it('collects both tokens and styles', () => {
     const { css } = collectStyles(() => {
       const color = createTokens('ssr-theme', { bg: '#fff' });
-      createStyles('ssr-card', {
+      createComponent('ssr-card', {
         root: { backgroundColor: color.bg },
       });
       return '';

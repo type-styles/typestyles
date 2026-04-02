@@ -5,7 +5,6 @@ import { runTypestylesBuild } from '@typestyles/build-runner';
  * Regex patterns to extract namespace strings from typestyles API calls.
  *
  * Matches:
- *   styles.create('button', ...)      → prefix ".button-"
  *   styles.component('button', ...)   → prefix ".button-"
  *   tokens.create('color', ...)       → key "tokens:color"
  *   tokens.createTheme('dark', ...)   → key "theme:dark"  (also createTheme('dark', ...))
@@ -13,7 +12,6 @@ import { runTypestylesBuild } from '@typestyles/build-runner';
  *   global.style('body', ...)         → prefix "body"
  *   global.fontFace('Inter', ...)     → prefix "font-face:Inter"
  */
-const STYLES_CREATE_RE = /styles\.create\(\s*['"]([^'"]+)['"]/g;
 const STYLES_COMPONENT_RE = /styles\.component\(\s*['"]([^'"]+)['"]/g;
 const TOKENS_CREATE_RE = /tokens\.create\(\s*['"]([^'"]+)['"]/g;
 const CREATE_THEME_RE = /(?:tokens\.)?createTheme\(\s*['"]([^'"]+)['"]/g;
@@ -62,10 +60,6 @@ export function extractNamespaces(code: string): {
 } {
   const keys: string[] = [];
   const prefixes: string[] = [];
-
-  for (const match of code.matchAll(STYLES_CREATE_RE)) {
-    prefixes.push(`.${match[1]}-`);
-  }
 
   for (const match of code.matchAll(STYLES_COMPONENT_RE)) {
     prefixes.push(`.${match[1]}-`);

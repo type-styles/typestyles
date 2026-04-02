@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const select = styles.create('select', {
+export const select = styles.component('select', {
   root: {
     display: 'grid',
     gap: t.space[1],

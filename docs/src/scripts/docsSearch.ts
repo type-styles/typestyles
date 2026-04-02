@@ -1,23 +1,6 @@
 import MiniSearch from 'minisearch';
 
-type SearchClasses = {
-  root: string;
-  rootOpen: string;
-  backdrop: string;
-  dialog: string;
-  dialogOpen: string;
-  inputRow: string;
-  inputIcon: string;
-  input: string;
-  results: string;
-  result: string;
-  resultLink: string;
-  resultLinkActive: string;
-  resultTitle: string;
-  resultMeta: string;
-  mark: string;
-  empty: string;
-};
+type CommandPaletteSlots = Record<string, string>;
 
 type RawDoc = {
   slug: string;
@@ -85,14 +68,13 @@ function highlightWithTerms(text: string, terms: string[], markClass: string): s
   return text.replace(re, (m) => `<mark class="${markClass}">${escapeHtml(m)}</mark>`);
 }
 
-function readClasses(): SearchClasses {
-  const el = document.getElementById('docs-search-classes');
-  const empty = {} as SearchClasses;
-  if (!el?.textContent) return empty;
+function readSlotClasses(): { closed: CommandPaletteSlots; open: CommandPaletteSlots } | null {
+  const el = document.getElementById('docs-search-slot-classes');
+  if (!el?.textContent?.trim()) return null;
   try {
-    return JSON.parse(el.textContent) as SearchClasses;
+    return JSON.parse(el.textContent) as { closed: CommandPaletteSlots; open: CommandPaletteSlots };
   } catch {
-    return empty;
+    return null;
   }
 }
 
@@ -135,7 +117,10 @@ function bindPalette(): (() => void) | undefined {
   const triggerEl = document.getElementById('docs-search-trigger');
   if (!paletteRoot || !backdropEl || !dialogEl || !inputEl || !listEl) return undefined;
 
-  const cls = readClasses();
+  const parsed = readSlotClasses();
+  if (!parsed) return undefined;
+  const slotsClosed = parsed.closed;
+  const slotsOpen = parsed.open;
   let previousActiveElement: Element | null = null;
   let activeIndex = -1;
   let paletteOpen = false;
@@ -147,12 +132,12 @@ function bindPalette(): (() => void) | undefined {
   }
 
   function renderHint(): void {
-    listEl.innerHTML = `<li class="${cls.empty}">Type at least ${MIN_QUERY_LENGTH} characters to search.</li>`;
+    listEl.innerHTML = `<li class="${slotsClosed.empty}">Type at least ${MIN_QUERY_LENGTH} characters to search.</li>`;
     setListboxOpen(false);
   }
 
   function renderEmpty(message: string): void {
-    listEl.innerHTML = `<li class="${cls.empty}">${escapeHtml(message)}</li>`;
+    listEl.innerHTML = `<li class="${slotsClosed.empty}">${escapeHtml(message)}</li>`;
     setListboxOpen(false);
   }
 
@@ -163,10 +148,10 @@ function bindPalette(): (() => void) | undefined {
     }
     listEl.innerHTML = results
       .map((r, i) => {
-        const titleHtml = highlightWithTerms(r.title, r.terms, cls.mark);
-        const metaHtml = highlightWithTerms(r.categoryTitle, r.terms, cls.mark);
-        const active = i === activeIndex ? ` ${cls.resultLinkActive}` : '';
-        return `<li class="${cls.result}" role="none"><a role="option" aria-selected="${i === activeIndex}" tabindex="-1" class="${cls.resultLink}${active}" href="${escapeHtml(r.id)}"><span class="${cls.resultTitle}">${titleHtml}</span><span class="${cls.resultMeta}">${metaHtml}</span></a></li>`;
+        const titleHtml = highlightWithTerms(r.title, r.terms, slotsClosed.mark);
+        const metaHtml = highlightWithTerms(r.categoryTitle, r.terms, slotsClosed.mark);
+        const active = i === activeIndex ? ` ${slotsClosed.resultLinkActive}` : '';
+        return `<li class="${slotsClosed.result}" role="none"><a role="option" aria-selected="${i === activeIndex}" tabindex="-1" class="${slotsClosed.resultLink}${active}" href="${escapeHtml(r.id)}"><span class="${slotsClosed.resultTitle}">${titleHtml}</span><span class="${slotsClosed.resultMeta}">${metaHtml}</span></a></li>`;
       })
       .join('');
     setListboxOpen(true);
@@ -199,7 +184,9 @@ function bindPalette(): (() => void) | undefined {
     const links = listEl.querySelectorAll<HTMLAnchorElement>('[role="option"]');
     links.forEach((a, i) => {
       const on = i === activeIndex;
-      a.className = on ? `${cls.resultLink} ${cls.resultLinkActive}` : cls.resultLink;
+      a.className = on
+        ? `${slotsClosed.resultLink} ${slotsClosed.resultLinkActive}`
+        : slotsClosed.resultLink;
     });
     syncAriaSelected();
   }
@@ -212,8 +199,8 @@ function bindPalette(): (() => void) | undefined {
     if (paletteOpen) return;
     paletteOpen = true;
     previousActiveElement = document.activeElement;
-    paletteRoot.classList.add(cls.rootOpen);
-    dialogEl.classList.add(cls.dialogOpen);
+    paletteRoot.className = slotsOpen.root;
+    dialogEl.className = slotsOpen.dialog;
     paletteRoot.setAttribute('aria-hidden', 'false');
     dialogEl.setAttribute('aria-modal', 'true');
     document.body.style.overflow = 'hidden';
@@ -235,8 +222,8 @@ function bindPalette(): (() => void) | undefined {
   function closePalette(): void {
     if (!paletteOpen) return;
     paletteOpen = false;
-    paletteRoot.classList.remove(cls.rootOpen);
-    dialogEl.classList.remove(cls.dialogOpen);
+    paletteRoot.className = slotsClosed.root;
+    dialogEl.className = slotsClosed.dialog;
     paletteRoot.setAttribute('aria-hidden', 'true');
     dialogEl.removeAttribute('aria-modal');
     document.body.style.overflow = '';
@@ -315,8 +302,8 @@ function bindPalette(): (() => void) | undefined {
     document.removeEventListener('keydown', onDocKeydown);
     document.removeEventListener('astro:page-load', onAstroPageLoad);
     if (paletteOpen) {
-      paletteRoot.classList.remove(cls.rootOpen);
-      dialogEl.classList.remove(cls.dialogOpen);
+      paletteRoot.className = slotsClosed.root;
+      dialogEl.className = slotsClosed.dialog;
       paletteRoot.setAttribute('aria-hidden', 'true');
       dialogEl.removeAttribute('aria-modal');
       document.body.style.overflow = '';

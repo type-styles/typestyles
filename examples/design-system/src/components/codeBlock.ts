@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const codeBlock = styles.create('code-block', {
+export const codeBlock = styles.component('code-block', {
   root: {
     border: `1px solid ${t.codeBlock.border}`,
     borderRadius: t.radius.lg,

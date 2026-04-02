@@ -27,8 +27,8 @@ type Props = {
 
 const { title = 'typestyles - CSS-in-TypeScript', currentSlug = '', docsBySlug, tocHeadings = [] } =
   Astro.props;
-const sidebarRootOpenClass = sidebar('rootOpen');
-const sidebarBackdropVisibleClass = sidebar('backdropVisible');
+const sidebarRootOpenClass = sidebar.rootOpen;
+const sidebarBackdropVisibleClass = sidebar.backdropVisible;
 const hasToc = tocHeadings.length > 0;
 
 /** Vite/Astro `BASE_URL` ends with `/` when set. */
@@ -64,7 +64,7 @@ const appearanceBootstrap = {
       <DocsMobileBar />
     </div>
 
-    <div class:list={[layout('root'), codeHljsScope('root')]}>
+    <div class:list={[layout.root, codeHljsScope.root]}>
       <div transition:persist="docs-sidebar-shell" style="flex-shrink: 0; align-self: stretch">
         <DocsSidebar
           docsBySlug={docsBySlug}
@@ -73,21 +73,21 @@ const appearanceBootstrap = {
         />
       </div>
 
-      <div className={layout('content')} transition:name="docs-main">
+      <div className={layout.content} transition:name="docs-main">
         {
           hasToc ? (
-            <div class:list={[layout('docPageWrap'), layout('docPageWrapWithToc')]}>
-              <aside class={layout('tocAside')} aria-label="On this page">
+            <div class:list={[layout.docPageWrap, layout.docPageWrapWithToc]}>
+              <aside class={layout.tocAside} aria-label="On this page">
                 <DocsToc headings={tocHeadings} />
               </aside>
-              <div class={layout('mainColumn')}>
-                <main id="main-content" tabindex="-1" class={layout('main')}>
+              <div class={layout.mainColumn}>
+                <main id="main-content" tabindex="-1" class={layout.main}>
                   <slot />
                 </main>
               </div>
             </div>
           ) : (
-            <main id="main-content" tabindex="-1" class={layout('main')}>
+            <main id="main-content" tabindex="-1" class={layout.main}>
               <slot />
             </main>
           )

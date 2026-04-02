@@ -1,7 +1,7 @@
 import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
-export const fileTree = styles.create('fileTree', {
+export const fileTree = styles.component('fileTree', {
   root: {
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
     fontSize: t.fontSize.sm,

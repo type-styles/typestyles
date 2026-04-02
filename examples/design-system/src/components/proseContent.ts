@@ -9,7 +9,7 @@ const bp = '@media (max-width: 768px)';
  *
  * Apply `proseContent('root')` on the wrapper around rendered markdown HTML.
  */
-export const proseContent = styles.create('docs-prose', {
+export const proseContent = styles.component('docs-prose', {
   root: {
     fontSize: t.fontSize.md,
     lineHeight: 1.75,

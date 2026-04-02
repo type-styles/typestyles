@@ -52,15 +52,12 @@ export const pageStyles = {
     flexWrap: 'wrap',
   }),
 
-  section: styles.create(
-    'section',
-    { padding: `${spacing[12]} 0` },
-    {
-      border: {
-        borderTop: `1px solid ${colors.border}`,
-      },
+  section: styles.component('section', {
+    base: { padding: `${spacing[12]} 0` },
+    border: {
+      borderTop: `1px solid ${colors.border}`,
     },
-  ),
+  }),
 
   sectionHeader: styles.class('section-header', {
     display: 'flex',
@@ -88,9 +85,8 @@ export const pageStyles = {
     flexWrap: 'wrap',
   }),
 
-  tab: styles.create(
-    'tab',
-    {
+  tab: styles.component('tab', {
+    base: {
       fontSize: '0.875rem',
       fontWeight: '500',
       color: colors.mutedForeground,
@@ -106,13 +102,11 @@ export const pageStyles = {
         backgroundColor: colors.muted,
       },
     },
-    {
-      active: {
-        color: colors.foreground,
-        backgroundColor: colors.muted,
-      },
+    active: {
+      color: colors.foreground,
+      backgroundColor: colors.muted,
     },
-  ),
+  }),
 
   toolbar: styles.class('toolbar', {
     display: 'flex',
@@ -156,9 +150,8 @@ export const pageStyles = {
     },
   }),
 
-  featureIcon: styles.create(
-    'feature-icon',
-    {
+  featureIcon: styles.component('feature-icon', {
+    base: {
       width: '2.5rem',
       height: '2.5rem',
       borderRadius: borderRadius.md,
@@ -170,17 +163,15 @@ export const pageStyles = {
       fontSize: '0.875rem',
       fontWeight: '600',
     },
-    {
-      accent: {
-        backgroundColor: colors.primary,
-        color: colors.primaryForeground,
-      },
-      success: {
-        backgroundColor: 'hsl(142.1 76.2% 36.3%)',
-        color: 'white',
-      },
+    accent: {
+      backgroundColor: colors.primary,
+      color: colors.primaryForeground,
     },
-  ),
+    success: {
+      backgroundColor: 'hsl(142.1 76.2% 36.3%)',
+      color: 'white',
+    },
+  }),
 
   featureTitle: styles.class('feature-title', {
     fontSize: fontSize.lg,

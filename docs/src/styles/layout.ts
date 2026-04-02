@@ -4,7 +4,7 @@ import { styles } from 'typestyles';
 const bp = '@media (max-width: 768px)';
 const tocBp = '@media (min-width: 1024px)';
 
-const layoutBase = styles.create('docs-layout', {
+const layoutBase = styles.component('docs-layout', {
   root: {
     display: 'flex',
     minHeight: '100vh',

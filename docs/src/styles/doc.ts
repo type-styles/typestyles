@@ -1,7 +1,7 @@
 import { designTokens as t } from '@examples/design-system';
 import { styles } from 'typestyles';
 
-export const doc = styles.create('docs-doc', {
+export const doc = styles.component('docs-doc', {
   root: {
     flex: 1,
     minWidth: 0,

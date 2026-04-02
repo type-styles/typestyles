@@ -6,7 +6,7 @@ describe('extractNamespaces', () => {
     const code = `
       import { styles, tokens } from 'typestyles';
       const color = tokens.create('color', { primary: '#0066ff' });
-      const button = styles.create('button', { base: { color: color.primary } });
+      const button = styles.component('button', { base: { color: color.primary } });
     `;
     const result = extractNamespaces(code);
     expect(result.keys).toEqual(['tokens:color']);
