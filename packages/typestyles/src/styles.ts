@@ -131,26 +131,6 @@ export function compose(
   };
 }
 
-/**
- * Join class names, filtering out falsy values.
- * A tiny but essential utility for composing classes in JSX.
- *
- * @example
- * ```ts
- * import { cx } from 'typestyles';
- *
- * <div className={cx(
- *   card(),
- *   isActive && 'active',
- *   isPrimary && button({ intent: 'primary' }),
- *   externalClassName,
- * )} />
- * ```
- */
-export function cx(...classes: Array<string | false | null | undefined | 0 | ''>): string {
-  return classes.filter(Boolean).join(' ');
-}
-
 // ---------------------------------------------------------------------------
 // withUtils
 // ---------------------------------------------------------------------------

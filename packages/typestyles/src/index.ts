@@ -1,4 +1,4 @@
-import { createClass, createHashClass, compose, createStylesWithUtils, cx } from './styles.js';
+import { createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
 import { createTokens, useTokens, createTheme } from './tokens.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
@@ -47,18 +47,6 @@ export type {
 export { createVar, assignVars };
 
 export type { ColorMixSpace } from './color.js';
-
-/**
- * Class name joining utility. Filters out falsy values and joins with spaces.
- *
- * @example
- * ```ts
- * import { cx } from 'typestyles';
- *
- * <div className={cx(card(), isActive && 'active', className)} />
- * ```
- */
-export { cx };
 
 /**
  * Style creation API.

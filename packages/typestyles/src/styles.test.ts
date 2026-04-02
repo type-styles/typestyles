@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createClass, createHashClass, compose, createStylesWithUtils, cx } from './styles.js';
+import { createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
+import { cx } from './index.js';
 import { createComponent } from './component.js';
 import { resetClassNaming } from './class-naming.js';
 import { reset, flushSync } from './sheet.js';
@@ -96,7 +97,10 @@ describe('cx', () => {
   });
 
   it('works with component results', () => {
-    expect(cx('card-base', true && 'active', false && 'disabled')).toBe('card-base active');
+    const flags = { active: true, disabled: false };
+    expect(cx('card-base', flags.active && 'active', flags.disabled && 'disabled')).toBe(
+      'card-base active',
+    );
   });
 });
 
