@@ -5,7 +5,7 @@ import { runTypestylesBuild } from '@typestyles/build-runner';
  * Regex patterns to extract namespace strings from typestyles API calls.
  *
  * Matches:
- *   styles.create('button', ...)      → prefix ".button-"
+ *   styles.component('button', ...)    → prefix ".button-"
  *   styles.component('button', ...)   → prefix ".button-"
  *   tokens.create('color', ...)       → key "tokens:color"
  *   tokens.createTheme('dark', ...)   → key "theme:dark"  (also createTheme('dark', ...))

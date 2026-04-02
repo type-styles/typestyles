@@ -39,7 +39,7 @@ function serializeDeclarations(properties: CSSProperties): string {
  *   to: { opacity: 1 },
  * });
  *
- * const card = styles.create('card', {
+ * const card = styles.component('card', {
  *   base: { animation: `${fadeIn} 300ms ease` },
  * });
  * ```

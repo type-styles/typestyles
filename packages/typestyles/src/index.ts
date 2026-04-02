@@ -127,7 +127,7 @@ export const tokens = {
  *   to: { opacity: 1 },
  * });
  *
- * const card = styles.create('card', {
+ * const card = styles.component('card', {
  *   base: { animation: `${fadeIn} 300ms ease` },
  * });
  * ```
@@ -156,7 +156,7 @@ export const color = colorFns;
 /**
  * Return all registered CSS as a string (for SSR).
  *
- * Returns every CSS rule registered via `styles.create`, `tokens.create`,
+ * Returns every CSS rule registered via `styles.component`, `tokens.create`,
  * `keyframes.create`, etc. Use this in your SSR head/meta function to
  * inject styles into the document.
  *

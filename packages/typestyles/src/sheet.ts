@@ -227,7 +227,7 @@ export function startCollection(): () => string {
  *
  * Unlike `collectStyles`, this doesn't require wrapping a render function.
  * It simply returns every CSS rule that has been registered via
- * `styles.create`, `tokens.create`, `keyframes.create`, etc.
+ * `styles.component`, `tokens.create`, `keyframes.create`, etc.
  *
  * Ideal for SSR frameworks that need the CSS separately from the render
  * pass (e.g. TanStack Start's `head()`, Next.js metadata, Remix links).

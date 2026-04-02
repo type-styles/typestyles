@@ -1,7 +1,7 @@
 import type { CSSProperties } from './types.js';
 
 /**
- * How generated class names are formed for `styles.create`, `styles.class`,
+ * How generated class names are formed for `styles.component`, `styles.class`,
  * `styles.component`, and related APIs.
  *
  * - `semantic` — readable names like `button-base`, `button-intent-primary` (default).
@@ -92,7 +92,7 @@ export function buildSingleClassName(name: string, properties: CSSProperties): s
 }
 
 /**
- * `styles.create` / `styles.component` / components with `slots`: logical namespace plus
+ * `styles.component` / components with `slots`: logical namespace plus
  * a variant segment (`base`, `intent-primary`, `root-trigger-primary`, …).
  */
 export function buildComponentClassName(
