@@ -1,29 +1,29 @@
 import { designTokens as t } from '@examples/design-system';
 import { styles } from 'typestyles';
 
-export const doc = styles.create('docs-doc', {
-  root: {
+export const doc = {
+  root: styles.class('docs-doc-root', {
     flex: 1,
     minWidth: 0,
-  },
-  eyebrowRow: {
+  }),
+  eyebrowRow: styles.class('docs-doc-eyebrowRow', {
     marginBottom: t.space[2],
-  },
-  title: {
+  }),
+  title: styles.class('docs-doc-title', {
     fontSize: '32px',
     fontWeight: t.fontWeight.bold,
     marginBottom: t.space[2],
     color: t.color.text.primary,
     letterSpacing: '-0.025em',
     lineHeight: t.lineHeight.tight,
-  },
-  description: {
+  }),
+  description: styles.class('docs-doc-description', {
     fontSize: t.fontSize.lg,
     color: t.color.text.secondary,
     marginBottom: t.space[6],
     lineHeight: t.lineHeight.relaxed,
-  },
-  content: {
+  }),
+  content: styles.class('docs-doc-content', {
     '& a:not([data-prose-heading-anchor]):not([data-alert-action])': {
       color: t.color.accent.default,
       textDecoration: 'none',
@@ -73,5 +73,5 @@ export const doc = styles.create('docs-doc', {
       padding: 0,
       border: 'none',
     },
-  },
-});
+  }),
+};
