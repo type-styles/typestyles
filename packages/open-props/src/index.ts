@@ -716,5 +716,5 @@ export const masksCornerCuts = tokens.create('masks-corner-cuts', {
 });
 
 export function useOpenProps(namespace: string): TokenRef<Record<string, string>> {
-  return tokens.use(namespace);
+  return tokens.use<Record<string, string>>(namespace);
 }

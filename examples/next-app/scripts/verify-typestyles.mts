@@ -19,7 +19,7 @@ if (css.length < 500) fail(`CSS file unexpectedly small (${css.length} bytes).`)
 
 const requiredSubstrings = [
   ':root { --color-background-app:',
-  '.ds-button {',
+  '.button-base {',
   '.theme-default {',
   '.ds-layout-base {',
 ];
