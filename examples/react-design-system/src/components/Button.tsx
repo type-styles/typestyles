@@ -1,7 +1,6 @@
 import type { ComponentProps, JSX } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { button } from '@examples/design-system';
-import { cx } from './utils';
 
 export type ButtonProps = Omit<ComponentProps<typeof AriaButton>, 'className'> & {
   className?: string;
@@ -9,5 +8,5 @@ export type ButtonProps = Omit<ComponentProps<typeof AriaButton>, 'className'> &
 };
 
 export function Button({ intent = 'secondary', className, ...props }: ButtonProps): JSX.Element {
-  return <AriaButton {...props} className={cx(button.base, button[intent], className)} />;
+  return <AriaButton {...props} className={`${button({ intent })} ${className || ''}`} />;
 }

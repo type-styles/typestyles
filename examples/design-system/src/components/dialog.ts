@@ -2,6 +2,7 @@ import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
 export const dialog = styles.component('dialog', {
+  slots: ['overlay', 'modal', 'content', 'heading', 'description'] as const,
   overlay: {
     position: 'fixed',
     inset: 0,

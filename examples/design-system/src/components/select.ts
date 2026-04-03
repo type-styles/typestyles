@@ -2,6 +2,7 @@ import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
 export const select = styles.component('select', {
+  slots: ['root', 'label', 'trigger', 'popover', 'item'] as const,
   root: {
     display: 'grid',
     gap: t.space[1],

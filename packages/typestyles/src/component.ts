@@ -8,6 +8,8 @@ import type {
   SlotComponentConfig,
   SlotComponentFunction,
   SlotVariantDefinitions,
+  MultiSlotConfig,
+  MultiSlotReturn,
 } from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
@@ -29,10 +31,20 @@ function isDimensionedConfig(
   return 'variants' in config || 'compoundVariants' in config || 'defaultVariants' in config;
 }
 
-function isSlotConfig(
+function isSlotWithVariantsConfig(
   config: Record<string, unknown>,
 ): config is SlotComponentConfig<string, SlotVariantDefinitions<string>> {
-  return 'slots' in config;
+  return (
+    'slots' in config &&
+    ('variants' in config || 'compoundVariants' in config || 'defaultVariants' in config)
+  );
+}
+
+function isMultiSlotConfig(config: Record<string, unknown>): config is MultiSlotConfig<string> {
+  return (
+    'slots' in config &&
+    !('variants' in config || 'compoundVariants' in config || 'defaultVariants' in config)
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -108,8 +120,16 @@ export function createComponent<S extends string, V extends SlotVariantDefinitio
   config: SlotComponentConfig<S, V>,
 ): SlotComponentFunction<S, V>;
 
+export function createComponent<S extends string>(
+  namespace: string,
+  config: MultiSlotConfig<S>,
+): MultiSlotReturn<S>;
+
 export function createComponent(namespace: string, config: Record<string, unknown>): unknown {
-  if (isSlotConfig(config)) {
+  if (isMultiSlotConfig(config)) {
+    return createMultiSlotComponent(namespace, config as MultiSlotConfig<string>);
+  }
+  if (isSlotWithVariantsConfig(config)) {
     return createSlotComponent(
       namespace,
       config as SlotComponentConfig<string, SlotVariantDefinitions<string>>,
@@ -279,6 +299,67 @@ function createFlatComponent<K extends string>(
     (...args: unknown[]) => selectorFn(args[0] as Record<string, unknown> | undefined),
     classMap,
   ) as FlatComponentReturn<K>;
+}
+
+// ---------------------------------------------------------------------------
+// Multi-slot component (no variants, just multiple independent slot styles)
+// ---------------------------------------------------------------------------
+
+function createMultiSlotComponent<S extends string>(
+  namespace: string,
+  config: MultiSlotConfig<S>,
+): MultiSlotReturn<S> {
+  const { slots } = config;
+
+  warnDuplicate(namespace);
+  registeredNamespaces.add(namespace);
+
+  const rules: Array<{ key: string; css: string }> = [];
+  const slotClassMap: Record<string, string> = {};
+
+  for (const slot of slots) {
+    const properties = (config as Record<string, CSSProperties | undefined>)[slot];
+    if (properties) {
+      const className = buildComponentClassName(namespace, slot, properties);
+      slotClassMap[slot] = className;
+      rules.push(...serializeStyle(`.${className}`, properties));
+    } else {
+      slotClassMap[slot] = '';
+    }
+  }
+
+  insertRules(rules);
+
+  const selectorFn = (): Record<string, string> => {
+    const result: Record<string, string> = {};
+    for (const slot of slots) {
+      result[slot] = slotClassMap[slot] || '';
+    }
+    return result;
+  };
+
+  return makeMultiSlotObject(selectorFn, slotClassMap) as MultiSlotReturn<S>;
+}
+
+function makeMultiSlotObject(
+  selectorFn: () => Record<string, string>,
+  slotClassMap: Record<string, string>,
+): unknown {
+  const fn = function (this: unknown) {
+    return selectorFn();
+  };
+
+  Object.defineProperties(
+    fn,
+    Object.fromEntries(
+      Object.entries(slotClassMap).map(([key, value]) => [
+        key,
+        { value, enumerable: true, writable: false, configurable: false },
+      ]),
+    ),
+  );
+
+  return fn;
 }
 
 // ---------------------------------------------------------------------------

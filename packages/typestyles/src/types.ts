@@ -190,6 +190,20 @@ export type FlatComponentReturn<K extends string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Multi-slot components (no variants, just multiple independent slot styles)
+// ---------------------------------------------------------------------------
+
+export type MultiSlotConfig<S extends string> = {
+  slots: readonly S[];
+} & Partial<Record<S, CSSProperties>>;
+
+export type MultiSlotReturn<S extends string> = {
+  (): Record<S, string>;
+} & {
+  readonly [K in S]: string;
+};
+
+// ---------------------------------------------------------------------------
 // Slot component types
 // ---------------------------------------------------------------------------
 

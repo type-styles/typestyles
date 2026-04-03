@@ -2,6 +2,7 @@ import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
 export const checkbox = styles.component('checkbox', {
+  slots: ['root', 'box', 'label'] as const,
   root: {
     display: 'inline-flex',
     alignItems: 'center',
