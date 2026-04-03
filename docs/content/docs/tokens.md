@@ -1,6 +1,6 @@
 ---
 title: Tokens
-description: Design tokens and theming with tokens.create and createTheme
+description: Design tokens and theming with tokens.create, createTheme, and color modes
 ---
 
 # Tokens
@@ -41,16 +41,56 @@ When tokens are created in another module or package, use `tokens.use(namespace)
 
 ## Theming
 
-Use `tokens.createTheme(name, overrides)` to define a theme that overrides token values:
+Use `tokens.createTheme(name, config)` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.
+
+- **`base`** — Overrides always applied on the surface (typical light / default brand).
+- **`modes`** — Extra layers with explicit `tokens.when.*` conditions.
+- **`colorMode`** — Preset layers from `tokens.colorMode.*` (mutually exclusive with `modes`).
 
 ```ts
 const dark = tokens.createTheme('dark', {
-  color: {
-    primary: '#66b3ff',
-    text: '#e0e0e0',
-    surface: '#1a1a2e',
+  base: {
+    color: {
+      primary: '#66b3ff',
+      text: '#e0e0e0',
+      surface: '#1a1a2e',
+    },
   },
 });
 ```
 
-Apply the theme by adding the theme class to a parent (e.g. `document.body.classList.add(dark)`). All token references under that subtree will use the overridden values.
+`createTheme` returns a **`ThemeSurface`** (`className`, `name`, string coercion). Pass **`dark.className`** to DOM or React `className` props, or use `String(dark)` / `` `${dark}` `` in templates.
+
+```ts
+document.body.classList.add(dark.className);
+```
+
+**Shorthand — dark under `prefers-color-scheme` only:**
+
+```ts
+const autoDark = tokens.createDarkMode('app', {
+  color: { text: '#e5e7eb', surface: '#0f172a' },
+});
+```
+
+**Preset — system + `data-color-mode` toggle:**
+
+```ts
+const light = { color: { text: '#111', surface: '#fff' } };
+const dark = { color: { text: '#eee', surface: '#111' } };
+
+const shell = tokens.createTheme('shell', {
+  base: light,
+  colorMode: tokens.colorMode.systemWithLightDarkOverride({
+    attribute: 'data-color-mode',
+    values: { light: 'light', dark: 'dark', system: 'system' },
+    scope: 'ancestor',
+    light,
+    dark,
+  }),
+});
+```
+
+Other presets: `tokens.colorMode.mediaOnly`, `attributeOnly`, `mediaOrAttribute`. Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`.
+
+See [Theming patterns](/docs/theming-patterns) for end-to-end examples.

@@ -1,4 +1,4 @@
-import type { DesignComponentValues } from './tokens/component';
+import type { ThemeOverrides, ThemeSurface } from 'typestyles';
 import type { DesignColorValues, DesignSyntaxValues } from './tokens/semantic';
 import type {
   DesignDurationValues,
@@ -12,10 +12,6 @@ import type {
   DesignSpaceValues,
   DesignTransitionValues,
 } from './tokens/primitive';
-
-export type DeepPartial<T> = {
-  [K in keyof T]?: T[K] extends Record<string, unknown> ? DeepPartial<T[K]> : T[K];
-};
 
 export type DesignSemanticValues = {
   color: DesignColorValues;
@@ -35,20 +31,17 @@ export type DesignPrimitiveOverrides = {
   transition?: Partial<DesignTransitionValues>;
 };
 
+/**
+ * Palette config aligned with `tokens.createTheme`: `base` is the light surface;
+ * `dark` is the dark-mode override layer (same shape as `ThemeOverrides`).
+ */
 export type DesignThemeConfig = {
   name: string;
-  light: DesignSemanticValues;
-  dark: DeepPartial<DesignSemanticValues>;
-  primitives?: DesignPrimitiveOverrides;
-  components?: Partial<DesignComponentValues>;
+  light: ThemeOverrides;
+  dark: ThemeOverrides;
 };
 
-export type DesignTheme = {
-  className: string;
-  name: string;
-  lightValues: DesignSemanticValues;
-  darkValues: DeepPartial<DesignSemanticValues>;
-  primitiveOverrides?: DesignPrimitiveOverrides;
-};
+/** Same as typestyles `ThemeSurface` — class name + name for a palette from `createDesignTheme`. */
+export type DesignTheme = ThemeSurface;
 
 export type { DesignColorValues, DesignSyntaxValues };

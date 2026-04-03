@@ -417,23 +417,25 @@ import { tokens } from 'typestyles';
 import { primitiveColors } from '../primitives/colors';
 
 export const darkTheme = tokens.createTheme('dark', {
-  color: {
-    brand: primitiveColors.brand[400],
-    brandHover: primitiveColors.brand[300],
-    brandActive: primitiveColors.brand[500],
+  base: {
+    color: {
+      brand: primitiveColors.brand[400],
+      brandHover: primitiveColors.brand[300],
+      brandActive: primitiveColors.brand[500],
 
-    text: primitiveColors.gray[100],
-    textMuted: primitiveColors.gray[400],
-    textSubtle: primitiveColors.gray[500],
-    textInverse: primitiveColors.gray[900],
+      text: primitiveColors.gray[100],
+      textMuted: primitiveColors.gray[400],
+      textSubtle: primitiveColors.gray[500],
+      textInverse: primitiveColors.gray[900],
 
-    background: primitiveColors.gray[900],
-    surface: primitiveColors.gray[800],
-    surfaceRaised: primitiveColors.gray[700],
-    surfaceSunken: primitiveColors.gray[950],
+      background: primitiveColors.gray[900],
+      surface: primitiveColors.gray[800],
+      surfaceRaised: primitiveColors.gray[700],
+      surfaceSunken: primitiveColors.gray[950],
 
-    border: primitiveColors.gray[700],
-    borderHover: primitiveColors.gray[600],
+      border: primitiveColors.gray[700],
+      borderHover: primitiveColors.gray[600],
+    },
   },
 });
 ```
@@ -445,15 +447,17 @@ export const darkTheme = tokens.createTheme('dark', {
 import { tokens } from 'typestyles';
 
 export const highContrastTheme = tokens.createTheme('high-contrast', {
-  color: {
-    text: '#000000',
-    background: '#ffffff',
-    border: '#000000',
-    brand: '#0000ff',
+  base: {
+    color: {
+      text: '#000000',
+      background: '#ffffff',
+      border: '#000000',
+      brand: '#0000ff',
 
-    success: '#006600',
-    warning: '#cc6600',
-    danger: '#cc0000',
+      success: '#006600',
+      warning: '#cc6600',
+      danger: '#cc0000',
+    },
   },
 });
 ```

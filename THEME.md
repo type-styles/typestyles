@@ -224,28 +224,22 @@ tokens.colorMode.systemWithLightDarkOverride({
 
 ### 5.5 Using presets inside `createTheme`
 
+**Shipped API** — presets attach via the **`colorMode`** property (mutually exclusive with `modes`):
+
 ```ts
 tokens.createTheme('acme', {
   base: { color: lightTokens },
-  ...tokens.colorMode.systemWithLightDarkOverride({
+  colorMode: tokens.colorMode.systemWithLightDarkOverride({
     attribute: 'data-color-mode',
     values: { light: 'light', dark: 'dark', system: 'system' },
+    scope: 'ancestor',
     light: lightTokens,
     dark: darkTokens,
   }),
 });
 ```
 
-If spreading is awkward, allow a **`strategy`** slot instead:
-
-```ts
-tokens.createTheme('acme', {
-  base: { color: lightTokens },
-  colorMode: tokens.colorMode.systemWithLightDarkOverride({ ... }),
-});
-```
-
-Choose one style for the public API; avoid supporting both without a clear recommendation.
+Spreading the preset into the same object as `base` is not supported; it risks key collisions and ambiguous merges.
 
 ---
 
@@ -354,34 +348,20 @@ Prefer **deep partial** overrides for modes if base already defines the full tre
 
 ## 13. Resolved decisions
 
-| Topic                       | Decision                                                                                                                                                                                                                                                 |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Primary API name**        | `tokens.createTheme` on the existing `tokens` object; no separate `theme` namespace.                                                                                                                                                                     |
-| **`ThemeSurface` coercion** | Implement `toString()` returning `className` (and optional `Symbol.toPrimitive` for consistency) for template literals and `String(surface)`; use `surface.className` (or `String(surface)`) where props require a real string (e.g. React `className`). |
+| Topic                          | Decision                                                                                                                                                                                                                                                 |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Primary API name**           | `tokens.createTheme` on the existing `tokens` object; no separate `theme` namespace.                                                                                                                                                                     |
+| **`ThemeSurface` coercion**    | Implement `toString()` returning `className` (and optional `Symbol.toPrimitive` for consistency) for template literals and `String(surface)`; use `surface.className` (or `String(surface)`) where props require a real string (e.g. React `className`). |
+| **Preset attachment**          | **Named `colorMode` property** on the theme config (mutually exclusive with manual `modes`); attempting both throws in development.                                                                                                                      |
+| **`when.selector` validation** | **Dev-only heuristics** (empty/`!important`/unmatched brackets); production emits without parse-style checks. See `theme.ts` `validateSelector`.                                                                                                         |
 
-## 14. Open decisions (implementation phase)
+## 14. Historical notes: preset shape and `when.selector`
 
-Two topics remain: how presets attach to `createTheme`, and how hard we guard `when.selector`. Below are **pros / cons** so the choice is explicit.
+The following options were evaluated before shipping; the implementation matches **§13** above.
 
-### 14.1 Preset API shape: spread vs `strategy`
+### 14.1 Preset API shape (resolved: `colorMode` property)
 
-**Option A — Spread preset result into the theme config**
-
-```ts
-tokens.createTheme('acme', {
-  base: { color: lightTokens },
-  ...tokens.colorMode.systemWithLightDarkOverride({ ... }),
-});
-```
-
-| Pros                                                                     | Cons                                                                                                                                                                                                           |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Familiar** — matches everyday object merge patterns.                   | **Key collision** — preset return shape must avoid clashing with `base`, `modes`, or future top-level keys (`layer`, `scope`, …). Any rename on either side is a breaking change.                              |
-| **Flat config** — one object literal, easy to scan in small examples.    | **Ownership is opaque** — readers cannot tell which keys came from the preset without knowing its return type.                                                                                                 |
-| **Less nesting** — slightly fewer characters than a `strategy` property. | **TypeScript ergonomics** — intersection / spread types sometimes widen or lose narrow keys; presets that return `{ modes: [...] }` plus helpers need a **single canonical return type** or inference suffers. |
-|                                                                          | **Composition** — combining two presets via spread is ambiguous (last wins? merge `modes`?). A named slot scales better if multiple strategies ever matter.                                                    |
-
-**Option B — Named `strategy` (or `colorMode`) property**
+**Shipped API:**
 
 ```ts
 tokens.createTheme('acme', {
@@ -390,23 +370,7 @@ tokens.createTheme('acme', {
 });
 ```
 
-| Pros                                                                                                                     | Cons                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Clear boundary** — preset input lives in one place; no accidental overlap with other theme options.                    | **Extra nesting** — one more property for every themed app.                                                                                 |
-| **Review / grep** — `colorMode:` is easy to spot in code review and tooling.                                             | **Naming** — must pick and stick to one name (`colorMode` vs `strategy` vs `modesPreset`).                                                  |
-| **Evolution** — room for `colorMode: [a, b]` or `colorMode: { primary, highContrast }` later without overloading spread. | **Exclusive with manual `modes`?** — spec must say whether `modes` + `colorMode` together is allowed; if not, error message design matters. |
-| **Types** — discriminated union on `colorMode` by preset kind is straightforward.                                        |                                                                                                                                             |
-
-**Option C — Support both spread and `colorMode`**
-
-| Pros                                        | Cons                                                                                                                              |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Maximum flexibility** for early adopters. | **Two idioms** in the wild — docs, examples, and reviews become inconsistent; “which should I use?” becomes a recurring question. |
-|                                             | **Implementation** — merge rules must be deterministic when both appear (forbid or define order).                                 |
-
-**Pragmatic recommendation:** Prefer **Option B (`colorMode` or `strategy`)** as the **documented** API for presets, and treat spread as internal or unsupported unless you strongly want Option A’s ergonomics for tutorials only.
-
----
+Spreading a preset into the same object as `base` was rejected to avoid key collisions and ambiguous composition.
 
 ### 14.2 `when.selector`: validation vs docs-only
 
@@ -448,8 +412,8 @@ This escape hatch lets users pass **raw selector text** that the emitter wraps a
 - **Compound conditions** — user may duplicate what `when.and` already expresses, producing redundant or conflicting rules.
 - **Comma-separated selectors** — one branch applies to many contexts; harder to reason about than one condition per rule.
 
-**Pragmatic recommendation:** Ship **Option B in development** (lightweight checks + actionable messages) and **Option A in production** (no parse cost). Keep a **short “Selector escape hatch”** subsection in user-facing docs listing the footguns above.
+**Shipped behavior:** Dev-only warnings per **§13**; production matches Option A (no validation cost). User-facing docs should still call out specificity, ancestor vs self, and ordering footguns for `when.selector`.
 
 ---
 
-_This document is the source of truth for theme ergonomics until the implementation lands; update it when APIs ship or names change._
+_This document is the source of truth for theme ergonomics. Update it when the public API or emission rules change._

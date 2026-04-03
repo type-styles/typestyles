@@ -266,9 +266,11 @@ import { tokens } from 'typestyles';
 import { getRegisteredCss } from '@typestyles/next';
 
 const darkTheme = tokens.createTheme('dark', {
-  color: {
-    background: '#1a1a1a',
-    text: '#ffffff',
+  base: {
+    color: {
+      background: '#1a1a1a',
+      text: '#ffffff',
+    },
   },
 });
 
@@ -276,7 +278,7 @@ export default function RootLayout({ children }) {
   const css = getRegisteredCss();
 
   return (
-    <html className={darkTheme}>
+    <html className={darkTheme.className}>
       <head>{css && <style dangerouslySetInnerHTML={{ __html: css }} />}</head>
       <body>{children}</body>
     </html>

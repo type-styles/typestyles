@@ -421,12 +421,14 @@ const responsive = styles.create('responsive', {
 
 ```tsx
 const darkTheme = tokens.createTheme('dark', {
-  color: {
-    primary: '#66b3ff',
+  base: {
+    color: {
+      primary: '#66b3ff',
+    },
   },
 });
 
-<div className={darkTheme}>Content</div>;
+<div className={darkTheme.className}>Content</div>;
 ```
 
 **Check:**
@@ -441,7 +443,9 @@ const darkTheme = tokens.createTheme('dark', {
 
    // Overriding
    tokens.createTheme('dark', {
-     color: { ... } // Must match 'color' namespace
+     base: {
+       color: { ... }, // Must match 'color' namespace
+     },
    });
    ```
 

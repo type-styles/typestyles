@@ -353,24 +353,28 @@ export type { ButtonProps } from './Button';
 import { tokens } from 'typestyles';
 
 export const darkTheme = tokens.createTheme('dark', {
-  'semantic-color': {
-    primary: '#60a5fa',
-    primaryHover: '#3b82f6',
-    text: '#f9fafb',
-    textMuted: '#9ca3af',
-    background: '#111827',
-    surface: '#1f2937',
-    surfaceRaised: '#374151',
-    border: '#4b5563',
+  base: {
+    'semantic-color': {
+      primary: '#60a5fa',
+      primaryHover: '#3b82f6',
+      text: '#f9fafb',
+      textMuted: '#9ca3af',
+      background: '#111827',
+      surface: '#1f2937',
+      surfaceRaised: '#374151',
+      border: '#4b5563',
+    },
   },
 });
 
 export const highContrastTheme = tokens.createTheme('high-contrast', {
-  'semantic-color': {
-    text: '#000000',
-    background: '#ffffff',
-    primary: '#0000ff',
-    border: '#000000',
+  base: {
+    'semantic-color': {
+      text: '#000000',
+      background: '#ffffff',
+      primary: '#0000ff',
+      border: '#000000',
+    },
   },
 });
 ```
@@ -406,7 +410,7 @@ export function ThemeProvider({ children, defaultTheme = 'light' }: ThemeProvide
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
-      <div className={theme === 'dark' ? darkTheme : ''}>{children}</div>
+      <div className={theme === 'dark' ? darkTheme.className : ''}>{children}</div>
     </ThemeContext.Provider>
   );
 }

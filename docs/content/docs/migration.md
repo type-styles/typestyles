@@ -115,13 +115,15 @@ export const color = tokens.create('color', {
 });
 
 export const darkTheme = tokens.createTheme('dark', {
-  color: {
-    danger: '#fca5a5',
+  base: {
+    color: {
+      danger: '#fca5a5',
+    },
   },
 });
 ```
 
-Apply `darkTheme` on a parent container to scope dark values.
+Apply `darkTheme.className` on a parent container to scope dark values.
 
 ### Panda utility props to `@typestyles/props`
 

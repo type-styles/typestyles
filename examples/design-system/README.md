@@ -18,38 +18,47 @@ Tokens are grouped for clarity; recipes consume the flat `designTokens` object (
 
 **`designMotion`** is a convenience handle: `designMotion.duration.fast`, `designMotion.transition.panelEnter`, etc. New presets include `transition.colorShift` (links) and `transition.controlSurface` (buttons).
 
-## Theme classes
+## Theme surfaces
 
-First-class theme classes (all are strings you add to a root element, typically `<html>`):
+Palettes are built with `createDesignTheme()` (see `src/create-theme.ts`): one **`ThemeSurface`** per palette from `tokens.createTheme` with **`base` light tokens** and **`colorMode: tokens.colorMode.systemWithLightDarkOverride`** on **`data-mode`** (`scope: 'self'`). Dark overrides follow OS preference unless `data-mode="light"` or `data-mode="dark"` is set on the **same element** that carries the theme class.
 
-| Export                        | Class               | Purpose                                                          |
-| ----------------------------- | ------------------- | ---------------------------------------------------------------- |
-| `lightThemeClass`             | `theme-ds-light`    | Explicit light palette + light syntax (matches `:root` defaults) |
-| `darkThemeClass`              | `theme-ds-dark`     | Default dark `color` tokens + dark syntax                        |
-| `highContrastLightThemeClass` | `theme-ds-hc-light` | Stronger borders and body contrast on light surfaces             |
-| `highContrastDarkThemeClass`  | `theme-ds-hc-dark`  | Stronger borders and body contrast on dark surfaces              |
+| Export         | `className`     | Role                      |
+| -------------- | --------------- | ------------------------- |
+| `defaultTheme` | `theme-default` | Default slate / blue ramp |
+| `forestTheme`  | `theme-forest`  | Forest / sage palette     |
+| `roseTheme`    | `theme-rose`    | Rose palette              |
+| `amberTheme`   | `theme-amber`   | Amber palette             |
 
-Strip conflicting classes before applying another (the docs app keeps a fixed list for palette/mode switching).
+Each export is a **`DesignTheme`** (`ThemeSurface` from `tokens.createTheme`: `className`, `name`, string coercion). Strip other palette classes before switching palette (see `docs/src/tokens.ts` for the list used by the docs site).
 
 ### Astro (no React context)
 
-Use a tiny inline script or a client island to flip classes on `document.documentElement`. Persist mode in `localStorage` if you want it sticky:
+Use a tiny inline script to set **one** palette class on `document.documentElement` and **`data-mode`** for light/dark/system:
 
 ```astro
 ---
-import { lightThemeClass, darkThemeClass } from '@examples/design-system';
+import { defaultTheme } from '@examples/design-system';
 ---
-<script is:inline define:vars={{ lightThemeClass, darkThemeClass }}>
+<script is:inline define:vars={{ themeClass: defaultTheme.className }}>
   const key = 'theme-mode';
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const stored = localStorage.getItem(key);
-  const mode = stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
-  document.documentElement.classList.remove(lightThemeClass, darkThemeClass);
-  document.documentElement.classList.add(mode === 'dark' ? darkThemeClass : lightThemeClass);
+  const mode =
+    stored === 'light' || stored === 'dark' || stored === 'system'
+      ? stored
+      : prefersDark
+        ? 'dark'
+        : 'light';
+  document.documentElement.classList.add(themeClass);
+  if (mode === 'system') {
+    document.documentElement.removeAttribute('data-mode');
+  } else {
+    document.documentElement.setAttribute('data-mode', mode);
+  }
 </script>
 ```
 
-`import.meta.env.SSR` stays irrelevant: the snippet runs in the browser only. Adjust class lists if you also use palette themes (see `docs/src/tokens.ts` in this repo).
+`import.meta.env.SSR` stays irrelevant: the snippet runs in the browser only. Swap `defaultTheme` for another palette export when you change brand themes.
 
 ## Theming helpers
 
@@ -67,10 +76,10 @@ const subtleCodeBlock = mergeDesignThemeOverrides(brand, {
   codeBlock: { rootBg: '#0c1222', headerBg: '#111827' },
 });
 
-export const themeAcme = tokens.createTheme('ds-acme', subtleCodeBlock);
+export const themeAcme = tokens.createTheme('ds-acme', { base: subtleCodeBlock });
 ```
 
-Use `tokens.createTheme('ds-<name>', overrides)` with the same namespace keys as `DesignThemeOverrides`: `color`, `codeSyntax`, `doc`, `codeBlock`, plus primitives.
+Use `tokens.createTheme('ds-<name>', { base: { … } })` with the same namespace keys as your token map (`color`, `syntax`, `codeBlock`, primitives, etc.). Add `colorMode` or `modes` when you need conditional layers; palette themes in this package use `createDesignTheme` for the full light/dark/system pattern.
 
 ## Extending tokens safely
 

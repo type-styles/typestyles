@@ -138,14 +138,16 @@ Tokens support theming through standard CSS custom property overrides:
 
 ```tsx
 const theme = tokens.createTheme('dark', {
-  color: {
-    surface: '#1a1a2e',
-    text: '#e0e0e0',
+  base: {
+    color: {
+      surface: '#1a1a2e',
+      text: '#e0e0e0',
+    },
   },
 });
 
-// Apply the theme to any subtree
-<div className={theme}>{/* All children use dark theme values */}</div>;
+// Apply the theme to any subtree (ThemeSurface — use .className in React)
+<div className={theme.className}>{/* All children use dark theme values */}</div>;
 ```
 
 ### Incremental Adoption
@@ -189,9 +191,7 @@ const text = styles.component('text', {
 // Destructure and compose with cx()
 const { base, heading, bold, muted } = text;
 
-<h1 className={cx(base, heading, bold)}>
-  {/* class="text-base text-heading text-bold" */}
-</h1>;
+<h1 className={cx(base, heading, bold)}>{/* class="text-base text-heading text-bold" */}</h1>;
 ```
 
 Use the built-in `cx` utility to combine classes from different sources:
@@ -377,20 +377,24 @@ spacing.sm; // "var(--spacing-sm)" (typed as a CSS value)
 spacing.md; // "var(--spacing-md)"
 ```
 
-### `tokens.createTheme(name, overrides)`
+### `tokens.createTheme(name, config)`
 
-Creates a theme class that overrides token values.
+Creates a theme surface (class `theme-{name}`) with token overrides. Pass **`base`**, and either **`modes`** (manual `tokens.when` conditions) or **`colorMode`** (presets), not both. Returns a **`ThemeSurface`**—use **`surface.className`** where a string is required.
 
 ```tsx
 const dark = tokens.createTheme('dark', {
-  color: {
-    surface: '#1a1a2e',
-    text: '#e0e0e0',
+  base: {
+    color: {
+      surface: '#1a1a2e',
+      text: '#e0e0e0',
+    },
   },
 });
 
-<div className={dark}>   {/* class="theme-dark" */}
+<div className={dark.className}>{/* class="theme-dark" */}
 ```
+
+See `tokens.createDarkMode`, `tokens.when`, and `tokens.colorMode` for layered light/dark/system behavior.
 
 ### `tokens.use(namespace)`
 

@@ -131,7 +131,7 @@ Manages CSS custom properties as typed design tokens.
 
 **`tokens.use(namespace)`** — References tokens defined elsewhere (no CSS injection).
 
-**`tokens.createTheme(name, overrides)`** — Creates theme class with overridden custom properties.
+**`tokens.createTheme(name, config)`** — Creates a theme surface (`.theme-{name}`) with `base` overrides and optional `modes` or `colorMode` layers; returns a `ThemeSurface` (`className`, `name`). **`tokens.createDarkMode`** / **`tokens.when`** / **`tokens.colorMode`** support conditional modes.
 
 ### 4. StyleSheet Manager (`sheet.ts`)
 

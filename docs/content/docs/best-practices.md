@@ -496,24 +496,38 @@ export const color = tokens.create('color', {
 });
 
 export const darkTheme = tokens.createTheme('dark', {
-  color: {
-    text: '#e0e0e0',
-    textMuted: '#9ca3af',
-    surface: '#1a1a2e',
-    surfaceRaised: '#25253e',
+  base: {
+    color: {
+      text: '#e0e0e0',
+      textMuted: '#9ca3af',
+      surface: '#1a1a2e',
+      surfaceRaised: '#25253e',
+    },
   },
 });
 
 // Apply theme to document body or specific container
-document.body.classList.add(darkTheme);
+document.body.classList.add(darkTheme.className);
 ```
 
 ### Multiple themes
 
 ```ts
-const brandLight = tokens.createTheme('brand-light', { ... });
-const brandDark = tokens.createTheme('brand-dark', { ... });
-const highContrast = tokens.createTheme('high-contrast', { ... });
+const brandLight = tokens.createTheme('brand-light', {
+  base: {
+    /* … */
+  },
+});
+const brandDark = tokens.createTheme('brand-dark', {
+  base: {
+    /* … */
+  },
+});
+const highContrast = tokens.createTheme('high-contrast', {
+  base: {
+    /* … */
+  },
+});
 ```
 
 ## Code style
