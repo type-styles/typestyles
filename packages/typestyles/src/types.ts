@@ -59,21 +59,73 @@ export type StyleDefinitionsWithUtils<U extends StyleUtils> = Record<
 export type StyleDefinitions = Record<string, CSSProperties>;
 
 /**
- * A flat map of token names to their values.
+ * A token value can be a string/number or a nested object of token values.
+ * Supports arbitrarily deep nesting for hierarchical token structures.
  */
-export type TokenValues = Record<string, string>;
+export type TokenValues =
+  | string
+  | number
+  | {
+      [key: string]: TokenValues;
+    };
+
+/**
+ * A flattened key-value pair for CSS custom property generation.
+ */
+export type FlatTokenEntry = [key: string, value: string];
+
+/**
+ * Flattens a nested TokenValues object into an array of [key, value] pairs.
+ * Deeply nested objects are flattened with keys joined by hyphens.
+ *
+ * @example
+ * flattenTokens({ text: { primary: '#000' } })
+ * // => [['text-primary', '#000']]
+ */
+export function flattenTokenEntries(obj: TokenValues, prefix = ''): FlatTokenEntry[] {
+  const entries: FlatTokenEntry[] = [];
+
+  if (obj === null || obj === undefined) {
+    return entries;
+  }
+
+  if (typeof obj === 'string' || typeof obj === 'number') {
+    if (prefix) {
+      entries.push([prefix, String(obj)]);
+    }
+    return entries;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}-${key}` : key;
+
+    if (typeof value === 'string' || typeof value === 'number') {
+      entries.push([newKey, String(value)]);
+    } else if (value !== null && typeof value === 'object') {
+      entries.push(...flattenTokenEntries(value as TokenValues, newKey));
+    }
+  }
+
+  return entries;
+}
 
 /**
  * A typed token reference object. Property access returns var(--namespace-key).
+ * Supports nested access: token.text.primary => var(--namespace-text-primary)
  */
-export type TokenRef<T extends TokenValues> = {
-  readonly [K in keyof T]: string;
-};
+export type TokenRef<T extends TokenValues> = T extends string | number
+  ? string
+  : {
+      readonly [K in keyof T]: T[K] extends TokenValues ? TokenRef<T[K]> : string;
+    };
 
 /**
  * Theme overrides: a map of token namespaces to partial value overrides.
+ * Supports nested structures that mirror the token organization.
  */
-export type ThemeOverrides = Record<string, Partial<TokenValues>>;
+export type ThemeOverrides = {
+  [namespace: string]: TokenValues;
+};
 
 /**
  * Keyframe stops: 'from', 'to', or percentage strings mapped to CSS properties.

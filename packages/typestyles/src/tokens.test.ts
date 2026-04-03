@@ -37,9 +37,51 @@ describe('createTokens', () => {
 
   it('token values are usable as CSS strings', () => {
     const size = createTokens('size', { base: '16px' });
-    // Token refs are just strings — they work wherever a CSS value is expected
     expect(typeof size.base).toBe('string');
     expect(size.base).toContain('var(');
+  });
+
+  it('supports nested token objects', () => {
+    const color = createTokens('color', {
+      text: { primary: '#111827', secondary: '#6b7280' },
+      background: { surface: '#ffffff', subtle: '#f9fafb' },
+      border: { default: '#e5e7eb' },
+    });
+
+    expect(color.text.primary).toBe('var(--color-text-primary)');
+    expect(color.text.secondary).toBe('var(--color-text-secondary)');
+    expect(color.background.surface).toBe('var(--color-background-surface)');
+    expect(color.background.subtle).toBe('var(--color-background-subtle)');
+    expect(color.border.default).toBe('var(--color-border-default)');
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rule = style.sheet?.cssRules[0] as CSSStyleRule;
+    expect(rule.cssText).toContain('--color-text-primary');
+    expect(rule.cssText).toContain('--color-background-surface');
+    expect(rule.cssText).toContain('--color-border-default');
+  });
+
+  it('supports deeply nested token objects', () => {
+    const color = createTokens('color', {
+      brand: {
+        primary: { DEFAULT: '#0066ff', hover: '#0052cc' },
+      },
+    });
+
+    expect(color.brand.primary.DEFAULT).toBe('var(--color-brand-primary-DEFAULT)');
+    expect(color.brand.primary.hover).toBe('var(--color-brand-primary-hover)');
+  });
+
+  it('supports flat values alongside nested objects', () => {
+    const tokens = createTokens('test', {
+      simple: 'value',
+      nested: { key: 'nested-value' },
+    });
+
+    expect(tokens.simple).toBe('var(--test-simple)');
+    expect(tokens.nested.key).toBe('var(--test-nested-key)');
   });
 });
 
@@ -49,7 +91,6 @@ describe('useTokens', () => {
   });
 
   it('returns var() references without injecting CSS', () => {
-    // Create the tokens first so the namespace exists
     createTokens('theme-color', { primary: '#000' });
     flushSync();
 
@@ -60,7 +101,7 @@ describe('useTokens', () => {
     flushSync();
 
     const rulesAfter = stylesBefore?.sheet?.cssRules.length ?? 0;
-    expect(rulesAfter).toBe(ruleCountBefore); // No new rules added
+    expect(rulesAfter).toBe(ruleCountBefore);
 
     expect(color.primary).toBe('var(--theme-color-primary)');
   });
@@ -69,6 +110,13 @@ describe('useTokens', () => {
     const tokens = useTokens('anything');
     expect(tokens.foo).toBe('var(--anything-foo)');
     expect(tokens.bar).toBe('var(--anything-bar)');
+  });
+
+  it('supports nested access for useTokens when tokens are created first', () => {
+    createTokens('color', { text: { primary: '#000' } });
+    flushSync();
+    const tokens = useTokens('color');
+    expect(tokens.text.primary).toBe('var(--color-text-primary)');
   });
 });
 
@@ -104,5 +152,28 @@ describe('createTheme', () => {
     expect(themeRule).toBeDefined();
     expect(themeRule.cssText).toContain('--color-primary');
     expect(themeRule.cssText).toContain('--color-text');
+  });
+
+  it('supports nested structures in createTheme', () => {
+    createTheme('dark', {
+      color: {
+        text: { primary: '#e0e0e0', secondary: '#a1a1aa' },
+        background: { surface: '#1a1a2e', subtle: '#262640' },
+      },
+    });
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rules = Array.from(style.sheet?.cssRules ?? []);
+    const themeRule = rules.find(
+      (r) => (r as CSSStyleRule).selectorText === '.theme-dark',
+    ) as CSSStyleRule;
+
+    expect(themeRule).toBeDefined();
+    expect(themeRule.cssText).toContain('--color-text-primary');
+    expect(themeRule.cssText).toContain('--color-text-secondary');
+    expect(themeRule.cssText).toContain('--color-background-surface');
+    expect(themeRule.cssText).toContain('--color-background-subtle');
   });
 });

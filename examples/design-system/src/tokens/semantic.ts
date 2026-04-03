@@ -85,27 +85,3 @@ export const DERIVED_COLOR_TOKENS = {
   'info-border': 'color-mix(in oklch, var(--color-info-default) 40%, transparent)',
   'overlay-backdrop': 'color-mix(in oklch, var(--color-overlay-default) 60%, transparent)',
 } as const;
-
-type NestedStringGroups = Record<string, Record<string, string>>;
-
-export function flattenColorValues(obj: NestedStringGroups): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [group, tokens] of Object.entries(obj)) {
-    for (const [key, value] of Object.entries(tokens)) out[`${group}-${key}`] = value;
-  }
-  return out;
-}
-
-export function buildColorRefs<T extends NestedStringGroups>(
-  namespace: string,
-  shape: T,
-): { [G in keyof T]: { [K in keyof T[G]]: string } } {
-  const out = {} as { [G in keyof T]: { [K in keyof T[G]]: string } };
-  for (const group of Object.keys(shape) as (keyof T)[]) {
-    out[group] = {} as { [K in keyof T[typeof group]]: string };
-    for (const key of Object.keys(shape[group] as object)) {
-      (out[group] as Record<string, string>)[key] = `var(--${namespace}-${String(group)}-${key})`;
-    }
-  }
-  return out;
-}

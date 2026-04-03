@@ -1,5 +1,4 @@
-import { insertRules, tokens } from 'typestyles';
-import { flattenColorValues } from './tokens/semantic';
+import { flattenTokenEntries, insertRules, tokens, type TokenValues } from 'typestyles';
 import type {
   DeepPartial,
   DesignPrimitiveOverrides,
@@ -8,28 +7,31 @@ import type {
   DesignThemeConfig,
 } from './types';
 
-type FlatThemeOverrides = Record<string, Record<string, string>>;
+type ThemeOverrideMap = Record<string, TokenValues | undefined>;
 
-function flattenSemanticValues(semantic: DeepPartial<DesignSemanticValues>): FlatThemeOverrides {
-  const out: FlatThemeOverrides = {};
-  if (semantic.color)
-    out.color = flattenColorValues(semantic.color as Record<string, Record<string, string>>);
-  if (semantic.syntax) out.syntax = { ...semantic.syntax };
+function flattenSemanticValues(semantic: DeepPartial<DesignSemanticValues>): ThemeOverrideMap {
+  const out: ThemeOverrideMap = {};
+  if (semantic.color != null) out.color = semantic.color as TokenValues;
+  if (semantic.syntax != null) out.syntax = semantic.syntax as TokenValues;
   return out;
 }
 
-function flattenPrimitiveOverrides(primitives: DesignPrimitiveOverrides): FlatThemeOverrides {
+function flattenPrimitiveOverrides(primitives: DesignPrimitiveOverrides): ThemeOverrideMap {
   return Object.fromEntries(
     Object.entries(primitives).filter(([, values]) => values && Object.keys(values).length > 0),
-  ) as FlatThemeOverrides;
+  ) as ThemeOverrideMap;
 }
 
-function buildVarDeclString(overrides: FlatThemeOverrides): string {
-  return Object.entries(overrides)
-    .flatMap(([namespace, values]) =>
-      Object.entries(values).map(([key, value]) => `--${namespace}-${key}: ${value};`),
-    )
-    .join(' ');
+function buildVarDeclString(overrides: ThemeOverrideMap): string {
+  const parts: string[] = [];
+  for (const [namespace, values] of Object.entries(overrides)) {
+    if (values === undefined || values === null) continue;
+    if (typeof values !== 'object') continue;
+    for (const [key, value] of flattenTokenEntries(values)) {
+      parts.push(`--${namespace}-${key}: ${value};`);
+    }
+  }
+  return parts.join(' ');
 }
 
 export function createDesignTheme(config: DesignThemeConfig): DesignTheme {

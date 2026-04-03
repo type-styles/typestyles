@@ -21,52 +21,32 @@ const {
   actionHref,
 } = Astro.props as Props;
 
-const subtleTone: Record<AlertVariant, string> = {
-  info: alert.subtleInfo,
-  success: alert.subtleSuccess,
-  warning: alert.subtleWarning,
-  danger: alert.subtleDanger,
-  tip: alert.subtleTip,
-};
+const a = alert({
+  tone: variant,
+  appearance,
+  contentGap: title ? 'spaced' : 'flush',
+});
 
-const solidTone: Record<AlertVariant, string> = {
-  info: alert.solidInfo,
-  success: alert.solidSuccess,
-  warning: alert.solidWarning,
-  danger: alert.solidDanger,
-  tip: alert.solidTip,
-};
-
-const titleAccent: Record<AlertVariant, string> = {
-  info: alert.titleAccentInfo,
-  success: alert.titleAccentSuccess,
-  warning: alert.titleAccentWarning,
-  danger: alert.titleAccentDanger,
-  tip: alert.titleAccentTip,
-};
-
-const toneClass = appearance === 'solid' ? solidTone[variant] : subtleTone[variant];
-const titleAccentClass = appearance === 'subtle' ? titleAccent[variant] : '';
 const hasIcon = Astro.slots.has('icon');
 ---
 
-<div class:list={[alert.root, toneClass]} data-alert data-alert-variant={variant} data-alert-appearance={appearance}>
+<div class:list={[a.root]} data-alert data-alert-variant={variant} data-alert-appearance={appearance}>
   {
     hasIcon ? (
-      <div class={alert.icon} data-alert-icon>
+      <div class={a.icon} data-alert-icon>
         <slot name="icon" />
       </div>
     ) : null
   }
-  <div class={alert.body}>
-    {title ? <p class:list={[alert.title, titleAccentClass]}>{title}</p> : null}
-    <div class:list={[alert.content, !title && alert.contentFlush]} data-alert-content>
+  <div class={a.body}>
+    {title ? <p class={a.title}>{title}</p> : null}
+    <div class={a.content} data-alert-content>
       <slot />
     </div>
     {
       actionLabel && actionHref ? (
-        <div class={alert.action}>
-          <a class={alert.actionLink} href={actionHref} data-alert-action>
+        <div class={a.action}>
+          <a class={a.actionLink} href={actionHref} data-alert-action>
             {actionLabel}
           </a>
         </div>

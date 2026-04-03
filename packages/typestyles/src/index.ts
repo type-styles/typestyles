@@ -27,6 +27,7 @@ export type {
   TokenValues,
   TokenRef,
   ThemeOverrides,
+  FlatTokenEntry,
   KeyframeStops,
   VariantDefinitions,
   ComponentConfig,
@@ -43,6 +44,8 @@ export type {
   CSSVarRef,
   ComponentVariants,
 } from './types.js';
+
+export { flattenTokenEntries } from './types.js';
 
 export { createVar, assignVars };
 

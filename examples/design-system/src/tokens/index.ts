@@ -3,11 +3,9 @@ import { codeBlockValues } from './component';
 import { basePaletteTokenValues } from './palette';
 import {
   DERIVED_COLOR_TOKENS,
-  buildColorRefs,
   type DesignColorRefs,
   type DesignColorValues,
   type DesignSyntaxValues,
-  flattenColorValues,
 } from './semantic';
 import {
   durationValues,
@@ -68,8 +66,7 @@ const colorRefShape: DesignColorRefs = {
   overlay: { ...emptyThemeColorValues.overlay, backdrop: '' },
 };
 
-tokens.create('color', flattenColorValues(colorRefShape));
-export const colorTokens = buildColorRefs('color', colorRefShape);
+export const colorTokens = tokens.create('color', colorRefShape);
 
 const emptySyntaxValues: DesignSyntaxValues = {
   base: '',
