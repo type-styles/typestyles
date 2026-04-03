@@ -2,6 +2,7 @@ import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
 export const radio = styles.component('radio', {
+  slots: ['group', 'item', 'control', 'label', 'groupLabel'] as const,
   group: {
     display: 'grid',
     gap: t.space[1],

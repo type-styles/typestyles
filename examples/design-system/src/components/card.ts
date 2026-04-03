@@ -2,6 +2,16 @@ import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
 export const card = styles.component('card', {
+  slots: [
+    'root',
+    'title',
+    'body',
+    'grid',
+    'linkRoot',
+    'linkTitle',
+    'linkDescription',
+    'linkHint',
+  ] as const,
   root: {
     display: 'flex',
     flexDirection: 'column',

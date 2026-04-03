@@ -2,6 +2,31 @@ import { styles } from 'typestyles';
 import { designTokens as t } from '../tokens';
 
 export const alert = styles.component('alert', {
+  slots: [
+    'root',
+    'subtleInfo',
+    'subtleSuccess',
+    'subtleWarning',
+    'subtleDanger',
+    'subtleTip',
+    'solidInfo',
+    'solidSuccess',
+    'solidDanger',
+    'solidWarning',
+    'solidTip',
+    'icon',
+    'body',
+    'title',
+    'titleAccentInfo',
+    'titleAccentSuccess',
+    'titleAccentWarning',
+    'titleAccentDanger',
+    'titleAccentTip',
+    'content',
+    'contentFlush',
+    'action',
+    'actionLink',
+  ] as const,
   root: {
     display: 'flex',
     alignItems: 'flex-start',

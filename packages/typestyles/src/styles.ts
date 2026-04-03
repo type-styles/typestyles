@@ -10,6 +10,8 @@ import type {
   SlotVariantDefinitions,
   SlotComponentConfig,
   SlotComponentFunction,
+  MultiSlotConfig,
+  MultiSlotReturn,
 } from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
@@ -148,6 +150,7 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
       namespace: string,
       config: SlotComponentConfig<S, V>,
     ): SlotComponentFunction<S, V>;
+    <S extends string>(namespace: string, config: MultiSlotConfig<S>): MultiSlotReturn<S>;
   };
   compose: typeof compose;
 };

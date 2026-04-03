@@ -439,3 +439,75 @@ describe('createComponent with slots', () => {
     expect(css).toContain('.tabs-css-trigger-compound-0');
   });
 });
+
+describe('createComponent — multi-slot (no variants)', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+    resetClassNaming();
+  });
+
+  it('returns a callable function that returns slot classes', () => {
+    const checkbox = createComponent('checkbox', {
+      slots: ['root', 'box', 'label'] as const,
+      root: { display: 'flex', gap: '8px' },
+      box: { width: '18px', height: '18px' },
+      label: { fontSize: '14px' },
+    });
+    expect(typeof checkbox).toBe('function');
+    const classes = checkbox();
+    expect(classes.root).toBe('checkbox-root');
+    expect(classes.box).toBe('checkbox-box');
+    expect(classes.label).toBe('checkbox-label');
+  });
+
+  it('is destructurable — each slot returns its class string', () => {
+    const checkbox = createComponent('chk', {
+      slots: ['root', 'box'] as const,
+      root: { display: 'flex' },
+      box: { width: '20px' },
+    });
+
+    expect(checkbox.root).toBe('chk-root');
+    expect(checkbox.box).toBe('chk-box');
+  });
+
+  it('supports optional slots with no styles', () => {
+    const dialog = createComponent('dialog', {
+      slots: ['overlay', 'modal', 'content'] as const,
+      overlay: { position: 'fixed' },
+      modal: { padding: '16px' },
+    });
+
+    const classes = dialog();
+    expect(classes.overlay).toBe('dialog-overlay');
+    expect(classes.modal).toBe('dialog-modal');
+    expect(classes.content).toBe('');
+  });
+
+  it('supports Object.keys() for enumeration', () => {
+    const card = createComponent('mscard', {
+      slots: ['root', 'title', 'body'] as const,
+      root: { padding: '16px' },
+      title: { fontWeight: 'bold' },
+    });
+
+    const keys = Object.keys(card);
+    expect(keys).toContain('root');
+    expect(keys).toContain('title');
+    expect(keys).toContain('body');
+  });
+
+  it('injects CSS for all slots', () => {
+    createComponent('mscss', {
+      slots: ['root', 'box'] as const,
+      root: { display: 'flex' },
+      box: { width: '24px' },
+    });
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.mscss-root');
+    expect(css).toContain('.mscss-box');
+  });
+});

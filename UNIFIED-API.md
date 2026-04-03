@@ -94,6 +94,43 @@ const { base, elevated, compact } = card;
 className={cx(base, isElevated && elevated)}
 ```
 
+### Multi-slot components (multiple independent parts, no variants)
+
+For complex components with multiple parts/slots like Checkbox, Dialog, or Card:
+
+```ts
+const checkbox = styles.component('checkbox', {
+  slots: ['root', 'box', 'label'] as const,
+  root: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    cursor: 'pointer',
+  },
+  box: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '4px',
+    border: '1px solid currentColor',
+  },
+  label: {
+    fontSize: '14px',
+  },
+});
+
+// Destructure each slot's class
+const { root, box, label } = checkbox;
+
+// Call as function to get all slots at once
+const classes = checkbox();
+// { root: 'checkbox-root', box: 'checkbox-box', label: 'checkbox-label' }
+
+<Checkbox className={checkbox.root}>
+  <span className={checkbox.box} />
+  <span className={checkbox.label}>Label</span>
+</Checkbox>
+```
+
 ## Return Type Contract
 
 `styles.component(name, config)` returns an object that:
@@ -125,3 +162,4 @@ className={cx(base, isElevated && elevated)}
 4. **Flat variants** (no `variants:` wrapper) are supported for simple cases and detected automatically by the absence of a `variants` key
 5. **`defaultVariants` and `compoundVariants`** are supported (same design as current `styles.component`)
 6. **Invalid variant names are TypeScript errors**, not silent failures
+7. **Multi-slot components** (with `slots:` key) are supported for complex components with multiple independent parts
