@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { collectStyles } from './server.js';
-import { resetClassNaming } from './class-naming.js';
+import { defaultClassNamingConfig } from './class-naming.js';
 import { createComponent } from './component.js';
 import { createTokens } from './tokens.js';
 import { reset } from './sheet.js';
@@ -8,12 +8,11 @@ import { reset } from './sheet.js';
 describe('collectStyles', () => {
   beforeEach(() => {
     reset();
-    resetClassNaming();
   });
 
   it('collects CSS from styles created during render', () => {
     const { html, css } = collectStyles(() => {
-      createComponent('ssr-btn', {
+      createComponent(defaultClassNamingConfig, 'ssr-btn', {
         base: { color: 'red' },
       });
       return '<button class="ssr-btn-base">Click</button>';
@@ -26,7 +25,7 @@ describe('collectStyles', () => {
 
   it('collects CSS from tokens created during render', () => {
     const { css } = collectStyles(() => {
-      createTokens('ssr-color', { primary: '#0066ff' });
+      createTokens().create('ssr-color', { primary: '#0066ff' });
       return '';
     });
 
@@ -36,8 +35,8 @@ describe('collectStyles', () => {
 
   it('collects both tokens and styles', () => {
     const { css } = collectStyles(() => {
-      const color = createTokens('ssr-theme', { bg: '#fff' });
-      createComponent('ssr-card', {
+      const color = createTokens().create('ssr-theme', { bg: '#fff' });
+      createComponent(defaultClassNamingConfig, 'ssr-card', {
         root: { backgroundColor: color.bg },
       });
       return '';

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
 import { cx } from './index.js';
 import { createComponent } from './component.js';
-import { resetClassNaming } from './class-naming.js';
+import { defaultClassNamingConfig } from './class-naming.js';
 import { reset, flushSync } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
@@ -10,16 +10,18 @@ describe('createClass', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('returns the class name string', () => {
-    const card = createClass('card', { padding: '1rem', borderRadius: '8px' });
+    const card = createClass(defaultClassNamingConfig, 'card', {
+      padding: '1rem',
+      borderRadius: '8px',
+    });
     expect(card).toBe('card');
   });
 
   it('injects CSS into the style sheet', () => {
-    createClass('class-test', { color: 'red', fontSize: '14px' });
+    createClass(defaultClassNamingConfig, 'class-test', { color: 'red', fontSize: '14px' });
     flushSync();
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
@@ -32,7 +34,7 @@ describe('createClass', () => {
   });
 
   it('supports nested selectors', () => {
-    createClass('hover-card', {
+    createClass(defaultClassNamingConfig, 'hover-card', {
       padding: '1rem',
       '&:hover': { color: 'blue' },
     });
@@ -50,28 +52,31 @@ describe('createHashClass', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('returns deterministic class names for identical styles', () => {
-    const a = createHashClass({ color: 'red', padding: '8px' });
-    const b = createHashClass({ color: 'red', padding: '8px' });
+    const a = createHashClass(defaultClassNamingConfig, { color: 'red', padding: '8px' });
+    const b = createHashClass(defaultClassNamingConfig, { color: 'red', padding: '8px' });
     expect(a).toBe(b);
   });
 
   it('returns different class names for different styles', () => {
-    const a = createHashClass({ color: 'red' });
-    const b = createHashClass({ color: 'blue' });
+    const a = createHashClass(defaultClassNamingConfig, { color: 'red' });
+    const b = createHashClass(defaultClassNamingConfig, { color: 'blue' });
     expect(a).not.toBe(b);
   });
 
   it('supports labels for readability', () => {
-    const cls = createHashClass({ color: 'red' }, 'button-primary');
+    const cls = createHashClass(defaultClassNamingConfig, { color: 'red' }, 'button-primary');
     expect(cls.startsWith('ts-button-primary-')).toBe(true);
   });
 
   it('injects CSS for the hashed selector', () => {
-    const cls = createHashClass({ color: 'red', fontSize: '14px' }, 'hash-test');
+    const cls = createHashClass(
+      defaultClassNamingConfig,
+      { color: 'red', fontSize: '14px' },
+      'hash-test',
+    );
     flushSync();
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
@@ -108,26 +113,27 @@ describe('compose', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('composes multiple component functions', () => {
-    const base = createComponent('base', { base: { padding: '8px' } });
-    const primary = createComponent('primary', { base: { color: 'blue' } });
+    const base = createComponent(defaultClassNamingConfig, 'base', { base: { padding: '8px' } });
+    const primary = createComponent(defaultClassNamingConfig, 'primary', {
+      base: { color: 'blue' },
+    });
     const button = compose(base, primary);
 
     expect(button()).toBe('base-base primary-base');
   });
 
   it('composes functions with strings', () => {
-    const base = createComponent('base2', { base: { padding: '8px' } });
+    const base = createComponent(defaultClassNamingConfig, 'base2', { base: { padding: '8px' } });
     const composed = compose(base, 'custom-class');
 
     expect(composed()).toBe('base2-base custom-class');
   });
 
   it('filters falsy values', () => {
-    const base = createComponent('base3', { base: { padding: '8px' } });
+    const base = createComponent(defaultClassNamingConfig, 'base3', { base: { padding: '8px' } });
     const composed = compose(base, false, null, undefined, 'valid');
 
     expect(composed()).toBe('base3-base valid');
@@ -143,7 +149,6 @@ describe('createStylesWithUtils', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('expands utility keys in class()', () => {

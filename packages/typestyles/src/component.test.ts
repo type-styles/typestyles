@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createComponent } from './component.js';
-import { resetClassNaming } from './class-naming.js';
+import { defaultClassNamingConfig } from './class-naming.js';
 import { reset, flushSync, getRegisteredCss } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
@@ -8,11 +8,10 @@ describe('createComponent — dimensioned variants', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('returns a callable function', () => {
-    const btn = createComponent('btn', {
+    const btn = createComponent(defaultClassNamingConfig, 'btn', {
       base: { padding: '8px' },
       variants: { intent: { primary: { color: 'blue' } } },
     });
@@ -20,7 +19,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('includes base class when called with no args', () => {
-    const btn = createComponent('btn', {
+    const btn = createComponent(defaultClassNamingConfig, 'btn', {
       base: { padding: '8px' },
     });
     expect(btn()).toBe('btn-base');
@@ -28,7 +27,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('is destructurable — base property returns the base class string', () => {
-    const btn = createComponent('btn', {
+    const btn = createComponent(defaultClassNamingConfig, 'btn', {
       base: { padding: '8px' },
       variants: {
         intent: { primary: { color: 'blue' } },
@@ -38,7 +37,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('is destructurable — variant properties return individual class strings', () => {
-    const btn = createComponent('btn', {
+    const btn = createComponent(defaultClassNamingConfig, 'btn', {
       base: { padding: '8px' },
       variants: {
         intent: {
@@ -59,7 +58,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('supports Object.keys() for enumeration', () => {
-    const btn = createComponent('btn', {
+    const btn = createComponent(defaultClassNamingConfig, 'btn', {
       base: { padding: '8px' },
       variants: {
         intent: { primary: { color: 'blue' } },
@@ -72,7 +71,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('does not include base class when base is not defined', () => {
-    const btn = createComponent('btn-nobase', {
+    const btn = createComponent(defaultClassNamingConfig, 'btn-nobase', {
       variants: {
         intent: { primary: { color: 'blue' } },
       },
@@ -81,7 +80,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('applies variant classes from selections', () => {
-    const btn = createComponent('vbtn', {
+    const btn = createComponent(defaultClassNamingConfig, 'vbtn', {
       base: { padding: '8px' },
       variants: {
         intent: {
@@ -102,7 +101,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('applies defaultVariants when selection is omitted', () => {
-    const btn = createComponent('dbtn', {
+    const btn = createComponent(defaultClassNamingConfig, 'dbtn', {
       base: { padding: '8px' },
       variants: {
         intent: {
@@ -123,7 +122,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('explicit selection overrides defaultVariants', () => {
-    const btn = createComponent('obtn', {
+    const btn = createComponent(defaultClassNamingConfig, 'obtn', {
       variants: {
         intent: {
           primary: { color: 'blue' },
@@ -137,7 +136,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('applies compound variant class when all keys match', () => {
-    const btn = createComponent('cbtn', {
+    const btn = createComponent(defaultClassNamingConfig, 'cbtn', {
       base: { padding: '8px' },
       variants: {
         intent: {
@@ -169,7 +168,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('does not apply compound variant when only partial match', () => {
-    const btn = createComponent('pbtn', {
+    const btn = createComponent(defaultClassNamingConfig, 'pbtn', {
       variants: {
         intent: {
           primary: { color: 'blue' },
@@ -193,7 +192,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('injects CSS for base and variants into the stylesheet', () => {
-    createComponent('style-test', {
+    createComponent(defaultClassNamingConfig, 'style-test', {
       base: { display: 'flex' },
       variants: {
         intent: { primary: { color: 'blue' } },
@@ -207,7 +206,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('injects CSS for compound variants', () => {
-    createComponent('cv-test', {
+    createComponent(defaultClassNamingConfig, 'cv-test', {
       variants: {
         intent: { primary: { color: 'blue' } },
         size: { lg: { fontSize: '18px' } },
@@ -223,7 +222,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('matches compound variants with array values', () => {
-    const btn = createComponent('arrbtn', {
+    const btn = createComponent(defaultClassNamingConfig, 'arrbtn', {
       variants: {
         intent: {
           primary: { color: 'blue' },
@@ -249,7 +248,7 @@ describe('createComponent — dimensioned variants', () => {
   });
 
   it('supports boolean variant keys in selections and defaults', () => {
-    const btn = createComponent('boolbtn', {
+    const btn = createComponent(defaultClassNamingConfig, 'boolbtn', {
       variants: {
         outlined: {
           true: { border: '1px solid currentColor' },
@@ -269,11 +268,10 @@ describe('createComponent — flat variants', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('returns a callable function', () => {
-    const card = createComponent('card', {
+    const card = createComponent(defaultClassNamingConfig, 'card', {
       base: { padding: '16px' },
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
     });
@@ -281,7 +279,7 @@ describe('createComponent — flat variants', () => {
   });
 
   it('base always auto-applied on function call', () => {
-    const card = createComponent('card', {
+    const card = createComponent(defaultClassNamingConfig, 'card', {
       base: { padding: '16px' },
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
     });
@@ -289,7 +287,7 @@ describe('createComponent — flat variants', () => {
   });
 
   it('applies flat variants via boolean selections', () => {
-    const card = createComponent('card', {
+    const card = createComponent(defaultClassNamingConfig, 'card', {
       base: { padding: '16px' },
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
       compact: { padding: '8px' },
@@ -301,7 +299,7 @@ describe('createComponent — flat variants', () => {
   });
 
   it('is destructurable', () => {
-    const card = createComponent('card', {
+    const card = createComponent(defaultClassNamingConfig, 'card', {
       base: { padding: '16px' },
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
     });
@@ -311,7 +309,7 @@ describe('createComponent — flat variants', () => {
   });
 
   it('supports Object.keys() for enumeration', () => {
-    const card = createComponent('card', {
+    const card = createComponent(defaultClassNamingConfig, 'card', {
       base: { padding: '16px' },
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
     });
@@ -322,7 +320,7 @@ describe('createComponent — flat variants', () => {
   });
 
   it('injects CSS for all flat variants', () => {
-    createComponent('flatcss', {
+    createComponent(defaultClassNamingConfig, 'flatcss', {
       base: { display: 'block' },
       active: { borderColor: 'blue' },
     });
@@ -334,7 +332,7 @@ describe('createComponent — flat variants', () => {
   });
 
   it('works without base', () => {
-    const card = createComponent('nobase', {
+    const card = createComponent(defaultClassNamingConfig, 'nobase', {
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
     });
 
@@ -347,11 +345,10 @@ describe('createComponent with slots', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('returns per-slot class maps with defaults', () => {
-    const tabs = createComponent('tabs', {
+    const tabs = createComponent(defaultClassNamingConfig, 'tabs', {
       slots: ['root', 'trigger', 'content'] as const,
       base: {
         root: { display: 'grid' },
@@ -383,7 +380,7 @@ describe('createComponent with slots', () => {
   });
 
   it('applies slot compound variants to targeted slots', () => {
-    const tabs = createComponent('tabs-cv', {
+    const tabs = createComponent(defaultClassNamingConfig, 'tabs-cv', {
       slots: ['root', 'trigger', 'content'] as const,
       variants: {
         intent: {
@@ -413,7 +410,7 @@ describe('createComponent with slots', () => {
   });
 
   it('injects per-slot CSS class rules', () => {
-    createComponent('tabs-css', {
+    createComponent(defaultClassNamingConfig, 'tabs-css', {
       slots: ['root', 'trigger'] as const,
       base: {
         root: { display: 'grid' },
@@ -444,11 +441,10 @@ describe('createComponent — multi-slot (no variants)', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
   });
 
   it('returns a callable function that returns slot classes', () => {
-    const checkbox = createComponent('checkbox', {
+    const checkbox = createComponent(defaultClassNamingConfig, 'checkbox', {
       slots: ['root', 'box', 'label'] as const,
       root: { display: 'flex', gap: '8px' },
       box: { width: '18px', height: '18px' },
@@ -462,7 +458,7 @@ describe('createComponent — multi-slot (no variants)', () => {
   });
 
   it('is destructurable — each slot returns its class string', () => {
-    const checkbox = createComponent('chk', {
+    const checkbox = createComponent(defaultClassNamingConfig, 'chk', {
       slots: ['root', 'box'] as const,
       root: { display: 'flex' },
       box: { width: '20px' },
@@ -473,7 +469,7 @@ describe('createComponent — multi-slot (no variants)', () => {
   });
 
   it('supports optional slots with no styles', () => {
-    const dialog = createComponent('dialog', {
+    const dialog = createComponent(defaultClassNamingConfig, 'dialog', {
       slots: ['overlay', 'modal', 'content'] as const,
       overlay: { position: 'fixed' },
       modal: { padding: '16px' },
@@ -486,7 +482,7 @@ describe('createComponent — multi-slot (no variants)', () => {
   });
 
   it('supports Object.keys() for enumeration', () => {
-    const card = createComponent('mscard', {
+    const card = createComponent(defaultClassNamingConfig, 'mscard', {
       slots: ['root', 'title', 'body'] as const,
       root: { padding: '16px' },
       title: { fontWeight: 'bold' },
@@ -499,7 +495,7 @@ describe('createComponent — multi-slot (no variants)', () => {
   });
 
   it('injects CSS for all slots', () => {
-    createComponent('mscss', {
+    createComponent(defaultClassNamingConfig, 'mscss', {
       slots: ['root', 'box'] as const,
       root: { display: 'flex' },
       box: { width: '24px' },

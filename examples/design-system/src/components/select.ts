@@ -1,4 +1,4 @@
-import { styles } from 'typestyles';
+import { styles } from '../runtime';
 import { designTokens as t } from '../tokens';
 
 export const select = styles.component('select', {

@@ -14,7 +14,7 @@ import type {
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
-import { buildComponentClassName } from './class-naming.js';
+import { buildComponentClassName, type ClassNamingConfig } from './class-naming.js';
 
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
@@ -106,53 +106,72 @@ function isMultiSlotConfig(config: Record<string, unknown>): config is MultiSlot
  * ```
  */
 export function createComponent<V extends VariantDefinitions>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: ComponentConfig<V>,
 ): ComponentReturn<V>;
 
 export function createComponent<K extends string>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: FlatComponentConfig<K>,
 ): FlatComponentReturn<K>;
 
 export function createComponent<S extends string, V extends SlotVariantDefinitions<S>>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: SlotComponentConfig<S, V>,
 ): SlotComponentFunction<S, V>;
 
 export function createComponent<S extends string>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: MultiSlotConfig<S>,
 ): MultiSlotReturn<S>;
 
-export function createComponent(namespace: string, config: Record<string, unknown>): unknown {
+export function createComponent(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: Record<string, unknown>,
+): unknown {
   if (isMultiSlotConfig(config)) {
-    return createMultiSlotComponent(namespace, config as MultiSlotConfig<string>);
+    return createMultiSlotComponent(classNaming, namespace, config as MultiSlotConfig<string>);
   }
   if (isSlotWithVariantsConfig(config)) {
     return createSlotComponent(
+      classNaming,
       namespace,
       config as SlotComponentConfig<string, SlotVariantDefinitions<string>>,
     );
   }
   if (isDimensionedConfig(config)) {
-    return createDimensionedComponent(namespace, config as ComponentConfig<VariantDefinitions>);
+    return createDimensionedComponent(
+      classNaming,
+      namespace,
+      config as ComponentConfig<VariantDefinitions>,
+    );
   }
-  return createFlatComponent(namespace, config as FlatComponentConfig<string>);
+  return createFlatComponent(classNaming, namespace, config as FlatComponentConfig<string>);
 }
 
 // ---------------------------------------------------------------------------
 // Dimensioned variant component (the primary path)
 // ---------------------------------------------------------------------------
 
+function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: string): string {
+  const scope = classNaming.scopeId || 'default';
+  return `${scope}:${namespace}`;
+}
+
 function createDimensionedComponent<V extends VariantDefinitions>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: ComponentConfig<V>,
 ): ComponentReturn<V> {
   const { base, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
 
-  warnDuplicate(namespace);
-  registeredNamespaces.add(namespace);
+  warnDuplicate(classNaming, namespace);
+  registeredNamespaces.add(registryKeyForComponent(classNaming, namespace));
 
   const rules: Array<{ key: string; css: string }> = [];
 
@@ -162,7 +181,7 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   // 1. Base
   let baseClassName: string | undefined;
   if (base) {
-    baseClassName = buildComponentClassName(namespace, 'base', base);
+    baseClassName = buildComponentClassName(classNaming, namespace, 'base', base);
     classMap['base'] = baseClassName;
     rules.push(...serializeStyle(`.${baseClassName}`, base));
   }
@@ -172,7 +191,7 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   for (const [dimension, options] of Object.entries(variants)) {
     for (const [option, properties] of Object.entries(options as Record<string, CSSProperties>)) {
       const segment = `${dimension}-${option}`;
-      const className = buildComponentClassName(namespace, segment, properties);
+      const className = buildComponentClassName(classNaming, namespace, segment, properties);
       variantClassByKey[segment] = className;
       classMap[segment] = className;
       rules.push(...serializeStyle(`.${className}`, properties));
@@ -183,7 +202,12 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   const compoundClassByIndex: string[] = [];
   (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
     (cv, index) => {
-      const className = buildComponentClassName(namespace, `compound-${index}`, cv.style);
+      const className = buildComponentClassName(
+        classNaming,
+        namespace,
+        `compound-${index}`,
+        cv.style,
+      );
       compoundClassByIndex[index] = className;
       rules.push(...serializeStyle(`.${className}`, cv.style));
     },
@@ -254,11 +278,12 @@ function createDimensionedComponent<V extends VariantDefinitions>(
 // ---------------------------------------------------------------------------
 
 function createFlatComponent<K extends string>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: FlatComponentConfig<K>,
 ): FlatComponentReturn<K> {
-  warnDuplicate(namespace);
-  registeredNamespaces.add(namespace);
+  warnDuplicate(classNaming, namespace);
+  registeredNamespaces.add(registryKeyForComponent(classNaming, namespace));
 
   const rules: Array<{ key: string; css: string }> = [];
   const classMap: Record<string, string> = {};
@@ -268,7 +293,7 @@ function createFlatComponent<K extends string>(
     if (RESERVED_KEYS.has(key) && key !== 'base') continue;
     const props = properties as CSSProperties;
     const segment = key;
-    const className = buildComponentClassName(namespace, segment, props);
+    const className = buildComponentClassName(classNaming, namespace, segment, props);
     classMap[segment] = className;
     rules.push(...serializeStyle(`.${className}`, props));
     if (key !== 'base') {
@@ -306,13 +331,14 @@ function createFlatComponent<K extends string>(
 // ---------------------------------------------------------------------------
 
 function createMultiSlotComponent<S extends string>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: MultiSlotConfig<S>,
 ): MultiSlotReturn<S> {
   const { slots } = config;
 
-  warnDuplicate(namespace);
-  registeredNamespaces.add(namespace);
+  warnDuplicate(classNaming, namespace);
+  registeredNamespaces.add(registryKeyForComponent(classNaming, namespace));
 
   const rules: Array<{ key: string; css: string }> = [];
   const slotClassMap: Record<string, string> = {};
@@ -320,7 +346,7 @@ function createMultiSlotComponent<S extends string>(
   for (const slot of slots) {
     const properties = (config as Record<string, CSSProperties | undefined>)[slot];
     if (properties) {
-      const className = buildComponentClassName(namespace, slot, properties);
+      const className = buildComponentClassName(classNaming, namespace, slot, properties);
       slotClassMap[slot] = className;
       rules.push(...serializeStyle(`.${className}`, properties));
     } else {
@@ -367,6 +393,7 @@ function makeMultiSlotObject(
 // ---------------------------------------------------------------------------
 
 function createSlotComponent<S extends string, V extends SlotVariantDefinitions<S>>(
+  classNaming: ClassNamingConfig,
   namespace: string,
   config: SlotComponentConfig<S, V>,
 ): SlotComponentFunction<S, V> {
@@ -378,14 +405,14 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
     defaultVariants = {},
   } = config;
 
-  warnDuplicate(namespace);
-  registeredNamespaces.add(namespace);
+  warnDuplicate(classNaming, namespace);
+  registeredNamespaces.add(registryKeyForComponent(classNaming, namespace));
 
   const rules: Array<{ key: string; css: string }> = [];
 
   const baseClassBySlot: Record<string, string> = {};
   for (const [slot, properties] of Object.entries(base as Record<string, CSSProperties>)) {
-    const className = buildComponentClassName(namespace, slot, properties);
+    const className = buildComponentClassName(classNaming, namespace, slot, properties);
     baseClassBySlot[slot] = className;
     rules.push(...serializeStyle(`.${className}`, properties));
   }
@@ -397,7 +424,7 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
     )) {
       for (const [slot, properties] of Object.entries(slotStyles)) {
         const segment = `${slot}-${dimension}-${option}`;
-        const className = buildComponentClassName(namespace, segment, properties);
+        const className = buildComponentClassName(classNaming, namespace, segment, properties);
         variantClassByKey[segment] = className;
         rules.push(...serializeStyle(`.${className}`, properties));
       }
@@ -413,7 +440,7 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
   ).forEach((cv, index) => {
     for (const [slot, properties] of Object.entries(cv.style)) {
       const segment = `${slot}-compound-${index}`;
-      const className = buildComponentClassName(namespace, segment, properties);
+      const className = buildComponentClassName(classNaming, namespace, segment, properties);
       slotCompoundClassByKey[`${slot}::${index}`] = className;
       rules.push(...serializeStyle(`.${className}`, properties));
     }
@@ -505,9 +532,10 @@ function normalizeSelection(value: unknown, options: Record<string, unknown>): s
   return String(value);
 }
 
-function warnDuplicate(namespace: string): void {
+function warnDuplicate(classNaming: ClassNamingConfig, namespace: string): void {
   if (process.env.NODE_ENV !== 'production') {
-    if (registeredNamespaces.has(namespace)) {
+    const key = registryKeyForComponent(classNaming, namespace);
+    if (registeredNamespaces.has(key)) {
       console.warn(
         `[typestyles] styles.component('${namespace}', ...) called more than once. ` +
           `This will cause class name collisions. Each namespace should be unique.`,

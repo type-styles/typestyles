@@ -1,4 +1,4 @@
-import { tokens } from 'typestyles';
+import { tokens } from './runtime';
 import type { DesignTheme, DesignThemeConfig } from './types';
 
 /**

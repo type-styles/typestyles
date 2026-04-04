@@ -1,4 +1,5 @@
-import { insertRules, tokens } from 'typestyles';
+import { insertRules } from 'typestyles';
+import { tokens } from '../runtime';
 import { codeBlockValues } from './component';
 import { basePaletteTokenValues } from './palette';
 import {

@@ -9,8 +9,9 @@
 
 - styles.md
 - components.md
+- compose.md
+- atomic-css.md
 - tokens.md
-- open-props.md
 - keyframes.md
 - color.md
 

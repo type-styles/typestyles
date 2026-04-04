@@ -391,10 +391,23 @@ const dark = tokens.createTheme('dark', {
   },
 });
 
-<div className={dark.className}>{/* class="theme-dark" */}
+<div className={dark.className}>
 ```
 
 See `tokens.createDarkMode`, `tokens.when`, and `tokens.colorMode` for layered light/dark/system behavior.
+
+### `createStyles(options?)` and `createTokens(options?)`
+
+For **libraries, design systems, or micro-frontends**, create your own instances so class names and CSS variables stay isolated—no global configuration:
+
+```tsx
+import { createStyles, createTokens } from 'typestyles';
+
+export const styles = createStyles({ scopeId: 'my-ui', mode: 'hashed', prefix: 'ui' });
+export const tokens = createTokens({ scopeId: 'my-ui' });
+```
+
+The default `import { styles, tokens } from 'typestyles'` remains `createStyles()` / `createTokens()` with default options for single-app use.
 
 ### `tokens.use(namespace)`
 

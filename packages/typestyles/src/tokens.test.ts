@@ -1,15 +1,29 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTokens, useTokens } from './tokens.js';
+import { createTokens } from './tokens.js';
 import { createTheme } from './theme.js';
 import { reset, flushSync } from './sheet.js';
 
-describe('createTokens', () => {
+describe('createTokens factory', () => {
+  it('exposes scopeId on the instance', () => {
+    expect(createTokens().scopeId).toBeUndefined();
+    expect(createTokens({ scopeId: 'ds' }).scopeId).toBe('ds');
+  });
+
+  it('prefixes CSS variable namespaces when scopeId is set', () => {
+    const t = createTokens({ scopeId: 'my-pkg' });
+    const color = t.create('color', { primary: '#0066ff' });
+    expect(color.primary).toBe('var(--my-pkg-color-primary)');
+  });
+});
+
+describe('tokens.create', () => {
   beforeEach(() => {
     reset();
   });
 
   it('returns an object with var() references', () => {
-    const color = createTokens('color', {
+    const api = createTokens();
+    const color = api.create('color', {
       primary: '#0066ff',
       secondary: '#6b7280',
     });
@@ -19,7 +33,8 @@ describe('createTokens', () => {
   });
 
   it('injects :root CSS with custom properties', () => {
-    createTokens('spacing', {
+    const api = createTokens();
+    api.create('spacing', {
       sm: '8px',
       md: '16px',
       lg: '24px',
@@ -37,13 +52,15 @@ describe('createTokens', () => {
   });
 
   it('token values are usable as CSS strings', () => {
-    const size = createTokens('size', { base: '16px' });
+    const api = createTokens();
+    const size = api.create('size', { base: '16px' });
     expect(typeof size.base).toBe('string');
     expect(size.base).toContain('var(');
   });
 
   it('supports nested token objects', () => {
-    const color = createTokens('color', {
+    const api = createTokens();
+    const color = api.create('color', {
       text: { primary: '#111827', secondary: '#6b7280' },
       background: { surface: '#ffffff', subtle: '#f9fafb' },
       border: { default: '#e5e7eb' },
@@ -65,7 +82,8 @@ describe('createTokens', () => {
   });
 
   it('supports deeply nested token objects', () => {
-    const color = createTokens('color', {
+    const api = createTokens();
+    const color = api.create('color', {
       brand: {
         primary: { DEFAULT: '#0066ff', hover: '#0052cc' },
       },
@@ -76,7 +94,8 @@ describe('createTokens', () => {
   });
 
   it('supports flat values alongside nested objects', () => {
-    const tokens = createTokens('test', {
+    const api = createTokens();
+    const tokens = api.create('test', {
       simple: 'value',
       nested: { key: 'nested-value' },
     });
@@ -86,19 +105,20 @@ describe('createTokens', () => {
   });
 });
 
-describe('useTokens', () => {
+describe('tokens.use', () => {
   beforeEach(() => {
     reset();
   });
 
   it('returns var() references without injecting CSS', () => {
-    createTokens('theme-color', { primary: '#000' });
+    const api = createTokens();
+    api.create('theme-color', { primary: '#000' });
     flushSync();
 
     const stylesBefore = document.getElementById('typestyles') as HTMLStyleElement;
     const ruleCountBefore = stylesBefore?.sheet?.cssRules.length ?? 0;
 
-    const color = useTokens('theme-color');
+    const color = api.use('theme-color');
     flushSync();
 
     const rulesAfter = stylesBefore?.sheet?.cssRules.length ?? 0;
@@ -108,15 +128,17 @@ describe('useTokens', () => {
   });
 
   it('creates var() references for any property name', () => {
-    const tokens = useTokens('anything');
+    const api = createTokens();
+    const tokens = api.use('anything');
     expect(tokens.foo).toBe('var(--anything-foo)');
     expect(tokens.bar).toBe('var(--anything-bar)');
   });
 
   it('supports nested access for useTokens when tokens are created first', () => {
-    createTokens('color', { text: { primary: '#000' } });
+    const api = createTokens();
+    api.create('color', { text: { primary: '#000' } });
     flushSync();
-    const tokens = useTokens('color');
+    const tokens = api.use('color');
     expect(tokens.text.primary).toBe('var(--color-text-primary)');
   });
 });

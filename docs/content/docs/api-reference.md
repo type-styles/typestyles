@@ -5,49 +5,78 @@ description: Complete API reference for typestyles
 
 # API Reference
 
-Reference for the main typestyles APIs (kept in sync with the published package).
+Auto-generated documentation for all typestyles APIs.
 
 ## Core Exports
 
 ### `styles`
 
-Style creation and composition API.
+Default style API (semantic class names, empty `scopeId`). Prefer `createStyles({ scopeId, mode, prefix })`
+per package or micro-frontend for isolation.
 
 **Methods:**
 
-- `styles.component(namespace, config)`: Creates component styles (flat or dimensioned). Returns a CVA-style object that is both callable and destructurable.
-- `styles.class(name, style)`: Creates a single registered class from one style object
-- `styles.hashClass(styles, label?)`: Emits a hashed class from a style object (see [Class naming](/docs/class-naming))
-- `styles.withUtils(utils)`: Returns utility-aware `component`, `class`, and `hashClass` helpers
-- `styles.compose(...selectors)`: Combines multiple selector functions or class strings
+- `styles.component(namespace, config)`: Create multi-variant component styles (CVA-style)
+- `styles.class(name, properties)`: Create a single class
+- `styles.hashClass(properties, label?)`: Create a deterministic hashed class
+- `styles.compose(...fns)`: Compose multiple style functions
+- `styles.withUtils(utils)`: Create utility-aware styles API
+- `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
 
-### `cx`
+### `createStyles(options?)`
 
-Built-in class joining utility:
+Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'atomic'`), `prefix`, `scopeId`. Use one instance per package or micro-frontend.
 
-```ts
-import { cx } from 'typestyles';
-
-cx('class-a', isActive && 'class-b', undefined, 'class-c');
-// "class-a class-b class-c" (falsy values are filtered out)
-```
-
-### Class naming
-
-Global options for emitted class strings (used by `styles.component`, `styles.class`):
-
-- `configureClassNaming(options)`: Set `mode` (`'semantic' | 'hashed' | 'atomic'`), optional `prefix`, optional `scopeId`
-- `getClassNamingConfig()`: Read current config
-- `resetClassNaming()`: Restore defaults (mainly for tests)
-
-See [Class naming](/docs/class-naming).
+The default `import { styles } from 'typestyles'` is `createStyles()` with default options.
 
 ### `tokens`
 
-Design token API using CSS custom properties.
+Default token API (unscoped custom properties). Prefer `createTokens({ scopeId })` when multiple
+bundles share a page.
 
 **Methods:**
 
+- `tokens.create(namespace, values)`: Creates CSS custom properties
+- `tokens.use(namespace)`: References existing tokens
+- `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties
+- `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
+- `tokens.when` / `tokens.colorMode`: Condition helpers for themes
+- `tokens.scopeId`: The scope passed to `createTokens`, if any
+
+### `createTokens(options?)`
+
+Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme('dark', …)` registers `.theme-{scopeId}-dark` (sanitized segments).
+
+The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
+
+### `keyframes`
+
+Keyframe animation API.
+
+**Methods:**
+
+- `keyframes.create(name, stops)`: Creates @keyframes animation
+
+### `color`
+
+Type-safe CSS color function helpers.
+Each function returns a plain CSS color string — no runtime color math.
+Composes naturally with token references.
+
+**Functions:**
+
+- `color.rgb(r, g, b, alpha?)`: RGB color
+- `color.hsl(h, s, l, alpha?)`: HSL color
+- `color.oklch(l, c, h, alpha?)`: OKLCH color
+- `color.oklab(l, a, b, alpha?)`: OKLAB color
+- `color.lab(l, a, b, alpha?)`: LAB color
+- `color.lch(l, c, h, alpha?)`: LCH color
+- `color.hwb(h, w, b, alpha?)`: HWB color
+- `color.mix(c1, c2, p?, space?)`: Mix two colors
+- `color.lightDark(light, dark)`: Light/dark mode color
+- `color.alpha(color, opacity, space?)`: Adjust opacity
+
+See [Color](/docs/color).
 - `tokens.create(namespace, values)`: Registers tokens on `:root` and returns `var(--namespace-key)` references
 - `tokens.use(namespace)`: Returns `var(--namespace-key)` references without emitting CSS (for shared tokens defined elsewhere)
 - `tokens.createTheme(name, config)`: Registers a `.theme-{name}` surface with optional `base`, and either `modes` or `colorMode` (not both). Returns a **`ThemeSurface`** (`className`, `name`, string coercion)—use `.className` in React
@@ -62,10 +91,6 @@ Global CSS helpers (not scoped to a component class):
 - `global.style(selector, styles)`: Insert rules for an arbitrary selector
 - `global.fontFace(family, props)`: Register `@font-face`
 
-### `color`
-
-Type-safe helpers that return CSS color strings (`rgb`, `hsl`, `oklch`, `mix`, `alpha`, `lightDark`, etc.). See [Color](/docs/color).
-
 ### `cx(...parts)`
 
 Joins class name parts into a single string, filtering out falsy values (`false`, `undefined`, `null`, `0`, `''`).
@@ -75,13 +100,12 @@ Use `cx` to combine TypeStyles classes with external class strings and condition
 ```ts
 import { cx, styles } from 'typestyles';
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: { padding: '16px' },
-  active: { borderColor: 'blue' },
+  elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
 });
 
-cx(card('base'), isActive && card('active'), externalClassName);
-// => "card-base card-active my-external-class"
+cx(card('base'), isElevated && card('elevated'), externalClassName);
 ```
 
 ### CSS variables (advanced)
@@ -94,61 +118,32 @@ cx(card('base'), isActive && card('active'), externalClassName);
 - `reset()`, `flushSync()`, `ensureDocumentStylesAttached()`: Primarily for tests and advanced setup; see [Testing](/docs/testing)
 - `insertRules(rules)`: Low-level rule insertion (mainly for library authors)
 
-### `keyframes`
+### Class naming helpers
 
-Keyframe animation API.
+- `mergeClassNaming(partial?)`: Build a full `ClassNamingConfig` from partial options
+- `defaultClassNamingConfig`: Default `mode`, `prefix`, and `scopeId`
+- `scopedTokenNamespace(scopeId, logicalNamespace)`: CSS variable namespace segment for scoped token instances
 
-**Methods:**
-
-- `keyframes.create(name, stops)`: Creates @keyframes animation
+See [Class naming](/docs/class-naming).
 
 ## Usage Examples
 
-### Creating Component Styles (flat config)
-
-```ts
-import { styles } from 'typestyles';
-
-const card = styles.component('card', {
-  base: { padding: '16px', borderRadius: '8px' },
-  elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
-});
-
-// Call as function (base auto-applied):
-card();
-
-// Destructure:
-const { base, elevated } = card;
-```
-
-### Creating Component Styles (dimensioned config)
+### Creating Styles
 
 ```ts
 import { styles } from 'typestyles';
 
 const button = styles.component('button', {
-  base: { borderRadius: '8px' },
+  base: { padding: '8px 16px' },
   variants: {
-    intent: {
-      primary: { backgroundColor: '#2563eb', color: 'white' },
-      ghost: { backgroundColor: 'transparent', color: '#111827' },
-    },
+    intent: { primary: { backgroundColor: '#0066ff' } },
   },
-  defaultVariants: {
-    intent: 'primary',
-  },
+  defaultVariants: { intent: 'primary' },
 });
 
 button(); // "button-base button-intent-primary"
-button({ intent: 'ghost' }); // "button-base button-intent-ghost"
-```
-
-### Joining Classes with cx()
-
-```ts
-import { cx } from 'typestyles';
-
-const className = cx('base-class', isActive && 'active', isPrimary && 'primary');
+button({ intent: 'primary' }); // same
+const { base } = button; // destructure class strings
 ```
 
 ### Creating Tokens
@@ -162,6 +157,15 @@ const color = tokens.create('color', {
 });
 
 color.primary; // "var(--color-primary)"
+```
+
+### Scoped instances (libraries / micro-frontends)
+
+```ts
+import { createStyles, createTokens } from 'typestyles';
+
+export const styles = createStyles({ scopeId: 'my-ds', mode: 'hashed', prefix: 'ds' });
+export const tokens = createTokens({ scopeId: 'my-ds' });
 ```
 
 ### Creating Animations
@@ -178,64 +182,7 @@ const fadeIn = keyframes.create('fadeIn', {
 animation: `${fadeIn} 300ms ease`;
 ```
 
-### Composing Styles
-
-```ts
-import { styles } from 'typestyles';
-
-const base = styles.component('base', {
-  base: { padding: '8px' },
-});
-
-const primary = styles.component('primary', {
-  base: { color: 'blue' },
-});
-
-const button = styles.compose(base, primary);
-```
-
-## @typestyles/props
-
-Atomic CSS utility generator for type-safe utility classes.
-
-### `defineProperties(config)`
-
-Define a collection of CSS properties with allowed values.
-
-```ts
-import { defineProperties } from '@typestyles/props';
-
-const utilities = defineProperties({
-  conditions: {
-    mobile: { '@media': '(min-width: 768px)' },
-  },
-  properties: {
-    display: ['flex', 'block', 'grid'],
-    padding: { 0: '0', 1: '4px', 2: '8px' },
-  },
-  shorthands: {
-    p: ['padding'],
-  },
-});
-```
-
-### `createProps(namespace, ...collections)`
-
-Generate atomic utility classes from property collections.
-
-```ts
-import { createProps } from '@typestyles/props';
-
-const atoms = createProps('atom', utilities);
-
-atoms({
-  display: 'flex',
-  padding: 2,
-  p: { mobile: 1 },
-});
-// Returns: "atom-display-flex atom-padding-2 atom-p-mobile-1"
-```
-
 ---
 
-_Last reviewed: 2026-04-03_
+_This API reference was auto-generated from source code._
+_Last updated: 2026-04-04_

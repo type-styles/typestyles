@@ -1,4 +1,5 @@
-import { styles, type CSSProperties } from 'typestyles';
+import type { CSSProperties } from 'typestyles';
+import { styles } from '../runtime';
 import { designTokens as t } from '../tokens';
 
 export const alert = styles.component('alert', {

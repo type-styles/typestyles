@@ -18,10 +18,12 @@ import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 import {
   buildSingleClassName,
-  getClassNamingConfig,
+  defaultClassNamingConfig,
   hashString,
+  mergeClassNaming,
   sanitizeClassSegment,
   stableSerialize,
+  type ClassNamingConfig,
 } from './class-naming.js';
 import { createComponent } from './component.js';
 
@@ -41,18 +43,28 @@ import { createComponent } from './component.js';
  * <div className={card} />  // class="card"
  * ```
  */
-export function createClass(name: string, properties: CSSProperties): string {
+function registryKeyForClass(classNaming: ClassNamingConfig, name: string): string {
+  const scope = classNaming.scopeId || 'default';
+  return `${scope}:${name}`;
+}
+
+export function createClass(
+  classNaming: ClassNamingConfig,
+  name: string,
+  properties: CSSProperties,
+): string {
+  const regKey = registryKeyForClass(classNaming, name);
   if (process.env.NODE_ENV !== 'production') {
-    if (registeredNamespaces.has(name)) {
+    if (registeredNamespaces.has(regKey)) {
       console.warn(
         `[typestyles] styles.class('${name}', ...) called more than once. ` +
           `This will cause class name collisions. Each class name should be unique.`,
       );
     }
   }
-  registeredNamespaces.add(name);
+  registeredNamespaces.add(regKey);
 
-  const className = buildSingleClassName(name, properties);
+  const className = buildSingleClassName(classNaming, name, properties);
   const selector = `.${className}`;
   const rules = serializeStyle(selector, properties);
   insertRules(rules);
@@ -79,8 +91,12 @@ export function createClass(name: string, properties: CSSProperties): string {
  * );
  * ```
  */
-export function createHashClass(properties: CSSProperties, label?: string): string {
-  const cfg = getClassNamingConfig();
+export function createHashClass(
+  classNaming: ClassNamingConfig,
+  properties: CSSProperties,
+  label?: string,
+): string {
+  const cfg = classNaming;
   const serialized =
     cfg.scopeId !== ''
       ? stableSerialize({ scope: cfg.scopeId, properties })
@@ -137,6 +153,46 @@ export function compose(
 // withUtils
 // ---------------------------------------------------------------------------
 
+export type StylesApi = {
+  /** Resolved naming config for this instance (useful for debugging). */
+  readonly classNaming: Readonly<ClassNamingConfig>;
+  class: (name: string, properties: CSSProperties) => string;
+  hashClass: (properties: CSSProperties, label?: string) => string;
+  component: {
+    <V extends VariantDefinitions>(
+      namespace: string,
+      config: ComponentConfig<V>,
+    ): ComponentReturn<V>;
+    <K extends string>(namespace: string, config: FlatComponentConfig<K>): FlatComponentReturn<K>;
+    <S extends string, V extends SlotVariantDefinitions<S>>(
+      namespace: string,
+      config: SlotComponentConfig<S, V>,
+    ): SlotComponentFunction<S, V>;
+    <S extends string>(namespace: string, config: MultiSlotConfig<S>): MultiSlotReturn<S>;
+  };
+  withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApi<U>;
+  compose: typeof compose;
+};
+
+/**
+ * Create a styles API with its own class naming config (scope, mode, prefix).
+ * Use one instance per package or micro-frontend so hashed names and dev warnings
+ * stay isolated without global mutation.
+ */
+export function createStyles(partial?: Partial<ClassNamingConfig>): StylesApi {
+  const classNaming = mergeClassNaming(partial);
+
+  return {
+    classNaming,
+    class: (name, properties) => createClass(classNaming, name, properties),
+    hashClass: (properties, label) => createHashClass(classNaming, properties, label),
+    component: ((namespace: string, config: Record<string, unknown>) =>
+      createComponent(classNaming, namespace, config)) as StylesApi['component'],
+    withUtils: (utils) => createStylesWithUtils(utils, classNaming),
+    compose,
+  };
+}
+
 export type StylesWithUtilsApi<U extends StyleUtils> = {
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
@@ -170,7 +226,10 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
  * });
  * ```
  */
-export function createStylesWithUtils<U extends StyleUtils>(utils: U): StylesWithUtilsApi<U> {
+export function createStylesWithUtils<U extends StyleUtils>(
+  utils: U,
+  classNaming: ClassNamingConfig = defaultClassNamingConfig,
+): StylesWithUtilsApi<U> {
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
 
@@ -210,12 +269,16 @@ export function createStylesWithUtils<U extends StyleUtils>(utils: U): StylesWit
       }
     }
 
-    return createComponent(namespace, transformed as ComponentConfig<VariantDefinitions>);
+    return createComponent(
+      classNaming,
+      namespace,
+      transformed as ComponentConfig<VariantDefinitions>,
+    );
   }
 
   return {
-    class: (name, properties) => createClass(name, apply(properties)),
-    hashClass: (properties, label) => createHashClass(apply(properties), label),
+    class: (name, properties) => createClass(classNaming, name, apply(properties)),
+    hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
     component: component as StylesWithUtilsApi<U>['component'],
     compose,
   };

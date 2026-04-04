@@ -1,5 +1,5 @@
-import { createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
-import { createTokens, useTokens } from './tokens.js';
+import { createStyles } from './styles.js';
+import { createTokens } from './tokens.js';
 import { createTheme, createDarkMode, when, colorMode } from './theme.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
@@ -10,13 +10,21 @@ import {
   flushSync,
   ensureDocumentStylesAttached,
 } from './sheet.js';
-import { createComponent } from './component.js';
 import { globalStyle, globalFontFace } from './global.js';
 import { createVar, assignVars } from './vars.js';
 import { cx } from './cx.js';
 
+export type { StylesApi } from './styles.js';
+export type { CreateTokensOptions, TokensApi } from './tokens.js';
+
 export type { ClassNamingConfig, ClassNamingMode } from './class-naming.js';
-export { configureClassNaming, getClassNamingConfig, resetClassNaming } from './class-naming.js';
+export {
+  mergeClassNaming,
+  defaultClassNamingConfig,
+  scopedTokenNamespace,
+} from './class-naming.js';
+
+export { createStyles, createTokens };
 
 export type {
   CSSProperties,
@@ -64,8 +72,11 @@ export { createVar, assignVars };
 
 export type { ColorMixSpace } from './color.js';
 
+export { createTheme, createDarkMode, when, colorMode };
+
 /**
- * Style creation API.
+ * Default style API (semantic class names, empty `scopeId`). Prefer `createStyles({ scopeId, mode, prefix })`
+ * per package or micro-frontend for isolation.
  *
  * @example
  * ```ts
@@ -79,23 +90,12 @@ export type { ColorMixSpace } from './color.js';
  *   defaultVariants: { intent: 'primary', size: 'sm' },
  * });
  *
- * // Call as function — base always included
  * button({ intent: 'primary', size: 'lg' })
  *
- * // Destructure individual class strings
- * const { base, 'intent-primary': primary } = button;
- *
- * // Single class (no variants)
  * const card = styles.class('card', { padding: '1rem' });
  * ```
  */
-export const styles = {
-  component: createComponent,
-  class: createClass,
-  hashClass: createHashClass,
-  withUtils: createStylesWithUtils,
-  compose,
-} as const;
+export const styles = createStyles();
 
 /**
  * Global CSS API for arbitrary selectors and font-face declarations.
@@ -112,7 +112,8 @@ export const global = {
 } as const;
 
 /**
- * Design token API using CSS custom properties.
+ * Default token API (unscoped custom properties). Prefer `createTokens({ scopeId })` when multiple
+ * bundles share a page.
  *
  * @example
  * ```ts
@@ -123,17 +124,9 @@ export const global = {
  *   base: { color: { primary: '#ff6600' } },
  *   colorMode: tokens.colorMode.mediaOnly({ dark: darkOverrides }),
  * });
- * // acme.className === 'theme-acme'
  * ```
  */
-export const tokens = {
-  create: createTokens,
-  use: useTokens,
-  createTheme,
-  createDarkMode,
-  when,
-  colorMode,
-} as const;
+export const tokens = createTokens();
 
 /**
  * Keyframe animation API.

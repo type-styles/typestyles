@@ -1,5 +1,15 @@
 # typestyles
 
+## Unreleased
+
+### Breaking changes
+
+- **Instance-based APIs replace global class naming.** Removed `configureClassNaming`, `getClassNamingConfig`, and `resetClassNaming`.
+  - Use **`createStyles({ mode?, prefix?, scopeId? })`** for a dedicated style API (same surface as the default `styles` export). Default `import { styles } from 'typestyles'` is `createStyles()`.
+  - Use **`createTokens({ scopeId? })`** for a dedicated token + theme API. Default `import { tokens } from 'typestyles'` is `createTokens()`. When `scopeId` is set, `tokens.create` / `createTheme` emit scoped `--{scope}-namespace-*` variables and `.theme-{scope}-{name}` classes (sanitized segments).
+  - New exports: `mergeClassNaming`, `defaultClassNamingConfig`, `scopedTokenNamespace`, and types `StylesApi`, `TokensApi`, `CreateTokensOptions`.
+- Low-level **`createComponent`**, **`createClass`**, and **`createHashClass`** now take **`ClassNamingConfig`** as the first argument when imported from internal modules; app code should use `createStyles()` or the default `styles` object instead.
+
 ## 0.4.0
 
 ### Minor Changes

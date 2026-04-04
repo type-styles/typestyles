@@ -1,14 +1,35 @@
-import type { TokenValues, TokenRef } from './types.js';
+import type { TokenValues, TokenRef, ThemeConfig, ThemeSurface, ThemeOverrides } from './types.js';
 import { flattenTokenEntries } from './types.js';
+import { scopedTokenNamespace } from './class-naming.js';
 import { insertRule } from './sheet.js';
+import { createTheme, createDarkMode, when, colorMode } from './theme.js';
+
+export type CreateTokensOptions = {
+  /**
+   * Prefix for CSS custom property namespaces and theme class segments so multiple
+   * packages on one page do not share `--color-*` or `.theme-*` collisions.
+   */
+  scopeId?: string;
+};
 
 /**
- * Registry tracking which token namespaces have been created,
- * so tokens.use() can provide warnings in development.
+ * Design token and theme API bound to an optional `scopeId`.
  */
-const registeredNamespaces = new Set<string>();
-const createdTokenKeys = new Map<string, Set<string>>();
+export type TokensApi = {
+  /** Same `scopeId` passed to `createTokens`, if any. */
+  readonly scopeId: string | undefined;
+  create: <T extends TokenValues>(namespace: string, values: T) => TokenRef<T>;
+  use: <T extends TokenValues = TokenValues>(namespace: string) => TokenRef<T>;
+  createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
+  createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
+  when: typeof when;
+  colorMode: typeof colorMode;
+};
 
+/**
+ * Registry tracking which token namespaces have been created per instance,
+ * so `use()` can provide warnings in development.
+ */
 function getAllKeys(obj: TokenValues, prefix = ''): Set<string> {
   const keys = new Set<string>();
 
@@ -88,66 +109,65 @@ function createTokenProxy(namespace: string, prefix: string, allKeys: Set<string
 }
 
 /**
- * Create design tokens as CSS custom properties.
- *
- * Generates a :root rule with the custom properties and returns
- * a typed object where property access yields var() references.
- * Supports nested structures for hierarchical token organization.
+ * Create a tokens + theme API for a package or app. Each instance keeps its own
+ * namespace registry; with `scopeId`, emitted custom properties and theme classes
+ * are prefixed so they do not collide with other bundles on the same page.
  *
  * @example
  * ```ts
- * const color = tokens.create('color', {
- *   text: { primary: '#111827', secondary: '#6b7280' },
- *   background: { surface: '#ffffff', subtle: '#f9fafb' },
- * });
- *
- * color.text.primary  // "var(--color-text-primary)"
- * color.background.surface  // "var(--color-background-surface)"
+ * const tokens = createTokens({ scopeId: 'design-system' });
+ * const color = tokens.create('color', { primary: '#0066ff' });
+ * color.primary // var(--design-system-color-primary)
  * ```
  */
-export function createTokens<T extends TokenValues>(namespace: string, values: T): TokenRef<T> {
-  registeredNamespaces.add(namespace);
+export function createTokens(options: CreateTokensOptions = {}): TokensApi {
+  const scopeId = options.scopeId?.trim() || undefined;
 
-  const flatEntries = flattenTokenEntries(values);
-  const declarations = flatEntries
-    .map(([key, value]) => `--${namespace}-${key}: ${value}`)
-    .join('; ');
+  const registeredNamespaces = new Set<string>();
+  const createdTokenKeys = new Map<string, Set<string>>();
 
-  const css = `:root { ${declarations}; }`;
-  insertRule(`tokens:${namespace}`, css);
+  function create<T extends TokenValues>(namespace: string, values: T): TokenRef<T> {
+    registeredNamespaces.add(namespace);
 
-  const allKeys = getAllKeys(values);
-  createdTokenKeys.set(namespace, allKeys);
+    const cssNs = scopedTokenNamespace(scopeId, namespace);
+    const flatEntries = flattenTokenEntries(values);
+    const declarations = flatEntries
+      .map(([key, value]) => `--${cssNs}-${key}: ${value}`)
+      .join('; ');
 
-  return createTokenProxy(namespace, '', allKeys) as TokenRef<T>;
-}
+    const css = `:root { ${declarations}; }`;
+    insertRule(`tokens:${cssNs}`, css);
 
-/**
- * Reference tokens defined elsewhere without injecting CSS.
- *
- * Returns a typed proxy that produces var() references.
- * Useful for consuming shared tokens from a different module.
- *
- * @example
- * ```ts
- * const color = useTokens('color');
- * color.primary  // "var(--color-primary)"
- * ```
- */
-export function useTokens<T extends TokenValues = TokenValues>(namespace: string): TokenRef<T> {
-  if (
-    process.env.NODE_ENV !== 'production' &&
-    registeredNamespaces.size > 0 &&
-    !registeredNamespaces.has(namespace)
-  ) {
-    console.warn(
-      `[typestyles] tokens.use('${namespace}') references a namespace that hasn't been created yet. ` +
-        `Make sure tokens.create('${namespace}', ...) is called before using these tokens.`,
-    );
+    const allKeys = getAllKeys(values);
+    createdTokenKeys.set(namespace, allKeys);
+
+    return createTokenProxy(cssNs, '', allKeys) as TokenRef<T>;
   }
 
-  const allKeys = createdTokenKeys.get(namespace) ?? new Set<string>();
-  return createTokenProxy(namespace, '', allKeys) as TokenRef<T>;
-}
+  function use<T extends TokenValues = TokenValues>(namespace: string): TokenRef<T> {
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      registeredNamespaces.size > 0 &&
+      !registeredNamespaces.has(namespace)
+    ) {
+      console.warn(
+        `[typestyles] tokens.use('${namespace}') references a namespace that hasn't been created yet. ` +
+          `Make sure tokens.create('${namespace}', ...) is called before using these tokens.`,
+      );
+    }
 
-// createTheme has moved to theme.ts — re-exported via index.ts on the tokens namespace.
+    const cssNs = scopedTokenNamespace(scopeId, namespace);
+    const allKeys = createdTokenKeys.get(namespace) ?? new Set<string>();
+    return createTokenProxy(cssNs, '', allKeys) as TokenRef<T>;
+  }
+
+  return {
+    scopeId,
+    create,
+    use,
+    createTheme: (name, config) => createTheme(name, config, scopeId),
+    createDarkMode: (name, darkOverrides) => createDarkMode(name, darkOverrides, scopeId),
+    when,
+    colorMode,
+  };
+}

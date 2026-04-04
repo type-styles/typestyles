@@ -1,7 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { configureClassNaming, resetClassNaming } from './class-naming.js';
-import { createClass, createHashClass } from './styles.js';
-import { createComponent } from './component.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createStyles } from './styles.js';
 import { reset, flushSync } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
@@ -9,16 +7,11 @@ describe('class naming modes', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
-  });
-
-  afterEach(() => {
-    resetClassNaming();
   });
 
   it('semantic mode keeps readable component() class strings', () => {
-    configureClassNaming({ mode: 'semantic' });
-    const button = createComponent('btn', {
+    const styles = createStyles({ mode: 'semantic' });
+    const button = styles.component('btn', {
       base: { color: 'red' },
       primary: { backgroundColor: 'blue' },
     });
@@ -27,12 +20,12 @@ describe('class naming modes', () => {
   });
 
   it('hashed mode yields stable prefixed class names for component()', () => {
-    configureClassNaming({ mode: 'hashed', prefix: 'app' });
-    const a = createComponent('card', {
+    const styles = createStyles({ mode: 'hashed', prefix: 'app' });
+    const a = styles.component('card', {
       root: { padding: '8px' },
     });
     registeredNamespaces.clear();
-    const b = createComponent('card', {
+    const b = styles.component('card', {
       root: { padding: '8px' },
     });
     expect(a.root).toMatch(/^app-card-/);
@@ -40,19 +33,18 @@ describe('class naming modes', () => {
   });
 
   it('scopeId changes hashed output for the same logical component styles', () => {
-    configureClassNaming({ mode: 'hashed', scopeId: 'pkg-a' });
-    const x = createComponent('box', { main: { margin: 0 } }).main;
+    const sa = createStyles({ mode: 'hashed', scopeId: 'pkg-a' });
+    const x = sa.component('box', { main: { margin: 0 } }).main;
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
-    configureClassNaming({ mode: 'hashed', scopeId: 'pkg-b' });
-    const y = createComponent('box', { main: { margin: 0 } }).main;
+    const sb = createStyles({ mode: 'hashed', scopeId: 'pkg-b' });
+    const y = sb.component('box', { main: { margin: 0 } }).main;
     expect(x).not.toBe(y);
   });
 
   it('atomic mode omits the namespace slug in class strings', () => {
-    configureClassNaming({ mode: 'atomic', prefix: 'x' });
-    const button = createComponent('btn', {
+    const styles = createStyles({ mode: 'atomic', prefix: 'x' });
+    const button = styles.component('btn', {
       base: { color: 'red' },
     });
     expect(button.base).toMatch(/^x-[a-z0-9]+$/);
@@ -60,14 +52,14 @@ describe('class naming modes', () => {
   });
 
   it('styles.class respects naming mode', () => {
-    configureClassNaming({ mode: 'hashed', prefix: 't' });
-    const cls = createClass('hero', { display: 'flex' });
+    const styles = createStyles({ mode: 'hashed', prefix: 't' });
+    const cls = styles.class('hero', { display: 'flex' });
     expect(cls).toMatch(/^t-hero-/);
   });
 
   it('createComponent resolves variant keys to hashed classes', () => {
-    configureClassNaming({ mode: 'hashed', prefix: 'c' });
-    const btn = createComponent('cb', {
+    const styles = createStyles({ mode: 'hashed', prefix: 'c' });
+    const btn = styles.component('cb', {
       base: { padding: '4px' },
       variants: {
         intent: {
@@ -89,19 +81,19 @@ describe('class naming modes', () => {
     }
   });
 
-  it('createHashClass stays backward compatible when scopeId is empty', () => {
-    configureClassNaming({ scopeId: '' });
-    const cls = createHashClass({ color: 'red' }, 'lbl');
+  it('createHashClass uses default prefix when scopeId is empty', () => {
+    const styles = createStyles({ scopeId: '' });
+    const cls = styles.hashClass({ color: 'red' }, 'lbl');
     expect(cls.startsWith('ts-lbl-')).toBe(true);
   });
 
   it('createHashClass includes scopeId in the hash when set', () => {
-    const a = createHashClass({ width: 10 }, 'x');
+    const sa = createStyles();
+    const a = sa.hashClass({ width: 10 }, 'x');
     reset();
     registeredNamespaces.clear();
-    resetClassNaming();
-    configureClassNaming({ scopeId: 's1' });
-    const b = createHashClass({ width: 10 }, 'x');
+    const sb = createStyles({ scopeId: 's1' });
+    const b = sb.hashClass({ width: 10 }, 'x');
     expect(a).not.toBe(b);
   });
 });

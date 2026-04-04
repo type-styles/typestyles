@@ -7,6 +7,21 @@ description: Design tokens and theming with tokens.create, createTheme, and colo
 
 Tokens are design primitives (colors, spacing, etc.) exposed as CSS custom properties. They keep your styles consistent and make theming straightforward.
 
+## Scoped token instances
+
+The default `import { tokens } from 'typestyles'` is unscoped. For a **package or micro-frontend** that shares the page with other TypeStyles bundles, call **`createTokens({ scopeId })`** once and reuse that instance so custom properties and theme classes do not collide:
+
+```ts
+import { createTokens } from 'typestyles';
+
+export const tokens = createTokens({ scopeId: 'acme-ui' });
+
+const color = tokens.create('color', { primary: '#0066ff' });
+// var(--acme-ui-color-primary)
+```
+
+See [Class naming](/docs/class-naming) for how this pairs with `createStyles({ scopeId })` for styles.
+
 ## Creating tokens
 
 Use `tokens.create(prefix, object)` to define a set of tokens:

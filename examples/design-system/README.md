@@ -63,8 +63,11 @@ import { defaultTheme } from '@examples/design-system';
 ## Theming helpers
 
 ```ts
-import { mergeDesignThemeOverrides, createBrandAccentOverrides } from '@examples/design-system';
-import { tokens } from 'typestyles';
+import {
+  mergeDesignThemeOverrides,
+  createBrandAccentOverrides,
+  tokens,
+} from '@examples/design-system';
 
 const brand = createBrandAccentOverrides({
   accent: '#7c3aed',

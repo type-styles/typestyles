@@ -21,29 +21,15 @@ export type ClassNamingConfig = {
   scopeId: string;
 };
 
-const defaultConfig: ClassNamingConfig = {
+/** Default naming options used by `createStyles()` when no overrides are passed. */
+export const defaultClassNamingConfig: ClassNamingConfig = {
   mode: 'semantic',
   prefix: 'ts',
   scopeId: '',
 };
 
-let current: ClassNamingConfig = { ...defaultConfig };
-
-export function getClassNamingConfig(): Readonly<ClassNamingConfig> {
-  return current;
-}
-
-/**
- * Set global class naming options. Call once at app or package entry
- * (e.g. design-system `index.ts`) for per-package adoption in a monorepo.
- */
-export function configureClassNaming(partial: Partial<ClassNamingConfig>): void {
-  current = { ...current, ...partial };
-}
-
-/** Restore defaults (primarily for tests). */
-export function resetClassNaming(): void {
-  current = { ...defaultConfig };
+export function mergeClassNaming(partial?: Partial<ClassNamingConfig>): ClassNamingConfig {
+  return { ...defaultClassNamingConfig, ...partial };
 }
 
 export function stableSerialize(value: unknown): string {
@@ -75,9 +61,21 @@ export function sanitizeClassSegment(label: string): string {
   return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '') || 'style';
 }
 
+/** CSS custom property namespace segment for `tokens.create` / `createTheme` when `scopeId` is set. */
+export function scopedTokenNamespace(
+  scopeId: string | undefined,
+  logicalNamespace: string,
+): string {
+  if (!scopeId || !scopeId.trim()) return logicalNamespace;
+  return `${sanitizeClassSegment(scopeId)}-${logicalNamespace}`;
+}
+
 /** `styles.class(name, …)` */
-export function buildSingleClassName(name: string, properties: CSSProperties): string {
-  const cfg = getClassNamingConfig();
+export function buildSingleClassName(
+  cfg: ClassNamingConfig,
+  name: string,
+  properties: CSSProperties,
+): string {
   if (cfg.mode === 'semantic') return name;
 
   const payload = stableSerialize({
@@ -96,11 +94,11 @@ export function buildSingleClassName(name: string, properties: CSSProperties): s
  * a variant segment (`base`, `intent-primary`, `root-trigger-primary`, …).
  */
 export function buildComponentClassName(
+  cfg: ClassNamingConfig,
   namespace: string,
   suffix: string,
   properties: CSSProperties,
 ): string {
-  const cfg = getClassNamingConfig();
   if (cfg.mode === 'semantic') return `${namespace}-${suffix}`;
 
   const payload = stableSerialize({

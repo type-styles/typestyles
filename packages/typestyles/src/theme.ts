@@ -14,6 +14,7 @@ import type {
   TokenValues,
 } from './types.js';
 import { flattenTokenEntries } from './types.js';
+import { sanitizeClassSegment, scopedTokenNamespace } from './class-naming.js';
 import { insertRule, insertRules } from './sheet.js';
 
 // ---------------------------------------------------------------------------
@@ -288,15 +289,22 @@ function mergeCompiled(a: CompiledCondition, b: CompiledCondition): CompiledCond
 // CSS declaration building
 // ---------------------------------------------------------------------------
 
-function buildDeclarations(overrides: ThemeOverrides): string {
+function buildDeclarations(scopeId: string | undefined, overrides: ThemeOverrides): string {
   const parts: string[] = [];
   for (const [namespace, values] of Object.entries(overrides)) {
     if (values === null || values === undefined) continue;
+    const cssNs = scopedTokenNamespace(scopeId, namespace);
     for (const [key, value] of flattenTokenEntries(values as TokenValues)) {
-      parts.push(`--${namespace}-${key}: ${value}`);
+      parts.push(`--${cssNs}-${key}: ${value}`);
     }
   }
   return parts.join('; ');
+}
+
+function themeSegment(scopeId: string | undefined, name: string): string {
+  const n = sanitizeClassSegment(name);
+  if (!scopeId) return n;
+  return `${sanitizeClassSegment(scopeId)}-${n}`;
 }
 
 function buildSelector(themeClass: string, compiled: CompiledCondition): string {
@@ -486,7 +494,7 @@ function createThemeSurface(name: string, className: string): ThemeSurface {
  * // `${acme}` === 'theme-acme'
  * ```
  */
-export function createTheme(name: string, config: ThemeConfig): ThemeSurface {
+export function createTheme(name: string, config: ThemeConfig, scopeId?: string): ThemeSurface {
   if (process.env.NODE_ENV !== 'production') {
     if (config.modes && config.colorMode) {
       throw new Error(
@@ -496,15 +504,16 @@ export function createTheme(name: string, config: ThemeConfig): ThemeSurface {
     }
   }
 
-  const className = `theme-${name}`;
+  const segment = themeSegment(scopeId, name);
+  const className = `theme-${segment}`;
 
   // 1. Base rule
-  const baseDecls = config.base ? buildDeclarations(config.base) : '';
+  const baseDecls = config.base ? buildDeclarations(scopeId, config.base) : '';
   if (baseDecls) {
-    insertRule(`theme:${name}:base`, `.${className} { ${baseDecls}; }`);
+    insertRule(`theme:${segment}:base`, `.${className} { ${baseDecls}; }`);
   } else {
     // Emit an empty base rule so the class always exists in the sheet
-    insertRule(`theme:${name}:base`, `.${className} { }`);
+    insertRule(`theme:${segment}:base`, `.${className} { }`);
   }
 
   // 2. Mode layers
@@ -512,7 +521,7 @@ export function createTheme(name: string, config: ThemeConfig): ThemeSurface {
   const rules: Array<{ key: string; css: string }> = [];
 
   for (const mode of modes) {
-    const decls = buildDeclarations(mode.overrides);
+    const decls = buildDeclarations(scopeId, mode.overrides);
     if (!decls) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(
@@ -527,7 +536,7 @@ export function createTheme(name: string, config: ThemeConfig): ThemeSurface {
     for (let i = 0; i < compiledBranches.length; i++) {
       const branch = compiledBranches[i];
       const selector = buildSelector(className, branch);
-      const key = `theme:${name}:mode:${mode.id}:branch:${i}`;
+      const key = `theme:${segment}:mode:${mode.id}:branch:${i}`;
       rules.push({ key, css: buildRule(selector, decls, branch.media) });
     }
   }
@@ -554,8 +563,16 @@ export function createTheme(name: string, config: ThemeConfig): ThemeSurface {
  * });
  * ```
  */
-export function createDarkMode(name: string, darkOverrides: ThemeOverrides): ThemeSurface {
-  return createTheme(name, {
-    modes: [{ id: 'dark', overrides: darkOverrides, when: when.prefersDark }],
-  });
+export function createDarkMode(
+  name: string,
+  darkOverrides: ThemeOverrides,
+  scopeId?: string,
+): ThemeSurface {
+  return createTheme(
+    name,
+    {
+      modes: [{ id: 'dark', overrides: darkOverrides, when: when.prefersDark }],
+    },
+    scopeId,
+  );
 }

@@ -1,6 +1,6 @@
 ---
 title: Class naming
-description: Configure semantic, hashed, or atomic-style class names for styles.create, styles.class, and styles.component
+description: Per-instance semantic, hashed, or atomic class names via createStyles; scoped tokens via createTokens
 ---
 
 # Class naming
@@ -9,7 +9,6 @@ By default, typestyles emits **readable semantic** class names: `button-base`, `
 
 Naming applies to:
 
-- [`styles.create`](/docs/styles)
 - [`styles.class`](/docs/styles)
 - [`styles.component`](/docs/components) (single-part components and [multipart `slots`](/docs/components))
 
@@ -17,39 +16,51 @@ It does **not** change [`@typestyles/props`](/docs/atomic-css) utility naming; t
 
 ## Quick start
 
-Call **`configureClassNaming`** once at app or package entry (for example your design system `index.ts` or root `main.tsx`) **before** modules register styles:
+**Class names** are configured per **`createStyles()`** instance (not with a global singleton). Create one instance per package, design system, or micro-frontend and import that everywhere in the package:
 
 ```ts
-import { configureClassNaming } from 'typestyles';
+import { createStyles } from 'typestyles';
 
-configureClassNaming({
+export const styles = createStyles({
   mode: 'hashed',
   prefix: 'ds',
   scopeId: '@acme/design-system',
 });
 ```
 
-Then existing `styles.create` / `styles.component` calls keep the same TypeScript API; only the emitted `class` strings and generated selectors change.
+Use `styles.component`, `styles.class`, `styles.hashClass`, and `styles.withUtils` from that object. The default `import { styles } from 'typestyles'` is simply `createStyles()` with default options—fine for apps that own the whole page.
+
+**Tokens and themes** use the same idea: **`createTokens({ scopeId })`** so custom properties and theme classes do not collide when multiple bundles share one document:
+
+```ts
+import { createTokens } from 'typestyles';
+
+export const tokens = createTokens({ scopeId: '@acme/design-system' });
+```
+
+With `scopeId` set, `tokens.create('color', …)` emits variables like `--acme-design-system-color-primary` (sanitized), and `tokens.createTheme('dark', …)` registers a theme class whose segment includes the scope.
 
 ## API
 
-### `configureClassNaming(options)`
+### `createStyles(options?)`
 
-Merges into the current global config (partial updates are allowed).
+Returns a style API with the same methods as the default `styles` export. Options are a partial **`ClassNamingConfig`** merged onto defaults:
 
 | Option    | Type                                 | Default      | Description                                                                                                                                                |
 | --------- | ------------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mode`    | `'semantic' \| 'hashed' \| 'atomic'` | `'semantic'` | How class strings are built (see below).                                                                                                                   |
-| `prefix`  | `string`                             | `'ts'`       | Leading segment for hashed/atomic output and for [`styles.hashClass`](#styleshashclass).                                                                   |
+| `prefix`  | `string`                             | `'ts'`       | Leading segment for hashed/atomic output and for `hashClass`.                                                                                              |
 | `scopeId` | `string`                             | `''`         | Optional id (package name, app name) mixed into the hash input so two packages can reuse the same logical namespace without sharing the same class string. |
 
-### `getClassNamingConfig()`
+The instance also exposes **`styles.classNaming`**: a read-only snapshot of the resolved config (useful for debugging).
 
-Returns a read-only snapshot of the active config (useful for debugging).
+### `mergeClassNaming(partial?)` and `defaultClassNamingConfig`
 
-### `resetClassNaming()`
+Use these when you need the resolved config object without creating a full API (for example tests or tooling).
 
-Restores defaults. Intended for **tests** so one suite cannot leak naming mode into another; not something you typically call in application code.
+### `scopedTokenNamespace(scopeId, logicalNamespace)`
+
+Returns the CSS custom property namespace segment used for `tokens.create` when `scopeId` is set (sanitized). Advanced / library use.
 
 ## Modes
 
@@ -57,7 +68,7 @@ Restores defaults. Intended for **tests** so one suite cannot leak naming mode i
 
 Human-readable, stable names derived from the namespace and variant segment:
 
-- `styles.create('card', { base: { … } })` → `card-base`
+- `styles.class('card', { … })` → `card`
 - `styles.component('button', { … })` → `button-base`, `button-intent-primary`, etc.
 - Components with `slots` → `{namespace}-{slot}`, `{namespace}-{slot}-{dimension}-{option}`, etc.
 
@@ -75,29 +86,29 @@ This mode is a **prototype** for hash-only ergonomics: each component rule is st
 
 ## `styles.hashClass`
 
-[`styles.hashClass(styles, label?)`](/docs/styles) always emits a hashed class from the style object. It uses the configured **`prefix`**. If **`scopeId`** is non-empty, it is included in the hash input so scoped packages do not collide.
-
-When `scopeId` is the default empty string, the hash input matches the previous behavior (properties only, plus label handling), so existing class strings stay stable if you only adopt `prefix` or other naming modes for `create` / `component`.
+`hashClass` on a given instance uses that instance’s **`prefix`** and **`scopeId`**. If **`scopeId`** is empty, the hash input matches the historical behavior (properties only, plus label handling) for the same style shape.
 
 ## Monorepos and `scopeId`
 
-Two packages might both use `styles.create('button', …)` or `styles.component('button', …)`. With **`semantic`** mode, you rely on distinct namespaces. With **`hashed`** / **`atomic`**, set a different **`scopeId`** per package (for example the npm package name) so identical style objects in different packages do not map to the same class string.
+Two packages might both use `styles.component('button', …)`. With **`semantic`** mode, you rely on distinct namespaces or separate bundles. With **`hashed`** / **`atomic`**, give each package its own **`createStyles({ scopeId: '…' })`** so identical style objects in different packages do not map to the same class string.
 
-## SSR and entry order
+For tokens, use **`createTokens({ scopeId })`** per package so `--color-*` and `.theme-*` rules do not overwrite each other on `:root` or clash by name.
 
-Naming is **global** for the loaded bundle. Ensure **`configureClassNaming`** runs before any module that calls `styles.create`, `styles.class`, or `styles.component` during that load. In SSR, the server bundle should apply the same configuration as the client so class names and injected CSS match.
+## SSR
+
+Use the **same** `createStyles` / `createTokens` options (including `scopeId`) on the server and the client so class names, custom property names, and injected CSS match.
 
 ## Testing
 
-If tests call **`configureClassNaming`**, reset in **`beforeEach`** (or **`afterEach`**) so other tests keep the default:
+Use a **dedicated** `createStyles({ … })` per test file or suite when you need hashed/atomic mode. There is no global naming state to reset—only call **`reset()`** (and related sheet helpers) to clear injected CSS between tests. Default **`import { styles } from 'typestyles'`** is still shared across tests, so prefer a local `createStyles()` when asserting on class strings under non-semantic modes.
 
 ```ts
-import { resetClassNaming } from 'typestyles';
-import { reset } from 'typestyles';
+import { createStyles, reset } from 'typestyles';
+
+const styles = createStyles({ mode: 'hashed', prefix: 't', scopeId: 'test-a' });
 
 beforeEach(() => {
   reset();
-  resetClassNaming();
 });
 ```
 
@@ -107,7 +118,8 @@ See also [Testing](/docs/testing).
 
 ## Related
 
-- [Styles](/docs/styles) — `styles.create`, `styles.class`, `compose`, `withUtils`
+- [Styles](/docs/styles) — `styles.class`, `compose`, `withUtils`
 - [Components](/docs/components) — `styles.component` and `slots`
+- [Tokens](/docs/tokens) — `createTokens` and scoped custom properties
 - [Atomic CSS Utilities](/docs/atomic-css) — `@typestyles/props` (separate naming scheme)
 - [API Reference](/docs/api-reference) — export list

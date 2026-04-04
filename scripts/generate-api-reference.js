@@ -111,7 +111,12 @@ Auto-generated documentation for all typestyles APIs.
   apiDoc += `## Core Exports\n\n`;
 
   // Document styles
-  const stylesDoc = jsdocs.find((j) => j.description.includes('Style creation'));
+  const stylesDoc = jsdocs.find(
+    (j) =>
+      j.description.includes('style API') ||
+      j.description.includes('Style creation') ||
+      j.description.includes('Default style'),
+  );
   if (stylesDoc) {
     apiDoc += `### \`styles\`\n\n${stylesDoc.description}\n\n`;
     apiDoc += `**Methods:**\n\n`;
@@ -119,20 +124,37 @@ Auto-generated documentation for all typestyles APIs.
     apiDoc += `- \`styles.class(name, properties)\`: Create a single class\n`;
     apiDoc += `- \`styles.hashClass(properties, label?)\`: Create a deterministic hashed class\n`;
     apiDoc += `- \`styles.compose(...fns)\`: Compose multiple style functions\n`;
-    apiDoc += `- \`styles.withUtils(utils)\`: Create utility-aware styles API\n\n`;
+    apiDoc += `- \`styles.withUtils(utils)\`: Create utility-aware styles API\n`;
+    apiDoc += `- \`styles.classNaming\`: Read-only resolved naming config for the default \`styles\` instance\n\n`;
     apiDoc += `\n`;
   }
 
+  apiDoc += `### \`createStyles(options?)\`\n\n`;
+  apiDoc += `Returns a new style API (same shape as \`styles\`) with its own class naming config. Pass \`Partial<ClassNamingConfig>\`: \`mode\` (\`'semantic' | 'hashed' | 'atomic'\`), \`prefix\`, \`scopeId\`. Use one instance per package or micro-frontend.\n\n`;
+  apiDoc += `The default \`import { styles } from 'typestyles'\` is \`createStyles()\` with default options.\n\n`;
+
   // Document tokens
-  const tokensDoc = jsdocs.find((j) => j.description.includes('Design token'));
+  const tokensDoc = jsdocs.find(
+    (j) =>
+      j.description.includes('Design token') ||
+      j.description.includes('token API') ||
+      j.description.includes('Default token'),
+  );
   if (tokensDoc) {
     apiDoc += `### \`tokens\`\n\n${tokensDoc.description}\n\n`;
     apiDoc += `**Methods:**\n\n`;
     apiDoc += `- \`tokens.create(namespace, values)\`: Creates CSS custom properties\n`;
     apiDoc += `- \`tokens.use(namespace)\`: References existing tokens\n`;
-    apiDoc += `- \`tokens.createTheme(name, overrides)\`: Creates theme class\n`;
+    apiDoc += `- \`tokens.createTheme(name, config)\`: Registers a theme class that overrides token custom properties\n`;
+    apiDoc += `- \`tokens.createDarkMode(name, darkOverrides)\`: Shorthand theme with a single dark \`@media\` branch\n`;
+    apiDoc += `- \`tokens.when\` / \`tokens.colorMode\`: Condition helpers for themes\n`;
+    apiDoc += `- \`tokens.scopeId\`: The scope passed to \`createTokens\`, if any\n\n`;
     apiDoc += `\n`;
   }
+
+  apiDoc += `### \`createTokens(options?)\`\n\n`;
+  apiDoc += `Returns a token + theme API bound to an optional \`scopeId\`. When set, \`tokens.create('color', …)\` emits \`--{scopeId}-color-*\` variables and \`tokens.createTheme('dark', …)\` registers \`.theme-{scopeId}-dark\` (sanitized segments).\n\n`;
+  apiDoc += `The default \`import { tokens } from 'typestyles'\` is \`createTokens()\` (no scope).\n\n`;
 
   // Document keyframes
   const keyframesDoc = jsdocs.find((j) => j.description.includes('Keyframe'));
@@ -144,7 +166,11 @@ Auto-generated documentation for all typestyles APIs.
   }
 
   // Document color
-  const colorDoc = jsdocs.find((j) => j.description.includes('Color'));
+  const colorDoc = jsdocs.find(
+    (j) =>
+      j.description.includes('Type-safe CSS color') ||
+      (j.description.includes('Color') && j.description.includes('function')),
+  );
   if (colorDoc) {
     apiDoc += `### \`color\`\n\n${colorDoc.description}\n\n`;
     apiDoc += `**Functions:**\n\n`;
@@ -160,6 +186,12 @@ Auto-generated documentation for all typestyles APIs.
     apiDoc += `- \`color.alpha(color, opacity, space?)\`: Adjust opacity\n`;
     apiDoc += `\n`;
   }
+
+  apiDoc += `### Class naming helpers\n\n`;
+  apiDoc += `- \`mergeClassNaming(partial?)\`: Build a full \`ClassNamingConfig\` from partial options\n`;
+  apiDoc += `- \`defaultClassNamingConfig\`: Default \`mode\`, \`prefix\`, and \`scopeId\`\n`;
+  apiDoc += `- \`scopedTokenNamespace(scopeId, logicalNamespace)\`: CSS variable namespace segment for scoped token instances\n\n`;
+  apiDoc += `See [Class naming](/docs/class-naming).\n\n`;
 
   // Add example usage
   apiDoc += `## Usage Examples\n\n`;
@@ -184,6 +216,12 @@ Auto-generated documentation for all typestyles APIs.
   apiDoc += `  secondary: '#6b7280',\n`;
   apiDoc += `});\n\n`;
   apiDoc += `color.primary; // "var(--color-primary)"\n`;
+  apiDoc += `\`\`\`\n\n`;
+
+  apiDoc += `### Scoped instances (libraries / micro-frontends)\n\n\`\`\`ts\n`;
+  apiDoc += `import { createStyles, createTokens } from 'typestyles';\n\n`;
+  apiDoc += `export const styles = createStyles({ scopeId: 'my-ds', mode: 'hashed', prefix: 'ds' });\n`;
+  apiDoc += `export const tokens = createTokens({ scopeId: 'my-ds' });\n`;
   apiDoc += `\`\`\`\n\n`;
 
   apiDoc += `### Creating Animations\n\n\`\`\`ts\n`;
