@@ -90,3 +90,5 @@ const color = tokens.create('color', {
 ```
 
 You stay in control of the CSS; typestyles just generates the class names and custom properties.
+
+For Vite and Next.js, you can ship **zero-runtime CSS in production** while keeping the runtime during development — see [Zero-runtime extraction](/docs/zero-runtime) and the [Vite plugin](/docs/vite-plugin).
