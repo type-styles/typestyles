@@ -150,6 +150,23 @@ To ship a static `typestyles.css` and avoid client-side `<style>` injection (use
 
 `withTypestylesExtract` sets **`NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED`** via `next.config` `env` (works with **webpack and Turbopack**) and adds webpack **`DefinePlugin`** for `__TYPESTYLES_RUNTIME_DISABLED__` on client bundles when webpack runs. Example app: `examples/next-app`.
 
+### Runtime in development, zero-runtime in production
+
+During `next dev`, keeping the client runtime **enabled** avoids tying every style tweak to a pre-build extraction step. In production, disable injection so the browser loads one cacheable stylesheet.
+
+```js
+// next.config.mjs
+import { withTypestylesExtract } from '@typestyles/next/build';
+
+const base = {
+  /* your config */
+};
+
+export default process.env.NODE_ENV === 'production' ? withTypestylesExtract(base) : base;
+```
+
+You still typically generate `typestyles.css` before production builds (CI or `prebuild`). The example app uses this pattern.
+
 ## API Reference
 
 ### getRegisteredCss

@@ -39,9 +39,13 @@ export interface TypestylesPluginOptions {
   warnDuplicates?: boolean;
   /**
    * Mode for typestyles integration:
-   * - "runtime" (default): HMR only, no build-time extraction.
-   * - "build": emit a static CSS asset during build using typestyles/build.
-   * - "hybrid": both runtime injection and build-time CSS asset.
+   * - `"runtime"`: HMR only, no build-time extraction.
+   * - `"build"`: emit a static CSS asset on `vite build` and disable client injection there.
+   * - `"hybrid"`: extract on build and keep runtime-compatible behavior.
+   *
+   * When omitted and `extract.modules` is non-empty, defaults to `"build"`: `vite dev` keeps
+   * runtime injection + HMR (runtime is only disabled during `vite build`), and production emits
+   * the CSS file. With no `extract` config, defaults to `"runtime"`.
    */
   mode?: 'runtime' | 'build' | 'hybrid';
   /**
@@ -96,7 +100,9 @@ export function extractNamespaces(code: string): {
  * before re-execution — so updated CSS takes effect without a full reload.
  */
 export default function typestylesPlugin(options: TypestylesPluginOptions = {}): Plugin {
-  const { warnDuplicates = true, mode = 'runtime', extract } = options;
+  const { warnDuplicates = true, extract } = options;
+  const extractModules = extract?.modules ?? [];
+  const mode = options.mode ?? (extractModules.length > 0 ? 'build' : 'runtime');
 
   // Track namespaces per module for duplicate detection
   const moduleNamespaces = new Map<string, { keys: string[]; prefixes: string[] }>();
@@ -180,7 +186,7 @@ if (import.meta.hot) {
     async generateBundle() {
       if (!isBuildCommand) return;
       if (mode === 'runtime') return;
-      if (!extract || !extract.modules.length) return;
+      if (!extract || !extractModules.length) return;
       if (!resolvedConfig) return;
 
       const root = resolvedConfig.root ?? process.cwd();
@@ -189,7 +195,7 @@ if (import.meta.hot) {
       try {
         const css = await runTypestylesBuild({
           root,
-          modules: extract.modules,
+          modules: extractModules,
         });
         this.emitFile({
           type: 'asset',

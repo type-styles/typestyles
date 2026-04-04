@@ -23,7 +23,7 @@ Typestyles occupies a unique position in the CSS-in-JS landscape:
 | Integration           | Priority | Notes                                                                                                                                                                                                                                                                           |
 | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Next.js**           | High     | `@typestyles/next` — App Router, Pages Router, RSC documented (`packages/next` README, `examples/next-app`). Extract mode: webpack `DefinePlugin` **+** `next.config` `env` (`NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED`) so **Turbopack** disables client runtime injection too. |
-| **Vite**              | High     | `@typestyles/vite` ships today (HMR). Zero-runtime **`mode`** / extraction evolution tracked in §2. Example: `examples/vite-app`.                                                                                                                                               |
+| **Vite**              | High     | `@typestyles/vite` ships HMR plus build extraction (`extract`; default `build` mode when modules are listed). Example: `examples/vite-app`. Further polish tracked in §2.                                                                                                       |
 | **Rollup / Rolldown** | Medium   | `@typestyles/rollup` ships (runtime / build / hybrid). Rolldown supported via same plugin. Example: `examples/rollup-app`, `examples/rolldown-app`.                                                                                                                             |
 | **Webpack**           | Medium   | No standalone `@typestyles/webpack` yet; generic enterprise bundler integration. Next-specific webpack wiring lives under `@typestyles/next/build`.                                                                                                                             |
 | **PostCSS**           | Medium   | No public PostCSS plugin today (only internal PostCSS use in `@typestyles/migrate`). Plugin would unlock CSS-pipeline adoption.                                                                                                                                                 |
@@ -36,25 +36,16 @@ Typestyles occupies a unique position in the CSS-in-JS landscape:
 
 ### 2. Zero-Runtime Build Option
 
-- **Goal**: Optional "no runtime CSS-in-JS" mode that still uses the same `styles`, `tokens`, and `keyframes` APIs.
-- **Package**: `@typestyles/build` for build-time CSS extraction (CLI + Node API).
+- **Goal**: Optional "no runtime CSS-in-JS" mode that still uses the same `styles`, `tokens`, and `keyframes` APIs. **Shipped** for Vite/Rollup via `@typestyles/build-runner` + plugin `extract`; Next via `@typestyles/next/build` + `withTypestylesExtract`.
+- **Package**: `@typestyles/build` for build-time CSS collection (Node API); integrations call into `@typestyles/build-runner` for bundler pipelines.
 - **Output**:
   - Generates static CSS files at build time (like vanilla-extract).
-  - Emits a manifest mapping namespaces → class name strings so application code can stay untouched.
-- **Integration – Vite**
-  - Extend `@typestyles/vite` with a `mode` option: `"runtime"` (default), `"build"`, `"hybrid"`.
-  - In `"build"` mode, the plugin:
-    - Scans modules that import `typestyles` (re-using the existing namespace extraction logic).
-    - Runs a Node-side collector that imports those modules, calls `getRegisteredCss`, and writes `typestyles.css`.
-    - Injects the CSS file as a virtual asset linked from the Vite bundle.
-    - Ensures browser bundles use a no-op sheet implementation so there is effectively zero runtime styling cost.
-- **Integration – Next.js**
-  - Add a `@typestyles/next/build` entrypoint that:
-    - Provides a Next.js-compatible `build` helper to generate a CSS file + manifest during `next build`.
-    - Hooks into `@typestyles/next/server` utilities (like `getRegisteredCss`) to collect styles.
-  - Recommended wiring:
-    - Use the manifest to keep using `styles.*` APIs in components without runtime insertion on the client.
-    - Inject the generated CSS via Next.js `app` directory layout (e.g. global import in `layout.tsx` or metadata styles).
+  - Optional manifest mapping (see `examples/next-app`) for tooling; class APIs stay the same in app code.
+- **Integration – Vite** (done)
+  - `mode`: `"runtime"` | `"build"` | `"hybrid"`; with `extract.modules` set, `mode` defaults to `"build"` so `vite dev` keeps HMR/runtime and `vite build` emits CSS + disables client injection.
+- **Integration – Next.js** (done)
+  - `@typestyles/next/build` provides `buildTypestylesForNext`, `withTypestylesExtract`, and Turbopack-safe `NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED`.
+  - Recommended: apply `withTypestylesExtract` only in production; import generated CSS from the root layout.
 - **Motivation**
   - Addresses the "runtime overhead" concern that led companies to abandon Emotion/styled-components.
   - Keeps incremental adoption: projects can start in runtime mode and later switch specific routes or the whole app to build mode.

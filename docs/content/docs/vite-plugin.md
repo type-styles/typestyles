@@ -30,6 +30,8 @@ export default defineConfig({
 });
 ```
 
+For **zero-runtime production** builds while keeping **runtime + HMR in development**, add `extract` with your style entry modules (see [Zero-runtime extraction](/docs/zero-runtime)). When `extract.modules` is non-empty, the plugin defaults to `mode: 'build'`: `vite dev` still injects styles at runtime, and `vite build` emits a static CSS file and strips client injection.
+
 ## Features
 
 ### Hot Module Replacement (HMR)
@@ -60,6 +62,34 @@ This helps catch issues early, since duplicate namespaces can cause unexpected s
 
 ## Configuration
 
+### Runtime in dev, static CSS in production (recommended for SPAs)
+
+This is the usual setup for Vite: **development** uses the typestyles runtime so edits hot-reload without running a separate extraction step; **production** emits a real `.css` asset the browser can cache and parse in parallel with JS.
+
+Configure `extract` with one or more modules that import every registration side effect (often a small entry file that re-exports your tokens and components). You do **not** need to pass `mode` — with `extract.modules` set, it defaults to `build`, and the plugin only disables the runtime during `vite build`, not during `vite dev`.
+
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import typestyles from '@typestyles/vite';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    typestyles({
+      extract: {
+        modules: ['src/typestyles-entry.ts'],
+        fileName: 'typestyles.css',
+      },
+    }),
+  ],
+});
+```
+
+Link the generated file from `index.html` (for example `<link rel="stylesheet" href="/typestyles.css" />`). In dev the file is not emitted yet; the link may 404 harmlessly while the runtime supplies the same rules. Production builds include the asset.
+
+To force runtime-only everywhere (no extraction), set `mode: 'runtime'` even when `extract` is present. For dynamic values that cannot be extracted, see `mode: 'hybrid'` in [Zero-runtime extraction](/docs/zero-runtime).
+
 ### Disable duplicate warnings
 
 If you have a legitimate use case for duplicate namespaces (uncommon), you can disable the warning:
@@ -81,7 +111,7 @@ export default defineConfig({
 
 When you save a file that imports from `typestyles`, the plugin:
 
-1. **Extracts namespaces**: Parses your code to find all `styles.create()`, `tokens.create()`, `createTheme()`, and `keyframes.create()` calls
+1. **Extracts namespaces**: Parses your code to find all `styles.component()`, `tokens.create()`, `createTheme()`, and `keyframes.create()` calls
 
 2. **Injects HMR code**: Adds Vite's `import.meta.hot` handlers to the module
 
@@ -109,7 +139,7 @@ export const color = tokens.create('color', {
 import { styles } from 'typestyles';
 import { color } from './tokens';
 
-export const button = styles.create('button', {
+export const button = styles.component('button', {
   base: {
     backgroundColor: color.primary,
     padding: '8px 16px',
@@ -192,7 +222,7 @@ export default defineConfig({
 
 ## SSR with Vite
 
-The plugin is development-only and doesn't affect SSR. For SSR, use `collectStyles()` from `typestyles/server` as described in the [SSR guide](/docs/ssr).
+HMR hooks are dev-only (`import.meta.hot`). For build-time extraction, production client bundles get `__TYPESTYLES_RUNTIME_DISABLED__` so the sheet does not inject `<style>` tags; pair that with the emitted CSS file or SSR helpers. For SSR without extraction, use `collectStyles()` from `typestyles/server` as described in the [SSR guide](/docs/ssr).
 
 ## Troubleshooting
 
@@ -225,14 +255,15 @@ The plugin adds minimal overhead:
 
 - Only transforms files that import from `'typestyles'`
 - Transformation is a simple regex match, not a full AST parse
-- No runtime code is added in production builds
+- HMR helpers are stripped from production bundles; extraction runs only during `vite build` when using `build` or `hybrid` mode
 
 ## Is the plugin required?
 
-No. TypeStyles works perfectly without it. The plugin is purely a development convenience for:
+No. TypeStyles works perfectly without it. The plugin improves DX for:
 
 - Faster iteration with HMR
 - Early warning about duplicate namespaces
+- Optional production CSS extraction via `extract` (see [Zero-runtime extraction](/docs/zero-runtime))
 
 If you prefer full page reloads or use a different bundler, you don't need this plugin.
 
@@ -241,7 +272,6 @@ If you prefer full page reloads or use a different bundler, you don't need this 
 Planned enhancements (not yet implemented):
 
 - **Dead style detection**: Warn when styles are defined but never used
-- **Build-time extraction**: Optionally extract static styles to CSS files for production
 - **Source maps**: Map generated CSS back to your style definitions
 
 Stay tuned to the [GitHub repository](https://github.com/dbanksdesign/typestyles) for updates.

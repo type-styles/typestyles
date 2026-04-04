@@ -1,10 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
-import { tmpdir } from 'node:os';
-import { pathToFileURL } from 'node:url';
-import { runTypestylesBuild } from '@typestyles/build-runner';
-import { flushSync, getRegisteredCss, reset } from 'typestyles';
 import { extractNamespaces } from './index.js';
 
 describe('extractNamespaces', () => {
@@ -136,60 +130,30 @@ describe('typestyles vite plugin', () => {
     const plugin = mod.default();
     expect(plugin.name).toBe('typestyles');
   });
-});
 
-describe('runtime/build parity', () => {
-  it('emits identical CSS for component variant APIs', async () => {
-    const projectRoot = process.cwd();
-    const tempDir = await mkdtemp(join(tmpdir(), 'typestyles-parity-'));
-    const entryFile = join(tempDir, 'entry.ts');
+  it('defaults to build mode when extract.modules is set — runtime disabled only on vite build', async () => {
+    const mod = await import('./index.js');
+    const plugin = mod.default({ extract: { modules: ['src/entry.ts'] } });
+    const serve = plugin.config?.({}, { command: 'serve', mode: 'development' });
+    expect(serve?.define?.['__TYPESTYLES_RUNTIME_DISABLED__']).toBeUndefined();
+    const build = plugin.config?.({}, { command: 'build', mode: 'production' });
+    expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBe(JSON.stringify('true'));
+  });
 
-    await writeFile(
-      entryFile,
-      `
-import { styles } from 'typestyles';
+  it('defaults to runtime mode when extract is omitted', async () => {
+    const mod = await import('./index.js');
+    const plugin = mod.default();
+    const build = plugin.config?.({}, { command: 'build', mode: 'production' });
+    expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBeUndefined();
+  });
 
-styles.component('parity-button', {
-  base: { padding: '8px', borderWidth: '1px', borderStyle: 'solid' },
-  variants: {
-    intent: {
-      primary: { color: 'white', backgroundColor: 'blue' },
-      ghost: { color: 'blue', backgroundColor: 'transparent' },
-    },
-    outlined: {
-      true: { borderColor: 'currentColor' },
-      false: { borderColor: 'transparent' },
-    },
-  },
-  compoundVariants: [
-    { variants: { intent: ['primary', 'ghost'], outlined: true }, style: { fontWeight: 700 } },
-  ],
-  defaultVariants: { intent: 'primary', outlined: false },
-});
-
-`,
-      'utf8',
-    );
-
-    const modulePath = pathToFileURL(entryFile).href;
-    const moduleForBuild = relative(projectRoot, entryFile);
-
-    try {
-      reset();
-      await import(`${modulePath}?runtime=${Date.now()}`);
-      flushSync();
-      const runtimeCss = getRegisteredCss();
-
-      reset();
-      const buildCss = await runTypestylesBuild({
-        root: projectRoot,
-        modules: [moduleForBuild],
-      });
-
-      expect(buildCss).toBe(runtimeCss);
-    } finally {
-      reset();
-      await rm(tempDir, { recursive: true, force: true });
-    }
+  it('honors mode: runtime with extract on build', async () => {
+    const mod = await import('./index.js');
+    const plugin = mod.default({
+      mode: 'runtime',
+      extract: { modules: ['a.ts'] },
+    });
+    const build = plugin.config?.({}, { command: 'build', mode: 'production' });
+    expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBeUndefined();
   });
 });

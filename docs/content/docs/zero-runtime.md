@@ -13,7 +13,17 @@ Typestyles supports an optional **build extraction** mode through its bundler in
 - The typestyles runtime is replaced with a no-op stub (`~0 bytes` when tree-shaken).
 - No `<style>` injection happens in the browser — the CSS file is served directly.
 
-The same `styles.create`, `tokens.create`, and `keyframes.create` APIs work identically in both modes.
+The same `styles.component`, `tokens.create`, and `keyframes.create` APIs work identically in both modes.
+
+---
+
+## Why runtime in dev and extraction in production?
+
+**Development:** You want instant feedback. The typestyles runtime plus the Vite plugin’s HMR hooks let you change tokens or components without running a separate Node extraction step on every save.
+
+**Production:** You want a plain `.css` file: normal browser caching, parallel download/parse with JS, and no style injection work on the main thread after load.
+
+The Vite plugin implements this split automatically when you configure `extract`: it defaults to `mode: 'build'`, which **only** disables the runtime and emits CSS during `vite build`. `vite dev` keeps injection enabled.
 
 ---
 
@@ -35,16 +45,16 @@ Install the Vite plugin:
 npm install --save-dev @typestyles/vite
 ```
 
-In `vite.config.ts`, set `mode: 'build'` and list the modules that register styles:
+In `vite.config.ts`, list the modules that register styles. With `extract.modules` set, **`mode` defaults to `'build'`** (runtime stays on during `vite dev`; extraction and zero-runtime apply on `vite build`):
 
 ```ts
 import { defineConfig } from 'vite';
-import { typestyles } from '@typestyles/vite';
+import typestyles from '@typestyles/vite';
 
 export default defineConfig({
   plugins: [
     typestyles({
-      mode: 'build', // 'runtime' (default) | 'build' | 'hybrid'
+      // mode defaults to 'build' when extract.modules is non-empty
       extract: {
         // List all entry files that import and register typestyles styles.
         // Any transitive imports are automatically included.
@@ -56,17 +66,26 @@ export default defineConfig({
 });
 ```
 
+Explicit modes are still available when you need them:
+
+```ts
+typestyles({
+  mode: 'runtime', // force injection-only (even if extract is set)
+  extract: { modules: ['src/styles/index.ts'] },
+});
+```
+
 ### Modes
 
-| Mode        | Description                                                                                   |
-| ----------- | --------------------------------------------------------------------------------------------- |
-| `"runtime"` | Default. CSS is injected at runtime via `<style>`. No CSS file emitted.                       |
-| `"build"`   | CSS is extracted at build time to a `.css` asset. Runtime injection is disabled.              |
-| `"hybrid"`  | CSS is extracted AND the runtime is kept (useful for dynamic styles not known at build time). |
+| Mode        | Description                                                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `"runtime"` | Default when `extract` is omitted. CSS is injected at runtime via `<style>`. No CSS file emitted.                              |
+| `"build"`   | Default when `extract.modules` is non-empty. CSS is extracted on `vite build`; runtime disabled **only** in production builds. |
+| `"hybrid"`  | CSS is extracted AND the runtime is kept (useful for dynamic styles not known at build time).                                  |
 
 ### Linking the CSS file
 
-In `build` mode, Vite automatically injects a `<link rel="stylesheet">` for the generated `typestyles.css`. No extra configuration is needed when using a standard Vite HTML template.
+Add a `<link rel="stylesheet" href="/typestyles.css" />` (or your chosen `fileName`) to `index.html` so production serves the emitted asset. During `vite dev`, that URL may not exist yet; the runtime still applies the same rules.
 
 ---
 
@@ -105,14 +124,26 @@ Install the Next.js integration:
 npm install --save-dev @typestyles/next
 ```
 
-Wrap your Next.js config with `withTypestylesExtract`:
+Wrap your Next.js config with `withTypestylesExtract` for **production** so development keeps client-side injection for faster iteration (same idea as Vite: runtime in dev, static CSS + no injection in prod):
 
 ```js
-// next.config.js
+// next.config.mjs
 import { withTypestylesExtract } from '@typestyles/next/build';
 
-export default withTypestylesExtract({
+const base = {
   // Your existing Next.js config
+};
+
+export default process.env.NODE_ENV === 'production' ? withTypestylesExtract(base) : base;
+```
+
+Run `buildTypestylesForNext` (or your own script) before `next build` to emit the stylesheet your layout imports.
+
+For a single config that always disables the client runtime, pass the config object directly:
+
+```js
+export default withTypestylesExtract({
+  /* your config */
 });
 ```
 
@@ -142,15 +173,14 @@ The `modules` array should list files that register styles either directly or by
 ```ts
 // src/styles/index.ts
 export * from './tokens'; // tokens.create(...)
-export * from './button'; // styles.create(...)
-export * from './card'; // styles.create(...)
-export * from './typography'; // styles.create(...)
+export * from './button'; // styles.component(...)
+export * from './card'; // styles.component(...)
+export * from './typography'; // styles.component(...)
 ```
 
 ```ts
 // vite.config.ts
 typestyles({
-  mode: 'build',
   extract: { modules: ['src/styles/index.ts'] },
 });
 ```
@@ -161,9 +191,9 @@ typestyles({
 
 Typestyles is designed for incremental migration from runtime to build extraction:
 
-1. **Start in runtime mode** (default) — zero configuration, works everywhere.
-2. **Switch specific routes to build mode** — use the `hybrid` mode to extract styles for your critical path while keeping runtime injection for the rest.
-3. **Go fully static** — once all styles are covered by your entry modules, switch to `build` mode.
+1. **Start in runtime mode** — omit `extract` (or set `mode: 'runtime'`).
+2. **Add `extract`** — default `build` mode gives dev runtime + prod extraction in Vite.
+3. **Use `hybrid`** when you need a static baseline plus runtime for dynamic values.
 
 ---
 
