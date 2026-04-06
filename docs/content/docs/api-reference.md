@@ -18,6 +18,9 @@ per package or micro-frontend for isolation.
 
 - `styles.component(namespace, config)`: Create multi-variant component styles (CVA-style)
 - `styles.class(name, properties)`: Create a single class
+- `styles.container(…)`: Build typed `@container` keys for nested styles (also exported as `container`)
+- `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
+- `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
 - `styles.hashClass(properties, label?)`: Create a deterministic hashed class
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create utility-aware styles API

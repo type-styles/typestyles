@@ -321,49 +321,100 @@ const button = styles.create('button', {
 
 ## Container queries
 
-Container queries respond to the size of a container, not the viewport:
+Container queries respond to the size of a container, not the viewport. You can write plain `'@container …'` keys (they serialize like `@media`), or use **`styles.container()`** / **`container()`** for typed size features and named containers.
+
+### Typed keys with `styles.container()`
 
 ```ts
-const card = styles.create('card', {
-  base: {
-    // Establish this element as a container
-    containerType: 'inline-size',
-    containerName: 'card',
-  },
+import { styles } from 'typestyles';
 
-  content: {
-    padding: '12px',
+const card = styles.class('card', {
+  containerType: 'inline-size',
+  padding: '16px',
 
-    // When container is at least 400px wide
-    '@container (min-width: 400px)': {
-      padding: '24px',
-      display: 'flex',
-      gap: '16px',
-    },
-
-    // When container is at least 600px wide
-    '@container (min-width: 600px)': {
-      padding: '32px',
-    },
-  },
+  ...styles.atRuleBlock(styles.container({ minWidth: 400 }), {
+    padding: '24px',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+  }),
 });
 ```
 
+`container({ … })` accepts camelCase size features (`minWidth`, `maxInlineSize`, `orientation`, …). Numbers become `px` (except `aspectRatio`, where a number is emitted as-is—prefer a string like `'16 / 9'` when needed). Multiple features compile to one condition joined with `and`.
+
+**TypeScript:** a computed key like `[styles.container(…)]` is inferred as `string`, which clashes with the `CSSProperties` index signatures. Spread **`styles.atRuleBlock(key, nested)`** (or the `atRuleBlock` export) so the key stays typed—you do not need `as CSSProperties`.
+
 ### Named container queries
 
+Set `containerName` on the element that establishes the container, then target it by name:
+
 ```ts
-const sidebar = styles.create('sidebar', {
-  base: {
-    containerName: 'sidebar',
-    containerType: 'inline-size',
-    width: '280px',
+const sidebar = styles.class('sidebar', {
+  containerType: 'inline-size',
+  containerName: 'sidebar',
+  width: '280px',
+});
+
+const sidebarItem = styles.class('sidebar-item', {
+  // Either form:
+  [styles.container('sidebar', { minWidth: 250 })]: {
+    flexDirection: 'row',
+  },
+  // [styles.container({ name: 'sidebar', minWidth: 250 })]: { ... },
+});
+```
+
+### Typed container names (`containerRef` / `createContainerRef`)
+
+**`styles.containerRef(label)`** returns a **human-readable** `container-name` you can reuse in TypeScript instead of repeating string literals: **`{scopeId}-{label}`** when `scopeId` is set on the styles instance, otherwise **`{prefix}-{label}`** (same defaults as `createStyles`). Use that value for both `containerName` and the first argument to `styles.container(…)`.
+
+```ts
+const shell = styles.containerRef('product-shell');
+
+const root = styles.class('shell-root', {
+  containerType: 'inline-size',
+  containerName: shell,
+});
+
+const body = styles.class('shell-body', {
+  display: 'flex',
+  flexDirection: 'column',
+  ...styles.atRuleBlock(styles.container(shell, { minWidth: 480 }), {
+    flexDirection: 'row',
+  }),
+});
+```
+
+Without a `styles` instance, call **`createContainerRef('product-shell', { scopeId: 'my-app' })`** — or with an empty scope, **`{ prefix: 'acme' }`** so names become `acme-product-shell`.
+
+A full copy-paste example lives in the design-system package: [`namedContainerQuery.ts`](https://github.com/dbanksdesign/typestyles/blob/main/examples/design-system/src/components/namedContainerQuery.ts).
+
+### Raw string keys (style queries, `not`, scroll state)
+
+For anything beyond the typed helper (e.g. `style()`, `not (…)`), pass a single string—the part of the rule after `@container`:
+
+```ts
+{
+  [styles.container('style(--theme: dark)')]: { color: '#fff' },
+}
+```
+
+### Manual keys (equivalent)
+
+```ts
+const card = styles.class('card', {
+  containerType: 'inline-size',
+  containerName: 'card',
+  padding: '12px',
+
+  '@container (min-width: 400px)': {
+    padding: '24px',
+    display: 'flex',
+    gap: '16px',
   },
 
-  content: {
-    // Styles that respond to sidebar width
-    '@container sidebar (min-width: 250px)': {
-      display: 'block',
-    },
+  '@container (min-width: 600px)': {
+    padding: '32px',
   },
 });
 ```

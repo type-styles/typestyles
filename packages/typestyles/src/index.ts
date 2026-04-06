@@ -14,6 +14,8 @@ import {
 import { globalStyle, globalFontFace } from './global.js';
 import { createVar, assignVars } from './vars.js';
 import { cx } from './cx.js';
+import { container, createContainerRef } from './container.js';
+import { atRuleBlock } from './at-rule-block.js';
 
 export type {
   StylesApi,
@@ -38,6 +40,16 @@ export {
 } from './class-naming.js';
 
 export { createStyles, createTokens, createTypeStyles };
+
+export { container, createContainerRef, atRuleBlock };
+
+export type {
+  ContainerQueryKey,
+  ContainerQueryFeatures,
+  ContainerQueryObject,
+  ContainerNameRef,
+  CreateContainerRefOptions,
+} from './container.js';
 
 export type {
   CSSProperties,

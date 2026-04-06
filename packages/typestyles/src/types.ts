@@ -8,6 +8,9 @@ export type CSSValue = string | number;
 /**
  * CSS properties with support for nested selectors and at-rules.
  * Extends csstype's Properties with nesting capabilities.
+ *
+ * For **computed** `@…` keys (e.g. `[styles.container(…)]`), TypeScript widens the key to `string` and
+ * the object no longer matches this type — spread **`atRuleBlock` / `styles.atRuleBlock`** instead.
  */
 export interface CSSProperties extends CSS.Properties<CSSValue> {
   /** Nested selector (e.g., '&:hover', '& .child', '&::before', '&[data-variant]') */

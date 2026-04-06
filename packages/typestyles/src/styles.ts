@@ -30,6 +30,12 @@ import {
   type ClassNamingConfig,
 } from './class-naming.js';
 import { createComponent } from './component.js';
+import {
+  container as containerQuery,
+  createContainerRef,
+  type ContainerNameRef,
+} from './container.js';
+import { atRuleBlock as atRuleBlockFn } from './at-rule-block.js';
 
 /**
  * Create a single class with the given styles. Returns the class name string.
@@ -184,6 +190,20 @@ export function compose(
 export type StylesApi = {
   /** Resolved naming config for this instance (useful for debugging). */
   readonly classNaming: Readonly<ClassNamingConfig>;
+  /**
+   * Typed `@container` object keys for nested styles (size features, named containers, or raw conditions).
+   * Same function as the named export `container` from `typestyles`.
+   */
+  readonly container: typeof containerQuery;
+  /**
+   * Readable `container-name` for `containerName`: `{scopeId}-{label}` or `{prefix}-{label}` when `scopeId` is empty.
+   * Same as `createContainerRef(label, { scopeId, prefix })` from this instance’s naming config.
+   */
+  readonly containerRef: (label: string) => ContainerNameRef;
+  /**
+   * Build a spreadable `{ [ @key ]: nested }` so computed `@…` keys stay typed (see `atRuleBlock` export).
+   */
+  readonly atRuleBlock: typeof atRuleBlockFn;
   class: (name: string, properties: CSSProperties) => string;
   hashClass: (properties: CSSProperties, label?: string) => string;
   component: {
@@ -338,9 +358,18 @@ function buildStylesRuntimeApi(
     options?: LayerOption<string>,
   ) => createComponent(classNaming, namespace, config, options?.layer);
 
+  const containerRef = (label: string): ContainerNameRef =>
+    createContainerRef(label, {
+      scopeId: classNaming.scopeId,
+      prefix: classNaming.prefix,
+    });
+
   if (layered) {
     return {
       classNaming,
+      container: containerQuery,
+      containerRef,
+      atRuleBlock: atRuleBlockFn,
       class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
         const layer = options.layer;
         return createClass(classNaming, name, properties, layer);
@@ -357,6 +386,9 @@ function buildStylesRuntimeApi(
 
   return {
     classNaming,
+    container: containerQuery,
+    containerRef,
+    atRuleBlock: atRuleBlockFn,
     class: (name: string, properties: CSSProperties) => createClass(classNaming, name, properties),
     hashClass: (properties: CSSProperties, label?: string) =>
       createHashClass(classNaming, properties, label),
@@ -374,6 +406,9 @@ function buildStylesRuntimeApi(
 }
 
 export type StylesWithUtilsApi<U extends StyleUtils> = {
+  readonly container: typeof containerQuery;
+  readonly containerRef: (label: string) => ContainerNameRef;
+  readonly atRuleBlock: typeof atRuleBlockFn;
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
   component: {
@@ -413,6 +448,12 @@ export function createStylesWithUtils<U extends StyleUtils>(
   utils: U,
   classNaming: ClassNamingConfig = defaultClassNamingConfig,
 ): StylesWithUtilsApi<U> {
+  const containerRef = (label: string): ContainerNameRef =>
+    createContainerRef(label, {
+      scopeId: classNaming.scopeId,
+      prefix: classNaming.prefix,
+    });
+
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
 
@@ -435,6 +476,9 @@ export function createStylesWithUtils<U extends StyleUtils>(
   }
 
   return {
+    container: containerQuery,
+    containerRef,
+    atRuleBlock: atRuleBlockFn,
     class: (name, properties) => createClass(classNaming, name, apply(properties)),
     hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
     component: component as StylesWithUtilsApi<U>['component'],
@@ -446,6 +490,12 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
   utils: U,
   classNaming: ClassNamingConfig,
 ): StylesWithUtilsApiLayered<U, string> {
+  const containerRef = (label: string): ContainerNameRef =>
+    createContainerRef(label, {
+      scopeId: classNaming.scopeId,
+      prefix: classNaming.prefix,
+    });
+
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
 
@@ -474,6 +524,9 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
   }
 
   return {
+    container: containerQuery,
+    containerRef,
+    atRuleBlock: atRuleBlockFn,
     class: (name, properties, options) =>
       createClass(classNaming, name, apply(properties), options.layer),
     hashClass: (properties, options) =>
