@@ -16,6 +16,14 @@ import type {
 import { flattenTokenEntries } from './types.js';
 import { sanitizeClassSegment, scopedTokenNamespace } from './class-naming.js';
 import { insertRule, insertRules } from './sheet.js';
+import type { ResolvedCascadeLayers } from './layers.js';
+import { applyLayerToRules } from './layers.js';
+
+/** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
+export type ThemeEmitLayerContext = {
+  readonly stack: ResolvedCascadeLayers;
+  readonly layer: string;
+};
 
 // ---------------------------------------------------------------------------
 // Condition builders — tokens.when.*
@@ -494,7 +502,12 @@ function createThemeSurface(name: string, className: string): ThemeSurface {
  * // `${acme}` === 'theme-acme'
  * ```
  */
-export function createTheme(name: string, config: ThemeConfig, scopeId?: string): ThemeSurface {
+export function createTheme(
+  name: string,
+  config: ThemeConfig,
+  scopeId?: string,
+  layerContext?: ThemeEmitLayerContext,
+): ThemeSurface {
   if (process.env.NODE_ENV !== 'production') {
     if (config.modes && config.colorMode) {
       throw new Error(
@@ -507,13 +520,21 @@ export function createTheme(name: string, config: ThemeConfig, scopeId?: string)
   const segment = themeSegment(scopeId, name);
   const className = `theme-${segment}`;
 
+  const emitRule = (key: string, css: string): void => {
+    if (layerContext) {
+      insertRules(applyLayerToRules([{ key, css }], layerContext.layer, layerContext.stack));
+    } else {
+      insertRule(key, css);
+    }
+  };
+
   // 1. Base rule
   const baseDecls = config.base ? buildDeclarations(scopeId, config.base) : '';
   if (baseDecls) {
-    insertRule(`theme:${segment}:base`, `.${className} { ${baseDecls}; }`);
+    emitRule(`theme:${segment}:base`, `.${className} { ${baseDecls}; }`);
   } else {
     // Emit an empty base rule so the class always exists in the sheet
-    insertRule(`theme:${segment}:base`, `.${className} { }`);
+    emitRule(`theme:${segment}:base`, `.${className} { }`);
   }
 
   // 2. Mode layers
@@ -542,7 +563,11 @@ export function createTheme(name: string, config: ThemeConfig, scopeId?: string)
   }
 
   if (rules.length > 0) {
-    insertRules(rules);
+    if (layerContext) {
+      insertRules(applyLayerToRules(rules, layerContext.layer, layerContext.stack));
+    } else {
+      insertRules(rules);
+    }
   }
 
   return createThemeSurface(name, className);
@@ -567,6 +592,7 @@ export function createDarkMode(
   name: string,
   darkOverrides: ThemeOverrides,
   scopeId?: string,
+  layerContext?: ThemeEmitLayerContext,
 ): ThemeSurface {
   return createTheme(
     name,
@@ -574,5 +600,6 @@ export function createDarkMode(
       modes: [{ id: 'dark', overrides: darkOverrides, when: when.prefersDark }],
     },
     scopeId,
+    layerContext,
   );
 }

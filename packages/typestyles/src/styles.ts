@@ -17,6 +17,8 @@ import type {
 } from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
+import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers.js';
+import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers.js';
 import { registeredNamespaces } from './registry.js';
 import {
   buildSingleClassName,
@@ -54,6 +56,7 @@ export function createClass(
   classNaming: ClassNamingConfig,
   name: string,
   properties: CSSProperties,
+  layer?: string,
 ): string {
   const regKey = registryKeyForClass(classNaming, name);
   if (process.env.NODE_ENV !== 'production') {
@@ -69,7 +72,18 @@ export function createClass(
   const className = buildSingleClassName(classNaming, name, properties);
   const selector = `.${className}`;
   const rules = serializeStyle(selector, properties);
-  insertRules(rules);
+  if (classNaming.cascadeLayers) {
+    if (layer == null || layer === '') {
+      throw new Error(
+        `[typestyles] \`layer\` is required in the third argument when using \`createStyles({ layers })\` — ` +
+          `e.g. styles.class('${name}', { … }, { layer: '…' }).`,
+      );
+    }
+    assertOwnLayer(classNaming.cascadeLayers, layer, `styles.class('${name}', …)`);
+    insertRules(applyLayerToRules(rules, layer, classNaming.cascadeLayers));
+  } else {
+    insertRules(rules);
+  }
 
   return className;
 }
@@ -97,6 +111,7 @@ export function createHashClass(
   classNaming: ClassNamingConfig,
   properties: CSSProperties,
   label?: string,
+  layer?: string,
 ): string {
   const cfg = classNaming;
   const serialized =
@@ -109,7 +124,18 @@ export function createHashClass(
     : `${cfg.prefix}-${hash}`;
   const selector = `.${className}`;
   const rules = serializeStyle(selector, properties);
-  insertRules(rules);
+  if (classNaming.cascadeLayers) {
+    if (layer == null || layer === '') {
+      throw new Error(
+        '[typestyles] `layer` is required in the options argument when using `createStyles({ layers })` — ' +
+          'e.g. styles.hashClass({ … }, { layer: `utilities` }).',
+      );
+    }
+    assertOwnLayer(classNaming.cascadeLayers, layer, 'styles.hashClass(…)');
+    insertRules(applyLayerToRules(rules, layer, classNaming.cascadeLayers));
+  } else {
+    insertRules(rules);
+  }
   return className;
 }
 
@@ -179,25 +205,172 @@ export type StylesApi = {
   compose: typeof compose;
 };
 
+/** Options argument for styles when `createStyles({ layers })` is used. */
+export type LayerOption<L extends string = string> = { readonly layer: L };
+
+export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+  layers?: CascadeLayersInput;
+  /**
+   * Only applies when using `createTokens` / `createTypeStyles` for `:root` and theme CSS.
+   * Ignored by `createStyles` alone (passing it here avoids repeating the key at the factory).
+   */
+  tokenLayer?: string;
+};
+
+export type LayeredComponentFn<L extends string> = {
+  <V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+    options: LayerOption<L>,
+  ): ComponentReturn<V>;
+  <K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+    options: LayerOption<L>,
+  ): FlatComponentReturn<K>;
+  <S extends string, V extends SlotVariantDefinitions<S>>(
+    namespace: string,
+    config: SlotComponentConfigInput<S, V>,
+    options: LayerOption<L>,
+  ): SlotComponentFunction<S, V>;
+  <S extends string>(
+    namespace: string,
+    config: MultiSlotConfigInput<S>,
+    options: LayerOption<L>,
+  ): MultiSlotReturn<S>;
+};
+
+export type LayeredComponentFnWithUtils<L extends string> = {
+  <V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+    options: LayerOption<L>,
+  ): ComponentReturn<V>;
+  <K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+    options: LayerOption<L>,
+  ): FlatComponentReturn<K>;
+  <S extends string, V extends SlotVariantDefinitions<S>>(
+    namespace: string,
+    config: SlotComponentConfigInput<S, V>,
+    options: LayerOption<L>,
+  ): SlotComponentFunction<S, V>;
+  <S extends string>(
+    namespace: string,
+    config: MultiSlotConfigInput<S>,
+    options: LayerOption<L>,
+  ): MultiSlotReturn<S>;
+};
+
+export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = Omit<
+  StylesWithUtilsApi<U>,
+  'class' | 'hashClass' | 'component'
+> & {
+  class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<L>) => string;
+  hashClass: (
+    properties: CSSPropertiesWithUtils<U>,
+    options: LayerOption<L> & { label?: string },
+  ) => string;
+  component: LayeredComponentFnWithUtils<L>;
+  compose: typeof compose;
+};
+
+export type StylesApiWithLayers<L extends string> = Omit<
+  StylesApi,
+  'class' | 'hashClass' | 'component' | 'withUtils'
+> & {
+  class: (name: string, properties: CSSProperties, options: LayerOption<L>) => string;
+  hashClass: (properties: CSSProperties, options: LayerOption<L> & { label?: string }) => string;
+  component: LayeredComponentFn<L>;
+  withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApiLayered<U, L>;
+};
+
 /**
  * Create a styles API with its own class naming config (scope, mode, prefix).
  * Use one instance per package or micro-frontend so hashed names and dev warnings
  * stay isolated without global mutation.
+ *
+ * Pass **`layers`** to enable CSS cascade layers: a tuple (or `{ order, prependFrameworkLayers? }`)
+ * defines a single `@layer a, b, c;` preamble, and every `class` / `hashClass` / `component` call
+ * must pass `{ layer: … }` with a name from that stack.
  */
-export function createStyles(partial?: Partial<ClassNamingConfig>): StylesApi {
-  const classNaming = mergeClassNaming(partial);
+export function createStyles<const L extends readonly string[]>(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+    layers: L;
+    tokenLayer?: L[number];
+  },
+): StylesApiWithLayers<L[number]>;
+
+export function createStyles(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+    layers: CascadeLayersObjectInput;
+    tokenLayer?: string;
+  },
+): StylesApiWithLayers<string>;
+
+export function createStyles(options?: CreateStylesInput): StylesApi;
+
+export function createStyles(options?: CreateStylesInput): StylesApi | StylesApiWithLayers<string> {
+  const partial = options ?? {};
+  const { layers, tokenLayer: tokenLayerHint, ...namingPartial } = partial;
+
+  if (process.env.NODE_ENV !== 'production' && tokenLayerHint !== undefined && !layers) {
+    console.warn(
+      '[typestyles] `tokenLayer` on `createStyles` is ignored without `layers`. Use `createTokens` or `createTypeStyles` to emit token CSS into a layer.',
+    );
+  }
+
+  const cascadeLayers = layers ? resolveCascadeLayers(layers, namingPartial.scopeId) : undefined;
+  const classNaming = mergeClassNaming({ ...namingPartial, cascadeLayers });
+
+  return buildStylesRuntimeApi(classNaming) as StylesApi | StylesApiWithLayers<string>;
+}
+
+function buildStylesRuntimeApi(
+  classNaming: ClassNamingConfig,
+): StylesApi | StylesApiWithLayers<string> {
+  const layered = Boolean(classNaming.cascadeLayers);
+
+  const componentImpl = (
+    namespace: string,
+    config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+    options?: LayerOption<string>,
+  ) => createComponent(classNaming, namespace, config, options?.layer);
+
+  if (layered) {
+    return {
+      classNaming,
+      class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
+        const layer = options.layer;
+        return createClass(classNaming, name, properties, layer);
+      },
+      hashClass: (properties: CSSProperties, options: LayerOption<string> & { label?: string }) => {
+        const { layer, label } = options;
+        return createHashClass(classNaming, properties, label, layer);
+      },
+      component: componentImpl as unknown as LayeredComponentFn<string>,
+      withUtils: (utils) => createStylesWithUtilsLayered(utils, classNaming),
+      compose,
+    } satisfies StylesApiWithLayers<string>;
+  }
 
   return {
     classNaming,
-    class: (name, properties) => createClass(classNaming, name, properties),
-    hashClass: (properties, label) => createHashClass(classNaming, properties, label),
-    component: ((
-      namespace: string,
-      config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
-    ) => createComponent(classNaming, namespace, config)) as StylesApi['component'],
+    class: (name: string, properties: CSSProperties) => createClass(classNaming, name, properties),
+    hashClass: (properties: CSSProperties, label?: string) =>
+      createHashClass(classNaming, properties, label),
+    component: ((namespace: string, config: unknown) =>
+      createComponent(
+        classNaming,
+        namespace,
+        config as
+          | Record<string, unknown>
+          | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+      )) as StylesApi['component'],
     withUtils: (utils) => createStylesWithUtils(utils, classNaming),
     compose,
-  };
+  } satisfies StylesApi;
 }
 
 export type StylesWithUtilsApi<U extends StyleUtils> = {
@@ -243,7 +416,77 @@ export function createStylesWithUtils<U extends StyleUtils>(
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
 
-  function transformComponentConfigWithUtils(
+  const transformComponentConfigWithUtils = makeTransformComponentConfigWithUtils(apply);
+
+  function component(
+    namespace: string,
+    config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+  ): unknown {
+    if (typeof config === 'function') {
+      return createComponent(classNaming, namespace, (ctx) =>
+        transformComponentConfigWithUtils(config(ctx) as Record<string, unknown>),
+      );
+    }
+    return createComponent(
+      classNaming,
+      namespace,
+      transformComponentConfigWithUtils(config) as ComponentConfig<VariantDefinitions>,
+    );
+  }
+
+  return {
+    class: (name, properties) => createClass(classNaming, name, apply(properties)),
+    hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
+    component: component as StylesWithUtilsApi<U>['component'],
+    compose,
+  };
+}
+
+function createStylesWithUtilsLayered<U extends StyleUtils>(
+  utils: U,
+  classNaming: ClassNamingConfig,
+): StylesWithUtilsApiLayered<U, string> {
+  const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
+    expandStyleWithUtils(properties, utils);
+
+  const transformComponentConfigWithUtils = makeTransformComponentConfigWithUtils(apply);
+
+  function component(
+    namespace: string,
+    config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+    options?: LayerOption<string>,
+  ): unknown {
+    const layer = options?.layer;
+    if (typeof config === 'function') {
+      return createComponent(
+        classNaming,
+        namespace,
+        (ctx) => transformComponentConfigWithUtils(config(ctx) as Record<string, unknown>),
+        layer,
+      );
+    }
+    return createComponent(
+      classNaming,
+      namespace,
+      transformComponentConfigWithUtils(config) as ComponentConfig<VariantDefinitions>,
+      layer,
+    );
+  }
+
+  return {
+    class: (name, properties, options) =>
+      createClass(classNaming, name, apply(properties), options.layer),
+    hashClass: (properties, options) =>
+      createHashClass(classNaming, apply(properties), options.label, options.layer),
+    component: component as unknown as LayeredComponentFnWithUtils<string>,
+    compose,
+  };
+}
+
+function makeTransformComponentConfigWithUtils<U extends StyleUtils>(
+  apply: (properties: CSSPropertiesWithUtils<U>) => CSSProperties,
+): (raw: Record<string, unknown>) => Record<string, unknown> {
+  return function transformComponentConfigWithUtils(
     raw: Record<string, unknown>,
   ): Record<string, unknown> {
     const transformed: Record<string, unknown> = {};
@@ -281,29 +524,6 @@ export function createStylesWithUtils<U extends StyleUtils>(
     }
 
     return transformed;
-  }
-
-  function component(
-    namespace: string,
-    config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
-  ): unknown {
-    if (typeof config === 'function') {
-      return createComponent(classNaming, namespace, (ctx) =>
-        transformComponentConfigWithUtils(config(ctx) as Record<string, unknown>),
-      );
-    }
-    return createComponent(
-      classNaming,
-      namespace,
-      transformComponentConfigWithUtils(config) as ComponentConfig<VariantDefinitions>,
-    );
-  }
-
-  return {
-    class: (name, properties) => createClass(classNaming, name, apply(properties)),
-    hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
-    component: component as StylesWithUtilsApi<U>['component'],
-    compose,
   };
 }
 

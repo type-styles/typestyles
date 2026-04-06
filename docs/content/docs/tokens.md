@@ -22,6 +22,8 @@ const color = tokens.create('color', { primary: '#0066ff' });
 
 See [Class naming](/docs/class-naming) for how this pairs with `createStyles({ scopeId })` for styles.
 
+To share a **cascade layer** stack with styles, use **`createTypeStyles`** or pass **`layers`** and **`tokenLayer`** to `createTokens` (see [Cascade layers](/docs/cascade-layers)).
+
 ## Creating tokens
 
 Use `tokens.create(prefix, object)` to define a set of tokens:

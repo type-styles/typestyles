@@ -1,5 +1,6 @@
 import { createStyles } from './styles.js';
 import { createTokens } from './tokens.js';
+import { createTypeStyles } from './create-type-styles.js';
 import { createTheme, createDarkMode, when, colorMode } from './theme.js';
 import { createKeyframes } from './keyframes.js';
 import * as colorFns from './color.js';
@@ -14,8 +15,20 @@ import { globalStyle, globalFontFace } from './global.js';
 import { createVar, assignVars } from './vars.js';
 import { cx } from './cx.js';
 
-export type { StylesApi } from './styles.js';
+export type {
+  StylesApi,
+  StylesApiWithLayers,
+  CreateStylesInput,
+  LayerOption,
+  LayeredComponentFn,
+} from './styles.js';
 export type { CreateTokensOptions, TokensApi } from './tokens.js';
+
+export type {
+  CascadeLayersInput,
+  CascadeLayersObjectInput,
+  ResolvedCascadeLayers,
+} from './layers.js';
 
 export type { ClassNamingConfig, ClassNamingMode } from './class-naming.js';
 export {
@@ -24,7 +37,7 @@ export {
   scopedTokenNamespace,
 } from './class-naming.js';
 
-export { createStyles, createTokens };
+export { createStyles, createTokens, createTypeStyles };
 
 export type {
   CSSProperties,
@@ -84,6 +97,8 @@ export { createVar, assignVars };
 export type { ColorMixSpace } from './color.js';
 
 export { createTheme, createDarkMode, when, colorMode };
+
+export type { ThemeEmitLayerContext } from './theme.js';
 
 /**
  * Default style API (semantic class names, empty `scopeId`). Prefer `createStyles({ scopeId, mode, prefix })`

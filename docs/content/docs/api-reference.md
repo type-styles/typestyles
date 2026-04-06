@@ -25,7 +25,7 @@ per package or micro-frontend for isolation.
 
 ### `createStyles(options?)`
 
-Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'atomic'`), `prefix`, `scopeId`. Use one instance per package or micro-frontend.
+Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'atomic'`), `prefix`, `scopeId`. Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)).
 
 The default `import { styles } from 'typestyles'` is `createStyles()` with default options.
 
@@ -45,7 +45,7 @@ bundles share a page.
 
 ### `createTokens(options?)`
 
-Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme('dark', …)` registers `.theme-{scopeId}-dark` (sanitized segments).
+Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme('dark', …)` registers `.theme-{scopeId}-dark` (sanitized segments). With **`layers`**, **`tokenLayer`** is required and token/theme CSS is wrapped in that layer.
 
 The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
 
@@ -77,12 +77,14 @@ Composes naturally with token references.
 - `color.alpha(color, opacity, space?)`: Adjust opacity
 
 See [Color](/docs/color).
-- `tokens.create(namespace, values)`: Registers tokens on `:root` and returns `var(--namespace-key)` references
-- `tokens.use(namespace)`: Returns `var(--namespace-key)` references without emitting CSS (for shared tokens defined elsewhere)
-- `tokens.createTheme(name, config)`: Registers a `.theme-{name}` surface with optional `base`, and either `modes` or `colorMode` (not both). Returns a **`ThemeSurface`** (`className`, `name`, string coercion)—use `.className` in React
-- `tokens.createDarkMode(name, darkOverrides)`: Shorthand for a single dark mode layer under `prefers-color-scheme: dark`
-- `tokens.when`: Condition builders (`media`, `prefersDark`, `prefersLight`, `attr`, `className`, `selector`, `and`, `or`, `not`) for manual `modes`
-- `tokens.colorMode`: Presets (`mediaOnly`, `attributeOnly`, `mediaOrAttribute`, `systemWithLightDarkOverride`) that expand to `modes`—pass as `colorMode` on `createTheme`
+
+### `createTypeStyles(options)`
+
+Returns **`{ styles, tokens }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. See [Cascade layers](/docs/cascade-layers).
+
+### Cascade layers (types)
+
+Exported types include **`CascadeLayersInput`**, **`CascadeLayersObjectInput`**, **`ResolvedCascadeLayers`**, and **`ThemeEmitLayerContext`** (theme emission with layers).
 
 ### `global`
 
@@ -185,4 +187,4 @@ animation: `${fadeIn} 300ms ease`;
 ---
 
 _This API reference was auto-generated from source code._
-_Last updated: 2026-04-04_
+_Last updated: 2026-04-05_

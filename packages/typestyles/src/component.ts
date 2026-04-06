@@ -18,6 +18,7 @@ import type {
 } from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
+import { applyLayerToRules, assertOwnLayer } from './layers.js';
 import { registeredNamespaces } from './registry.js';
 import { buildComponentClassName, type ClassNamingConfig } from './class-naming.js';
 import { createComponentConfigContextPair } from './component-config-context.js';
@@ -148,40 +149,61 @@ export function createComponent<V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: ComponentConfigInput<V>,
+  layer?: string,
 ): ComponentReturn<V>;
 
 export function createComponent<K extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: FlatComponentConfigInput<K>,
+  layer?: string,
 ): FlatComponentReturn<K>;
 
 export function createComponent<S extends string, V extends SlotVariantDefinitions<S>>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: SlotComponentConfigInput<S, V>,
+  layer?: string,
 ): SlotComponentFunction<S, V>;
 
 export function createComponent<S extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: MultiSlotConfigInput<S>,
+  layer?: string,
 ): MultiSlotReturn<S>;
 
 export function createComponent(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+  layer?: string,
 ): unknown {
+  if (classNaming.cascadeLayers) {
+    if (layer == null || layer === '') {
+      throw new Error(
+        `[typestyles] \`layer\` is required in the third argument when using \`createStyles({ layers })\` — ` +
+          `e.g. styles.component('${namespace}', config, { layer: '…' }).`,
+      );
+    }
+    assertOwnLayer(classNaming.cascadeLayers, layer, `styles.component('${namespace}', …)`);
+  }
+
   const resolved = resolveComponentConfig(classNaming, namespace, config);
   if (isMultiSlotConfig(resolved)) {
-    return createMultiSlotComponent(classNaming, namespace, resolved as MultiSlotConfig<string>);
+    return createMultiSlotComponent(
+      classNaming,
+      namespace,
+      resolved as MultiSlotConfig<string>,
+      layer,
+    );
   }
   if (isSlotWithVariantsConfig(resolved)) {
     return createSlotComponent(
       classNaming,
       namespace,
       resolved as SlotComponentConfig<string, SlotVariantDefinitions<string>>,
+      layer,
     );
   }
   if (isDimensionedConfig(resolved)) {
@@ -189,9 +211,15 @@ export function createComponent(
       classNaming,
       namespace,
       resolved as ComponentConfig<VariantDefinitions>,
+      layer,
     );
   }
-  return createFlatComponent(classNaming, namespace, resolved as FlatComponentConfig<string>);
+  return createFlatComponent(
+    classNaming,
+    namespace,
+    resolved as FlatComponentConfig<string>,
+    layer,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -203,10 +231,22 @@ function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: stri
   return `${scope}:${namespace}`;
 }
 
+function finalizeComponentRules(
+  classNaming: ClassNamingConfig,
+  layer: string | undefined,
+  rules: Array<{ key: string; css: string }>,
+): Array<{ key: string; css: string }> {
+  if (classNaming.cascadeLayers && layer) {
+    return applyLayerToRules(rules, layer, classNaming.cascadeLayers);
+  }
+  return rules;
+}
+
 function createDimensionedComponent<V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: ComponentConfig<V>,
+  layer?: string,
 ): ComponentReturn<V> {
   const { base, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
 
@@ -253,7 +293,7 @@ function createDimensionedComponent<V extends VariantDefinitions>(
     },
   );
 
-  insertRules(rules);
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
 
   // 4. Build the callable + destructurable return
   const selectorFn = (selections: Record<string, unknown> = {}): string => {
@@ -321,6 +361,7 @@ function createFlatComponent<K extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: FlatComponentConfig<K>,
+  layer?: string,
 ): FlatComponentReturn<K> {
   warnDuplicate(classNaming, namespace);
   registeredNamespaces.add(registryKeyForComponent(classNaming, namespace));
@@ -341,7 +382,7 @@ function createFlatComponent<K extends string>(
     }
   }
 
-  insertRules(rules);
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
 
   const baseClassName = classMap['base'];
 
@@ -374,6 +415,7 @@ function createMultiSlotComponent<S extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: MultiSlotConfig<S>,
+  layer?: string,
 ): MultiSlotReturn<S> {
   const { slots } = config;
 
@@ -394,7 +436,7 @@ function createMultiSlotComponent<S extends string>(
     }
   }
 
-  insertRules(rules);
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
 
   const selectorFn = (): Record<string, string> => {
     const result: Record<string, string> = {};
@@ -436,6 +478,7 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
   classNaming: ClassNamingConfig,
   namespace: string,
   config: SlotComponentConfig<S, V>,
+  layer?: string,
 ): SlotComponentFunction<S, V> {
   const {
     slots,
@@ -486,7 +529,7 @@ function createSlotComponent<S extends string, V extends SlotVariantDefinitions<
     }
   });
 
-  insertRules(rules);
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
 
   return ((selections: Record<string, unknown> = {}) => {
     const classes = Object.fromEntries(

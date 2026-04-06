@@ -40,17 +40,20 @@ export const tokens = createTokens({ scopeId: '@acme/design-system' });
 
 With `scopeId` set, `tokens.create('color', …)` emits variables like `--acme-design-system-color-primary` (sanitized), and `tokens.createTheme('dark', …)` registers a theme class whose segment includes the scope.
 
+For **CSS cascade layers** (`@layer`) — optional, and off by default — see [Cascade layers](/docs/cascade-layers). Use **`createTypeStyles`** when both class rules and token/theme CSS should share one layer stack and one `scopeId`.
+
 ## API
 
 ### `createStyles(options?)`
 
 Returns a style API with the same methods as the default `styles` export. Options are a partial **`ClassNamingConfig`** merged onto defaults:
 
-| Option    | Type                                 | Default      | Description                                                                                                                                                |
-| --------- | ------------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mode`    | `'semantic' \| 'hashed' \| 'atomic'` | `'semantic'` | How class strings are built (see below).                                                                                                                   |
-| `prefix`  | `string`                             | `'ts'`       | Leading segment for hashed/atomic output and for `hashClass`.                                                                                              |
-| `scopeId` | `string`                             | `''`         | Optional id (package name, app name) mixed into the hash input so two packages can reuse the same logical namespace without sharing the same class string. |
+| Option    | Type                                                        | Default      | Description                                                                                                                                                |
+| --------- | ----------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`    | `'semantic' \| 'hashed' \| 'atomic'`                        | `'semantic'` | How class strings are built (see below).                                                                                                                   |
+| `prefix`  | `string`                                                    | `'ts'`       | Leading segment for hashed/atomic output and for `hashClass`.                                                                                              |
+| `scopeId` | `string`                                                    | `''`         | Optional id (package name, app name) mixed into the hash input so two packages can reuse the same logical namespace without sharing the same class string. |
+| `layers`  | `readonly string[]` or `{ order, prependFrameworkLayers? }` | _(omitted)_  | When set, enables `@layer` output and requires `{ layer }` on each `class` / `hashClass` / `component` call. See [Cascade layers](/docs/cascade-layers).   |
 
 The instance also exposes **`styles.classNaming`**: a read-only snapshot of the resolved config (useful for debugging).
 

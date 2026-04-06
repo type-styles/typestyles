@@ -161,6 +161,40 @@ function scheduleFlush(): void {
 }
 
 /**
+ * Register a single `@layer a, b, c;` preamble so layer **order** is defined before any
+ * `@layer name { … }` blocks. Inserts at the front of the virtual sheet and at CSSOM index 0
+ * when injecting into the document.
+ */
+export function registerCascadeLayerOrder(preambleKey: string, css: string): void {
+  const key = `typestyles:@layer-order:${preambleKey}`;
+  if (insertedRules.has(key)) return;
+  insertedRules.add(key);
+
+  allRules.unshift(css);
+
+  if (ssrBuffer) {
+    ssrBuffer.unshift(css);
+    return;
+  }
+
+  if (RUNTIME_DISABLED) return;
+
+  if (!isBrowser) return;
+
+  const el = getStyleElement();
+  const sheet = el.sheet;
+  if (sheet) {
+    try {
+      sheet.insertRule(css, 0);
+    } catch {
+      el.insertBefore(document.createTextNode(`${css}\n`), el.firstChild);
+    }
+  } else {
+    el.insertBefore(document.createTextNode(`${css}\n`), el.firstChild);
+  }
+}
+
+/**
  * Insert a CSS rule. Deduplicates by rule key.
  */
 export function insertRule(key: string, css: string): void {

@@ -262,14 +262,17 @@ afterEach(() => resetClassNaming());
 
 ```ts
 // Each package creates its own scoped instance
-import { createStyles, createTokens } from 'typestyles';
+import { createTypeStyles, createStyles, createTokens } from 'typestyles';
 
-// design-system package
-export const styles = createStyles({ scopeId: 'ds', mode: 'semantic' });
-export const tokens = createTokens({ scopeId: 'ds' });
+// design-system package — prefer one factory so scopeId (and later: layers, @property) cannot drift
+export const { styles, tokens } = createTypeStyles({ scopeId: 'ds', mode: 'semantic' });
+
+// Equivalent when you only need one of the two APIs
+export const stylesOnly = createStyles({ scopeId: 'ds', mode: 'semantic' });
+export const tokensOnly = createTokens({ scopeId: 'ds' });
 
 // app package — independent, no collision
-const styles = createStyles({ scopeId: 'app' });
+const { styles } = createTypeStyles({ scopeId: 'app' });
 
 // The default `styles` and `tokens` imports still work for simple cases
 // (they're just a pre-created default instance)
@@ -315,22 +318,23 @@ These features are essential for a library that claims to embrace the web platfo
 
 **Why it matters:** `@layer` is the platform-native answer to specificity management. Without it, TypeStyles forces users into specificity wars when integrating with existing CSS.
 
-**Desired:**
+**Desired (revised DX):** Layer order should be declared once, at the same place the style API is constructed — not via a separate `layers.declare()` that is easy to misplace, duplicate, or call in the wrong order relative to imports. **Default:** if `layers` is omitted, TypeStyles emits **no** `@layer` rules (flat cascade, same as today). Opting in is explicit: pass a `layers` tuple and get **literal-union typing** for every `layer` option on `styles.create` / `styles.component`.
+
+**Why consider `createTypeStyles`:** Today `createStyles` and `createTokens` are separate entry points; authors repeat `scopeId` (and any future cross-cutting options like layers, `@property` defaults, or build targets). Tokens that compile to CSS (`:root`, `@property`, global base styles) may need to live in a specific layer (e.g. `tokens`) so utilities and components can override them predictably. A single factory keeps **one config object**, guarantees **one scope**, and lets the runtime/build plugin emit **one ordered `@layer` preamble** that covers both token CSS and class rules.
 
 ```ts
-import { layers, styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-// Declare layer order (must happen before any styles)
-layers.declare('reset', 'tokens', 'components', 'utilities');
+const { styles, tokens } = createTypeStyles({
+  scopeId: 'ds',
+  mode: 'semantic',
+  layers: ['reset', 'tokens', 'components', 'utilities'] as const,
+  // Optional: where token/theme CSS is emitted when layers are enabled
+  tokenLayer: 'tokens',
+});
 
-// Styles automatically assigned to their layer
-const reset = styles.create(
-  'reset',
-  {
-    base: { margin: 0, padding: 0 },
-  },
-  { layer: 'reset' },
-);
+// With layers enabled, `layer` is required on each style (typed union from the tuple).
+const reset = styles.create('reset', { base: { margin: 0, padding: 0 } }, { layer: 'reset' });
 
 const button = styles.create(
   'button',
@@ -341,12 +345,39 @@ const button = styles.create(
   { layer: 'components' },
 );
 
-// Generated CSS:
+// Generated CSS (conceptual):
 // @layer reset, tokens, components, utilities;
-// @layer components { .button { padding: 8px 16px; } }
+// @layer tokens { :root { /* custom properties */ } }
+// @layer reset { .ds-reset { margin: 0; padding: 0; } }
+// @layer components { .ds-button { padding: 8px 16px; } }
 ```
 
-**Challenges:** Layer declaration ordering must be deterministic. May require a build-step or explicit `layers.declare()` call that emits before any other CSS.
+`createStyles` / `createTokens` can remain as **narrow constructors** for styles-only or tokens-only use cases (no layers, or layers only where the implementation can still apply). Alternatively they become **thin aliases** over the same internal builder as `createTypeStyles` so behavior never diverges.
+
+```ts
+// Explicitly no cascade layers: omit `layers` — no @layer in output, no `layer` on styles.create
+const { styles, tokens } = createTypeStyles({ scopeId: 'ds', mode: 'semantic' });
+```
+
+**Design notes:**
+
+- **Multiple instances:** Each `createTypeStyles({ layers })` (or `createStyles({ layers })`) owns its stack. Micro-frontends or nested design systems can pass different tuples; the bundler/runtime still needs a single emitted order **per CSS output**, so document whether layers are namespaced (e.g. prefixed by `scopeId`) or merged by the build plugin.
+- **Omitting `layers`:** **No cascade layers** — no `@layer` wrappers, no `layer` option on style APIs (TypeScript should not suggest it). This is the default; Panda-style opinionated layer stacks are not implied.
+- **External CSS:** Optional escape hatch such as `layers: { order: [...], prependFrameworkLayers: ['bootstrap'] }` so TypeStyles can emit `@layer bootstrap, reset, …` when integrating legacy stacks.
+- **Unified factory tradeoffs:** Pros — no duplicated `scopeId`, tokens and classes share layer semantics, one place for `@property` / theme injection. Cons — larger conceptual API surface, migration from two imports to one; mitigate with `createTypeStyles` returning `{ styles, tokens }` with the same `StylesApi` / `TokensApi` shapes authors already know, and keep standalone `createStyles` / `createTokens` for minimal or library-internal usage.
+
+**Prior art (how others handle cascade layers):**
+
+| Project             | Approach                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **StyleX**          | Primarily a **build/PostCSS** concern: plugins expose options like `useCSSLayers` / `useLayer` so generated rules sit inside layers; authors do not usually declare layer order in application TypeScript. Polyfill story often goes through `@csstools/postcss-cascade-layers`. See [StyleX PostCSS docs](https://stylexjs.com/docs/learn/installation/postcss) and [discussion on layer usage in bundlers](https://github.com/facebook/stylex/issues/138). |
+| **Panda CSS**       | **Config-first:** fixed conceptual layers (`reset`, `base`, `tokens`, `recipes`, `utilities`) with documented precedence; generated CSS includes `@layer reset, base, tokens, recipes, utilities` (customizable via `layers` in config). Authors choose the layer implicitly by feature (utilities vs recipes, etc.), not per-call `layer: '…'` on every style. See [Panda — Cascade layers](https://panda-css.com/docs/concepts/cascade-layers).            |
+| **Stitches**        | **No first-class `@layer` API.** Precedence is handled via the runtime composition model (`css` prop, variants, token scales), not platform cascade layers. Integrating with layered global CSS is a manual concern.                                                                                                                                                                                                                                         |
+| **Vanilla Extract** | **Explicit layer handles:** `layer()` (scoped names) / patterns for nesting; styles opt in with an `@layer` key mapping a layer reference to declarations. Order emerges from how layer files are imported and composed; see [VE `layer` API](https://vanilla-extract.style/documentation/api/layer/).                                                                                                                                                       |
+
+TypeStyles can sit between Panda’s “layers by convention” and Vanilla Extract’s “layer as first-class value”: **one ordered tuple on the factory** (`createTypeStyles` or `createStyles`), then **per-style `layer`** with full type inference from that tuple when layers are enabled.
+
+**Challenges:** Layer declaration ordering must be deterministic across chunks (build plugin may need to hoist a single `@layer a, b, c;` preamble). Runtime-only injection must define where the preamble is inserted relative to dynamically loaded style blocks. If layer names collide with third-party global layers, prefer namespacing or explicit `prependFrameworkLayers`-style configuration rather than ad hoc `declare()` calls scattered in modules.
 
 ---
 
