@@ -20,6 +20,7 @@
 - ssr.md
 - vite-plugin.md
 - class-naming.md
+- cascade-layers.md
 - custom-at-rules.md
 - theming-patterns.md
 

@@ -1,8 +1,10 @@
 import type { TokenValues, TokenRef, ThemeConfig, ThemeSurface, ThemeOverrides } from './types.js';
 import { flattenTokenEntries } from './types.js';
 import { scopedTokenNamespace } from './class-naming.js';
-import { insertRule } from './sheet.js';
+import { insertRule, insertRules } from './sheet.js';
 import { createTheme, createDarkMode, when, colorMode } from './theme.js';
+import type { CascadeLayersInput } from './layers.js';
+import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers.js';
 
 export type CreateTokensOptions = {
   /**
@@ -10,6 +12,15 @@ export type CreateTokensOptions = {
    * packages on one page do not share `--color-*` or `.theme-*` collisions.
    */
   scopeId?: string;
+  /**
+   * When set with **`tokenLayer`**, `:root` custom properties and theme surfaces are wrapped in
+   * `@layer tokenLayer { … }`, and a matching `@layer …;` order preamble is registered.
+   */
+  layers?: CascadeLayersInput;
+  /**
+   * Which layer from **`layers`** receives token and theme CSS. Required when **`layers`** is set.
+   */
+  tokenLayer?: string;
 };
 
 /**
@@ -123,6 +134,33 @@ function createTokenProxy(namespace: string, prefix: string, allKeys: Set<string
 export function createTokens(options: CreateTokensOptions = {}): TokensApi {
   const scopeId = options.scopeId?.trim() || undefined;
 
+  if (process.env.NODE_ENV !== 'production') {
+    if (options.layers && options.tokenLayer == null) {
+      throw new Error(
+        '[typestyles] `createTokens({ layers })` requires `tokenLayer` — pass the layer name for `:root` and theme CSS.',
+      );
+    }
+    if (!options.layers && options.tokenLayer != null) {
+      throw new Error(
+        '[typestyles] `tokenLayer` is only valid on `createTokens` when `layers` is also set.',
+      );
+    }
+  } else if (options.layers && options.tokenLayer == null) {
+    throw new Error(
+      '[typestyles] `createTokens({ layers })` requires `tokenLayer` — pass the layer name for `:root` and theme CSS.',
+    );
+  }
+
+  const cascadeStack = options.layers ? resolveCascadeLayers(options.layers, scopeId) : undefined;
+  const tokenLayer = options.tokenLayer;
+
+  if (cascadeStack && tokenLayer) {
+    assertOwnLayer(cascadeStack, tokenLayer, 'tokens.create / createTheme');
+  }
+
+  const themeLayerContext =
+    cascadeStack && tokenLayer ? { stack: cascadeStack, layer: tokenLayer } : undefined;
+
   const registeredNamespaces = new Set<string>();
   const createdTokenKeys = new Map<string, Set<string>>();
 
@@ -136,7 +174,14 @@ export function createTokens(options: CreateTokensOptions = {}): TokensApi {
       .join('; ');
 
     const css = `:root { ${declarations}; }`;
-    insertRule(`tokens:${cssNs}`, css);
+    const key = `tokens:${cssNs}`;
+    if (themeLayerContext) {
+      insertRules(
+        applyLayerToRules([{ key, css }], themeLayerContext.layer, themeLayerContext.stack),
+      );
+    } else {
+      insertRule(key, css);
+    }
 
     const allKeys = getAllKeys(values);
     createdTokenKeys.set(namespace, allKeys);
@@ -165,8 +210,9 @@ export function createTokens(options: CreateTokensOptions = {}): TokensApi {
     scopeId,
     create,
     use,
-    createTheme: (name, config) => createTheme(name, config, scopeId),
-    createDarkMode: (name, darkOverrides) => createDarkMode(name, darkOverrides, scopeId),
+    createTheme: (name, config) => createTheme(name, config, scopeId, themeLayerContext),
+    createDarkMode: (name, darkOverrides) =>
+      createDarkMode(name, darkOverrides, scopeId, themeLayerContext),
     when,
     colorMode,
   };

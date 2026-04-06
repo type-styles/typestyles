@@ -31,6 +31,7 @@ export const docNavigation = {
         { slug: 'ssr', title: 'Server-Side Rendering' },
         { slug: 'vite-plugin', title: 'Vite Plugin' },
         { slug: 'class-naming', title: 'Class naming' },
+        { slug: 'cascade-layers', title: 'Cascade layers (@layer)' },
         { slug: 'custom-at-rules', title: 'Custom Selectors & At-Rules' },
         { slug: 'theming-patterns', title: 'Theming Patterns' },
       ],

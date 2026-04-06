@@ -1,4 +1,5 @@
 import type { CSSProperties } from './types.js';
+import type { ResolvedCascadeLayers } from './layers.js';
 
 /**
  * How generated class names are formed for `styles.create`, `styles.class`,
@@ -19,6 +20,11 @@ export type ClassNamingConfig = {
    * names from different packages do not produce the same class string.
    */
   scopeId: string;
+  /**
+   * When set (via `createStyles({ layers: … })`), every `class` / `hashClass` / `component`
+   * call must pass `{ layer: … }` and emitted rules are wrapped in `@layer`.
+   */
+  cascadeLayers?: ResolvedCascadeLayers;
 };
 
 /** Default naming options used by `createStyles()` when no overrides are passed. */

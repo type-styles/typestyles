@@ -1,9 +1,13 @@
-import { createStyles, createTokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
 /**
- * Dedicated TypeStyles instances for this package (no global class-naming mutation).
- * When this library may share a page with another TypeStyles bundle, pass
- * `{ scopeId: 'your-package' }` to both factories so variables and theme classes stay unique.
+ * Single factory: shared scope and optional cascade layer stack for classes + tokens.
+ * Omit `layers` for flat CSS (default); enable layers when integrating with global CSS
+ * that uses `@layer`.
  */
-export const styles = createStyles();
-export const tokens = createTokens();
+export const { styles, tokens } = createTypeStyles({
+  scopeId: 'example-ds',
+  mode: 'semantic',
+  // layers: ['tokens', 'components', 'utilities'] as const,
+  // tokenLayer: 'tokens',
+});
