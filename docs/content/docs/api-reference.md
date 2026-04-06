@@ -18,13 +18,18 @@ per package or micro-frontend for isolation.
 
 - `styles.component(namespace, config)`: Create multi-variant component styles (CVA-style)
 - `styles.class(name, properties)`: Create a single class
-- `styles.container(…)`: Build typed `@container` keys for nested styles (also exported as `container`)
+- `styles.container(…)`: Build typed `@container` keys for nested styles (also exported as `container`). Object/two-arg forms infer a **literal** `@container …` string, so `[container({ minWidth: 400 })]: { … }` works next to longhands without casting; use `atRuleBlock` when the key is only known as a generic `string`.
+- `styles.has(…)`, `styles.is(…)`, `styles.where(…)`: Build nested `&`-keys for `:has()`, `:is()`, and `:where()` (same as the `has` / `is` / `where` exports). Literal arguments narrow to a concrete `&:…` key so you can mix them with longhands as `[has('.x')]: { … }` without `as CSSProperties`. `:where()` keeps **zero specificity**; raw `'&:has(…)'` strings still work.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
 - `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
 - `styles.hashClass(properties, label?)`: Create a deterministic hashed class
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create utility-aware styles API
 - `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
+
+**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `atRuleBlock`, `has`, `is`, `where`.
+
+**Related types:** `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
 
 ### `createStyles(options?)`
 
@@ -173,6 +178,23 @@ export const styles = createStyles({ scopeId: 'my-ds', mode: 'hashed', prefix: '
 export const tokens = createTokens({ scopeId: 'my-ds' });
 ```
 
+### `:has()`, `:is()`, `:where()` (nested selectors)
+
+Use the helpers as **computed keys** so you keep normal CSS semantics (including `:where`’s zero specificity) with the same “small builder” ergonomics as `container()`:
+
+```ts
+import { styles } from 'typestyles';
+
+const nav = styles.class('nav', {
+  display: 'flex',
+  [styles.where('.nav')]: { gap: '8px' },
+  [styles.has('.active')]: { borderBottom: '2px solid blue' },
+  [styles.is(':hover', ':focus-visible')]: { outline: '2px solid blue' },
+});
+```
+
+The named exports `has`, `is`, and `where` are identical to `styles.has` / `styles.is` / `styles.where`. The `IsPseudoArg` type documents common pseudos for `:is()` groups.
+
 ### Creating Animations
 
 ```ts
@@ -190,4 +212,4 @@ animation: `${fadeIn} 300ms ease`;
 ---
 
 _This API reference was auto-generated from source code._
-_Last updated: 2026-04-05_
+_Last updated: 2026-04-06_

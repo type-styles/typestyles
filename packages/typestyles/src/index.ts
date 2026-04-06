@@ -16,6 +16,7 @@ import { createVar, assignVars } from './vars.js';
 import { cx } from './cx.js';
 import { container, createContainerRef } from './container.js';
 import { atRuleBlock } from './at-rule-block.js';
+import { has, is, where } from './relational-pseudo.js';
 
 export type {
   StylesApi,
@@ -41,15 +42,23 @@ export {
 
 export { createStyles, createTokens, createTypeStyles };
 
-export { container, createContainerRef, atRuleBlock };
+export { container, createContainerRef, atRuleBlock, has, is, where };
 
 export type {
   ContainerQueryKey,
   ContainerQueryFeatures,
   ContainerQueryObject,
+  ContainerObjectKey,
   ContainerNameRef,
   CreateContainerRefOptions,
 } from './container.js';
+
+export type {
+  HasNestedKey,
+  IsNestedKey,
+  WhereNestedKey,
+  IsPseudoArg,
+} from './relational-pseudo.js';
 
 export type {
   CSSProperties,

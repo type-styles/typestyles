@@ -1,4 +1,5 @@
 import { sanitizeClassSegment } from './class-naming.js';
+import type { JoinAnd } from './join-selector-list-types.js';
 
 /**
  * Object key for nested styles: `@container … { … }`.
@@ -34,6 +35,111 @@ export type ContainerQueryFeatures = {
 export type ContainerQueryObject = ContainerQueryFeatures & {
   name?: string;
 };
+
+// ---------------------------------------------------------------------------
+// Type-level @container keys (mirrors conditionFromFeatures + emitFeatureValue)
+// ---------------------------------------------------------------------------
+
+type EmitLengthish<V> = V extends 0
+  ? '0'
+  : V extends number
+    ? `${V}px`
+    : V extends string
+      ? V
+      : never;
+
+type EmitAspect<V> = V extends 0 ? '0' : V extends number ? `${V}` : V extends string ? V : never;
+
+type GMinWidth<F extends ContainerQueryFeatures> = F['minWidth'] extends infer V
+  ? V extends string | number
+    ? [`(min-width: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GMaxWidth<F extends ContainerQueryFeatures> = F['maxWidth'] extends infer V
+  ? V extends string | number
+    ? [`(max-width: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GMinHeight<F extends ContainerQueryFeatures> = F['minHeight'] extends infer V
+  ? V extends string | number
+    ? [`(min-height: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GMaxHeight<F extends ContainerQueryFeatures> = F['maxHeight'] extends infer V
+  ? V extends string | number
+    ? [`(max-height: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GMinInlineSize<F extends ContainerQueryFeatures> = F['minInlineSize'] extends infer V
+  ? V extends string | number
+    ? [`(min-inline-size: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GMaxInlineSize<F extends ContainerQueryFeatures> = F['maxInlineSize'] extends infer V
+  ? V extends string | number
+    ? [`(max-inline-size: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GMinBlockSize<F extends ContainerQueryFeatures> = F['minBlockSize'] extends infer V
+  ? V extends string | number
+    ? [`(min-block-size: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GMaxBlockSize<F extends ContainerQueryFeatures> = F['maxBlockSize'] extends infer V
+  ? V extends string | number
+    ? [`(max-block-size: ${EmitLengthish<V>})`]
+    : []
+  : [];
+
+type GAspectRatio<F extends ContainerQueryFeatures> = F['aspectRatio'] extends infer V
+  ? V extends string | number
+    ? [`(aspect-ratio: ${EmitAspect<V>})`]
+    : []
+  : [];
+
+type GOrientation<F extends ContainerQueryFeatures> = F['orientation'] extends infer V
+  ? V extends 'portrait' | 'landscape'
+    ? [`(orientation: ${V})`]
+    : []
+  : [];
+
+type ContainerConditionTuple<F extends ContainerQueryFeatures> = [
+  ...GMinWidth<F>,
+  ...GMaxWidth<F>,
+  ...GMinHeight<F>,
+  ...GMaxHeight<F>,
+  ...GMinInlineSize<F>,
+  ...GMaxInlineSize<F>,
+  ...GMinBlockSize<F>,
+  ...GMaxBlockSize<F>,
+  ...GAspectRatio<F>,
+  ...GOrientation<F>,
+];
+
+type CondFromFeatures<F extends ContainerQueryFeatures> = JoinAnd<ContainerConditionTuple<F>>;
+
+type NamePart<F extends ContainerQueryObject> = F['name'] extends string
+  ? F['name'] extends ''
+    ? ''
+    : F['name']
+  : '';
+
+/** Narrow `@container` key for {@link container} object form — allows `[container({ … })]` without widening. */
+export type ContainerObjectKey<F extends ContainerQueryObject> =
+  CondFromFeatures<Omit<F, 'name'>> extends infer B extends string
+    ? B extends ''
+      ? never
+      : NamePart<F> extends ''
+        ? `@container ${B}`
+        : `@container ${NamePart<F>} ${B}`
+    : never;
 
 const FEATURE_ORDER: ReadonlyArray<{
   key: keyof ContainerQueryFeatures;
@@ -168,9 +274,22 @@ function conditionFromFeatures(features: ContainerQueryFeatures): string {
  * ...styles.atRuleBlock(styles.container('style(--theme: dark)'), { color: '#fff' })
  * ```
  */
-export function container(name: string, features: ContainerQueryFeatures): ContainerQueryKey;
-export function container(features: ContainerQueryObject): ContainerQueryKey;
+export function container<const F extends ContainerQueryObject>(features: F): ContainerObjectKey<F>;
+
+export function container<const N extends string, const F extends ContainerQueryFeatures>(
+  name: N,
+  features: F,
+): CondFromFeatures<F> extends infer B extends string
+  ? B extends ''
+    ? never
+    : `@container ${N} ${B}`
+  : never;
+
+/** Raw condition after `@container` — literal `S` preserves a narrow key for `[container('…')]`. */
+export function container<const S extends string>(rawCondition: S): `@container ${S}`;
+
 export function container(rawCondition: string): ContainerQueryKey;
+
 export function container(
   a: string | ContainerQueryObject,
   b?: ContainerQueryFeatures,

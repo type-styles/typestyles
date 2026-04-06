@@ -36,6 +36,7 @@ import {
   type ContainerNameRef,
 } from './container.js';
 import { atRuleBlock as atRuleBlockFn } from './at-rule-block.js';
+import { has as hasNested, is as isNested, where as whereNested } from './relational-pseudo.js';
 
 /**
  * Create a single class with the given styles. Returns the class name string.
@@ -204,6 +205,18 @@ export type StylesApi = {
    * Build a spreadable `{ [ @key ]: nested }` so computed `@…` keys stay typed (see `atRuleBlock` export).
    */
   readonly atRuleBlock: typeof atRuleBlockFn;
+  /**
+   * Nested `&:has(…)` object keys (same helpers as the `has` export).
+   */
+  readonly has: typeof hasNested;
+  /**
+   * Nested `&:is(…)` object keys for grouped states (same as the `is` export).
+   */
+  readonly is: typeof isNested;
+  /**
+   * Nested `&:where(…)` keys — zero-specificity defaults (same as the `where` export).
+   */
+  readonly where: typeof whereNested;
   class: (name: string, properties: CSSProperties) => string;
   hashClass: (properties: CSSProperties, label?: string) => string;
   component: {
@@ -370,6 +383,9 @@ function buildStylesRuntimeApi(
       container: containerQuery,
       containerRef,
       atRuleBlock: atRuleBlockFn,
+      has: hasNested,
+      is: isNested,
+      where: whereNested,
       class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
         const layer = options.layer;
         return createClass(classNaming, name, properties, layer);
@@ -381,7 +397,8 @@ function buildStylesRuntimeApi(
       component: componentImpl as unknown as LayeredComponentFn<string>,
       withUtils: (utils) => createStylesWithUtilsLayered(utils, classNaming),
       compose,
-    } satisfies StylesApiWithLayers<string>;
+      // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
+    } as StylesApiWithLayers<string>;
   }
 
   return {
@@ -389,6 +406,9 @@ function buildStylesRuntimeApi(
     container: containerQuery,
     containerRef,
     atRuleBlock: atRuleBlockFn,
+    has: hasNested,
+    is: isNested,
+    where: whereNested,
     class: (name: string, properties: CSSProperties) => createClass(classNaming, name, properties),
     hashClass: (properties: CSSProperties, label?: string) =>
       createHashClass(classNaming, properties, label),
@@ -402,13 +422,17 @@ function buildStylesRuntimeApi(
       )) as StylesApi['component'],
     withUtils: (utils) => createStylesWithUtils(utils, classNaming),
     compose,
-  } satisfies StylesApi;
+    // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
+  } as StylesApi;
 }
 
 export type StylesWithUtilsApi<U extends StyleUtils> = {
   readonly container: typeof containerQuery;
   readonly containerRef: (label: string) => ContainerNameRef;
   readonly atRuleBlock: typeof atRuleBlockFn;
+  readonly has: typeof hasNested;
+  readonly is: typeof isNested;
+  readonly where: typeof whereNested;
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
   component: {
@@ -479,6 +503,9 @@ export function createStylesWithUtils<U extends StyleUtils>(
     container: containerQuery,
     containerRef,
     atRuleBlock: atRuleBlockFn,
+    has: hasNested,
+    is: isNested,
+    where: whereNested,
     class: (name, properties) => createClass(classNaming, name, apply(properties)),
     hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
     component: component as StylesWithUtilsApi<U>['component'],
@@ -527,6 +554,9 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     container: containerQuery,
     containerRef,
     atRuleBlock: atRuleBlockFn,
+    has: hasNested,
+    is: isNested,
+    where: whereNested,
     class: (name, properties, options) =>
       createClass(classNaming, name, apply(properties), options.layer),
     hashClass: (properties, options) =>

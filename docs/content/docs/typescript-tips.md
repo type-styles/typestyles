@@ -433,6 +433,29 @@ function Button({ variant: variantProp }: { variant?: string }) {
 7. **Export types** that consumers might need
 8. **Document complex types** with JSDoc comments
 
+## Nested keys: `container()`, `has()`, `is()`, `where()`
+
+Style objects allow nested keys that start with **`&`** (pseudos, descendants), **`[`** (attributes), or **`@`** (at-rules). When you use a **computed** key next to normal longhands (`color`, `padding`, …), TypeScript must keep that key as a **narrow template literal**. If it widens to plain `string`, the object no longer matches `CSSProperties` and you might be tempted to use `as CSSProperties`.
+
+TypeStyles narrows keys when you use the builders with **literal** inputs:
+
+- **`styles.container({ minWidth: 400 })`**, **`styles.container('sidebar', { minWidth: 300 })`**, and **`styles.container('(min-width: 1px)')`** infer a concrete `` `@container …` `` key.
+- **`styles.has('.active')`**, **`styles.is(':hover', ':focus-visible')`**, **`styles.where('.nav')`** infer a concrete `` `&:…` `` key.
+
+So this pattern type-checks without casting:
+
+```ts
+import { styles } from 'typestyles';
+
+styles.class('card', {
+  color: 'inherit',
+  [styles.container({ minWidth: 400 })]: { display: 'grid' },
+  [styles.has('.expanded')]: { borderColor: 'blue' },
+});
+```
+
+When the query or selector is only known as a **`string`** variable at compile time, use **`…styles.atRuleBlock(containerKey, { … })`** (or spread a one-key object) instead of `[someString]: { … }`. See [Custom selectors & at-rules](/docs/custom-at-rules).
+
 ## Common type issues
 
 ### Issue: "Type instantiation is excessively deep"

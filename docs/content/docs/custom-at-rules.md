@@ -234,6 +234,29 @@ All CSS attribute selector operators are supported:
 - ends with: `[attr$="suffix"]`
 - contains substring: `[attr*="part"]`
 
+## `:has()`, `:is()`, and `:where()` helpers
+
+Use **`styles.has`**, **`styles.is`**, and **`styles.where`** (or the named exports `has`, `is`, `where` from `typestyles`) to build `&`-nested keys the same way **`styles.container`** builds `@container` keys. Each helper returns a string suitable as an object key; multiple arguments become a comma-separated list inside the pseudo-class.
+
+- **`:where()`** — wraps a selector list at **zero specificity**, so library defaults are easy for consumers to override.
+- **`:is()`** — groups selectors; specificity is that of the most specific argument in the list.
+- **`:has()`** — accepts a [relative selector list](https://drafts.csswg.org/selectors/#relative-real-selector-list) (parent / descendant-aware styling).
+
+```ts
+import { styles } from 'typestyles';
+
+const nav = styles.class('nav', {
+  display: 'flex',
+  [styles.where('.nav')]: { gap: '8px' },
+  [styles.has('.active')]: { borderBottom: '2px solid blue' },
+  [styles.is(':hover', ':focus-visible')]: { outline: '2px solid blue' },
+});
+```
+
+You can still author raw nested keys (e.g. `'&:has(.active)'`, `'&:is(:hover, :focus)'`). The **`IsPseudoArg`** type lists common pseudos for `:is()` groups. See [API Reference](/docs/api-reference) for exported types (`HasNestedKey`, `IsNestedKey`, `WhereNestedKey`).
+
+**TypeScript:** literal arguments narrow to a concrete `` `&:…` `` template so computed keys mix cleanly with longhands; for dynamic selector strings, prefer plain `'&…'` keys or a small wrapper object you spread.
+
 ## Media queries
 
 Use the `@` prefix for media queries:
@@ -332,17 +355,17 @@ const card = styles.class('card', {
   containerType: 'inline-size',
   padding: '16px',
 
-  ...styles.atRuleBlock(styles.container({ minWidth: 400 }), {
+  [styles.container({ minWidth: 400 })]: {
     padding: '24px',
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-  }),
+  },
 });
 ```
 
 `container({ … })` accepts camelCase size features (`minWidth`, `maxInlineSize`, `orientation`, …). Numbers become `px` (except `aspectRatio`, where a number is emitted as-is—prefer a string like `'16 / 9'` when needed). Multiple features compile to one condition joined with `and`.
 
-**TypeScript:** a computed key like `[styles.container(…)]` is inferred as `string`, which clashes with the `CSSProperties` index signatures. Spread **`styles.atRuleBlock(key, nested)`** (or the `atRuleBlock` export) so the key stays typed—you do not need `as CSSProperties`.
+**TypeScript:** object and two-argument forms infer a **literal** `` `@container …` `` template, so **`[styles.container(…)]`** can sit next to longhands (`padding`, `display`, …) without `as CSSProperties`. When the `@container` text is only known as a generic **`string`** at compile time, spread **`styles.atRuleBlock(key, nested)`** (or the `atRuleBlock` export) instead. A **string literal** one-arg call also narrows, e.g. `[styles.container('(min-width: 1px)')]: { … }`.
 
 ### Named container queries
 

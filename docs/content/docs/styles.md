@@ -112,6 +112,21 @@ const trigger = styles.component('trigger', {
 });
 ```
 
+### `:has()`, `:is()`, and `:where()` helpers
+
+For grouped or low-specificity pseudos, use **`styles.has`**, **`styles.is`**, and **`styles.where`** (or import `has`, `is`, `where` from `typestyles`). They mirror the ergonomics of **`styles.container()`** for container queries: small builders that return `&`-prefixed keys and infer **literal** templates from your arguments, so you can mix them with ordinary properties without `as CSSProperties`.
+
+```ts
+const nav = styles.class('nav', {
+  display: 'flex',
+  [styles.where('.nav')]: { gap: '8px' },
+  [styles.has('.active')]: { borderBottom: '2px solid blue' },
+  [styles.is(':hover', ':focus-visible')]: { outline: '2px solid dodgerblue' },
+});
+```
+
+`:where()` is especially useful for design-system defaults (zero specificity). See [Custom selectors & at-rules](/docs/custom-at-rules) for TypeScript notes and more examples.
+
 ## Composing styles
 
 Use `styles.compose()` to combine multiple component style functions or class strings:

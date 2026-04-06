@@ -140,7 +140,7 @@ Below is a practical feature map to support the full range of approaches.
   - `&[data-state="open"]`
   - `&[aria-expanded="true"]`
   - `& [data-part="label"]`
-  - `&:has([data-state="open"])` (where supported)
+  - `&:has([data-state="open"])` (where supported), plus **`has` / `is` / `where`** helpers for `:has()`, `:is()`, and `:where()` keys (see [Custom selectors & at-rules](/docs/custom-at-rules))
 - Ensure all CSS attribute selector operators are supported.
 - Add type-safe helpers for common state selectors (optional convenience layer).
 
