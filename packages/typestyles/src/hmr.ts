@@ -4,4 +4,4 @@
  * Import from 'typestyles/hmr' — this keeps HMR internals out of the
  * main bundle for production users.
  */
-export { invalidatePrefix, invalidateKeys } from './sheet.js';
+export { invalidatePrefix, invalidateKeys } from './sheet';

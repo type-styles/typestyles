@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateAllAtomicClasses, generateFromCollections } from './generate.js';
+import { generateAllAtomicClasses, generateFromCollections } from './generate';
 
 describe('generateAllAtomicClasses', () => {
   it('generates classes without conditions when defaultCondition is false', () => {

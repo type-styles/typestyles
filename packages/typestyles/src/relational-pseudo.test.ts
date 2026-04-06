@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { serializeStyle } from './css.js';
-import { has, is, where } from './relational-pseudo.js';
+import { serializeStyle } from './css';
+import { has, is, where } from './relational-pseudo';
 
 describe('relational pseudo helpers', () => {
   it('builds :has keys and serializes', () => {

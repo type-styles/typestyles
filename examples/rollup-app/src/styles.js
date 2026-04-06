@@ -1,6 +1,6 @@
 import { styles } from 'typestyles';
-import { color, space } from './tokens.js';
-import { fadeIn, spin } from './animations.js';
+import { color, space } from './tokens';
+import { fadeIn, spin } from './animations';
 
 export const layout = styles.component('layout', {
   page: {

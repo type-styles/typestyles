@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createClass, createHashClass, compose, createStylesWithUtils } from './styles.js';
-import { cx } from './index.js';
-import { createComponent } from './component.js';
-import { defaultClassNamingConfig } from './class-naming.js';
-import { reset, flushSync } from './sheet.js';
-import { registeredNamespaces } from './registry.js';
+import { createClass, createHashClass, compose, createStylesWithUtils } from './styles';
+import { cx } from './index';
+import { createComponent } from './component';
+import { defaultClassNamingConfig } from './class-naming';
+import { reset, flushSync } from './sheet';
+import { registeredNamespaces } from './registry';
 
 describe('createClass', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
-import type { CSSProperties, FontFaceProps } from './types.js';
-import { serializeStyle } from './css.js';
-import { insertRule, insertRules } from './sheet.js';
+import type { CSSProperties, FontFaceProps } from './types';
+import { serializeStyle } from './css';
+import { insertRule, insertRules } from './sheet';
 
 /**
  * Apply styles to an arbitrary CSS selector.

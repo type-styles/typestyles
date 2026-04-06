@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createKeyframes } from './keyframes.js';
-import { reset, flushSync } from './sheet.js';
+import { createKeyframes } from './keyframes';
+import { reset, flushSync } from './sheet';
 
 /**
  * Helper to get all injected CSS text from the style element.

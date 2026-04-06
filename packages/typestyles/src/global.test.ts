@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { globalStyle, globalFontFace } from './global.js';
-import { reset, flushSync, getRegisteredCss } from './sheet.js';
+import { globalStyle, globalFontFace } from './global';
+import { reset, flushSync, getRegisteredCss } from './sheet';
 
 describe('globalStyle', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
-import { sanitizeClassSegment } from './class-naming.js';
-import type { JoinAnd } from './join-selector-list-types.js';
+import { sanitizeClassSegment } from './class-naming';
+import type { JoinAnd } from './join-selector-list-types';
 
 /**
  * Object key for nested styles: `@container … { … }`.

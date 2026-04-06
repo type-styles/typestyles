@@ -1,4 +1,4 @@
-import type { CSSVarRef } from './types.js';
+import type { CSSVarRef } from './types';
 
 let counter = 0;
 

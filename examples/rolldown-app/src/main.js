@@ -1,4 +1,4 @@
-import { button, card, layout, spinner } from './styles.js';
+import { button, card, layout, spinner } from './styles';
 
 const app = globalThis.document.getElementById('app');
 

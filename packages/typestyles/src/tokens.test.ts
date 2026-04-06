@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTokens } from './tokens.js';
-import { createTheme } from './theme.js';
-import { reset, flushSync } from './sheet.js';
+import { createTokens } from './tokens';
+import { createTheme } from './theme';
+import { reset, flushSync } from './sheet';
 
 describe('createTokens factory', () => {
   it('exposes scopeId on the instance', () => {

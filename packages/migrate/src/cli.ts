@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
-import type { CliOptions } from './types.js';
-import { runMigration } from './migrate.js';
+import type { CliOptions } from './types';
+import { runMigration } from './migrate';
 
 const HELP_TEXT = `typestyles-migrate <paths...> [options]
 

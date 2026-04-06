@@ -1,10 +1,10 @@
-import type { TokenValues, TokenRef, ThemeConfig, ThemeSurface, ThemeOverrides } from './types.js';
-import { flattenTokenEntries } from './types.js';
-import { scopedTokenNamespace } from './class-naming.js';
-import { insertRule, insertRules } from './sheet.js';
-import { createTheme, createDarkMode, when, colorMode } from './theme.js';
-import type { CascadeLayersInput } from './layers.js';
-import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers.js';
+import type { TokenValues, TokenRef, ThemeConfig, ThemeSurface, ThemeOverrides } from './types';
+import { flattenTokenEntries } from './types';
+import { scopedTokenNamespace } from './class-naming';
+import { insertRule, insertRules } from './sheet';
+import { createTheme, createDarkMode, when, colorMode } from './theme';
+import type { CascadeLayersInput } from './layers';
+import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
 
 export type CreateTokensOptions = {
   /**

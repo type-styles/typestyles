@@ -15,13 +15,13 @@ import type {
   MultiSlotConfig,
   MultiSlotConfigInput,
   MultiSlotReturn,
-} from './types.js';
-import { serializeStyle } from './css.js';
-import { insertRules } from './sheet.js';
-import { applyLayerToRules, assertOwnLayer } from './layers.js';
-import { registeredNamespaces } from './registry.js';
-import { buildComponentClassName, type ClassNamingConfig } from './class-naming.js';
-import { createComponentConfigContextPair } from './component-config-context.js';
+} from './types';
+import { serializeStyle } from './css';
+import { insertRules } from './sheet';
+import { applyLayerToRules, assertOwnLayer } from './layers';
+import { registeredNamespaces } from './registry';
+import { buildComponentClassName, type ClassNamingConfig } from './class-naming';
+import { createComponentConfigContextPair } from './component-config-context';
 
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)

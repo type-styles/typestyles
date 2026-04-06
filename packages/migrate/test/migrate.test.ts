@@ -2,8 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { runMigration } from '../src/migrate.js';
-import { migrateSource } from '../src/transform.js';
+import { runMigration } from '../src/migrate';
+import { migrateSource } from '../src/transform';
 
 const fixture = (name: string) => join(process.cwd(), 'test', 'fixtures', name);
 

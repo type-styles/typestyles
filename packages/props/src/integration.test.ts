@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { styles, reset, getRegisteredCss } from 'typestyles';
-import { defineProperties, createProps } from './index.js';
+import { defineProperties, createProps } from './index';
 
 describe('integration with typestyles', () => {
   beforeEach(() => {

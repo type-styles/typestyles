@@ -12,12 +12,12 @@ import type {
   ThemeOverrides,
   ThemeSurface,
   TokenValues,
-} from './types.js';
-import { flattenTokenEntries } from './types.js';
-import { sanitizeClassSegment, scopedTokenNamespace } from './class-naming.js';
-import { insertRule, insertRules } from './sheet.js';
-import type { ResolvedCascadeLayers } from './layers.js';
-import { applyLayerToRules } from './layers.js';
+} from './types';
+import { flattenTokenEntries } from './types';
+import { sanitizeClassSegment, scopedTokenNamespace } from './class-naming';
+import { insertRule, insertRules } from './sheet';
+import type { ResolvedCascadeLayers } from './layers';
+import { applyLayerToRules } from './layers';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {

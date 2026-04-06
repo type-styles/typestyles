@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as t from '@babel/types';
-import { cssToObjectExpression } from '../src/css.js';
-import type { MigrationWarning } from '../src/types.js';
+import { cssToObjectExpression } from '../src/css';
+import type { MigrationWarning } from '../src/types';
 
 /**
  * Convert a Babel ObjectExpression to a plain JS object for easy assertion.

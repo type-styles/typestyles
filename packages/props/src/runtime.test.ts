@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLookupMap, expandShorthands, createResolver } from './runtime.js';
+import { buildLookupMap, expandShorthands, createResolver } from './runtime';
 
 describe('buildLookupMap', () => {
   it('collects properties from collections', () => {

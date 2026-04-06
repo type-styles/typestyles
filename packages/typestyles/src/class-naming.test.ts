@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStyles } from './styles.js';
-import { reset, flushSync } from './sheet.js';
-import { registeredNamespaces } from './registry.js';
+import { createStyles } from './styles';
+import { reset, flushSync } from './sheet';
+import { registeredNamespaces } from './registry';
 
 describe('class naming modes', () => {
   beforeEach(() => {

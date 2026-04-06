@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createTheme, createDarkMode, when, colorMode } from './theme.js';
-import { reset, flushSync } from './sheet.js';
+import { createTheme, createDarkMode, when, colorMode } from './theme';
+import { reset, flushSync } from './sheet';
 
 function getRules(): CSSRule[] {
   const style = document.getElementById('typestyles') as HTMLStyleElement;

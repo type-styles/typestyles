@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
-import { withTypestylesExtract } from './build.js';
+import { withTypestylesExtract } from './build';
 
 type WebpackContext = Parameters<NonNullable<NextConfig['webpack']>>[1];
 

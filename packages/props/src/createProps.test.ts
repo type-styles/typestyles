@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { reset, flushSync, getRegisteredCss } from 'typestyles';
-import { defineProperties } from './defineProperties.js';
-import { createProps } from './createProps.js';
+import { defineProperties } from './defineProperties';
+import { createProps } from './createProps';
 
 describe('createProps', () => {
   beforeEach(() => {

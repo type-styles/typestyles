@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, expectTypeOf } from 'vitest';
-import { createVar, assignVars, __resetVarCounter } from './vars.js';
-import type { CSSVarRef, ComponentVariants, ComponentFunction } from './types.js';
+import { createVar, assignVars, __resetVarCounter } from './vars';
+import type { CSSVarRef, ComponentVariants, ComponentFunction } from './types';
 
 describe('createVar', () => {
   beforeEach(() => {

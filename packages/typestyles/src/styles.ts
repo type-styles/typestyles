@@ -14,12 +14,12 @@ import type {
   SlotComponentFunction,
   MultiSlotConfigInput,
   MultiSlotReturn,
-} from './types.js';
-import { serializeStyle } from './css.js';
-import { insertRules } from './sheet.js';
-import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers.js';
-import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers.js';
-import { registeredNamespaces } from './registry.js';
+} from './types';
+import { serializeStyle } from './css';
+import { insertRules } from './sheet';
+import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers';
+import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
+import { registeredNamespaces } from './registry';
 import {
   buildSingleClassName,
   defaultClassNamingConfig,
@@ -28,15 +28,15 @@ import {
   sanitizeClassSegment,
   stableSerialize,
   type ClassNamingConfig,
-} from './class-naming.js';
-import { createComponent } from './component.js';
+} from './class-naming';
+import { createComponent } from './component';
 import {
   container as containerQuery,
   createContainerRef,
   type ContainerNameRef,
-} from './container.js';
-import { atRuleBlock as atRuleBlockFn } from './at-rule-block.js';
-import { has as hasNested, is as isNested, where as whereNested } from './relational-pseudo.js';
+} from './container';
+import { atRuleBlock as atRuleBlockFn } from './at-rule-block';
+import { has as hasNested, is as isNested, where as whereNested } from './relational-pseudo';
 
 /**
  * Create a single class with the given styles. Returns the class name string.

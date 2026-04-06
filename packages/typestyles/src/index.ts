@@ -1,22 +1,22 @@
-import { createStyles } from './styles.js';
-import { createTokens } from './tokens.js';
-import { createTypeStyles } from './create-type-styles.js';
-import { createTheme, createDarkMode, when, colorMode } from './theme.js';
-import { createKeyframes } from './keyframes.js';
-import * as colorFns from './color.js';
+import { createStyles } from './styles';
+import { createTokens } from './tokens';
+import { createTypeStyles } from './create-type-styles';
+import { createTheme, createDarkMode, when, colorMode } from './theme';
+import { createKeyframes } from './keyframes';
+import * as colorFns from './color';
 import {
   getRegisteredCss,
   insertRules,
   reset,
   flushSync,
   ensureDocumentStylesAttached,
-} from './sheet.js';
-import { globalStyle, globalFontFace } from './global.js';
-import { createVar, assignVars } from './vars.js';
-import { cx } from './cx.js';
-import { container, createContainerRef } from './container.js';
-import { atRuleBlock } from './at-rule-block.js';
-import { has, is, where } from './relational-pseudo.js';
+} from './sheet';
+import { globalStyle, globalFontFace } from './global';
+import { createVar, assignVars } from './vars';
+import { cx } from './cx';
+import { container, createContainerRef } from './container';
+import { atRuleBlock } from './at-rule-block';
+import { has, is, where } from './relational-pseudo';
 
 export type {
   StylesApi,
@@ -24,21 +24,13 @@ export type {
   CreateStylesInput,
   LayerOption,
   LayeredComponentFn,
-} from './styles.js';
-export type { CreateTokensOptions, TokensApi } from './tokens.js';
+} from './styles';
+export type { CreateTokensOptions, TokensApi } from './tokens';
 
-export type {
-  CascadeLayersInput,
-  CascadeLayersObjectInput,
-  ResolvedCascadeLayers,
-} from './layers.js';
+export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';
 
-export type { ClassNamingConfig, ClassNamingMode } from './class-naming.js';
-export {
-  mergeClassNaming,
-  defaultClassNamingConfig,
-  scopedTokenNamespace,
-} from './class-naming.js';
+export type { ClassNamingConfig, ClassNamingMode } from './class-naming';
+export { mergeClassNaming, defaultClassNamingConfig, scopedTokenNamespace } from './class-naming';
 
 export { createStyles, createTokens, createTypeStyles };
 
@@ -51,14 +43,9 @@ export type {
   ContainerObjectKey,
   ContainerNameRef,
   CreateContainerRefOptions,
-} from './container.js';
+} from './container';
 
-export type {
-  HasNestedKey,
-  IsNestedKey,
-  WhereNestedKey,
-  IsPseudoArg,
-} from './relational-pseudo.js';
+export type { HasNestedKey, IsNestedKey, WhereNestedKey, IsPseudoArg } from './relational-pseudo';
 
 export type {
   CSSProperties,
@@ -109,17 +96,17 @@ export type {
   ThemeConfig,
   ThemeSurface,
   DeepPartialTokenValues,
-} from './types.js';
+} from './types';
 
-export { flattenTokenEntries } from './types.js';
+export { flattenTokenEntries } from './types';
 
 export { createVar, assignVars };
 
-export type { ColorMixSpace } from './color.js';
+export type { ColorMixSpace } from './color';
 
 export { createTheme, createDarkMode, when, colorMode };
 
-export type { ThemeEmitLayerContext } from './theme.js';
+export type { ThemeEmitLayerContext } from './theme';
 
 /**
  * Default style API (semantic class names, empty `scopeId`). Prefer `createStyles({ scopeId, mode, prefix })`

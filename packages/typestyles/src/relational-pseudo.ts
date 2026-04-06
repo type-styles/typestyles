@@ -1,4 +1,4 @@
-import type { JoinComma } from './join-selector-list-types.js';
+import type { JoinComma } from './join-selector-list-types';
 
 /**
  * Object key for nested styles using {@link has} — compiles to `.base:has(…)`.

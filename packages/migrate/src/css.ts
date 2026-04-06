@@ -1,6 +1,6 @@
 import postcss, { type ChildNode, type Container } from 'postcss';
 import * as t from '@babel/types';
-import type { MigrationWarning } from './types.js';
+import type { MigrationWarning } from './types';
 
 function camelCaseProperty(property: string): string {
   return property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());

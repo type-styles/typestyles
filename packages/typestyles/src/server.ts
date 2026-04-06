@@ -1,4 +1,4 @@
-import { startCollection, flushSync, getRegisteredCss } from './sheet.js';
+import { startCollection, flushSync, getRegisteredCss } from './sheet';
 
 export { getRegisteredCss };
 

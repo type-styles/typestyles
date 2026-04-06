@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defineProperties } from './defineProperties.js';
+import { defineProperties } from './defineProperties';
 
 describe('defineProperties', () => {
   it('creates a property collection with properties', () => {

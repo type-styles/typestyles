@@ -5,8 +5,8 @@ import type {
   ConditionDefinition,
   PropertyValues,
   ShorthandDefinitions,
-} from './types.js';
-import { sanitizeValue, toKebabCase } from './utils.js';
+} from './types';
+import { sanitizeValue, toKebabCase } from './utils';
 
 /**
  * Generate a single atomic CSS class.

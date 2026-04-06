@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { collectStylesFromModules } from './build.js';
-import { insertRule, reset } from './sheet.js';
+import { collectStylesFromModules } from './build';
+import { insertRule, reset } from './sheet';
 
 describe('collectStylesFromModules', () => {
   beforeEach(() => {

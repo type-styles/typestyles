@@ -1,6 +1,6 @@
-import type { CSSProperties } from './types.js';
-import { toKebabCase } from './css.js';
-import { insertRule } from './sheet.js';
+import type { CSSProperties } from './types';
+import { toKebabCase } from './css';
+import { insertRule } from './sheet';
 
 /**
  * A keyframe stop is either 'from', 'to', or a percentage like '50%'.

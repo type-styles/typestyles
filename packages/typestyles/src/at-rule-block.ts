@@ -1,4 +1,4 @@
-import type { CSSProperties } from './types.js';
+import type { CSSProperties } from './types';
 
 /**
  * Returns a one-key object to **spread** into a style map.

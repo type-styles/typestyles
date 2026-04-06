@@ -1,5 +1,5 @@
-import type { CSSProperties } from './types.js';
-import type { ResolvedCascadeLayers } from './layers.js';
+import type { CSSProperties } from './types';
+import type { ResolvedCascadeLayers } from './layers';
 
 /**
  * How generated class names are formed for `styles.create`, `styles.class`,

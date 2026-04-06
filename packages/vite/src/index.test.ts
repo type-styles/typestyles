@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractNamespaces } from './index.js';
+import { extractNamespaces } from './index';
 
 describe('extractNamespaces', () => {
   it('extracts styles.component namespaces as prefixes', () => {
@@ -121,18 +121,18 @@ describe('extractNamespaces', () => {
 
 describe('typestyles vite plugin', () => {
   it('exports a default function', async () => {
-    const mod = await import('./index.js');
+    const mod = await import('./index');
     expect(typeof mod.default).toBe('function');
   });
 
   it('returns a plugin object with correct name', async () => {
-    const mod = await import('./index.js');
+    const mod = await import('./index');
     const plugin = mod.default();
     expect(plugin.name).toBe('typestyles');
   });
 
   it('defaults to build mode when extract.modules is set — runtime disabled only on vite build', async () => {
-    const mod = await import('./index.js');
+    const mod = await import('./index');
     const plugin = mod.default({ extract: { modules: ['src/entry.ts'] } });
     const serve = plugin.config?.({}, { command: 'serve', mode: 'development' });
     expect(serve?.define?.['__TYPESTYLES_RUNTIME_DISABLED__']).toBeUndefined();
@@ -141,14 +141,14 @@ describe('typestyles vite plugin', () => {
   });
 
   it('defaults to runtime mode when extract is omitted', async () => {
-    const mod = await import('./index.js');
+    const mod = await import('./index');
     const plugin = mod.default();
     const build = plugin.config?.({}, { command: 'build', mode: 'production' });
     expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBeUndefined();
   });
 
   it('honors mode: runtime with extract on build', async () => {
-    const mod = await import('./index.js');
+    const mod = await import('./index');
     const plugin = mod.default({
       mode: 'runtime',
       extract: { modules: ['a.ts'] },

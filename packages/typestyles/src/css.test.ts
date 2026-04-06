@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toKebabCase, serializeStyle } from './css.js';
+import { toKebabCase, serializeStyle } from './css';
 
 describe('toKebabCase', () => {
   it('converts camelCase to kebab-case', () => {

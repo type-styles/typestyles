@@ -4,7 +4,7 @@ import type {
   ShorthandDefinitions,
   DefinePropertiesConfig,
   PropertyCollection,
-} from './types.js';
+} from './types';
 
 /**
  * Define a collection of CSS properties with their allowed values and optional conditions.

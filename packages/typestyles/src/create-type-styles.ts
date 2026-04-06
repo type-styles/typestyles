@@ -1,9 +1,9 @@
-import type { ClassNamingConfig } from './class-naming.js';
-import type { CascadeLayersObjectInput } from './layers.js';
-import { createStyles } from './styles.js';
-import type { StylesApi, StylesApiWithLayers } from './styles.js';
-import { createTokens } from './tokens.js';
-import type { TokensApi } from './tokens.js';
+import type { ClassNamingConfig } from './class-naming';
+import type { CascadeLayersObjectInput } from './layers';
+import { createStyles } from './styles';
+import type { StylesApi, StylesApiWithLayers } from './styles';
+import { createTokens } from './tokens';
+import type { TokensApi } from './tokens';
 
 type NamingPartial = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>>;
 

@@ -1,5 +1,5 @@
-export { defineProperties } from './defineProperties.js';
-export { createProps } from './createProps.js';
+export { defineProperties } from './defineProperties';
+export { createProps } from './createProps';
 
 export type {
   PropertyDefinitions,
@@ -11,4 +11,4 @@ export type {
   PropsFunction,
   ConditionDefinition,
   PropertyValues,
-} from './types.js';
+} from './types';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rgb, hsl, oklch, oklab, lab, lch, hwb, mix, lightDark, alpha } from './color.js';
+import { rgb, hsl, oklch, oklab, lab, lch, hwb, mix, lightDark, alpha } from './color';
 
 describe('rgb', () => {
   it('produces rgb() without alpha', () => {

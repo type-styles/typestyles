@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractNamespaces } from './index.js';
+import { extractNamespaces } from './index';
 
 describe('extractNamespaces', () => {
   it('extracts styles and tokens namespaces', () => {

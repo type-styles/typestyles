@@ -3,8 +3,8 @@ import type {
   ConditionDefinitions,
   ShorthandDefinitions,
   PropertyCollection,
-} from './types.js';
-import { sanitizeValue, isConditionalValue } from './utils.js';
+} from './types';
+import { sanitizeValue, isConditionalValue } from './utils';
 
 /**
  * Build a lookup map for runtime class name resolution.

@@ -1,9 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, relative } from 'node:path';
 import { createPatch } from 'diff';
-import type { CliOptions, MigrationReport, MigrationSummary } from './types.js';
-import { collectTargetFiles } from './files.js';
-import { migrateSource } from './transform.js';
+import type { CliOptions, MigrationReport, MigrationSummary } from './types';
+import { collectTargetFiles } from './files';
+import { migrateSource } from './transform';
 
 function renderPatch(filePath: string, before: string, after: string): string {
   return createPatch(filePath, before, after, 'before', 'after').split('\n').slice(2).join('\n');

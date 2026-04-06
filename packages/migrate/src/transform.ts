@@ -2,8 +2,8 @@ import { parse } from '@babel/parser';
 import generate from '@babel/generator';
 import traverse, { type NodePath } from '@babel/traverse';
 import * as t from '@babel/types';
-import { cssToObjectExpression } from './css.js';
-import type { FileMigrationResult, MigrationWarning } from './types.js';
+import { cssToObjectExpression } from './css';
+import type { FileMigrationResult, MigrationWarning } from './types';
 
 type StyledTarget =
   | { kind: 'intrinsic'; jsxName: t.JSXIdentifier }

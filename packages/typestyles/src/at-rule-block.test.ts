@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { atRuleBlock } from './at-rule-block.js';
-import { container } from './container.js';
-import type { CSSProperties } from './types.js';
+import { atRuleBlock } from './at-rule-block';
+import { container } from './container';
+import type { CSSProperties } from './types';
 
 describe('atRuleBlock', () => {
   it('returns a one-key object for runtime merge', () => {

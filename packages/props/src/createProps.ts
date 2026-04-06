@@ -4,10 +4,10 @@ import type {
   PropertyDefinitions,
   ConditionDefinitions,
   ShorthandDefinitions,
-} from './types.js';
+} from './types';
 import { insertRules } from 'typestyles';
-import { generateFromCollections } from './generate.js';
-import { buildLookupMap, createResolver } from './runtime.js';
+import { generateFromCollections } from './generate';
+import { buildLookupMap, createResolver } from './runtime';
 
 /**
  * Combine property collections into a typed props function with pre-generated CSS.

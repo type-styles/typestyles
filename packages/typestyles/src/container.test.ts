@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { container, createContainerRef } from './container.js';
-import { serializeStyle } from './css.js';
-import { createStyles } from './styles.js';
+import { container, createContainerRef } from './container';
+import { serializeStyle } from './css';
+import { createStyles } from './styles';
 
 describe('container', () => {
   it('builds anonymous size queries', () => {

@@ -1,8 +1,4 @@
-import {
-  sanitizeClassSegment,
-  scopedTokenNamespace,
-  type ClassNamingConfig,
-} from './class-naming.js';
+import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
 import type {
   ComponentConfigContext,
   ComponentInternalVarRef,
@@ -12,8 +8,8 @@ import type {
   ComponentVarOptions,
   ComponentVarRefTree,
   CSSVarRef,
-} from './types.js';
-import { insertRule } from './sheet.js';
+} from './types';
+import { insertRule } from './sheet';
 
 function escapePropertySyntaxString(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');

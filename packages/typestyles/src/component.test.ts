@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createComponent } from './component.js';
-import { defaultClassNamingConfig, mergeClassNaming } from './class-naming.js';
-import { reset, flushSync, getRegisteredCss } from './sheet.js';
-import { registeredNamespaces } from './registry.js';
+import { createComponent } from './component';
+import { defaultClassNamingConfig, mergeClassNaming } from './class-naming';
+import { reset, flushSync, getRegisteredCss } from './sheet';
+import { registeredNamespaces } from './registry';
 
 describe('createComponent — dimensioned variants', () => {
   beforeEach(() => {

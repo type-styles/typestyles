@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { reset, flushSync, getRegisteredCss } from './sheet.js';
-import { createStyles } from './styles.js';
-import { createTokens } from './tokens.js';
-import { createTypeStyles } from './create-type-styles.js';
-import { resolveCascadeLayers } from './layers.js';
+import { reset, flushSync, getRegisteredCss } from './sheet';
+import { createStyles } from './styles';
+import { createTokens } from './tokens';
+import { createTypeStyles } from './create-type-styles';
+import { resolveCascadeLayers } from './layers';
 
 describe('cascade layers', () => {
   beforeEach(() => {

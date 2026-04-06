@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { collectStyles } from './server.js';
-import { defaultClassNamingConfig } from './class-naming.js';
-import { createComponent } from './component.js';
-import { createTokens } from './tokens.js';
-import { reset } from './sheet.js';
+import { collectStyles } from './server';
+import { defaultClassNamingConfig } from './class-naming';
+import { createComponent } from './component';
+import { createTokens } from './tokens';
+import { reset } from './sheet';
 
 describe('collectStyles', () => {
   beforeEach(() => {

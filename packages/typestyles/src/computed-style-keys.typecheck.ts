@@ -2,8 +2,8 @@
  * Compile-only fixtures (included in `tsc --noEmit`, not shipped in the bundle entry).
  * Ensures `[container(…)]`, `[has(…)]`, etc. mix with longhands without `as CSSProperties`.
  */
-import type { CSSProperties } from './types.js';
-import { container, createStyles, has, is, where } from './index.js';
+import type { CSSProperties } from './types';
+import { container, createStyles, has, is, where } from './index';
 
 const styles = createStyles();
 

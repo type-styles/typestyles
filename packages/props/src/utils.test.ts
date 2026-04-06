@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeValue, toKebabCase, isConditionalValue } from './utils.js';
+import { sanitizeValue, toKebabCase, isConditionalValue } from './utils';
 
 describe('sanitizeValue', () => {
   it('returns clean string values unchanged', () => {

@@ -1,4 +1,4 @@
-import type { CSSProperties } from './types.js';
+import type { CSSProperties } from './types';
 
 /**
  * Convert a camelCase CSS property name to kebab-case.
