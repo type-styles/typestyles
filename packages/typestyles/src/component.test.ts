@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createComponent } from './component.js';
-import { defaultClassNamingConfig } from './class-naming.js';
+import { defaultClassNamingConfig, mergeClassNaming } from './class-naming.js';
 import { reset, flushSync, getRegisteredCss } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 
@@ -505,5 +505,141 @@ describe('createComponent — multi-slot (no variants)', () => {
     const css = getRegisteredCss();
     expect(css).toContain('.mscss-root');
     expect(css).toContain('.mscss-box');
+  });
+});
+
+describe('createComponent — function config & internal vars', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('accepts a callback that returns dimensioned config; vars scope to component', () => {
+    const badge = createComponent(defaultClassNamingConfig, 'cb-badge', (c) => {
+      const v = c.vars({
+        textColor: '#333',
+        borderColor: { value: '#ccc', syntax: '<color>', inherits: false },
+      });
+      return {
+        base: {
+          color: v.textColor.var,
+          borderColor: v.borderColor.var,
+          borderWidth: '1px',
+        },
+        variants: {
+          tone: {
+            neutral: {},
+            danger: {
+              [v.textColor.name]: '#900',
+              [v.borderColor.name]: '#f00',
+            },
+          },
+        },
+        defaultVariants: { tone: 'neutral' },
+      };
+    });
+
+    expect(badge()).toBe('cb-badge-base cb-badge-tone-neutral');
+    expect(badge({ tone: 'danger' })).toBe('cb-badge-base cb-badge-tone-danger');
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --cb-badge-bordercolor');
+    expect(css).toContain('--cb-badge-textcolor: #333');
+    expect(css).toContain('--cb-badge-bordercolor: #ccc');
+    expect(css).toContain('color: var(--cb-badge-textcolor)');
+    expect(css).toContain('border-color: var(--cb-badge-bordercolor)');
+  });
+
+  it('prefixes internal var names with scopeId', () => {
+    const scoped = mergeClassNaming({ scopeId: 'acme' });
+    createComponent(scoped, 'pill', (c) => {
+      const x = c.var('ink', { value: '#111' });
+      return {
+        base: { color: x.var },
+      };
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--acme-pill-ink: #111');
+  });
+
+  it('registers @property when syntax and value are set on ctx.var', () => {
+    createComponent(defaultClassNamingConfig, 'prop-chip', (c) => {
+      c.var('opacity', {
+        value: '1',
+        syntax: '<number>',
+        inherits: false,
+      });
+      return { base: { padding: '4px' } };
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --prop-chip-opacity');
+    expect(css).toContain('syntax: "<number>"');
+    expect(css).toContain('initial-value: 1');
+  });
+
+  it('warns once on duplicate var id in dev', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    createComponent(defaultClassNamingConfig, 'dup-var', (c) => {
+      c.var('same');
+      c.var('same');
+      return { base: { color: c.var('same').var } };
+    });
+
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('supports flat variant config via function', () => {
+    const card = createComponent(defaultClassNamingConfig, 'fn-flat', (c) => {
+      const e = c.var('elev');
+      return {
+        base: { boxShadow: e.var },
+        elevated: { [e.name]: '0 2px 8px rgba(0,0,0,0.1)' },
+      };
+    });
+
+    expect(card()).toBe('fn-flat-base');
+    expect(card({ elevated: true })).toBe('fn-flat-base fn-flat-elevated');
+  });
+
+  it('supports multi-slot config via function', () => {
+    const ui = createComponent(defaultClassNamingConfig, 'fn-slot', (c) => {
+      const gap = c.var('g');
+      return {
+        slots: ['root', 'item'] as const,
+        root: { gap: gap.var },
+        item: { padding: '2px' },
+      };
+    });
+
+    const classes = ui();
+    expect(classes.root).toBe('fn-slot-root');
+    expect(classes.item).toBe('fn-slot-item');
+    flushSync();
+    expect(getRegisteredCss()).toContain('gap: var(--fn-slot-g)');
+  });
+
+  it('supports nested vars object like tokens.create', () => {
+    createComponent(defaultClassNamingConfig, 'nestv', (c) => {
+      const v = c.vars({
+        text: { primary: '#222', muted: '#888' },
+      });
+      return {
+        base: { color: v.text.primary.var },
+        variants: {
+          dim: {
+            on: { [v.text.primary.name]: '#fff' },
+          },
+        },
+      };
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--nestv-text-primary: #222');
+    expect(css).toContain('color: var(--nestv-text-primary)');
   });
 });

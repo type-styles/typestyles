@@ -204,6 +204,36 @@ describe('createStylesWithUtils', () => {
     expect(rule.style.getPropertyValue('padding-bottom')).toBe('12px');
   });
 
+  it('expands utility keys when component() uses a function config', () => {
+    const u = createStylesWithUtils({
+      padY: (value: string | number) => ({ paddingTop: value, paddingBottom: value }),
+    });
+
+    const box = u.component('util-fn-comp', (c) => {
+      const ink = c.var('ink');
+      return {
+        base: { padY: 8, color: ink.var },
+        variants: {
+          t: {
+            hi: { [ink.name]: '#f00', padY: 20 },
+          },
+        },
+      };
+    });
+
+    expect(box({ t: 'hi' })).toContain('util-fn-comp-base');
+    flushSync();
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const baseRule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp-base',
+    ) as CSSStyleRule;
+    const hiRule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp-t-hi',
+    ) as CSSStyleRule;
+    expect(baseRule.style.getPropertyValue('padding-top')).toBe('8px');
+    expect(hiRule.style.getPropertyValue('padding-top')).toBe('20px');
+  });
+
   it('expands utility keys in component() with flat variants', () => {
     const u = createStylesWithUtils({
       marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),

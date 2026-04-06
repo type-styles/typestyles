@@ -354,31 +354,198 @@ const button = styles.create(
 
 **Problem:** Tokens are plain custom properties — you can't animate them, they don't have type safety in CSS, and they inherit by default. `@property` solves all of this and is the natural companion to a token system built on custom properties.
 
+**Additional requirements (not obvious from `@property` alone):**
+
+1. **Reference-based property names in styles** — Authors must not hand-write `'--color-primary'` (or any scoped `--{scopeId}-…` name) in style objects. That duplicates the token definition, breaks refactors, and drifts from the actual emitted name when `scopeId` is set. Each **leaf token** (and each `styles.property` handle) should expose:
+   - **`.var`** (or the ref coerces to this string) — `var(--…)` for anywhere a _value_ is required (`backgroundColor`, `padding`, etc.).
+   - **`.name`** — the raw custom property identifier (`--…`) for computed keys in style objects and for `transition` / `animation` timelines, where CSS expects the registered property _name_, not `var()`.
+
+2. **`styles.property` for non-token usage** — Not every registered custom property belongs in the token/theme system (one-off component variables, experiments, third-party bridges). **`styles.property(options)`** registers `@property` + optional initial `:root` (or layer) value on the same `scopeId` as the style API, returns the same `{ name, var }` ref shape, and keeps naming consistent without `tokens.create`.
+
 **Desired:**
 
 ```ts
 const color = tokens.create('color', {
   primary: { value: '#0066ff', syntax: '<color>', inherits: true },
-  spacing: { value: '16px', syntax: '<length>', inherits: false },
 });
 
-// Generated CSS:
-// @property --color-primary {
+const space = tokens.create('space', {
+  md: { value: '16px', syntax: '<length>', inherits: false },
+});
+
+// Generated CSS (with scopeId: 'ds' → names are --ds-color-primary, etc.):
+// @property --ds-color-primary {
 //   syntax: '<color>';
 //   inherits: true;
 //   initial-value: #0066ff;
 // }
-// :root { --color-primary: #0066ff; }
+// @property --ds-space-md { syntax: '<length>'; inherits: false; initial-value: 16px; }
+// :root { --ds-color-primary: #0066ff; --ds-space-md: 16px; }
 
-// Now you can animate custom properties!
-const fadeIn = styles.create('card', {
+// Value contexts: use .var (or string coercion to var()) — unchanged mental model.
+// backgroundColor: color.primary.var
+
+// Declaration / transition contexts: use .name — never repeat the string literal.
+const card = styles.create('card', {
   base: {
-    '--color-primary': '#0066ff',
-    transition: '--color-primary 0.3s ease',
-    '&:hover': { '--color-primary': '#0052cc' },
+    [color.primary.name]: '#0066ff',
+    transition: `${color.primary.name} 0.3s ease`,
+    '&:hover': { [color.primary.name]: '#0052cc' },
+  },
+});
+
+// Ad-hoc registered property (no token namespace, still scoped with the styles instance):
+const lift = styles.property({
+  id: 'lift',
+  syntax: '<length>',
+  inherits: false,
+  initialValue: '0px',
+});
+// lift.name → e.g. '--{scope}-lift' (stable id, no collision across packages when scopeId is set)
+const surface = styles.create('surface', {
+  base: {
+    [lift.name]: '4px',
+    transition: `${lift.name} 0.2s ease`,
+    '&:hover': { [lift.name]: '12px' },
   },
 });
 ```
+
+**Type / runtime note:** Today token refs are plain `var(--…)` strings, so they cannot serve as declaration keys. This item implies upgrading leaf refs to a small branded object (or tuple) with `toString()` → `var` for backward compatibility, plus explicit `.name` / `.var` for clarity.
+
+#### 2.2.1 Component-internal custom properties (`styles.component` sugar)
+
+**Problem:** Variant blocks often repeat the same longhand declarations (`color`, `borderColor`, `background`, …). For a badge, every `tone` variant might restate text and border colors. It is easier to define **internal custom properties** on the component (e.g. scoped equivalents of `--badge-text-color`, `--badge-border-color`), set those **only in variants**, and keep **`base` consuming `var(…)` once**. That matches plain CSS and reduces drift when adding variants.
+
+**Requirements:**
+
+- Names must be **scoped to the component** (and to `scopeId` / hashed class prefix when used) so two components or packages never collide.
+- Authors should use **refs** (same `.name` / `.var` model as §2.2), not hand-written `--…` strings.
+- Optional: **`syntax` / `inherits`** per internal var when `@property` is desired.
+
+**Invariant for API design:** Whether the author passes a **plain object** or a **function**, the **returned config shape stays the same** — `base`, `variants`, `defaultVariants`, `compoundVariants`, etc. — so types, docs, and mental models do not fork. The function form only exists to create a scope where **internal vars are declared before** that same object is assembled.
+
+---
+
+##### DX option A — **Function config** (recommended direction)
+
+`styles.component(name, (ctx) => ComponentConfig)` — the callback returns **exactly** the same object type as the current second argument, but `ctx` exposes helpers to register internal properties and get `{ name, var }` refs.
+
+```ts
+const badge = styles.component('badge', (c) => {
+  const textColor = c.var('textColor', { syntax: '<color>', inherits: false });
+  const borderColor = c.var('borderColor', { syntax: '<color>', inherits: false });
+
+  return {
+    base: {
+      color: textColor.var,
+      borderColor: borderColor.var,
+      borderWidth: '1px',
+      borderStyle: 'solid',
+    },
+    variants: {
+      tone: {
+        neutral: {
+          [textColor.name]: tokens.textSecondary.var,
+          [borderColor.name]: tokens.borderDefault.var,
+        },
+        danger: {
+          [textColor.name]: tokens.dangerText.var,
+          [borderColor.name]: tokens.dangerBorder.var,
+        },
+      },
+    },
+    defaultVariants: { tone: 'neutral' },
+  };
+});
+```
+
+**Pros:** One call site; return type matches today’s config; easy migration from object → wrap in `(c) => ({ ... })` and add `c.var` lines; declaration order is obvious. **Cons:** Slightly noisier for components with **no** internal vars (still fine as `() => ({ base: … })` or keep object overload — see below).
+
+**Batch sugar on `ctx`:** `c.vars({ textColor: { syntax: '<color>' }, borderColor: { syntax: '<color>' } })` returning `{ textColor, borderColor }` reduces repetition vs many `c.var` calls.
+
+---
+
+##### DX option B — **Plain object** (no internal vars, or global/tokens only)
+
+Unchanged from today:
+
+```ts
+const card = styles.component('card', {
+  base: { padding: '16px' },
+  elevated: { boxShadow: '…' },
+});
+```
+
+**Overload:** `styles.component(name, config: ComponentConfig | ((ctx: Ctx) => ComponentConfig))` — object form stays zero-cost for simple components.
+
+---
+
+##### DX option C — **Declarative `vars` + nested `build`**
+
+Top-level `vars` schema and a `build` function that receives resolved refs (previous sketch). The **outer** object is no longer the same shape as `ComponentConfig`; tooling must special-case `build`.
+
+```ts
+const badge = styles.component('badge', {
+  vars: { textColor: { syntax: '<color>' }, borderColor: { syntax: '<color>' } },
+  build: ({ vars }) => ({
+    base: { color: vars.textColor.var, … },
+    variants: { … },
+  }),
+});
+```
+
+**Pros:** Vars are visibly grouped at the top. **Cons:** **Two** shapes (`vars` + `build` vs flat `ComponentConfig`); authors learn a second layout; harder to document as “the same object, plus…”.
+
+---
+
+##### DX option D — **Hoisted var factory** + plain `ComponentConfig`
+
+Internal vars created **outside** `styles.component`, passed in as refs (still component-scoped if the factory is bound to `name` / `scopeId`).
+
+```ts
+const badgeVars = styles.componentVars('badge', {
+  textColor: { syntax: '<color>' },
+  borderColor: { syntax: '<color>' },
+});
+
+const badge = styles.component('badge', {
+  base: {
+    color: badgeVars.textColor.var,
+    borderColor: badgeVars.borderColor.var,
+    …
+  },
+  variants: {
+    tone: {
+      neutral: {
+        [badgeVars.textColor.name]: tokens.textSecondary.var,
+        …
+      },
+    },
+  },
+});
+```
+
+**Pros:** Pure object config; vars reusable if multiple components share a bundle-private contract (rare). **Cons:** Two identifiers (`badgeVars` + `badge`); easy to **mismatch** factory name vs component name; ordering bugs if `componentVars` is called after styles are evaluated.
+
+---
+
+##### Comparison (short)
+
+| Option                 | Same `ComponentConfig` return shape | Internal vars colocated with component | Low ceremony when no vars                        |
+| ---------------------- | ----------------------------------- | -------------------------------------- | ------------------------------------------------ |
+| **A** Function         | Yes (return value)                  | Yes                                    | Accept `(c) => ({ … })` or object overload **B** |
+| **B** Object only      | Yes                                 | No (use tokens / `styles.property`)    | Best                                             |
+| **C** `vars` + `build` | Only inside `build`                 | Yes                                    | Extra nesting always                             |
+| **D** Hoisted factory  | Yes                                 | Split across calls                     | Two calls                                        |
+
+---
+
+##### Recommendation
+
+Prefer **overload A + B**: default **object** config for simple cases; **function** config when internal custom properties are needed, returning the **identical** `ComponentConfig` type. Optionally add **`c.vars({ … })`** batch helper on the callback context.
+
+**Runtime:** On the function branch, invoke the callback once at registration time with a fresh `ctx` that allocates scoped `--…` names and registers optional `@property` rules tied to the component’s root/variant classes.
 
 ---
 
@@ -864,32 +1031,32 @@ All three reviewers agreed on what works well:
 
 ## Summary: Prioritized Action Order
 
-| Priority | Item                                           | Effort    | Impact                                              |
-| -------- | ---------------------------------------------- | --------- | --------------------------------------------------- |
-| **1**    | 1.1 Unify `styles.create` / `styles.component` | High      | Critical — everything builds on this                |
-| **2**    | 1.2 Ship built-in `cx()`                       | Low       | High — 5 lines, disproportionate DX impact          |
-| **3**    | 1.3 Nested token objects                       | Medium    | Critical — unblocks real design systems             |
-| **4**    | 1.4 `createTheme` accepts nested structure     | Medium    | Critical — paired with 1.3                          |
-| **5**    | 1.5 Dark mode / media-query themes             | Medium    | High — table stakes for design systems              |
-| **6**    | 3.4 Namespace collision → error                | Low       | Medium — prevents silent production bugs            |
-| **7**    | 3.5 Invalid variant feedback                   | Low       | Medium — prevents silent failures                   |
-| **8**    | 2.1 `@layer` support                           | High      | High — essential for cascade management             |
-| **9**    | 1.6 Instanceable API                           | High      | High — unblocks library authors and micro-frontends |
-| **10**   | 1.7 Zero-runtime extraction                    | Very High | High — already on roadmap, elevate priority         |
-| **11**   | 4.4 Complete getting-started docs              | Low       | Medium — first 5 minutes experience                 |
-| **12**   | 3.1 Fix `compose` type safety                  | Medium    | Medium                                              |
-| **13**   | 3.2 Fix `tokens.use` type safety               | Low       | Medium                                              |
-| **14**   | 4.1 Rethink color API                          | Low       | Low-Medium                                          |
-| **15**   | 4.2 Global utils registration                  | Medium    | Medium                                              |
-| **16**   | 2.2 `@property` registration                   | Medium    | Medium                                              |
-| **17**   | 2.3 Container queries                          | Low       | Medium — may already work, needs docs               |
-| **18**   | 2.4 `:has()/:is()/:where()` docs               | Low       | Low-Medium                                          |
-| **19**   | 4.3 Custom CSS variable names                  | Low       | Low — migration convenience                         |
-| **20**   | 3.3 Slots API typing                           | Low       | Low                                                 |
-| **21**   | 4.5 SSR API consolidation                      | Low       | Low — disappears with zero-runtime                  |
-| **22**   | 4.6 `global.style()` guardrails                | Low       | Low                                                 |
-| **23**   | 5.1 React `css` prop / `styled()`              | High      | Medium — migration convenience                      |
-| **24**   | 5.2 Responsive object syntax                   | Medium    | Low                                                 |
-| **25**   | 5.3 Developer tooling                          | High      | Medium                                              |
-| **26**   | 5.4 Built-in reset                             | Low       | Low                                                 |
-| **27**   | 2.5 `@scope` support                           | Low       | Low — forward-looking                               |
+| Priority | Item                                                                                                      | Effort    | Impact                                              |
+| -------- | --------------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------- |
+| **1**    | 1.1 Unify `styles.create` / `styles.component`                                                            | High      | Critical — everything builds on this                |
+| **2**    | 1.2 Ship built-in `cx()`                                                                                  | Low       | High — 5 lines, disproportionate DX impact          |
+| **3**    | 1.3 Nested token objects                                                                                  | Medium    | Critical — unblocks real design systems             |
+| **4**    | 1.4 `createTheme` accepts nested structure                                                                | Medium    | Critical — paired with 1.3                          |
+| **5**    | 1.5 Dark mode / media-query themes                                                                        | Medium    | High — table stakes for design systems              |
+| **6**    | 3.4 Namespace collision → error                                                                           | Low       | Medium — prevents silent production bugs            |
+| **7**    | 3.5 Invalid variant feedback                                                                              | Low       | Medium — prevents silent failures                   |
+| **8**    | 2.1 `@layer` support                                                                                      | High      | High — essential for cascade management             |
+| **9**    | 1.6 Instanceable API                                                                                      | High      | High — unblocks library authors and micro-frontends |
+| **10**   | 1.7 Zero-runtime extraction                                                                               | Very High | High — already on roadmap, elevate priority         |
+| **11**   | 4.4 Complete getting-started docs                                                                         | Low       | Medium — first 5 minutes experience                 |
+| **12**   | 3.1 Fix `compose` type safety                                                                             | Medium    | Medium                                              |
+| **13**   | 3.2 Fix `tokens.use` type safety                                                                          | Low       | Medium                                              |
+| **14**   | 4.1 Rethink color API                                                                                     | Low       | Low-Medium                                          |
+| **15**   | 4.2 Global utils registration                                                                             | Medium    | Medium                                              |
+| **16**   | 2.2 `@property`, `.name`/`.var`, `styles.property`, component internal vars (fn config + object overload) | Medium    | Medium                                              |
+| **17**   | 2.3 Container queries                                                                                     | Low       | Medium — may already work, needs docs               |
+| **18**   | 2.4 `:has()/:is()/:where()` docs                                                                          | Low       | Low-Medium                                          |
+| **19**   | 4.3 Custom CSS variable names                                                                             | Low       | Low — migration convenience                         |
+| **20**   | 3.3 Slots API typing                                                                                      | Low       | Low                                                 |
+| **21**   | 4.5 SSR API consolidation                                                                                 | Low       | Low — disappears with zero-runtime                  |
+| **22**   | 4.6 `global.style()` guardrails                                                                           | Low       | Low                                                 |
+| **23**   | 5.1 React `css` prop / `styled()`                                                                         | High      | Medium — migration convenience                      |
+| **24**   | 5.2 Responsive object syntax                                                                              | Medium    | Low                                                 |
+| **25**   | 5.3 Developer tooling                                                                                     | High      | Medium                                              |
+| **26**   | 5.4 Built-in reset                                                                                        | Low       | Low                                                 |
+| **27**   | 2.5 `@scope` support                                                                                      | Low       | Low — forward-looking                               |

@@ -2,19 +2,25 @@ import type {
   CSSProperties,
   VariantDefinitions,
   ComponentConfig,
+  ComponentConfigContext,
+  ComponentConfigInput,
   ComponentReturn,
   FlatComponentConfig,
+  FlatComponentConfigInput,
   FlatComponentReturn,
   SlotComponentConfig,
+  SlotComponentConfigInput,
   SlotComponentFunction,
   SlotVariantDefinitions,
   MultiSlotConfig,
+  MultiSlotConfigInput,
   MultiSlotReturn,
 } from './types.js';
 import { serializeStyle } from './css.js';
 import { insertRules } from './sheet.js';
 import { registeredNamespaces } from './registry.js';
 import { buildComponentClassName, type ClassNamingConfig } from './class-naming.js';
+import { createComponentConfigContextPair } from './component-config-context.js';
 
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
@@ -45,6 +51,19 @@ function isMultiSlotConfig(config: Record<string, unknown>): config is MultiSlot
     'slots' in config &&
     !('variants' in config || 'compoundVariants' in config || 'defaultVariants' in config)
   );
+}
+
+function resolveComponentConfig(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+): Record<string, unknown> {
+  if (typeof config === 'function') {
+    const { ctx, mergeVarDefaultsInto } = createComponentConfigContextPair(classNaming, namespace);
+    const resolved = config(ctx) as Record<string, unknown>;
+    return mergeVarDefaultsInto(resolved);
+  }
+  return config;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,54 +123,75 @@ function isMultiSlotConfig(config: Record<string, unknown>): config is MultiSlot
  * // Destructure
  * const { base, elevated } = card;
  * ```
+ *
+ * **Function config** — declare internal custom properties for variant-driven styling:
+ * ```ts
+ * const badge = styles.component('badge', (c) => {
+ *   const v = c.vars({
+ *     textColor: '#333',
+ *     borderColor: { value: '#ccc', syntax: '<color>', inherits: false },
+ *   });
+ *   return {
+ *     base: { color: v.textColor.var, borderColor: v.borderColor.var, borderWidth: '1px' },
+ *     variants: {
+ *       tone: {
+ *         neutral: {},
+ *         danger: { [v.textColor.name]: '#900', [v.borderColor.name]: '#f00' },
+ *       },
+ *     },
+ *     defaultVariants: { tone: 'neutral' },
+ *   };
+ * });
+ * ```
  */
 export function createComponent<V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
-  config: ComponentConfig<V>,
+  config: ComponentConfigInput<V>,
 ): ComponentReturn<V>;
 
 export function createComponent<K extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
-  config: FlatComponentConfig<K>,
+  config: FlatComponentConfigInput<K>,
 ): FlatComponentReturn<K>;
 
 export function createComponent<S extends string, V extends SlotVariantDefinitions<S>>(
   classNaming: ClassNamingConfig,
   namespace: string,
-  config: SlotComponentConfig<S, V>,
+  config: SlotComponentConfigInput<S, V>,
 ): SlotComponentFunction<S, V>;
 
 export function createComponent<S extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
-  config: MultiSlotConfig<S>,
+  config: MultiSlotConfigInput<S>,
 ): MultiSlotReturn<S>;
 
 export function createComponent(
   classNaming: ClassNamingConfig,
   namespace: string,
-  config: Record<string, unknown>,
+  config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
 ): unknown {
-  if (isMultiSlotConfig(config)) {
-    return createMultiSlotComponent(classNaming, namespace, config as MultiSlotConfig<string>);
+  const resolved = resolveComponentConfig(classNaming, namespace, config);
+  if (isMultiSlotConfig(resolved)) {
+    return createMultiSlotComponent(classNaming, namespace, resolved as MultiSlotConfig<string>);
   }
-  if (isSlotWithVariantsConfig(config)) {
+  if (isSlotWithVariantsConfig(resolved)) {
     return createSlotComponent(
       classNaming,
       namespace,
-      config as SlotComponentConfig<string, SlotVariantDefinitions<string>>,
+      resolved as SlotComponentConfig<string, SlotVariantDefinitions<string>>,
     );
   }
-  if (isDimensionedConfig(config)) {
+  if (isDimensionedConfig(resolved)) {
     return createDimensionedComponent(
       classNaming,
       namespace,
-      config as ComponentConfig<VariantDefinitions>,
+      resolved as ComponentConfig<VariantDefinitions>,
     );
   }
-  return createFlatComponent(classNaming, namespace, config as FlatComponentConfig<string>);
+  return createFlatComponent(classNaming, namespace, resolved as FlatComponentConfig<string>);
 }
 
 // ---------------------------------------------------------------------------

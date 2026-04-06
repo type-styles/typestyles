@@ -276,9 +276,69 @@ export type ComponentSelections<V extends VariantDimensions> = {
   [K in keyof V]?: VariantSelectionValue<VariantOptionKey<V, K>> | null | undefined;
 };
 
+/**
+ * A CSS custom property reference as a `var(--…)` value (tokens, `createVar()`, component internal vars).
+ */
+export type CSSVarRef = `var(--${string})`;
+
 // ---------------------------------------------------------------------------
 // Dimensioned variant config (has `variants: { ... }`)
 // ---------------------------------------------------------------------------
+
+/**
+ * Leaf shape for `ctx.vars({ … })` — mirrors typed tokens: `value` is the default (merged into `base`);
+ * optional `syntax` / `inherits` register `@property` like typed design tokens.
+ */
+export type ComponentVarDescriptor = {
+  value: string | number;
+  syntax?: string;
+  inherits?: boolean;
+};
+
+/**
+ * Nested map of component internal vars (same nesting as `tokens.create` / theme token trees).
+ */
+export type ComponentVarNode =
+  | string
+  | number
+  | ComponentVarDescriptor
+  | { [key: string]: ComponentVarNode };
+
+export type ComponentVarDefinitions = {
+  [key: string]: ComponentVarNode;
+};
+
+/**
+ * Options for `ctx.var(id, options?)`. Set `value` to merge a default into `base` and as `@property` initial-value when `syntax` is set.
+ */
+export type ComponentVarOptions = {
+  value?: string | number;
+  syntax?: string;
+  inherits?: boolean;
+};
+
+/**
+ * Reference to a component-scoped custom property: `.name` for declaration keys and transitions, `.var` for values.
+ */
+export type ComponentInternalVarRef = {
+  readonly name: string;
+  readonly var: CSSVarRef;
+};
+
+/**
+ * Context passed to `styles.component(namespace, (ctx) => { ... })` to declare internal custom properties.
+ */
+/** Proxy tree returned by `ctx.vars({ … })` — leaves are `{ name, var }`, nested objects are sub-trees. */
+export type ComponentVarRefTree<T> = {
+  [K in keyof T]: T[K] extends ComponentVarDescriptor | string | number
+    ? ComponentInternalVarRef
+    : ComponentVarRefTree<T[K]>;
+};
+
+export type ComponentConfigContext = {
+  var: (id: string, options?: ComponentVarOptions) => ComponentInternalVarRef;
+  vars: <const T extends ComponentVarDefinitions>(definitions: T) => ComponentVarRefTree<T>;
+};
 
 /**
  * The full config object passed to styles.component() with dimensioned variants.
@@ -389,11 +449,23 @@ export type SlotComponentFunction<S extends string, V extends SlotVariantDefinit
 ) => Record<S, string>;
 
 /**
- * A reference to a CSS custom property created by createVar().
- * The string value is `var(--ts-N)` and can be used directly as a CSS value.
- * Template literal type provides type safety without a brand.
+ * Config for `styles.component` may be a plain object or a function that receives {@link ComponentConfigContext}.
  */
-export type CSSVarRef = `var(--${string})`;
+export type ComponentConfigInput<V extends VariantDefinitions> =
+  | ComponentConfig<V>
+  | ((ctx: ComponentConfigContext) => ComponentConfig<V>);
+
+export type FlatComponentConfigInput<K extends string> =
+  | FlatComponentConfig<K>
+  | ((ctx: ComponentConfigContext) => FlatComponentConfig<K>);
+
+export type SlotComponentConfigInput<S extends string, V extends SlotVariantDefinitions<S>> =
+  | SlotComponentConfig<S, V>
+  | ((ctx: ComponentConfigContext) => SlotComponentConfig<S, V>);
+
+export type MultiSlotConfigInput<S extends string> =
+  | MultiSlotConfig<S>
+  | ((ctx: ComponentConfigContext) => MultiSlotConfig<S>);
 
 /**
  * Extract the variant prop types from a ComponentReturn or ComponentFunction.

@@ -4,13 +4,15 @@ import type {
   StyleUtils,
   VariantDefinitions,
   ComponentConfig,
+  ComponentConfigContext,
+  ComponentConfigInput,
   ComponentReturn,
-  FlatComponentConfig,
+  FlatComponentConfigInput,
   FlatComponentReturn,
   SlotVariantDefinitions,
-  SlotComponentConfig,
+  SlotComponentConfigInput,
   SlotComponentFunction,
-  MultiSlotConfig,
+  MultiSlotConfigInput,
   MultiSlotReturn,
 } from './types.js';
 import { serializeStyle } from './css.js';
@@ -161,14 +163,17 @@ export type StylesApi = {
   component: {
     <V extends VariantDefinitions>(
       namespace: string,
-      config: ComponentConfig<V>,
+      config: ComponentConfigInput<V>,
     ): ComponentReturn<V>;
-    <K extends string>(namespace: string, config: FlatComponentConfig<K>): FlatComponentReturn<K>;
+    <K extends string>(
+      namespace: string,
+      config: FlatComponentConfigInput<K>,
+    ): FlatComponentReturn<K>;
     <S extends string, V extends SlotVariantDefinitions<S>>(
       namespace: string,
-      config: SlotComponentConfig<S, V>,
+      config: SlotComponentConfigInput<S, V>,
     ): SlotComponentFunction<S, V>;
-    <S extends string>(namespace: string, config: MultiSlotConfig<S>): MultiSlotReturn<S>;
+    <S extends string>(namespace: string, config: MultiSlotConfigInput<S>): MultiSlotReturn<S>;
   };
   withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApi<U>;
   compose: typeof compose;
@@ -186,8 +191,10 @@ export function createStyles(partial?: Partial<ClassNamingConfig>): StylesApi {
     classNaming,
     class: (name, properties) => createClass(classNaming, name, properties),
     hashClass: (properties, label) => createHashClass(classNaming, properties, label),
-    component: ((namespace: string, config: Record<string, unknown>) =>
-      createComponent(classNaming, namespace, config)) as StylesApi['component'],
+    component: ((
+      namespace: string,
+      config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+    ) => createComponent(classNaming, namespace, config)) as StylesApi['component'],
     withUtils: (utils) => createStylesWithUtils(utils, classNaming),
     compose,
   };
@@ -199,14 +206,17 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   component: {
     <V extends VariantDefinitions>(
       namespace: string,
-      config: ComponentConfig<V>,
+      config: ComponentConfigInput<V>,
     ): ComponentReturn<V>;
-    <K extends string>(namespace: string, config: FlatComponentConfig<K>): FlatComponentReturn<K>;
+    <K extends string>(
+      namespace: string,
+      config: FlatComponentConfigInput<K>,
+    ): FlatComponentReturn<K>;
     <S extends string, V extends SlotVariantDefinitions<S>>(
       namespace: string,
-      config: SlotComponentConfig<S, V>,
+      config: SlotComponentConfigInput<S, V>,
     ): SlotComponentFunction<S, V>;
-    <S extends string>(namespace: string, config: MultiSlotConfig<S>): MultiSlotReturn<S>;
+    <S extends string>(namespace: string, config: MultiSlotConfigInput<S>): MultiSlotReturn<S>;
   };
   compose: typeof compose;
 };
@@ -233,10 +243,12 @@ export function createStylesWithUtils<U extends StyleUtils>(
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
 
-  function component(namespace: string, config: Record<string, unknown>): unknown {
+  function transformComponentConfigWithUtils(
+    raw: Record<string, unknown>,
+  ): Record<string, unknown> {
     const transformed: Record<string, unknown> = {};
 
-    for (const [key, value] of Object.entries(config)) {
+    for (const [key, value] of Object.entries(raw)) {
       if (key === 'base' && value && typeof value === 'object') {
         transformed[key] = apply(value as CSSPropertiesWithUtils<U>);
       } else if (key === 'variants' && value && typeof value === 'object') {
@@ -262,17 +274,28 @@ export function createStylesWithUtils<U extends StyleUtils>(
         typeof value === 'object' &&
         !Array.isArray(value)
       ) {
-        // Flat variant — apply utils to the CSS properties
         transformed[key] = apply(value as CSSPropertiesWithUtils<U>);
       } else {
         transformed[key] = value;
       }
     }
 
+    return transformed;
+  }
+
+  function component(
+    namespace: string,
+    config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+  ): unknown {
+    if (typeof config === 'function') {
+      return createComponent(classNaming, namespace, (ctx) =>
+        transformComponentConfigWithUtils(config(ctx) as Record<string, unknown>),
+      );
+    }
     return createComponent(
       classNaming,
       namespace,
-      transformed as ComponentConfig<VariantDefinitions>,
+      transformComponentConfigWithUtils(config) as ComponentConfig<VariantDefinitions>,
     );
   }
 
