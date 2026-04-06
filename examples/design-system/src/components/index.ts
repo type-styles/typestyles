@@ -7,6 +7,7 @@ export { codeBlock } from './codeBlock';
 export { alert } from './alert';
 export { badge } from './badge';
 export { card } from './card';
+export { namedContainerQuery } from './namedContainerQuery';
 export { steps } from './steps';
 export { fileTree } from './fileTree';
 export { checkbox } from './checkbox';
