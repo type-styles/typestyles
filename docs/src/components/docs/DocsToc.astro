@@ -13,10 +13,10 @@ const labelId = 'docs-page-toc-title';
 const detailsId = 'docs-page-toc';
 ---
 
-<div class={toc('root')}>
-  <details class={toc('details')} id={detailsId}>
-    <summary class={toc('summary')}>On this page</summary>
-    <div class={toc('panel')}>
+<div class={toc.root}>
+  <details class={toc.details} id={detailsId}>
+    <summary class={toc.summary}>On this page</summary>
+    <div class={toc.panel}>
       <DocsTocNav headings={headings} labelledBy={labelId} />
     </div>
   </details>

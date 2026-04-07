@@ -1,5 +1,5 @@
 import { designTokens as t } from '@examples/design-system';
-import { styles } from 'typestyles';
+import { docsTokens as dt, styles } from './typestyles';
 
 export const doc = styles.component('docs-doc', {
   root: {
@@ -10,7 +10,7 @@ export const doc = styles.component('docs-doc', {
     marginBottom: t.space[2],
   },
   title: {
-    fontSize: '32px',
+    fontSize: dt.size.titleLarge,
     fontWeight: t.fontWeight.bold,
     marginBottom: t.space[2],
     color: t.color.text.primary,

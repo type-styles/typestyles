@@ -1,6 +1,6 @@
 import { proseContent } from '@examples/design-system';
 
-/** Compose with `doc('content')` on markdown bodies — registers prose CSS before doc overrides. */
+/** Compose with `doc.content` on markdown bodies — registers prose CSS before doc overrides. */
 export const docProseRoot = proseContent.root;
 
 export { layout } from './layout';

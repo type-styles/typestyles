@@ -1,5 +1,5 @@
 import { designTokens as t } from '@examples/design-system';
-import { styles } from 'typestyles';
+import { docsTokens as dt, styles } from './typestyles';
 
 const bp = '@media (max-width: 768px)';
 
@@ -14,7 +14,7 @@ export const mobileBar = styles.component('docs-mobile-bar', {
       top: 0,
       left: 0,
       right: 0,
-      height: '56px',
+      height: dt.size.mobileHeaderHeight,
       zIndex: 300,
       padding: `0 ${t.space[4]}`,
       backgroundColor: t.color.background.subtle,
@@ -26,8 +26,8 @@ export const mobileBar = styles.component('docs-mobile-bar', {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '36px',
-    height: '36px',
+    width: dt.size.mobileIconButton,
+    height: dt.size.mobileIconButton,
     padding: 0,
     backgroundColor: 'transparent',
     border: 'none',
@@ -51,7 +51,7 @@ export const mobileBar = styles.component('docs-mobile-bar', {
   },
   /** Balances the menu button so the logo stays centered on small screens. */
   headerSpacer: {
-    width: '36px',
+    width: dt.size.mobileIconButton,
     flexShrink: 0,
   },
 });

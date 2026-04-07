@@ -17,17 +17,17 @@ const padForDepth = (depth: number) => Math.max(0, depth - 2) * 12;
 ---
 
 <nav
-  class={toc('nav')}
+  class={toc.nav}
   aria-labelledby={showTitle ? labelledBy : undefined}
   aria-label={showTitle ? undefined : 'Table of contents'}
   data-docs-toc-nav
 >
-  {showTitle ? <p id={labelledBy} class={toc('title')}>On this page</p> : null}
-  <ul class={toc('list')}>
+  {showTitle ? <p id={labelledBy} class={toc.title}>On this page</p> : null}
+  <ul class={toc.list}>
     {
       headings.map((h) => (
-        <li class={toc('item')} style={{ paddingLeft: `${padForDepth(h.depth)}px` }}>
-          <a href={`#${h.id}`} class={toc('link')} data-docs-toc-link>
+        <li class={toc.item} style={{ paddingLeft: `${padForDepth(h.depth)}px` }}>
+          <a href={`#${h.id}`} class={toc.link} data-docs-toc-link>
             {h.text}
           </a>
         </li>

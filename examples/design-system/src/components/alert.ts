@@ -1,177 +1,134 @@
-import type { CSSProperties } from 'typestyles';
 import { styles } from '../runtime';
 import { designTokens as t } from '../tokens';
+import {
+  semanticChannelAssignments,
+  subtleBackgroundColor,
+  subtleBorderColor,
+} from './semanticTone';
 
+/**
+ * Slot component with cross-axis variants using `c.vars()`:
+ *
+ * - **tone** assigns semantic colors on `root` (custom properties). `title` uses
+ *   `color: var(semantic)` in base styles (the var inherits from `root`).
+ * - **appearance** chooses how those tokens are *applied* (tinted surface vs solid fill).
+ *
+ * This avoids a compound-variant grid (`appearance × tone`) while keeping each axis
+ * easy to extend independently.
+ *
+ * **Prior step:** `badge.ts` is the same `c.vars()` idea on a single-slot (flat) component.
+ *
+ * **Shared:** `semanticTone.ts` — one table for tone channels; subtle mixes match badge.
+ */
 export const alert = styles.component(
   'alert',
-  {
-    slots: ['root', 'icon', 'body', 'title', 'content', 'action', 'actionLink'],
-    base: {
-      root: {
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: t.space[3],
-        padding: t.space[4],
-        borderRadius: t.radius.md,
-        lineHeight: 1.55,
+  (c) => {
+    const v = c.vars({
+      semantic: {
+        value: t.color.accent.default,
+        syntax: '<color>',
+        inherits: true,
       },
-      icon: {
-        flexShrink: 0,
-        display: 'inline-flex',
-        marginTop: '2px',
-        fontSize: t.fontSize.lg,
-        lineHeight: 1,
+      solidBg: {
+        value: t.color.accent.default,
+        syntax: '<color>',
+        inherits: false,
       },
-      body: {
-        flex: 1,
-        minWidth: 0,
+      solidFg: {
+        value: t.color.text.onAccent,
+        syntax: '<color>',
+        inherits: false,
       },
-      title: {
-        fontSize: t.fontSize.md,
-        fontWeight: t.fontWeight.semibold,
-        margin: 0,
-      },
-      content: {
-        fontSize: t.fontSize.md,
-        margin: 0,
-        color: 'inherit',
-      },
-      action: {
-        marginTop: t.space[2],
-      },
-      actionLink: {
-        fontSize: t.fontSize.md,
-        fontWeight: t.fontWeight.medium,
-        color: 'inherit',
-        textDecoration: 'underline',
-        textUnderlineOffset: '2px',
-        '&:hover': {
-          textDecoration: 'none',
+    });
+
+    return {
+      slots: ['root', 'icon', 'body', 'title', 'content', 'action', 'actionLink'],
+      base: {
+        root: {
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: t.space[3],
+          padding: t.space[4],
+          borderRadius: t.radius.md,
+          lineHeight: 1.55,
         },
-        '&:focus-visible': {
-          outline: `2px solid ${t.color.border.focus}`,
-          outlineOffset: '2px',
-          borderRadius: t.radius.sm,
+        icon: {
+          flexShrink: 0,
+          display: 'inline-flex',
+          marginTop: '2px',
+          fontSize: t.fontSize.lg,
+          lineHeight: 1,
         },
-      },
-    },
-    variants: {
-      tone: {
-        info: { title: { color: t.color.accent.default } },
-        success: { title: { color: t.color.success.default } },
-        warning: { title: { color: t.color.warning.default } },
-        danger: { title: { color: t.color.danger.default } },
-        tip: { title: { color: t.color.info.default } },
-      },
-      appearance: {
-        subtle: {},
-        solid: {},
-      },
-      contentGap: {
-        spaced: { content: { marginTop: t.space[1] } },
-        flush: { content: { marginTop: 0 } },
-      },
-    },
-    defaultVariants: {
-      tone: 'info',
-      appearance: 'subtle',
-      contentGap: 'spaced',
-    },
-    compoundVariants: [
-      { variants: { appearance: 'subtle', tone: 'info' }, style: { root: subtleRoot('accent') } },
-      {
-        variants: { appearance: 'subtle', tone: 'success' },
-        style: { root: subtleRoot('success') },
-      },
-      {
-        variants: { appearance: 'subtle', tone: 'warning' },
-        style: { root: subtleRoot('warning') },
-      },
-      {
-        variants: { appearance: 'subtle', tone: 'danger' },
-        style: { root: subtleRoot('danger') },
-      },
-      { variants: { appearance: 'subtle', tone: 'tip' }, style: { root: subtleRoot('info') } },
-      {
-        variants: { appearance: 'solid', tone: 'info' },
-        style: {
-          root: {
-            backgroundColor: t.color.accent.default,
-            border: `1px solid ${t.color.accent.default}`,
-            color: t.color.text.onAccent,
+        body: {
+          flex: 1,
+          minWidth: 0,
+        },
+        title: {
+          fontSize: t.fontSize.md,
+          fontWeight: t.fontWeight.semibold,
+          margin: 0,
+          color: v.semantic.var,
+        },
+        content: {
+          fontSize: t.fontSize.md,
+          margin: 0,
+          color: 'inherit',
+        },
+        action: {
+          marginTop: t.space[2],
+        },
+        actionLink: {
+          fontSize: t.fontSize.md,
+          fontWeight: t.fontWeight.medium,
+          color: 'inherit',
+          textDecoration: 'underline',
+          textUnderlineOffset: '2px',
+          '&:hover': {
+            textDecoration: 'none',
+          },
+          '&:focus-visible': {
+            outline: `2px solid ${t.color.border.focus}`,
+            outlineOffset: '2px',
+            borderRadius: t.radius.sm,
           },
         },
       },
-      {
-        variants: { appearance: 'solid', tone: 'success' },
-        style: {
-          root: {
-            backgroundColor: t.color.success.solid,
-            border: `1px solid ${t.color.success.solid}`,
-            color: '#ffffff',
+      variants: {
+        tone: {
+          info: { root: semanticChannelAssignments(v, 'accent') },
+          success: { root: semanticChannelAssignments(v, 'success') },
+          warning: { root: semanticChannelAssignments(v, 'warning') },
+          danger: { root: semanticChannelAssignments(v, 'danger') },
+          tip: { root: semanticChannelAssignments(v, 'info') },
+        },
+        appearance: {
+          subtle: {
+            root: {
+              backgroundColor: subtleBackgroundColor(v.semantic.var),
+              border: `1px solid ${subtleBorderColor(v.semantic.var)}`,
+              color: t.color.text.primary,
+            },
+          },
+          solid: {
+            root: {
+              backgroundColor: v.solidBg.var,
+              border: `1px solid ${v.solidBg.var}`,
+              color: v.solidFg.var,
+            },
+            title: { color: 'inherit' },
           },
         },
-      },
-      {
-        variants: { appearance: 'solid', tone: 'danger' },
-        style: {
-          root: {
-            backgroundColor: t.color.danger.solid,
-            border: `1px solid ${t.color.danger.solid}`,
-            color: '#ffffff',
-          },
+        contentGap: {
+          spaced: { content: { marginTop: t.space[1] } },
+          flush: { content: { marginTop: 0 } },
         },
       },
-      {
-        variants: { appearance: 'solid', tone: 'warning' },
-        style: {
-          root: {
-            backgroundColor: t.color.warning.default,
-            border: `1px solid ${t.color.warning.default}`,
-            color: t.color.warning.onSolid,
-          },
-        },
+      defaultVariants: {
+        tone: 'info',
+        appearance: 'subtle',
+        contentGap: 'spaced',
       },
-      {
-        variants: { appearance: 'solid', tone: 'tip' },
-        style: {
-          root: {
-            backgroundColor: t.color.info.default,
-            border: `1px solid ${t.color.info.default}`,
-            color: t.color.info.onSolid,
-          },
-        },
-      },
-      {
-        variants: {
-          appearance: 'solid',
-          tone: ['info', 'success', 'warning', 'danger', 'tip'],
-        },
-        style: { title: { color: 'inherit' } },
-      },
-    ],
+    };
   },
   { layer: 'components' },
 );
-
-type ToneToken = 'accent' | 'success' | 'warning' | 'danger' | 'info';
-
-function subtleRoot(kind: ToneToken): CSSProperties {
-  const c =
-    kind === 'accent'
-      ? t.color.accent.default
-      : kind === 'success'
-        ? t.color.success.default
-        : kind === 'warning'
-          ? t.color.warning.default
-          : kind === 'danger'
-            ? t.color.danger.default
-            : t.color.info.default;
-  const mixBg = kind === 'warning' ? '16%' : kind === 'success' ? '14%' : '12%';
-  const mixBorder = kind === 'warning' ? '42%' : kind === 'success' ? '40%' : '38%';
-  return {
-    backgroundColor: `color-mix(in srgb, ${c} ${mixBg}, ${t.color.background.surface})`,
-    border: `1px solid color-mix(in srgb, ${c} ${mixBorder}, ${t.color.border.default})`,
-    color: t.color.text.primary,
-  };
-}

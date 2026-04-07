@@ -21,10 +21,10 @@ const formatted =
 
 {
   (formatted || editHref) && (
-    <div class={docPage('footer')}>
+    <div class={docPage.footer}>
       {formatted ? <span>Last updated {formatted}</span> : null}
       {editHref ? (
-        <a class={docPage('editLink')} href={editHref} target="_blank" rel="noopener noreferrer">
+        <a class={docPage.editLink} href={editHref} target="_blank" rel="noopener noreferrer">
           Edit this page
         </a>
       ) : null}

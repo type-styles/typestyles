@@ -11,6 +11,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@examples/design-system": "workspace:*",
     "@examples/react-design-system": "workspace:*",
     "react": "latest",
     "react-dom": "latest",

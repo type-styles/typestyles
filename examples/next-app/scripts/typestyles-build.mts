@@ -7,7 +7,7 @@ const root = resolve(__dirname, '..');
 
 await buildTypestylesForNext({
   root,
-  modules: ['../react-design-system/src/index.ts'],
+  modules: ['styles/typestyles-entry.ts'],
   cssOutFile: 'app/typestyles.css',
   manifestOutFile: 'app/typestyles.manifest.json',
   manifestCssPath: 'app/typestyles.css',

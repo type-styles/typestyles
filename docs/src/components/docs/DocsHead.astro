@@ -6,7 +6,7 @@ type Props = {
   title: string;
   /** Used by the blocking boot script to prevent palette flash. */
   appearanceBootstrap: AppearanceBootstrap;
-  /** Pre-extracted Typestyles stylesheet emitted in production builds. */
+  /** Pre-extracted Typestyles stylesheet (`@typestyles/vite` serves it in dev and emits it on build). */
   typestylesCssHref?: string;
 };
 
@@ -69,15 +69,4 @@ const { title, appearanceBootstrap, typestylesCssHref } = Astro.props;
 
     document.addEventListener('astro:after-swap', applyToLiveDocument);
   })();
-</script>
-<script>
-  import { ensureDocumentStylesAttached } from 'typestyles';
-
-  if (import.meta.env.DEV) {
-    void import('../../typestyles-entry');
-  }
-
-  document.addEventListener('astro:after-swap', () => {
-    ensureDocumentStylesAttached();
-  });
 </script>

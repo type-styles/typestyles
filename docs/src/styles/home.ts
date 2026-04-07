@@ -1,5 +1,5 @@
 import { designTokens as t } from '@examples/design-system';
-import { styles } from 'typestyles';
+import { docsTokens as dt, styles } from './typestyles';
 
 const bp = '@media (max-width: 768px)';
 
@@ -9,24 +9,24 @@ export const home = styles.component('docs-home', {
     paddingBottom: t.space[8],
   },
   title: {
-    fontSize: '44px',
+    fontSize: dt.size.heroTitle,
     fontWeight: t.fontWeight.bold,
     letterSpacing: '-0.035em',
     lineHeight: 1.15,
     marginBottom: t.space[4],
     color: t.color.text.primary,
     [bp]: {
-      fontSize: '32px',
+      fontSize: dt.size.titleLarge,
     },
   },
   titleAccent: {
     color: t.color.accent.default,
   },
   subtitle: {
-    fontSize: '18px',
+    fontSize: dt.size.subtitle,
     color: t.color.text.secondary,
     lineHeight: t.lineHeight.relaxed,
-    maxWidth: '540px',
+    maxWidth: dt.size.subtitleMaxWidth,
     marginBottom: t.space[6],
   },
   actions: {
@@ -38,7 +38,7 @@ export const home = styles.component('docs-home', {
     display: 'inline-flex',
     alignItems: 'center',
     gap: t.space[2],
-    fontSize: '15px',
+    fontSize: dt.size.ctaText,
     fontWeight: t.fontWeight.medium,
     fontFamily: t.fontFamily.sans,
     color: t.color.text.onAccent,
@@ -55,7 +55,7 @@ export const home = styles.component('docs-home', {
     display: 'inline-flex',
     alignItems: 'center',
     gap: t.space[2],
-    fontSize: '15px',
+    fontSize: dt.size.ctaText,
     fontWeight: t.fontWeight.medium,
     fontFamily: t.fontFamily.sans,
     color: t.color.text.primary,

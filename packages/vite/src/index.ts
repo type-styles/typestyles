@@ -44,8 +44,10 @@ export interface TypestylesPluginOptions {
    * - `"hybrid"`: extract on build and keep runtime-compatible behavior.
    *
    * When omitted and `extract.modules` is non-empty, defaults to `"build"`: `vite dev` keeps
-   * runtime injection + HMR (runtime is only disabled during `vite build`), and production emits
-   * the CSS file. With no `extract` config, defaults to `"runtime"`.
+   * runtime injection + HMR (runtime is only disabled during `vite build`), serves the same
+   * extracted CSS at `extract.fileName` so `<link href="/typestyles.css">` is valid (avoids SPA
+   * fallback returning HTML for that URL), and production emits the CSS file. With no `extract`
+   * config, defaults to `"runtime"`.
    */
   mode?: 'runtime' | 'build' | 'hybrid';
   /**
@@ -109,6 +111,10 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
   let resolvedConfig: ResolvedConfig | null = null;
   let isBuildCommand = false;
 
+  /** Dev-only cache for on-demand extract CSS (avoids SPA fallback serving HTML for the link href). */
+  let devExtractCss: string | null = null;
+  let devExtractInFlight: Promise<string> | null = null;
+
   return {
     name: 'typestyles',
     enforce: 'pre',
@@ -129,6 +135,78 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
     configResolved(config) {
       resolvedConfig = config;
+    },
+
+    configureServer(server) {
+      if (!extract || extractModules.length === 0) return;
+      if (mode === 'runtime') return;
+
+      const fileName = extract.fileName ?? 'typestyles.css';
+
+      const invalidateDevExtract = (): void => {
+        devExtractCss = null;
+        devExtractInFlight = null;
+      };
+
+      server.watcher.on('change', invalidateDevExtract);
+      server.watcher.on('add', invalidateDevExtract);
+      server.watcher.on('unlink', invalidateDevExtract);
+
+      server.middlewares.use(async (req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          next();
+          return;
+        }
+        const config = resolvedConfig;
+        if (!config) {
+          next();
+          return;
+        }
+
+        const url = req.url?.split('?')[0] ?? '';
+        const base = config.base.replace(/\/$/, '') || '';
+        const expectedPath =
+          base === '' || base === '/'
+            ? `/${fileName.replace(/^\//, '')}`
+            : `${base}/${fileName.replace(/^\//, '')}`;
+
+        if (url !== expectedPath) {
+          next();
+          return;
+        }
+
+        const root = config.root ?? process.cwd();
+
+        try {
+          if (devExtractCss !== null) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'text/css; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.end(devExtractCss);
+            return;
+          }
+          if (!devExtractInFlight) {
+            devExtractInFlight = runTypestylesBuild({
+              root,
+              modules: extractModules,
+            })
+              .then((css) => {
+                devExtractCss = css;
+                return css;
+              })
+              .finally(() => {
+                devExtractInFlight = null;
+              });
+          }
+          const css = await devExtractInFlight;
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'text/css; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.end(css);
+        } catch (err) {
+          next(err);
+        }
+      });
     },
 
     transform(code, id) {
