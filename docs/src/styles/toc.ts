@@ -1,5 +1,5 @@
 import { designTokens as t } from '@examples/design-system';
-import { styles } from 'typestyles';
+import { docsTokens as dt, styles } from './typestyles';
 
 const belowTocBp = '@media (max-width: 1023px)';
 const tocBp = '@media (min-width: 1024px)';
@@ -26,7 +26,7 @@ export const toc = styles.component('docs-toc', {
   },
   item: {
     margin: 0,
-    marginBottom: '2px',
+    marginBottom: dt.size.borderThin,
   },
   link: {
     display: 'block',
@@ -59,7 +59,7 @@ export const toc = styles.component('docs-toc', {
     backgroundColor: t.color.background.subtle,
     overflow: 'hidden',
     position: 'sticky',
-    top: '64px',
+    top: dt.size.tocStickyTop,
     zIndex: 20,
     [tocBp]: {
       marginBottom: 0,

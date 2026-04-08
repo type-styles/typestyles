@@ -22,6 +22,7 @@ const requiredSubstrings = [
   '.button-base {',
   '.theme-example-ds-default {',
   '.ds-layout-base {',
+  '.app-site-page {',
 ];
 for (const s of requiredSubstrings) {
   if (!css.includes(s)) fail(`Expected CSS to contain ${JSON.stringify(s)}.`);

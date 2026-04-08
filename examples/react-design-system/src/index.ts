@@ -1,3 +1,5 @@
+import './globalBody';
+
 export {
   Button,
   Link,

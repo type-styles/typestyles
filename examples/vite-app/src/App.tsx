@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -15,31 +15,40 @@ import {
   TextAreaField,
   TextField,
 } from '@examples/react-design-system';
-import { tokens } from 'typestyles';
-
-const oceanTheme = tokens.createTheme('ds-ocean', {
-  base: {
-    color: {
-      accent: '#0284c7',
-      accentHover: '#0369a1',
-      accentForeground: '#f0f9ff',
-      focusRing: '#38bdf8',
-    },
-  },
-});
-
-type ThemeMode = 'light' | 'dark' | 'ocean';
+import { designPaletteList } from '@examples/design-system';
+import { site } from './site-styles';
+import { appearanceBootstrap } from './appearanceBootstrap';
+import {
+  persistAppearance,
+  readStoredMode,
+  readStoredPalette,
+  syncDocumentClass,
+} from './appearanceRuntime';
+import { usePrefersColorSchemeDark } from './usePrefersColorSchemeDark';
 
 export function App(): JSX.Element {
-  const [themeMode, setThemeMode] = useState<ThemeMode>('light');
+  const [palette, setPalette] = useState(() => readStoredPalette(appearanceBootstrap));
+  const [colorMode, setColorMode] = useState<'light' | 'dark' | 'system'>(() => readStoredMode());
   const [agreed, setAgreed] = useState(true);
   const [notifications, setNotifications] = useState(false);
   const [plan, setPlan] = useState('starter');
   const [role, setRole] = useState('designer');
   const [tabId, setTabId] = useState('overview');
 
-  const customThemeClassName = themeMode === 'ocean' ? oceanTheme.className : undefined;
-  const providerTheme = themeMode === 'dark' ? 'dark' : 'light';
+  const prefersDark = usePrefersColorSchemeDark();
+
+  useLayoutEffect(() => {
+    syncDocumentClass(appearanceBootstrap, palette, colorMode);
+  }, [palette, colorMode]);
+
+  const providerTheme =
+    colorMode === 'dark'
+      ? 'dark'
+      : colorMode === 'light'
+        ? 'light'
+        : prefersDark
+          ? 'dark'
+          : 'light';
 
   const tabs = useMemo(
     () => [
@@ -62,37 +71,54 @@ export function App(): JSX.Element {
     [],
   );
 
+  function applyPalette(nextPalette: string): void {
+    if (!appearanceBootstrap.map[nextPalette]) return;
+    setPalette(nextPalette);
+    persistAppearance(nextPalette, colorMode);
+  }
+
+  function toggleStoredLightDark(): void {
+    const nextMode = colorMode === 'dark' ? 'light' : 'dark';
+    setColorMode(nextMode);
+    persistAppearance(palette, nextMode);
+  }
+
   return (
-    <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
-      <main
-        className={layout.stack}
-        style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}
-      >
-        <header className={layout.stack} style={{ gap: 10 }}>
+    <DesignSystemProvider theme={providerTheme} omitWrapperThemeSurface>
+      <main className={`${site.page} ${layout.stack}`}>
+        <header className={`${site.header} ${layout.stack}`}>
           <h1 className={text.title}>Vite consuming shared typestyles design system</h1>
           <p className={text.subtitle}>
-            This page uses one shared React library and switches between default, dark, and custom
-            themes.
+            Palette and color mode match the docs site: shared localStorage keys,{' '}
+            <code>data-mode</code> on <code>html</code>, and the same Slate / Forest / Rose / Amber
+            palettes.
           </p>
-          <div className={layout.row}>
-            <Button
-              intent={themeMode === 'light' ? 'primary' : 'secondary'}
-              onPress={() => setThemeMode('light')}
+          <div className={site.appearanceControls}>
+            <label className={site.themeFieldLabel} htmlFor="vite-palette-select">
+              Palette
+            </label>
+            <select
+              id="vite-palette-select"
+              className={site.themeSelect}
+              aria-label="Color palette"
+              value={palette}
+              onChange={(e) => applyPalette(e.target.value)}
             >
-              Light
-            </Button>
-            <Button
-              intent={themeMode === 'dark' ? 'primary' : 'secondary'}
-              onPress={() => setThemeMode('dark')}
+              {designPaletteList.map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <span className={site.themeFieldLabel}>Color mode</span>
+            <button
+              type="button"
+              className={site.themeToggle}
+              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              onClick={toggleStoredLightDark}
             >
-              Dark
-            </Button>
-            <Button
-              intent={themeMode === 'ocean' ? 'primary' : 'secondary'}
-              onPress={() => setThemeMode('ocean')}
-            >
-              Ocean (custom)
-            </Button>
+              {colorMode === 'dark' ? 'Light' : 'Dark'}
+            </button>
           </div>
         </header>
 

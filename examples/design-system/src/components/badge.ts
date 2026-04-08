@@ -1,6 +1,15 @@
 import { styles } from '../runtime';
 import { designTokens as t } from '../tokens';
+import { badgeTonePaint } from './semanticTone';
 
+/**
+ * Flat component: one node, `tone` swaps `c.vars()` assignments on that same element.
+ *
+ * **Next step:** see `alert.ts` for slots plus a second variant axis (`appearance`) where
+ * tone only supplies tokens on `root` and another axis applies recipes—still no compound grid.
+ *
+ * **Shared:** `semanticTone.ts` holds the semantic palette + subtle `color-mix` recipe (same as alert).
+ */
 export const badge = styles.component(
   'badge',
   (c) => {
@@ -37,41 +46,11 @@ export const badge = styles.component(
       variants: {
         tone: {
           neutral: {},
-          accent: {
-            [v.borderColor.name]:
-              `color-mix(in srgb, ${t.color.accent.default} 45%, ${t.color.border.default})`,
-            [v.backgroundColor.name]:
-              `color-mix(in srgb, ${t.color.accent.default} 14%, ${t.color.background.surface})`,
-            [v.textColor.name]: t.color.accent.default,
-          },
-          success: {
-            [v.borderColor.name]:
-              `color-mix(in srgb, ${t.color.success.default} 40%, ${t.color.border.default})`,
-            [v.backgroundColor.name]:
-              `color-mix(in srgb, ${t.color.success.default} 12%, ${t.color.background.surface})`,
-            [v.textColor.name]: t.color.success.default,
-          },
-          warning: {
-            [v.borderColor.name]:
-              `color-mix(in srgb, ${t.color.warning.default} 40%, ${t.color.border.default})`,
-            [v.backgroundColor.name]:
-              `color-mix(in srgb, ${t.color.warning.default} 14%, ${t.color.background.surface})`,
-            [v.textColor.name]: t.color.warning.default,
-          },
-          danger: {
-            [v.borderColor.name]:
-              `color-mix(in srgb, ${t.color.danger.default} 40%, ${t.color.border.default})`,
-            [v.backgroundColor.name]:
-              `color-mix(in srgb, ${t.color.danger.default} 12%, ${t.color.background.surface})`,
-            [v.textColor.name]: t.color.danger.default,
-          },
-          tip: {
-            [v.borderColor.name]:
-              `color-mix(in srgb, ${t.color.info.default} 40%, ${t.color.border.default})`,
-            [v.backgroundColor.name]:
-              `color-mix(in srgb, ${t.color.info.default} 12%, ${t.color.background.surface})`,
-            [v.textColor.name]: t.color.info.default,
-          },
+          accent: badgeTonePaint(v, 'accent'),
+          success: badgeTonePaint(v, 'success'),
+          warning: badgeTonePaint(v, 'warning'),
+          danger: badgeTonePaint(v, 'danger'),
+          tip: badgeTonePaint(v, 'info'),
         },
       },
       defaultVariants: { tone: 'neutral' },

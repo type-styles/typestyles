@@ -1,5 +1,5 @@
 import { designTokens as t } from '@examples/design-system';
-import { styles } from 'typestyles';
+import { docsTokens as dt, styles } from './typestyles';
 
 const bp = '@media (max-width: 768px)';
 const tocBp = '@media (min-width: 1024px)';
@@ -17,11 +17,11 @@ const layoutBase = styles.component('docs-layout', {
     flex: 1,
     minWidth: 0,
     [bp]: {
-      paddingTop: '56px',
+      paddingTop: dt.size.mobileHeaderHeight,
     },
   },
   main: {
-    maxWidth: '768px',
+    maxWidth: dt.size.contentMaxWidth,
     padding: t.space[8],
     [bp]: {
       padding: `${t.space[5]} ${t.space[4]}`,
@@ -29,7 +29,7 @@ const layoutBase = styles.component('docs-layout', {
   },
   /** Grid wrapper when `tocHeadings` are present (desktop TOC column). */
   docPageWrap: {
-    maxWidth: '1100px',
+    maxWidth: dt.size.pageMaxWidth,
     margin: '0 auto',
     width: '100%',
   },
@@ -38,7 +38,7 @@ const layoutBase = styles.component('docs-layout', {
     gridTemplateColumns: '1fr',
     gridTemplateAreas: '"toc" "main"',
     [tocBp]: {
-      gridTemplateColumns: 'minmax(0, 1fr) 200px',
+      gridTemplateColumns: `minmax(0, 1fr) ${dt.size.tocColumnWidth}`,
       gridTemplateAreas: '"main toc"',
       gap: t.space[8],
       alignItems: 'start',
@@ -53,7 +53,7 @@ const layoutBase = styles.component('docs-layout', {
     minWidth: 0,
     [tocBp]: {
       justifySelf: 'end',
-      width: '200px',
+      width: dt.size.tocColumnWidth,
       position: 'sticky',
       top: t.space[5],
       maxHeight: `calc(100vh - ${t.space[5]} - ${t.space[2]})`,

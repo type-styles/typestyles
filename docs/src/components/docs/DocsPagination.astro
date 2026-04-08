@@ -11,16 +11,16 @@ interface Props {
 const { prev, next } = Astro.props as Props;
 ---
 
-<div class={docPage('pagination')}>
+<div class={docPage.pagination}>
   {prev ? (
-    <a href={`/docs/${prev.slug}`} class={docPage('paginationLink')}>
+    <a href={`/docs/${prev.slug}`} class={docPage.paginationLink}>
       &larr; {prev.title}
     </a>
   ) : (
     <span />
   )}
   {next && (
-    <a href={`/docs/${next.slug}`} class={docPage('paginationLink')} style="margin-left:auto;">
+    <a href={`/docs/${next.slug}`} class={docPage.paginationLink} style="margin-left:auto;">
       {next.title} &rarr;
     </a>
   )}

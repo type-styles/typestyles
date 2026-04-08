@@ -1,11 +1,11 @@
 import { designTokens as t } from '@examples/design-system';
-import { styles } from 'typestyles';
+import { docsTokens as dt, styles } from './typestyles';
 
 const bp = '@media (max-width: 768px)';
 
 const sidebarBase = styles.component('docs-sidebar', {
   root: {
-    width: '280px',
+    width: dt.size.sidebarWidth,
     flexShrink: 0,
     height: '100vh',
     position: 'sticky',
@@ -90,7 +90,7 @@ const sidebarBase = styles.component('docs-sidebar', {
   },
   searchIcon: {
     position: 'absolute',
-    left: '10px',
+    left: dt.size.insetXs,
     top: '50%',
     transform: 'translateY(-50%)',
     display: 'inline-flex',
@@ -116,7 +116,7 @@ const sidebarBase = styles.component('docs-sidebar', {
   },
   searchKbd: {
     position: 'absolute',
-    right: '10px',
+    right: dt.size.insetXs,
     top: '50%',
     transform: 'translateY(-50%)',
     fontSize: t.fontSize.xs,
@@ -126,7 +126,7 @@ const sidebarBase = styles.component('docs-sidebar', {
     borderRadius: t.radius.sm,
     padding: `${t.space[1]} 5px`,
     fontFamily: t.fontFamily.sans,
-    lineHeight: '16px',
+    lineHeight: dt.size.lineHeightTight,
     pointerEvents: 'none',
   },
   searchTrigger: {
@@ -152,7 +152,7 @@ const sidebarBase = styles.component('docs-sidebar', {
     '&:focus-visible': {
       borderColor: t.color.accent.default,
       outline: `2px solid ${t.color.accent.default}`,
-      outlineOffset: '2px',
+      outlineOffset: dt.size.borderThin,
     },
   },
   nav: {

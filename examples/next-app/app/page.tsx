@@ -17,6 +17,7 @@ import {
   TextAreaField,
   TextField,
 } from '@examples/react-design-system';
+import { site } from '@/styles/site';
 import { tokens } from 'typestyles';
 
 const sunsetTheme = tokens.createTheme('ds-sunset', {
@@ -66,11 +67,8 @@ export default function Home(): JSX.Element {
 
   return (
     <DesignSystemProvider theme={providerTheme} customThemeClassName={customThemeClassName}>
-      <main
-        className={layout({ stack: true })}
-        style={{ maxWidth: 920, margin: '0 auto', padding: '32px 20px' }}
-      >
-        <header className={layout({ stack: true })} style={{ gap: 10 }}>
+      <main className={`${site.page} ${layout({ stack: true })}`}>
+        <header className={`${site.header} ${layout({ stack: true })}`}>
           <h1 className={text({ title: true })}>
             Next.js consuming shared typestyles design system
           </h1>

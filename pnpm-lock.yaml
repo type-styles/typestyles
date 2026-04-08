@@ -246,6 +246,9 @@ importers:
 
   examples/vite-app:
     dependencies:
+      '@examples/design-system':
+        specifier: workspace:*
+        version: link:../design-system
       '@examples/react-design-system':
         specifier: workspace:*
         version: link:../react-design-system

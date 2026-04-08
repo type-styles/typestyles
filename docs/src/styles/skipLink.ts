@@ -1,5 +1,5 @@
 import { designTokens as t } from '@examples/design-system';
-import { styles } from 'typestyles';
+import { docsTokens as dt, styles } from './typestyles';
 
 export const skipLink = styles.component('docs-skip', {
   root: {
@@ -19,7 +19,7 @@ export const skipLink = styles.component('docs-skip', {
     '&:focus': {
       transform: 'translateY(0)',
       outline: `2px solid ${t.color.accent.default}`,
-      outlineOffset: '2px',
+      outlineOffset: dt.size.borderThin,
     },
   },
 });
