@@ -17,7 +17,7 @@ import type {
   MultiSlotReturn,
 } from './types';
 import { serializeStyle } from './css';
-import { insertRules } from './sheet';
+import { insertRules, invalidateComponentNamespaceForDev } from './sheet';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { registeredNamespaces } from './registry';
 import { buildComponentClassName, type ClassNamingConfig } from './class-naming';
@@ -286,21 +286,17 @@ function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: stri
 
 /**
  * Reserves the logical namespace before config resolution so nested `styles.component` calls
- * cannot bypass duplicate detection. In production, duplicate registrations are allowed (rule
- * insertion dedupes by selector key; first registration wins for CSS).
+ * cannot bypass duplicate detection.
+ *
+ * In **development**, a second registration for the same scope + namespace clears prior sheet
+ * keys and registry state (same as `typestyles/hmr` invalidation). Some bundlers (notably Astro)
+ * can re-run the module before `import.meta.hot.dispose` fires, so this keeps HMR from throwing.
+ * In **production**, duplicate registration does not throw (rule insertion dedupes by key).
  */
 function claimComponentNamespace(classNaming: ClassNamingConfig, namespace: string): void {
   const key = registryKeyForComponent(classNaming, namespace);
   if (process.env.NODE_ENV !== 'production' && registeredNamespaces.has(key)) {
-    const scopeLabel = classNaming.scopeId?.trim()
-      ? `'${classNaming.scopeId}'`
-      : 'default (empty scopeId)';
-    throw new Error(
-      `[typestyles] styles.component('${namespace}', ...) was called more than once for scope ${scopeLabel}. ` +
-        `Class names would collide. Use a unique namespace per component, or isolate with ` +
-        `createStyles({ scopeId: fileScopeId(import.meta) }) or createStyles({ scopeId: 'your-package' }) ` +
-        `(import \`fileScopeId\` from 'typestyles').`,
-    );
+    invalidateComponentNamespaceForDev(namespace);
   }
   registeredNamespaces.add(key);
 }

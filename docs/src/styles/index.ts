@@ -11,3 +11,4 @@ export { skipLink } from './skipLink';
 export { toc } from './toc';
 export { docPage } from './docPage';
 export { home } from './home';
+export * from './global';

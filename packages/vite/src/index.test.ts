@@ -156,4 +156,28 @@ describe('typestyles vite plugin', () => {
     const build = plugin.config?.({}, { command: 'build', mode: 'production' });
     expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBeUndefined();
   });
+
+  it('injects HMR dispose when styles are imported from a local re-export (not from typestyles package string)', async () => {
+    const mod = await import('./index');
+    const plugin = mod.default();
+    plugin.configResolved?.({ command: 'serve' } as import('vite').ResolvedConfig);
+    const code = `import { styles } from './typestyles';
+styles.component('docs-sidebar', { base: { color: 'red' } });`;
+    const ctx = { warn: () => {} };
+    const result = await plugin.transform!.call(ctx as never, code, '/src/styles/sidebar.ts');
+    expect(result).not.toBeNull();
+    expect(result!.code).toContain("from 'typestyles/hmr'");
+    expect(result!.code).toContain('__typestylesInvalidateKeys');
+    expect(result!.code).toContain('.docs-sidebar-');
+  });
+
+  it('does not inject HMR during vite build', async () => {
+    const mod = await import('./index');
+    const plugin = mod.default();
+    plugin.configResolved?.({ command: 'build' } as import('vite').ResolvedConfig);
+    const code = `import { styles } from 'typestyles';
+styles.component('x', { base: {} });`;
+    const result = await plugin.transform!.call({ warn: () => {} } as never, code, '/src/a.ts');
+    expect(result).toBeNull();
+  });
 });

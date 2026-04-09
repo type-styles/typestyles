@@ -1,3 +1,8 @@
+import {
+  namespacesFromTypestylesHmrPrefixes,
+  releaseReservedNamespacesForComponentOrClassNames,
+} from './registry';
+
 const STYLE_ELEMENT_ID = 'typestyles';
 
 /**
@@ -314,6 +319,8 @@ export function invalidatePrefix(prefix: string): void {
     }
   }
 
+  releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes([prefix]));
+
   if (!isBrowser) return;
 
   const el = styleElement;
@@ -346,6 +353,8 @@ export function invalidateKeys(keys: string[], prefixes: string[]): void {
       }
     }
   }
+
+  releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes(prefixes));
 
   if (!isBrowser) return;
 
@@ -382,6 +391,22 @@ export function invalidateKeys(keys: string[], prefixes: string[]): void {
       sheet.deleteRule(i);
     }
   }
+}
+
+/**
+ * Drop every rule key tied to a `styles.component('namespace', …)` registration, including
+ * `@layer`-wrapped keys (`layer:….:.namespace-…`), and release reserved namespace entries.
+ * Used for Vite HMR and for dev recovery when a module re-runs before `hot.dispose`.
+ */
+export function invalidateComponentNamespaceForDev(namespace: string): void {
+  const selectorInfix = `.${namespace}-`;
+  const keysToDrop: string[] = [];
+  for (const k of insertedRules) {
+    if (k.includes(selectorInfix)) {
+      keysToDrop.push(k);
+    }
+  }
+  invalidateKeys(keysToDrop, [selectorInfix]);
 }
 
 function ruleMatchesPrefix(rule: CSSRule, prefix: string): boolean {

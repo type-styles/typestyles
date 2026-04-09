@@ -190,7 +190,9 @@ export async function getDocBySlug(slug: string): Promise<DocEntry | null> {
 }
 
 export function getDocNeighbors(slug: string): { prev: DocMeta | null; next: DocMeta | null } {
-  const allDocs = docNavigation.categories.flatMap((cat) => cat.items);
+  const allDocs = docNavigation.categories
+    .flatMap((cat) => cat.items)
+    .filter((item): item is { slug: string; title: string } => Boolean(item.slug));
   const index = allDocs.findIndex((doc) => doc.slug === slug);
 
   const toMeta = (item: (typeof allDocs)[number] | undefined): DocMeta | null =>

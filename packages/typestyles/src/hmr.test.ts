@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { invalidatePrefix, invalidateKeys } from './hmr';
+import { createStyles } from './styles';
+import { registeredNamespaces } from './registry';
 import { insertRule, flushSync, reset } from './sheet';
 
 describe('invalidatePrefix', () => {
   beforeEach(() => {
     reset();
+    registeredNamespaces.clear();
   });
 
   it('allows re-insertion of rules after invalidating by prefix', () => {
@@ -55,6 +58,7 @@ describe('invalidatePrefix', () => {
 describe('invalidateKeys', () => {
   beforeEach(() => {
     reset();
+    registeredNamespaces.clear();
   });
 
   it('invalidates exact keys', () => {
@@ -101,5 +105,14 @@ describe('invalidateKeys', () => {
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     expect(style.sheet?.cssRules.length).toBe(1);
+  });
+
+  it('releases component namespace reservations so the same module can re-register (HMR)', () => {
+    const styles = createStyles({ scopeId: 'docs' });
+    styles.component('docs-sidebar', { base: { color: 'red' } });
+
+    invalidateKeys([], ['.docs-sidebar-']);
+
+    expect(() => styles.component('docs-sidebar', { base: { color: 'blue' } })).not.toThrow();
   });
 });

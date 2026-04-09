@@ -2,6 +2,12 @@ import type * as CSS from 'csstype';
 
 /**
  * A CSS value that can be a standard value or a token reference (var() string).
+ *
+ * Values are emitted verbatim. TypeScript does **not** validate CSS syntax, so a typo in
+ * `calc()`, `clamp()`, `min()`, `max()`, `url()`, etc. (for example a missing `)`) can produce
+ * invalid CSS that breaks parsing for following rules. Use **`calc`** (tagged template) and
+ * **`clamp`** from `typestyles` to keep function parentheses balanced, or small named helpers;
+ * see the docs “TypeScript Tips” page.
  */
 export type CSSValue = string | number;
 
