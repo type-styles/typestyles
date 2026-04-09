@@ -5,7 +5,7 @@ export const docPage = styles.component('docs-doc-page', {
   footer: {
     marginTop: t.space[5],
     paddingTop: t.space[4],
-    borderTop: `1px solid ${t.color.border.default}`,
+    borderTop: `${t.borderWidth.thick} solid #000`,
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -16,7 +16,7 @@ export const docPage = styles.component('docs-doc-page', {
   editLink: {
     color: t.color.accent.default,
     textDecoration: 'none',
-    fontWeight: t.fontWeight.medium,
+    fontWeight: t.fontWeight.bold,
     '&:hover': {
       textDecoration: 'underline',
     },
@@ -26,20 +26,22 @@ export const docPage = styles.component('docs-doc-page', {
     justifyContent: 'space-between',
     marginTop: t.space[6],
     paddingTop: t.space[5],
-    borderTop: `1px solid ${t.color.border.default}`,
+    borderTop: `${t.borderWidth.thick} solid #000`,
     gap: t.space[4],
   },
   paginationLink: {
     fontSize: t.fontSize.md,
-    color: t.color.accent.default,
+    color: t.color.text.primary,
     textDecoration: 'none',
     padding: `${t.space[2]} ${t.space[4]}`,
-    borderRadius: t.radius.md,
-    border: `1px solid ${t.color.border.default}`,
-    transition: 'background-color 0.15s ease, border-color 0.15s ease',
+    border: `${t.borderWidth.default} solid #000`,
+    boxShadow: t.shadow.sm,
+    fontWeight: t.fontWeight.medium,
     '&:hover': {
-      backgroundColor: t.color.background.subtle,
-      borderColor: t.color.accent.default,
+      backgroundColor: t.color.accent.default,
+      color: t.color.text.onAccent,
+      transform: 'translate(2px, 2px)',
+      boxShadow: 'none',
     },
   },
 });

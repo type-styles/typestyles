@@ -11,7 +11,7 @@ export const toc = styles.component('docs-toc', {
   title: {
     margin: `0 0 ${t.space[2]}`,
     fontSize: t.fontSize.xs,
-    fontWeight: t.fontWeight.semibold,
+    fontWeight: t.fontWeight.bold,
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     color: t.color.text.placeholder,
@@ -35,8 +35,7 @@ export const toc = styles.component('docs-toc', {
     color: t.color.text.secondary,
     textDecoration: 'none',
     padding: `4px ${t.space[2]}`,
-    borderLeft: '2px solid transparent',
-    transition: 'color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease',
+    borderLeft: `${t.borderWidth.default} solid transparent`,
     '&:hover': {
       color: t.color.text.primary,
       backgroundColor: t.color.background.subtle,
@@ -54,8 +53,7 @@ export const toc = styles.component('docs-toc', {
   },
   root: {
     marginBottom: t.space[5],
-    border: `1px solid ${t.color.border.default}`,
-    borderRadius: t.radius.md,
+    border: `${t.borderWidth.default} solid #000`,
     backgroundColor: t.color.background.subtle,
     overflow: 'hidden',
     position: 'sticky',
@@ -64,12 +62,13 @@ export const toc = styles.component('docs-toc', {
     [tocBp]: {
       marginBottom: 0,
       border: 'none',
-      borderRadius: 0,
+      borderLeft: `${t.borderWidth.thick} solid #000`,
       backgroundColor: 'transparent',
       overflow: 'visible',
       position: 'static',
       top: 'auto',
       zIndex: 'auto',
+      paddingLeft: t.space[4],
     },
   },
   details: {
@@ -79,7 +78,7 @@ export const toc = styles.component('docs-toc', {
     listStyle: 'none',
     cursor: 'pointer',
     fontSize: t.fontSize.sm,
-    fontWeight: t.fontWeight.semibold,
+    fontWeight: t.fontWeight.bold,
     color: t.color.text.primary,
     padding: `${t.space[2]} ${t.space[4]}`,
     '&::-webkit-details-marker': {
@@ -91,7 +90,7 @@ export const toc = styles.component('docs-toc', {
   },
   panel: {
     padding: `0 ${t.space[4]} ${t.space[4]}`,
-    borderTop: `1px solid ${t.color.border.default}`,
+    borderTop: `${t.borderWidth.default} solid #000`,
     [tocBp]: {
       padding: 0,
       borderTop: 'none',

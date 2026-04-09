@@ -17,9 +17,8 @@ export const mobileBar = styles.component('docs-mobile-bar', {
       height: dt.size.mobileHeaderHeight,
       zIndex: 300,
       padding: `0 ${t.space[4]}`,
-      backgroundColor: t.color.background.subtle,
-      borderBottom: `1px solid ${t.color.border.default}`,
-      transition: 'background-color 0.2s ease, border-color 0.2s ease',
+      backgroundColor: t.color.background.app,
+      borderBottom: `${t.borderWidth.thick} solid #000`,
     },
   },
   menuBtn: {
@@ -29,14 +28,17 @@ export const mobileBar = styles.component('docs-mobile-bar', {
     width: dt.size.mobileIconButton,
     height: dt.size.mobileIconButton,
     padding: 0,
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: t.radius.sm,
+    backgroundColor: t.color.background.surface,
+    border: `${t.borderWidth.default} solid #000`,
     color: t.color.text.primary,
     cursor: 'pointer',
-    transition: 'background-color 0.12s ease',
+    boxShadow: t.shadow.xs,
     '&:hover': {
       backgroundColor: t.color.background.subtle,
+    },
+    '&:active': {
+      boxShadow: 'none',
+      transform: 'translate(2px, 2px)',
     },
   },
   logo: {
@@ -45,6 +47,7 @@ export const mobileBar = styles.component('docs-mobile-bar', {
     color: t.color.text.primary,
     textDecoration: 'none',
     letterSpacing: '-0.03em',
+    textTransform: 'uppercase',
   },
   logoAccent: {
     color: t.color.accent.default,
