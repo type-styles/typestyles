@@ -3,6 +3,7 @@ import { tokens } from '../runtime';
 import { basePaletteTokenValues } from './palette';
 import { type DesignColorRefs, type DesignColorValues, type DesignSyntaxValues } from './semantic';
 import {
+  borderWidthValues,
   durationValues,
   easingValues,
   fontFamilyValues,
@@ -17,6 +18,7 @@ import {
 
 export type { DesignCodeBlockValues } from './component';
 export type {
+  DesignBorderWidthValues,
   DesignFontFamilyValues,
   DesignFontSizeValues,
   DesignFontWeightValues,
@@ -29,6 +31,7 @@ export type {
 export const paletteTokens = tokens.create('palette', basePaletteTokenValues);
 export const spaceTokens = tokens.create('space', spaceValues);
 export const radiusTokens = tokens.create('radius', radiusValues);
+export const borderWidthTokens = tokens.create('borderWidth', borderWidthValues);
 export const fontFamilyTokens = tokens.create('fontFamily', fontFamilyValues);
 export const fontSizeTokens = tokens.create('fontSize', fontSizeValues);
 export const fontWeightTokens = tokens.create('fontWeight', fontWeightValues);
@@ -123,6 +126,7 @@ export const designPrimitiveTokens = {
   palette: paletteTokens,
   space: spaceTokens,
   radius: radiusTokens,
+  borderWidth: borderWidthTokens,
   fontFamily: fontFamilyTokens,
   fontSize: fontSizeTokens,
   fontWeight: fontWeightTokens,
