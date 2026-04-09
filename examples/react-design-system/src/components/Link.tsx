@@ -1,9 +1,9 @@
-import type { ComponentProps, JSX } from 'react';
-import { Link as AriaLink } from 'react-aria-components';
+import type { JSX } from 'react';
+import { Link as AriaLink, type LinkProps as RACLinkProps } from 'react-aria-components';
 import { link } from '@examples/design-system';
 import { cx } from './utils';
 
-export type LinkProps = Omit<ComponentProps<typeof AriaLink>, 'className'> & {
+export type LinkProps = Omit<RACLinkProps, 'className'> & {
   className?: string;
 };
 

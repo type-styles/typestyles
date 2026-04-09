@@ -1,5 +1,11 @@
-import type { ComponentProps, JSX, ReactNode } from 'react';
-import { Tab, TabList, TabPanel, Tabs as AriaTabs } from 'react-aria-components';
+import type { JSX, ReactNode } from 'react';
+import {
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs as AriaTabs,
+  type TabsProps as RACTabsProps,
+} from 'react-aria-components';
 import { tabs as tabsStyles } from '@examples/design-system';
 
 type TabDefinition = {
@@ -8,7 +14,7 @@ type TabDefinition = {
   content: ReactNode;
 };
 
-export type TabsProps = Omit<ComponentProps<typeof AriaTabs>, 'children'> & {
+export type TabsProps = Omit<RACTabsProps, 'children'> & {
   tabs: TabDefinition[];
 };
 

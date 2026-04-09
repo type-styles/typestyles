@@ -10,11 +10,13 @@ describe('createComponent — duplicate namespace', () => {
     registeredNamespaces.clear();
   });
 
-  it('throws in development when the same namespace is registered twice under one scope', () => {
+  it('in development, re-registering the same namespace succeeds (HMR / out-of-order dispose)', () => {
     createComponent(defaultClassNamingConfig, 'dupbtn', { base: { padding: '1px' } });
     expect(() =>
       createComponent(defaultClassNamingConfig, 'dupbtn', { base: { padding: '2px' } }),
-    ).toThrow(/styles\.component\('dupbtn'/);
+    ).not.toThrow();
+    const again = createComponent(defaultClassNamingConfig, 'dupbtn', { base: { padding: '3px' } });
+    expect(again.base).toBe('dupbtn-base');
   });
 
   it('allows the same logical namespace when scopeId differs', () => {

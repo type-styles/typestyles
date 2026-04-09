@@ -1,7 +1,19 @@
 // Documentation navigation configuration
 // This defines the structure and organization of the documentation
 
-export const docNavigation = {
+export type DocNavItem = {
+  slug?: string;
+  title: string;
+  href?: string;
+};
+
+export type DocNavCategory = {
+  title: string;
+  slug: string;
+  items: DocNavItem[];
+};
+
+export const docNavigation: { categories: DocNavCategory[] } = {
   categories: [
     {
       title: 'Getting Started',
@@ -79,7 +91,9 @@ export function findDoc(slug: string) {
 
 // Helper to get next/previous docs for pagination
 export function getDocNeighbors(slug: string) {
-  const allDocs = docNavigation.categories.flatMap((cat) => cat.items);
+  const allDocs = docNavigation.categories
+    .flatMap((cat) => cat.items)
+    .filter((item): item is Required<Pick<DocNavItem, 'slug' | 'title'>> => Boolean(item.slug));
   const index = allDocs.findIndex((doc) => doc.slug === slug);
 
   return {

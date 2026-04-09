@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import type { ResolvedConfig } from 'vite';
 import { extractNamespaces } from './index';
+
+/** Vite plugin hooks may be a function or `{ handler }`. */
+function viteHookFn<F>(hook: F | { handler: F } | undefined | null): F | undefined {
+  if (hook == null) return undefined;
+  if (typeof hook === 'function') return hook;
+  return (hook as { handler: F }).handler;
+}
 
 describe('extractNamespaces', () => {
   it('extracts styles.component namespaces as prefixes', () => {
@@ -134,16 +142,18 @@ describe('typestyles vite plugin', () => {
   it('defaults to build mode when extract.modules is set — runtime disabled only on vite build', async () => {
     const mod = await import('./index');
     const plugin = mod.default({ extract: { modules: ['src/entry.ts'] } });
-    const serve = plugin.config?.({}, { command: 'serve', mode: 'development' });
+    const config = viteHookFn(plugin.config);
+    const serve = await Promise.resolve(config?.({}, { command: 'serve', mode: 'development' }));
     expect(serve?.define?.['__TYPESTYLES_RUNTIME_DISABLED__']).toBeUndefined();
-    const build = plugin.config?.({}, { command: 'build', mode: 'production' });
+    const build = await Promise.resolve(config?.({}, { command: 'build', mode: 'production' }));
     expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBe(JSON.stringify('true'));
   });
 
   it('defaults to runtime mode when extract is omitted', async () => {
     const mod = await import('./index');
     const plugin = mod.default();
-    const build = plugin.config?.({}, { command: 'build', mode: 'production' });
+    const config = viteHookFn(plugin.config);
+    const build = await Promise.resolve(config?.({}, { command: 'build', mode: 'production' }));
     expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBeUndefined();
   });
 
@@ -153,7 +163,37 @@ describe('typestyles vite plugin', () => {
       mode: 'runtime',
       extract: { modules: ['a.ts'] },
     });
-    const build = plugin.config?.({}, { command: 'build', mode: 'production' });
+    const config = viteHookFn(plugin.config);
+    const build = await Promise.resolve(config?.({}, { command: 'build', mode: 'production' }));
     expect(build?.define?.__TYPESTYLES_RUNTIME_DISABLED__).toBeUndefined();
+  });
+
+  it('injects HMR dispose when styles are imported from a local re-export (not from typestyles package string)', async () => {
+    const mod = await import('./index');
+    const plugin = mod.default();
+    viteHookFn(plugin.configResolved)?.({ command: 'serve' } as ResolvedConfig);
+    const code = `import { styles } from './typestyles';
+styles.component('docs-sidebar', { base: { color: 'red' } });`;
+    const ctx = { warn: () => {} };
+    const transform = viteHookFn(plugin.transform);
+    if (transform == null) throw new Error('expected plugin.transform');
+    const result = await transform.call(ctx as never, code, '/src/styles/sidebar.ts');
+    expect(result).not.toBeNull();
+    if (result == null) throw new Error('expected transform result');
+    expect(result.code).toContain("from 'typestyles/hmr'");
+    expect(result.code).toContain('__typestylesInvalidateKeys');
+    expect(result.code).toContain('.docs-sidebar-');
+  });
+
+  it('does not inject HMR during vite build', async () => {
+    const mod = await import('./index');
+    const plugin = mod.default();
+    viteHookFn(plugin.configResolved)?.({ command: 'build' } as ResolvedConfig);
+    const code = `import { styles } from 'typestyles';
+styles.component('x', { base: {} });`;
+    const transform = viteHookFn(plugin.transform);
+    if (transform == null) throw new Error('expected plugin.transform');
+    const result = await transform.call({ warn: () => {} } as never, code, '/src/a.ts');
+    expect(result).toBeNull();
   });
 });

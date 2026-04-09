@@ -1,8 +1,8 @@
-import type { ComponentProps, JSX, ReactNode } from 'react';
-import { Switch as AriaSwitch } from 'react-aria-components';
+import type { JSX, ReactNode } from 'react';
+import { Switch as AriaSwitch, type SwitchProps as RACSwitchProps } from 'react-aria-components';
 import { switchStyles } from '@examples/design-system';
 
-export type SwitchProps = Omit<ComponentProps<typeof AriaSwitch>, 'children'> & {
+export type SwitchProps = Omit<RACSwitchProps, 'children'> & {
   children?: ReactNode;
 };
 

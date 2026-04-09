@@ -19,9 +19,6 @@ const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_STYLE_RE = /global\.style\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_FONT_FACE_RE = /global\.fontFace\(\s*['"]([^'"]+)['"]/g;
 
-/** Check whether a module imports from 'typestyles' */
-const TYPESTYLES_IMPORT_RE = /(?:from\s+|import\s+|require\s*\(\s*)['"]typestyles['"]/;
-
 export interface TypestylesExtractOptions {
   /**
    * Modules that should be imported during build to register styles.
@@ -97,9 +94,10 @@ export function extractNamespaces(code: string): {
 /**
  * Vite plugin for typestyles HMR support.
  *
- * When a module that uses typestyles is edited, this plugin injects HMR
- * accept/dispose handlers that invalidate the module's style registrations
- * before re-execution — so updated CSS takes effect without a full reload.
+ * When a module that registers typestyles (e.g. `styles.component`, `tokens.create`) is edited,
+ * this plugin injects HMR accept/dispose handlers that invalidate that module's registrations
+ * before re-execution. Files may import from a local re-export such as `./typestyles` rather
+ * than `from 'typestyles'` directly — we key off API call patterns in the source, not the import path.
  */
 export default function typestylesPlugin(options: TypestylesPluginOptions = {}): Plugin {
   const { warnDuplicates = true, extract } = options;
@@ -110,6 +108,8 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
   const moduleNamespaces = new Map<string, { keys: string[]; prefixes: string[] }>();
   let resolvedConfig: ResolvedConfig | null = null;
   let isBuildCommand = false;
+  /** HMR injection only during dev server — avoids pulling `typestyles/hmr` into production bundles. */
+  let isServe = false;
 
   /** Dev-only cache for on-demand extract CSS (avoids SPA fallback serving HTML for the link href). */
   let devExtractCss: string | null = null;
@@ -135,6 +135,7 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
     configResolved(config) {
       resolvedConfig = config;
+      isServe = config.command === 'serve';
     },
 
     configureServer(server) {
@@ -214,12 +215,9 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
       if (!/\.[jt]sx?$/.test(id)) return null;
       if (id.includes('node_modules')) return null;
 
-      // Only transform modules that import from typestyles
-      if (!TYPESTYLES_IMPORT_RE.test(code)) return null;
-
       const { keys, prefixes } = extractNamespaces(code);
 
-      // Nothing to invalidate
+      // Nothing to invalidate (no typestyles registration calls in this file)
       if (keys.length === 0 && prefixes.length === 0) return null;
 
       // Duplicate namespace detection
@@ -240,23 +238,27 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
       moduleNamespaces.set(id, { keys, prefixes });
 
-      // Inject HMR code (dev/runtime path). Even in "build" mode this is
-      // effectively dev-only because import.meta.hot is stripped in production.
+      if (!isServe) {
+        return null;
+      }
+
+      // Dev-only: synchronous dispose must run invalidateKeys before the updated module re-executes.
+      // A dynamic import().then(...) registers dispose too late and can load a different chunk than the
+      // app's `typestyles` singleton, so the registry never clears.
       const keysJSON = JSON.stringify(keys);
       const prefixesJSON = JSON.stringify(prefixes);
 
+      const hmrImport = `import { invalidateKeys as __typestylesInvalidateKeys } from 'typestyles/hmr';\n`;
       const hmrCode = `
 if (import.meta.hot) {
-  import('typestyles/hmr').then(({ invalidateKeys: __typestyles_invalidateKeys }) => {
-    import.meta.hot.accept();
-    import.meta.hot.dispose(() => {
-      __typestyles_invalidateKeys(${keysJSON}, ${prefixesJSON});
-    });
+  import.meta.hot.accept();
+  import.meta.hot.dispose(() => {
+    __typestylesInvalidateKeys(${keysJSON}, ${prefixesJSON});
   });
 }`;
 
       return {
-        code: code + hmrCode,
+        code: hmrImport + code + hmrCode,
         map: null,
       };
     },

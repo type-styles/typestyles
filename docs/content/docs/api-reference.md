@@ -86,6 +86,15 @@ Composes naturally with token references.
 
 See [Color](/docs/color).
 
+### `calc` and `clamp`
+
+Helpers for CSS `calc()` and `clamp()` that always emit balanced outer parentheses:
+
+- **`calc`** — tagged template: `` calc`100vh - ${token}` `` → `calc(100vh - …)`
+- **`clamp(min, preferred, max)`** — three arguments → `clamp(min, preferred, max)`
+
+See [TypeScript Tips — Complex CSS values](/docs/typescript-tips).
+
 ### `createTypeStyles(options)`
 
 Returns **`{ styles, tokens }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. See [Cascade layers](/docs/cascade-layers).

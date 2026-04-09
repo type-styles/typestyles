@@ -433,6 +433,45 @@ function Button({ variant: variantProp }: { variant?: string }) {
 7. **Export types** that consumers might need
 8. **Document complex types** with JSDoc comments
 
+## Complex CSS values (`calc`, `clamp`, and other parentheses)
+
+Property values are typed as **strings** (or numbers where unit conversion applies). TypeScript cannot tell whether `calc(…)`, `clamp(…)`, `min(…)`, `max(…)`, `url(…)`, or similar is syntactically valid. A single missing or extra `)` often produces **invalid CSS**; depending on where it appears, the browser may ignore one declaration or mis-parse **many rules** after it.
+
+### Built-in helpers: `calc` and `clamp`
+
+TypeStyles exports **`calc`** (a tagged template) and **`clamp(min, preferred, max)`** so the outer `calc(…)` / `clamp(…)` parentheses are always emitted together:
+
+```ts
+import { calc, clamp, styles } from 'typestyles';
+
+styles.class('sidebar', {
+  height: calc`100vh - 2 * ${t.space[4]}`,
+  fontSize: clamp('0.875rem', '2vw', '1.125rem'),
+});
+```
+
+You still need valid syntax inside the template (for example balanced parentheses in nested `min()` / `max()`), but you won’t forget the closing `)` of `calc` itself.
+
+### Other patterns
+
+1. **Manual template literals** — keep `calc(` and `)` in one literal and interpolate only the middle if you prefer not to use the tag:
+
+   ```ts
+   height: `calc(100vh - 2 * ${t.space[4]})`,
+   ```
+
+2. **Custom helpers** when you repeat the same shape:
+
+   ```ts
+   function calcSubtract(minuend: string, subtrahend: string) {
+     return `calc(${minuend} - ${subtrahend})`;
+   }
+   ```
+
+3. **Name intermediate pieces** if a value gets long—easier to review than a single huge string.
+
+4. **Validate in the browser** (devtools → computed / rules) when you touch tricky values; there is no full compile-time substitute today.
+
 ## Nested keys: `container()`, `has()`, `is()`, `where()`
 
 Style objects allow nested keys that start with **`&`** (pseudos, descendants), **`[`** (attributes), or **`@`** (at-rules). When you use a **computed** key next to normal longhands (`color`, `padding`, …), TypeScript must keep that key as a **narrow template literal**. If it widens to plain `string`, the object no longer matches `CSSProperties` and you might be tempted to use `as CSSProperties`.

@@ -17,6 +17,7 @@ import { cx } from './cx';
 import { container, createContainerRef } from './container';
 import { atRuleBlock } from './at-rule-block';
 import { has, is, where } from './relational-pseudo';
+import { calc, clamp } from './css-math';
 
 export type {
   StylesApi,
@@ -40,6 +41,10 @@ export {
 export { createStyles, createTokens, createTypeStyles };
 
 export { container, createContainerRef, atRuleBlock, has, is, where };
+
+export { calc, clamp };
+
+export type { CssMathValue } from './css-math';
 
 export type {
   ContainerQueryKey,

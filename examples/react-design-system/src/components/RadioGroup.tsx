@@ -1,5 +1,10 @@
-import type { ComponentProps, JSX } from 'react';
-import { Label, Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components';
+import type { JSX } from 'react';
+import {
+  Label,
+  Radio as AriaRadio,
+  RadioGroup as AriaRadioGroup,
+  type RadioGroupProps as RACRadioGroupProps,
+} from 'react-aria-components';
 import { radio } from '@examples/design-system';
 
 export type RadioGroupOption = {
@@ -7,7 +12,7 @@ export type RadioGroupOption = {
   label: string;
 };
 
-export type RadioGroupProps = Omit<ComponentProps<typeof AriaRadioGroup>, 'children'> & {
+export type RadioGroupProps = Omit<RACRadioGroupProps, 'children'> & {
   label?: string;
   options: RadioGroupOption[];
 };

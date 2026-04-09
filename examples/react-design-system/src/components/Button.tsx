@@ -1,8 +1,8 @@
-import type { ComponentProps, JSX } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
+import type { JSX } from 'react';
+import { Button as AriaButton, type ButtonProps as RACButtonProps } from 'react-aria-components';
 import { button } from '@examples/design-system';
 
-export type ButtonProps = Omit<ComponentProps<typeof AriaButton>, 'className'> & {
+export type ButtonProps = Omit<RACButtonProps, 'className'> & {
   className?: string;
   intent?: 'primary' | 'secondary' | 'ghost';
 };

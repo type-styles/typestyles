@@ -8,7 +8,7 @@ const docs = await getAllDocs();
 const docsBySlug = Object.fromEntries(docs.map((entry) => [entry.slug, entry]));
 ---
 
-<DocsLayout docsBySlug={docsBySlug} currentSlug="">
+<DocsLayout docsBySlug={docsBySlug} currentSlug="/docs">
   <div class={doc.root}>
     <h1 class={doc.title}>Documentation</h1>
     <p class={doc.description}>
@@ -23,11 +23,12 @@ const docsBySlug = Object.fromEntries(docs.map((entry) => [entry.slug, entry]));
             <h2>{category.title}</h2>
             <ul>
               {category.items.map((item) => {
-                const entry = docsBySlug[item.slug];
-                if (!entry) return null;
+                const href = item.href ?? (item.slug ? `/docs/${item.slug}` : undefined);
+                if (!href) return null;
+                const title = item.slug ? (docsBySlug[item.slug]?.title ?? item.title) : item.title;
                 return (
                   <li>
-                    <a href={`/docs/${item.slug}`}>{entry.title}</a>
+                    <a href={href}>{title}</a>
                   </li>
                 );
               })}

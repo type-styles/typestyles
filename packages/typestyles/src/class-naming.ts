@@ -17,8 +17,9 @@ export type ClassNamingConfig = {
   prefix: string;
   /**
    * Package, app, or per-file id: same logical `styles.component` / `styles.class` name under different
-   * scopes produces different classes. In development, duplicate registration for the same scope throws.
-   * Use `fileScopeId(import.meta)` for file-local isolation (CSS Modules–style).
+   * scopes produces different classes. In development, re-registering the same scope + component name
+   * (e.g. HMR) clears prior rules instead of throwing. Use `fileScopeId(import.meta)` for file-local
+   * isolation (CSS Modules–style).
    */
   scopeId: string;
   /**

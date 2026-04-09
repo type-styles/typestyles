@@ -1,8 +1,11 @@
-import type { ComponentProps, JSX, ReactNode } from 'react';
-import { Checkbox as AriaCheckbox } from 'react-aria-components';
+import type { JSX, ReactNode } from 'react';
+import {
+  Checkbox as AriaCheckbox,
+  type CheckboxProps as RACCheckboxProps,
+} from 'react-aria-components';
 import { checkbox } from '@examples/design-system';
 
-export type CheckboxProps = Omit<ComponentProps<typeof AriaCheckbox>, 'children'> & {
+export type CheckboxProps = Omit<RACCheckboxProps, 'children'> & {
   children?: ReactNode;
 };
 

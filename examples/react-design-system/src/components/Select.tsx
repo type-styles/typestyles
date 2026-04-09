@@ -1,4 +1,4 @@
-import type { ComponentProps, JSX } from 'react';
+import type { JSX } from 'react';
 import {
   Button as AriaButton,
   Label,
@@ -7,6 +7,7 @@ import {
   Popover,
   Select as AriaSelect,
   SelectValue,
+  type SelectProps as RACSelectProps,
 } from 'react-aria-components';
 import { select } from '@examples/design-system';
 
@@ -15,7 +16,7 @@ export type SelectOption = {
   label: string;
 };
 
-export type SelectProps = Omit<ComponentProps<typeof AriaSelect>, 'children'> & {
+export type SelectProps = Omit<RACSelectProps, 'children'> & {
   label?: string;
   options: SelectOption[];
   placeholder?: string;
