@@ -2,7 +2,6 @@
 import { home } from '../styles';
 import DocsLayout from '../layouts/DocsLayout.astro';
 import { getAllDocs } from '../lib/docs';
-import { button } from '@examples/design-system';
 
 const docs = await getAllDocs();
 const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.slug, title: doc.title }]));
@@ -16,22 +15,34 @@ const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.s
       <span class={home.titleAccent}>embraces CSS</span>
     </h1>
     <p class={home.subtitle}>
-      Design tokens, style variants, and keyframes - with full control over the CSS. No runtime
+      Design tokens, style variants, and keyframes — with full control over the CSS. No runtime
       overhead, no magic, just types.
     </p>
     <div class={home.actions}>
-      <a href="/docs/getting-started" class={`${home.cta} ${button.base} ${button.primary}`}>
+      <a href="/docs/getting-started" class={home.cta}>
         Get started
         <span aria-hidden="true">&rarr;</span>
       </a>
       <a
         href="https://github.com/typestyles/typestyles"
-        class={`${home.ctaSecondary} ${button.base}`}
+        class={home.ctaSecondary}
         target="_blank"
         rel="noopener noreferrer"
       >
         GitHub
       </a>
+    </div>
+    <div class={home.codeExample}>
+      <div class={home.codeExampleHeader}>theme.ts</div>
+      <div class={home.codeExampleBody}>{`const button = styles.component('button', {
+  base: { border: '3px solid #000' },
+  variants: {
+    intent: {
+      primary: { background: token.accent },
+      ghost: { background: 'transparent' },
+    },
+  },
+});`}</div>
     </div>
   </div>
 </DocsLayout>
