@@ -11,7 +11,6 @@ const layoutBase = styles.component('docs-layout', {
     fontFamily: t.fontFamily.sans,
     color: t.color.text.primary,
     backgroundColor: t.color.background.app,
-    transition: 'background-color 0.2s ease, color 0.2s ease',
   },
   content: {
     flex: 1,
