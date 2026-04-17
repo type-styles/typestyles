@@ -11,6 +11,39 @@ const STYLE_ELEMENT_ID = 'typestyles';
 const insertedRules = new Set<string>();
 
 /**
+ * Last emitted CSS per dedupe key (see {@link warnIfDuplicateRuleKeyConflict}).
+ * Cleared with {@link reset} and kept in sync when keys are invalidated.
+ */
+const ruleCssByKey = new Map<string, string>();
+
+function duplicateRuleKeyConflictWarningsEnabled(): boolean {
+  if (typeof process === 'undefined') return true;
+  return process.env.NODE_ENV !== 'production';
+}
+
+/**
+ * When the same key is registered again with different CSS, the second rule is skipped
+ * (idempotency / HMR). In non-production builds, surface that so overlapping globals
+ * (e.g. reset `body` + app `body` in the same scope) are not silent failures.
+ */
+function warnIfDuplicateRuleKeyConflict(
+  key: string,
+  previousCss: string,
+  ignoredCss: string,
+): void {
+  if (!duplicateRuleKeyConflictWarningsEnabled()) return;
+  const prevShort = previousCss.length > 220 ? `${previousCss.slice(0, 220)}…` : previousCss;
+  const nextShort = ignoredCss.length > 220 ? `${ignoredCss.slice(0, 220)}…` : ignoredCss;
+  console.warn(
+    `[typestyles] Skipped a rule: dedupe key "${key}" already exists with different CSS. ` +
+      `Only the first registration is kept. For globals, merge into one \`global.style\`, ` +
+      `or use a distinct selector (e.g. \`html body\` after reset’s \`body\`).\n` +
+      `  Existing: ${prevShort}\n` +
+      `  Skipped:  ${nextShort}`,
+  );
+}
+
+/**
  * Whether runtime DOM insertion is disabled (for build-time/zero-runtime mode).
  * The Vite plugin (mode: 'build') defines __TYPESTYLES_RUNTIME_DISABLED__ as the
  * string "true" at build time, so this is true in production and no <style> is created.
@@ -203,8 +236,15 @@ export function registerCascadeLayerOrder(preambleKey: string, css: string): voi
  * Insert a CSS rule. Deduplicates by rule key.
  */
 export function insertRule(key: string, css: string): void {
-  if (insertedRules.has(key)) return;
+  if (insertedRules.has(key)) {
+    const prev = ruleCssByKey.get(key);
+    if (prev != null && prev !== css) {
+      warnIfDuplicateRuleKeyConflict(key, prev, css);
+    }
+    return;
+  }
   insertedRules.add(key);
+  ruleCssByKey.set(key, css);
   allRules.push(css);
   if (RUNTIME_DISABLED && !ssrBuffer) return;
   pendingRules.push(css);
@@ -217,8 +257,15 @@ export function insertRule(key: string, css: string): void {
 export function insertRules(rules: Array<{ key: string; css: string }>): void {
   let added = false;
   for (const { key, css } of rules) {
-    if (insertedRules.has(key)) continue;
+    if (insertedRules.has(key)) {
+      const prev = ruleCssByKey.get(key);
+      if (prev != null && prev !== css) {
+        warnIfDuplicateRuleKeyConflict(key, prev, css);
+      }
+      continue;
+    }
     insertedRules.add(key);
+    ruleCssByKey.set(key, css);
     allRules.push(css);
     if (!RUNTIME_DISABLED || ssrBuffer) {
       pendingRules.push(css);
@@ -235,6 +282,7 @@ export function replaceRule(key: string, css: string): void {
   if (!isBrowser || RUNTIME_DISABLED) return;
 
   insertedRules.delete(key);
+  ruleCssByKey.delete(key);
 
   // Remove existing rule from the sheet if possible
   const el = getStyleElement();
@@ -266,7 +314,7 @@ export function startCollection(): () => string {
  *
  * Unlike `collectStyles`, this doesn't require wrapping a render function.
  * It simply returns every CSS rule that has been registered via
- * `styles.create`, `tokens.create`, `keyframes.create`, etc.
+ * `styles.component`, `styles.class`, `tokens.create`, `keyframes.create`, etc.
  *
  * Ideal for SSR frameworks that need the CSS separately from the render
  * pass (e.g. TanStack Start's `head()`, Next.js metadata, Remix links).
@@ -290,6 +338,7 @@ export function getRegisteredCss(): string {
  */
 export function reset(): void {
   insertedRules.clear();
+  ruleCssByKey.clear();
   pendingRules = [];
   allRules.length = 0;
   flushScheduled = false;
@@ -316,6 +365,7 @@ export function invalidatePrefix(prefix: string): void {
   for (const key of insertedRules) {
     if (key.startsWith(prefix)) {
       insertedRules.delete(key);
+      ruleCssByKey.delete(key);
     }
   }
 
@@ -345,11 +395,13 @@ export function invalidatePrefix(prefix: string): void {
 export function invalidateKeys(keys: string[], prefixes: string[]): void {
   for (const key of keys) {
     insertedRules.delete(key);
+    ruleCssByKey.delete(key);
   }
   for (const prefix of prefixes) {
     for (const key of insertedRules) {
       if (key.startsWith(prefix)) {
         insertedRules.delete(key);
+        ruleCssByKey.delete(key);
       }
     }
   }

@@ -221,7 +221,7 @@ import { TypestylesStylesheet } from '@typestyles/next';
 // app/page.tsx
 import { styles } from 'typestyles';
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '12px 24px',
     backgroundColor: '#0066ff',
@@ -235,7 +235,7 @@ const button = styles.create('button', {
 export default function Home() {
   return (
     <main>
-      <button className={button('base')}>Click me</button>
+      <button className={button()}>Click me</button>
     </main>
   );
 }
@@ -262,7 +262,7 @@ export const spacing = tokens.create('space', {
 import { styles } from 'typestyles';
 import { colors, spacing } from './tokens';
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     padding: spacing.md,
     backgroundColor: colors.primary,
@@ -271,7 +271,7 @@ const card = styles.create('card', {
 });
 
 export default function Page() {
-  return <div className={card('base')}>Hello World</div>;
+  return <div className={card()}>Hello World</div>;
 }
 ```
 
@@ -302,6 +302,14 @@ export default function RootLayout({ children }) {
   );
 }
 ```
+
+## Fonts and local files
+
+`global.fontFace()` registers `@font-face` like any other TypeStyles global. For **Next’s pre-build extraction** (`buildTypestylesForNext`), prefer fonts under **`public/fonts/`** and a root-relative `url('/fonts/…')` in `src` so Node does not need to resolve binary imports.
+
+For **Vite**, you can use `import file from './font.woff2?url'` and `url(\`${file}\`) format('woff2')` so production CSS points at hashed assets.
+
+See the **Fonts** guide in the TypeStyles docs (`docs/content/docs/fonts.md`, route `/docs/fonts` on the docs site).
 
 ## Troubleshooting
 

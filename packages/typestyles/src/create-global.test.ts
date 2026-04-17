@@ -93,4 +93,35 @@ describe('createGlobal', () => {
       createTypeStyles({ scopeId: 'x', globalLayer: 'reset' } as never);
     }).toThrow(/globalLayer/);
   });
+
+  it('warns in non-production when the same global dedupe key is reused with different CSS', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { global } = createTypeStyles({
+      scopeId: 'dedupe-warn',
+      layers: ['reset', 'tokens', 'components'] as const,
+      tokenLayer: 'tokens',
+      globalLayer: 'reset',
+    });
+    global.style('body', { margin: 0 });
+    global.style('body', { padding: 0 });
+    flushSync();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/dedupe key/);
+    warn.mockRestore();
+  });
+
+  it('does not warn when the same global dedupe key is reused with identical CSS', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { global } = createTypeStyles({
+      scopeId: 'dedupe-idem',
+      layers: ['reset', 'tokens', 'components'] as const,
+      tokenLayer: 'tokens',
+      globalLayer: 'reset',
+    });
+    global.style('p', { color: 'red' });
+    global.style('p', { color: 'red' });
+    flushSync();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });

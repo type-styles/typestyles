@@ -32,6 +32,8 @@ export default defineConfig({
 
 For **zero-runtime production** builds while keeping **runtime + HMR in development**, add `extract` with your style entry modules (see [Zero-runtime extraction](/docs/zero-runtime)). When `extract.modules` is non-empty, the plugin defaults to `mode: 'build'`: `vite dev` still injects styles at runtime, and `vite build` emits a static CSS file and strips client injection.
 
+For loading self-hosted fonts with Vite’s asset pipeline, see [Fonts](/docs/fonts).
+
 ## Features
 
 ### Hot Module Replacement (HMR)
@@ -150,7 +152,7 @@ export const button = styles.component('button', {
 import { button } from './styles';
 
 document.getElementById('app').innerHTML = `
-  <button class="${button('base')}">Click me</button>
+  <button class="${button()}">Click me</button>
 `;
 ```
 

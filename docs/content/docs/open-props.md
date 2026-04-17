@@ -19,7 +19,7 @@ npm install @typestyles/open-props
 import { styles } from 'typestyles';
 import { sizes, radius, color, font } from '@typestyles/open-props';
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   padding: sizes['4'],
   borderRadius: radius['3'],
   backgroundColor: color['gray-2'],
@@ -290,7 +290,7 @@ All tokens work seamlessly with typestyles:
 import { styles } from 'typestyles';
 import { sizes, radius, color, shadow, fontSize } from '@typestyles/open-props';
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -324,7 +324,7 @@ const brand = tokens.create('brand', {
 });
 
 // Use both together
-const container = styles.create('container', {
+const container = styles.component('container', {
   backgroundColor: brand.primary, // var(--brand-primary)
   padding: sizes['4'], // var(--size-4)
   borderColor: color['gray-3'], // var(--color-gray-3)

@@ -19,7 +19,7 @@ const fadeIn = keyframes.create('fadeIn', {
   to: { opacity: 1 },
 });
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     animation: `${fadeIn} 300ms ease`,
   },
@@ -116,7 +116,7 @@ const spin = keyframes.create('spin', {
   to: { transform: 'rotate(360deg)' },
 });
 
-const spinner = styles.create('spinner', {
+const spinner = styles.component('spinner', {
   base: {
     display: 'inline-block',
     width: '24px',
@@ -149,7 +149,7 @@ const pulse = keyframes.create('pulse', {
   '50%': { opacity: 0.5 },
 });
 
-const skeleton = styles.create('skeleton', {
+const skeleton = styles.component('skeleton', {
   base: {
     backgroundColor: '#e5e7eb',
     borderRadius: '4px',
@@ -167,7 +167,7 @@ const shake = keyframes.create('shake', {
   '20%, 40%, 60%, 80%': { transform: 'translateX(4px)' },
 });
 
-const input = styles.create('input', {
+const input = styles.component('input', {
   base: { ... },
   error: {
     borderColor: '#ef4444',
@@ -190,7 +190,7 @@ const bounce = keyframes.create('bounce', {
   },
 });
 
-const notification = styles.create('notification', {
+const notification = styles.component('notification', {
   badge: {
     animation: `${bounce} 1s infinite`,
   },
@@ -207,7 +207,7 @@ const pageFadeIn = keyframes.create('pageFadeIn', {
   to: { opacity: 1 },
 });
 
-const pageLayout = styles.create('page', {
+const pageLayout = styles.component('page', {
   container: {
     animation: `${pageFadeIn} 300ms ease`,
   },
@@ -230,7 +230,7 @@ const listItemFadeIn = keyframes.create('listItemFadeIn', {
 });
 
 // Delay classes for stagger effect
-const list = styles.create('list', {
+const list = styles.component('list', {
   item: {
     opacity: 0,
     animation: `${listItemFadeIn} 300ms ease forwards`,
@@ -277,7 +277,7 @@ const buttonPress = keyframes.create('buttonPress', {
   '100%': { transform: 'scale(1)' },
 });
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     transition: 'transform 100ms ease',
 
@@ -305,7 +305,7 @@ const checkmark = keyframes.create('checkmark', {
   },
 });
 
-const checkbox = styles.create('checkbox', {
+const checkbox = styles.component('checkbox', {
   base: { ... },
 
   checkmark: {
@@ -324,7 +324,7 @@ const checkbox = styles.create('checkbox', {
 ### Hover lift effect
 
 ```ts
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     transition: 'transform 200ms ease, box-shadow 200ms ease',
   },
@@ -377,7 +377,7 @@ const modalContentSlideOut = keyframes.create('modalContentSlideOut', {
   },
 });
 
-const modal = styles.create('modal', {
+const modal = styles.component('modal', {
   backdrop: {
     position: 'fixed',
     inset: 0,
@@ -438,7 +438,7 @@ const toastProgress = keyframes.create('toastProgress', {
   to: { transform: 'scaleX(0)' },
 });
 
-const toast = styles.create('toast', {
+const toast = styles.component('toast', {
   base: {
     padding: '16px 20px',
     borderRadius: '8px',
@@ -486,7 +486,7 @@ const shimmer = keyframes.create('shimmer', {
   '100%': { backgroundPosition: '200% 0' },
 });
 
-const skeleton = styles.create('skeleton', {
+const skeleton = styles.component('skeleton', {
   base: {
     backgroundColor: '#e5e7eb',
     borderRadius: '4px',
@@ -538,7 +538,7 @@ const scrollIndicator = keyframes.create('scrollIndicator', {
   },
 });
 
-const scrollCue = styles.create('scroll-cue', {
+const scrollCue = styles.component('scroll-cue', {
   base: {
     display: 'flex',
     flexDirection: 'column',
@@ -590,7 +590,7 @@ const badAnimation = keyframes.create('badAnimation', {
 
 ```ts
 // Respect reduced motion preference
-const animated = styles.create('animated', {
+const animated = styles.component('animated', {
   base: {
     '@media (prefers-reduced-motion: reduce)': {
       animation: 'none',
@@ -616,7 +616,7 @@ const enter = 'cubic-bezier(0, 0, 0.2, 1)';
 const exit = 'cubic-bezier(0.4, 0, 1, 1)';
 
 // Usage
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     transition: `transform 200ms ${springy}`,
   },
@@ -714,7 +714,7 @@ export const presets = {
 } as const;
 
 // Usage
-const modal = styles.create('modal', {
+const modal = styles.component('modal', {
   enter: {
     animation: presets.fade.in,
   },

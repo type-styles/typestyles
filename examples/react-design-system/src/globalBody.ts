@@ -1,5 +1,4 @@
-import { designTokens } from '@examples/design-system';
-import { global } from 'typestyles';
+import { designTokens, global } from '@examples/design-system';
 
 global.style('body', {
   margin: 0,

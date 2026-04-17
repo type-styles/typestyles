@@ -93,7 +93,7 @@ export const primitiveSpacing = {
 // tokens/primitives/typography.ts
 export const primitiveTypography = {
   fontFamily: {
-    sans: ['Inter', 'system-ui', 'sans-serif'],
+    sans: ['Space Grotesk', 'system-ui', 'sans-serif'],
     serif: ['Georgia', 'Cambria', 'serif'],
     mono: ['Menlo', 'Monaco', 'monospace'],
   },
@@ -391,7 +391,7 @@ Create documentation for your tokens:
 // Always use tokens, never hardcode values
 
 // ❌ Bad
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 16px', // Hardcoded
     backgroundColor: '#3b82f6', // Hardcoded
@@ -399,7 +399,7 @@ const button = styles.create('button', {
 });
 
 // ✅ Good
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: `${buttonToken.paddingHorizontalMd} ${buttonToken.paddingVerticalMd}`,
     backgroundColor: buttonToken.primaryBackground,

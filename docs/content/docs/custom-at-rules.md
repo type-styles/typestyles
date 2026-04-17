@@ -12,7 +12,7 @@ TypeStyles supports all CSS at-rules and advanced selectors through special key 
 Use the `&` prefix for pseudo-classes:
 
 ```ts
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 16px',
     backgroundColor: '#0066ff',
@@ -58,7 +58,7 @@ const button = styles.create('button', {
 ### Form-related pseudo-classes
 
 ```ts
-const input = styles.create('input', {
+const input = styles.component('input', {
   base: {
     border: '1px solid #e5e7eb',
 
@@ -93,7 +93,7 @@ const input = styles.create('input', {
 ### Structural pseudo-classes
 
 ```ts
-const list = styles.create('list', {
+const list = styles.component('list', {
   item: {
     padding: '8px 0',
     borderBottom: '1px solid #e5e7eb',
@@ -132,7 +132,7 @@ const list = styles.create('list', {
 ### Child selectors
 
 ```ts
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     padding: '16px',
   },
@@ -163,7 +163,7 @@ const card = styles.create('card', {
 ### Sibling selectors
 
 ```ts
-const form = styles.create('form', {
+const form = styles.component('form', {
   base: {
     display: 'flex',
     flexDirection: 'column',
@@ -191,7 +191,7 @@ const form = styles.create('form', {
 ## Attribute selectors
 
 ```ts
-const link = styles.create('link', {
+const link = styles.component('link', {
   base: {
     color: '#0066ff',
     textDecoration: 'none',
@@ -262,7 +262,7 @@ You can still author raw nested keys (e.g. `'&:has(.active)'`, `'&:is(:hover, :f
 Use the `@` prefix for media queries:
 
 ```ts
-const layout = styles.create('layout', {
+const layout = styles.component('layout', {
   container: {
     display: 'grid',
     gridTemplateColumns: '1fr',
@@ -290,7 +290,7 @@ const layout = styles.create('layout', {
 ### Complex media queries
 
 ```ts
-const hero = styles.create('hero', {
+const hero = styles.component('hero', {
   base: {
     padding: '48px 16px',
 
@@ -323,7 +323,7 @@ const hero = styles.create('hero', {
 ### Combining media queries with pseudo-classes
 
 ```ts
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 16px',
 
@@ -447,7 +447,7 @@ const card = styles.class('card', {
 Feature detection with `@supports`:
 
 ```ts
-const backdrop = styles.create('backdrop', {
+const backdrop = styles.component('backdrop', {
   base: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
 
@@ -463,7 +463,7 @@ const backdrop = styles.create('backdrop', {
 ### Complex supports queries
 
 ```ts
-const grid = styles.create('grid', {
+const grid = styles.component('grid', {
   base: {
     // Fallback layout
     display: 'flex',
@@ -488,7 +488,7 @@ const grid = styles.create('grid', {
 CSS cascade layers for organizing styles:
 
 ```ts
-const reset = styles.create('reset', {
+const reset = styles.component('reset', {
   base: {
     // Apply to @layer reset
     '@layer reset': {
@@ -499,7 +499,7 @@ const reset = styles.create('reset', {
   },
 });
 
-const components = styles.create('components', {
+const components = styles.component('components', {
   button: {
     '@layer components': {
       padding: '8px 16px',
@@ -515,7 +515,7 @@ While typestyles supports deep nesting, it's best to keep it shallow:
 
 ```ts
 // ✅ Good - 2-3 levels deep
-const nav = styles.create('nav', {
+const nav = styles.component('nav', {
   base: {
     display: 'flex',
 
@@ -530,7 +530,7 @@ const nav = styles.create('nav', {
 });
 
 // ❌ Avoid - too deep, hard to maintain
-const deep = styles.create('deep', {
+const deep = styles.component('deep', {
   base: {
     '& div': {
       '& span': {
@@ -548,7 +548,7 @@ const deep = styles.create('deep', {
 ## Complex real-world example
 
 ```ts
-const dataTable = styles.create('data-table', {
+const dataTable = styles.component('data-table', {
   container: {
     overflowX: 'auto',
     containerType: 'inline-size',
@@ -627,7 +627,7 @@ TypeStyles converts these nested objects to flat CSS:
 **Input:**
 
 ```ts
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px',
     '&:hover': {

@@ -99,6 +99,7 @@ export type {
   SlotComponentFunction,
   MultiSlotConfigInput,
   FontFaceProps,
+  FontFaceSrc,
   CSSVarRef,
   ComponentVariants,
   ThemeCondition,
@@ -156,6 +157,7 @@ export const styles = createStyles();
  * global.style('body', { margin: 0 });
  * global.apply(...reset());
  * global.fontFace('Inter', { src: "url('/Inter.woff2') format('woff2')", fontWeight: 400 });
+ * global.fontFace('Inter', { src: [`local('Inter')`, "url('/Inter.woff2') format('woff2')"] });
  * ```
  */
 export const global = {

@@ -61,10 +61,11 @@ const composed = styles.compose(base, isElevated && elevated, isDark && 'dark-mo
 You can also use `cx()` to conditionally join class strings from destructured components:
 
 ```ts
-const { base } = styles.component('card', {
+const card = styles.component('card', {
   base: { padding: '16px' },
   elevated: { boxShadow: '0 4px 8px rgba(0,0,0,0.1)' },
 });
+const { base, elevated } = card;
 
 cx(base, isElevated && elevated);
 ```

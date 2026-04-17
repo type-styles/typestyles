@@ -130,4 +130,46 @@ describe('globalFontFace', () => {
     expect(css).toContain('font-stretch: condensed');
     expect(css).toContain('unicode-range: U+0000-00FF');
   });
+
+  it('joins src array into one CSS src list', () => {
+    globalFontFace('Combo', {
+      src: [`local('Combo')`, "url('/Combo.woff2') format('woff2')"],
+      fontDisplay: 'swap',
+    });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain(`src: local('Combo'), url('/Combo.woff2') format('woff2')`);
+  });
+
+  it('deduplicates font-face when src is an array matching a prior string', () => {
+    const pieces = [`local('X')`, "url('/X.woff2') format('woff2')"] as const;
+    globalFontFace('X', { src: pieces });
+    globalFontFace('X', { src: pieces.join(', ') });
+    flushSync();
+
+    const css = getRegisteredCss();
+    const count = (css.match(/@font-face/g) ?? []).length;
+    expect(count).toBe(1);
+  });
+
+  it('supports variable font weight range and metric overrides', () => {
+    globalFontFace('VarFace', {
+      src: "url('/Var.woff2') format('woff2')",
+      fontWeight: '100 900',
+      fontStyle: 'normal',
+      sizeAdjust: '90%',
+      ascentOverride: '90%',
+      descentOverride: '10%',
+      lineGapOverride: '0%',
+    });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('font-weight: 100 900');
+    expect(css).toContain('size-adjust: 90%');
+    expect(css).toContain('ascent-override: 90%');
+    expect(css).toContain('descent-override: 10%');
+    expect(css).toContain('line-gap-override: 0%');
+  });
 });

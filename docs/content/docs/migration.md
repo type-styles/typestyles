@@ -318,7 +318,7 @@ className={cx(base, isPrimary && primary, isLarge && large)}
 
 **After:**
 
-When all classes come from one `styles.create` call, the selector function handles conditional class names directly:
+When all classes come from one `styles.component` recipe, you can call it with variant overrides or combine pieces with `cx()`:
 
 ```tsx
 import { styles, cx } from 'typestyles';
@@ -338,9 +338,9 @@ const button = styles.component('button', {
 // Option 1: Call with variant overrides
 className={button({ intent: isPrimary ? 'primary' : undefined, size: isLarge ? 'large' : undefined })}
 
-// Option 2: Destructure and use cx()
-const { base, ...variants } = button;
-className={cx(base, isPrimary && 'button-intent-primary', isLarge && 'button-size-large')}
+// Option 2: Destructure dimensioned variant classes and use cx()
+const { base, 'intent-primary': intentPrimary, 'size-large': sizeLarge } = button;
+className={cx(base, isPrimary && intentPrimary, isLarge && sizeLarge)}
 ```
 
 When you need to combine classes from different sources (multiple style groups, external class strings, or conditional expressions), use the built-in `cx` utility:
@@ -349,12 +349,13 @@ When you need to combine classes from different sources (multiple style groups, 
 import { cx, styles } from 'typestyles';
 
 const card = styles.class('card', { padding: '16px' });
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { padding: '8px' },
   primary: { backgroundColor: 'blue' },
 });
+const { primary } = button;
 
-className={cx(card, button('base', 'primary'), isActive && 'active', externalClassName)}
+className={cx(card, button(), isPrimary && primary, isActive && 'active', externalClassName)}
 ```
 
 ## From CVA (Class Variance Authority)

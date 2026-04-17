@@ -15,7 +15,7 @@ First, verify the class name is being applied:
 
 ```tsx
 function Button() {
-  return <button className={button('base')}>Click me</button>;
+  return <button className={button()}>Click me</button>;
 }
 ```
 
@@ -77,10 +77,10 @@ This means you've created two different styles with the same namespace:
 
 ```ts
 // File A
-const button = styles.create('button', { ... });
+const button = styles.component('button', { ... });
 
 // File B
-const button = styles.create('button', { ... }); // Same namespace!
+const button = styles.component('button', { ... }); // Same namespace!
 ```
 
 ### How to fix
@@ -89,13 +89,13 @@ Use unique, descriptive namespaces:
 
 ```ts
 // ✅ Good - descriptive names
-const iconButton = styles.create('icon-button', { ... });
-const textButton = styles.create('text-button', { ... });
-const submitButton = styles.create('submit-button', { ... });
+const iconButton = styles.component('icon-button', { ... });
+const textButton = styles.component('text-button', { ... });
+const submitButton = styles.component('submit-button', { ... });
 
 // ❌ Bad - generic names that collide
-const button = styles.create('button', { ... });
-const button2 = styles.create('button', { ... }); // Collision!
+const button = styles.component('button', { ... });
+const button2 = styles.component('button', { ... }); // Collision!
 ```
 
 ## TypeScript errors
@@ -130,15 +130,15 @@ No overload matches this call.
 You're passing an invalid variant:
 
 ```ts
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { ... },
   primary: { ... },
 });
 
-button('base', 'secondary'); // Error! 'secondary' is not a valid variant
+button({ secondary: true }); // Error! 'secondary' is not a valid flat flag on this recipe
 ```
 
-**Fix:** Use only defined variants.
+**Fix:** Pass only variant keys that exist on the recipe (for dimensioned components, use the correct dimension keys and option names).
 
 ### Cannot find module 'typestyles'
 
@@ -349,7 +349,7 @@ button {
 1. Use more specific selectors:
 
    ```ts
-   const button = styles.create('button', {
+   const button = styles.component('button', {
      base: {
        color: 'blue',
        // Increase specificity
@@ -374,7 +374,7 @@ button {
 Styles from parent components affecting children:
 
 ```ts
-const parent = styles.create('parent', {
+const parent = styles.component('parent', {
   base: {
     '& button': { color: 'red' }, // Affects ALL buttons inside
   },
@@ -384,13 +384,13 @@ const parent = styles.create('parent', {
 **Fix:** Be more specific or avoid nesting:
 
 ```ts
-const parent = styles.create('parent', {
+const parent = styles.component('parent', {
   base: {
     // Don't use & button, style specific class instead
   },
 });
 
-const childButton = styles.create('child-button', {
+const childButton = styles.component('child-button', {
   base: {
     color: 'red',
   },
@@ -400,7 +400,7 @@ const childButton = styles.create('child-button', {
 ### Media queries not working
 
 ```ts
-const responsive = styles.create('responsive', {
+const responsive = styles.component('responsive', {
   base: {
     '@media (max-width: 768px)': {
       display: 'none',

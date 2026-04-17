@@ -225,16 +225,13 @@ export { fontSize, fontWeight, lineHeight } from './typography';
 import { styles } from 'typestyles';
 import { semanticColors, spacing, fontSize, fontWeight } from '../../tokens';
 
-export const button = styles.create('button', {
+export const button = styles.component('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[2],
-    padding: `${spacing[2]} ${spacing[4]}`,
     borderRadius: '6px',
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
     lineHeight: '1.5',
     cursor: 'pointer',
     border: 'none',
@@ -250,67 +247,71 @@ export const button = styles.create('button', {
       boxShadow: `0 0 0 3px ${semanticColors.primary}33`,
     },
   },
-
-  primary: {
-    backgroundColor: semanticColors.primary,
-    color: '#ffffff',
-
-    '&:hover:not(:disabled)': {
-      backgroundColor: semanticColors.primaryHover,
+  variants: {
+    intent: {
+      primary: {
+        backgroundColor: semanticColors.primary,
+        color: '#ffffff',
+        '&:hover:not(:disabled)': {
+          backgroundColor: semanticColors.primaryHover,
+        },
+      },
+      secondary: {
+        backgroundColor: semanticColors.secondary,
+        color: '#ffffff',
+        '&:hover:not(:disabled)': {
+          backgroundColor: semanticColors.secondaryHover,
+        },
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        border: `1px solid ${semanticColors.border}`,
+        color: semanticColors.text,
+        '&:hover:not(:disabled)': {
+          backgroundColor: semanticColors.surfaceRaised,
+        },
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+        color: semanticColors.text,
+        '&:hover:not(:disabled)': {
+          backgroundColor: semanticColors.surfaceRaised,
+        },
+      },
+    },
+    size: {
+      sm: {
+        padding: `${spacing[1]} ${spacing[3]}`,
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.medium,
+      },
+      md: {
+        padding: `${spacing[2]} ${spacing[4]}`,
+        fontSize: fontSize.base,
+        fontWeight: fontWeight.medium,
+      },
+      lg: {
+        padding: `${spacing[3]} ${spacing[6]}`,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.medium,
+      },
+    },
+    width: {
+      auto: {},
+      full: { width: '100%' },
     },
   },
-
-  secondary: {
-    backgroundColor: semanticColors.secondary,
-    color: '#ffffff',
-
-    '&:hover:not(:disabled)': {
-      backgroundColor: semanticColors.secondaryHover,
-    },
-  },
-
-  outline: {
-    backgroundColor: 'transparent',
-    border: `1px solid ${semanticColors.border}`,
-    color: semanticColors.text,
-
-    '&:hover:not(:disabled)': {
-      backgroundColor: semanticColors.surfaceRaised,
-    },
-  },
-
-  ghost: {
-    backgroundColor: 'transparent',
-    color: semanticColors.text,
-
-    '&:hover:not(:disabled)': {
-      backgroundColor: semanticColors.surfaceRaised,
-    },
-  },
-
-  sm: {
-    padding: `${spacing[1]} ${spacing[3]}`,
-    fontSize: fontSize.sm,
-  },
-
-  md: {
-    padding: `${spacing[2]} ${spacing[4]}`,
-    fontSize: fontSize.base,
-  },
-
-  lg: {
-    padding: `${spacing[3]} ${spacing[6]}`,
-    fontSize: fontSize.lg,
-  },
-
-  fullWidth: {
-    width: '100%',
+  defaultVariants: {
+    intent: 'primary',
+    size: 'md',
+    width: 'auto',
   },
 });
 ```
 
 ```tsx
 // src/components/Button/Button.tsx
+import { cx } from 'typestyles';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { button } from './Button.styles';
 
@@ -326,7 +327,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={button('base', variant, size, fullWidth && 'fullWidth', className)}
+        className={cx(
+          button({
+            intent: variant,
+            size,
+            width: fullWidth ? 'full' : 'auto',
+          }),
+          className,
+        )}
         {...props}
       >
         {children}
@@ -561,7 +569,7 @@ import { Button } from '@myorg/ui-library';
 import { semanticColors, spacing } from '@myorg/ui-library/tokens';
 import { styles } from 'typestyles';
 
-const customCard = styles.create('custom-card', {
+const customCard = styles.component('custom-card', {
   base: {
     padding: spacing[6],
     border: `2px solid ${semanticColors.primary}`,
@@ -571,7 +579,7 @@ const customCard = styles.create('custom-card', {
 
 function CustomComponent() {
   return (
-    <div className={customCard('base')}>
+    <div className={customCard()}>
       <Button variant="primary">Library Button</Button>
     </div>
   );

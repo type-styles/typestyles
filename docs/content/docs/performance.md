@@ -13,11 +13,11 @@ TypeStyles is designed to be fast. This guide explains how it works under the ho
 
 TypeStyles operates at runtime with minimal overhead. The timings below are **rough orders of magnitude** and will vary by device and bundle.
 
-| Operation                            | Cost (typical) | Frequency                 |
-| ------------------------------------ | -------------- | ------------------------- |
-| `styles.create()`                    | sub-ms         | Once per style definition |
-| Selector function (`button('base')`) | very small     | Every render              |
-| CSS injection                        | sub-ms         | Once per unique rule      |
+| Operation                               | Cost (typical) | Frequency                 |
+| --------------------------------------- | -------------- | ------------------------- |
+| `styles.component()` / `styles.class()` | sub-ms         | Once per style definition |
+| `button()` / `cx(...)`                  | very small     | Every render              |
+| CSS injection                           | sub-ms         | Once per unique rule      |
 
 **What this means:**
 
@@ -57,13 +57,13 @@ Styles aren't injected until they're used. This means:
 
 ```ts
 // This is defined but no CSS is injected yet
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { padding: '8px' },
 });
 
 // CSS is only injected when the component renders
 function App() {
-  return <button className={button('base')}>Click</button>;
+  return <button className={button()}>Click</button>;
 }
 ```
 
@@ -79,9 +79,9 @@ CSS rules are batched and inserted on the next frame:
 
 ```ts
 // Multiple style definitions
-const button = styles.create('button', { ... });
-const card = styles.create('card', { ... });
-const input = styles.create('input', { ... });
+const button = styles.component('button', { ... });
+const card = styles.component('card', { ... });
+const input = styles.component('input', { ... });
 
 // All queued together, inserted in one operation
 // Uses requestAnimationFrame or microtask for batching
@@ -99,16 +99,16 @@ const input = styles.create('input', { ... });
 
 ```ts
 // ✅ Good - defined once
-const button = styles.create('button', { ... });
+const button = styles.component('button', { ... });
 
 function Button() {
-  return <button className={button('base')} />;
+  return <button className={button()} />;
 }
 
 // ❌ Bad - redefined on every render
 function Button() {
-  const button = styles.create('button', { ... }); // Don't do this!
-  return <button className={button('base')} />;
+  const button = styles.component('button', { ... }); // Don't do this!
+  return <button className={button()} />;
 }
 ```
 
@@ -118,19 +118,19 @@ Module-level definitions are evaluated once. Creating styles inside components c
 
 ```ts
 // ❌ Bad - creates styles for every possible value
-const box = styles.create('box', {
+const box = styles.component('box', {
   base: { width: props.width }, // Dynamic values in styles
 });
 
 // ✅ Good - use inline styles for dynamic values
-const box = styles.create('box', {
+const box = styles.component('box', {
   base: { display: 'block' },
 });
 
 function Box({ width }) {
   return (
     <div
-      className={box('base')}
+      className={box()}
       style={{ width }} // Dynamic value here
     />
   );
@@ -147,20 +147,20 @@ const color = tokens.create('color', {
   primary: '#0066ff',
 });
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { color: color.primary },
 });
 
-const link = styles.create('link', {
+const link = styles.component('link', {
   base: { color: color.primary }, // Same reference
 });
 
 // ❌ Bad - recreate values
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { color: '#0066ff' },
 });
 
-const link = styles.create('link', {
+const link = styles.component('link', {
   base: { color: '#0066ff' }, // Duplicated value
 });
 ```
@@ -171,7 +171,7 @@ Tokens ensure consistency and reduce memory usage.
 
 ```ts
 // ❌ Bad - too many variants for rarely used combinations
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { ... },
   primary: { ... },
   secondary: { ... },
@@ -182,7 +182,7 @@ const button = styles.create('button', {
 });
 
 // ✅ Good - compose smaller variants
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { ... },
   primary: { ... },
   secondary: { ... },
@@ -190,7 +190,7 @@ const button = styles.create('button', {
   large: { ... },
 });
 
-// Usage: button('base', 'primary', 'small')
+// Usage: button({ primary: true, small: true }) with flat keys, or cx(base, primary, small)
 ```
 
 Composing variants reduces the number of CSS rules and makes your styles more flexible.
@@ -210,7 +210,7 @@ Since styles are co-located with components, code splitting works automatically.
 
 ```ts
 // ❌ Bad - deep nesting increases selector complexity
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     '& .header': {
       '& .title': {
@@ -223,11 +223,11 @@ const card = styles.create('card', {
 });
 
 // ✅ Good - flatter structure, separate styles
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: { ... },
 });
 
-const cardTitle = styles.create('card-title', {
+const cardTitle = styles.component('card-title', {
   base: { fontWeight: 'bold' },
 });
 ```
@@ -292,14 +292,14 @@ Add marks to measure specific operations:
 ```ts
 import { styles } from 'typestyles';
 
-performance.mark('styles-create-start');
-const button = styles.create('button', { ... });
-performance.mark('styles-create-end');
+performance.mark('styles-component-start');
+const button = styles.component('button', { ... });
+performance.mark('styles-component-end');
 
 performance.measure(
-  'styles-create',
-  'styles-create-start',
-  'styles-create-end'
+  'styles-component',
+  'styles-component-start',
+  'styles-component-end'
 );
 
 // Check in DevTools > Performance > Timings
@@ -314,7 +314,7 @@ performance.measure(
 ```ts
 // ❌ Bad - creates styles on every click
 function handleClick() {
-  const button = styles.create('dynamic-button', { ... });
+  const button = styles.component('dynamic-button', { ... });
   // This accumulates in memory!
 }
 ```
@@ -432,7 +432,7 @@ However, you can optimize your build:
 
 ### Production checklist
 
-- [ ] No `styles.create()` calls inside components
+- [ ] No `styles.component()` / `styles.class()` definitions inside component bodies (define at module scope)
 - [ ] No dynamic values in style objects
 - [ ] Tokens reused across components
 - [ ] Variants composed, not multiplied

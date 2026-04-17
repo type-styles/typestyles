@@ -142,7 +142,7 @@ const themeColor = tokens.create('color', {
   secondary: '#6b7280',
 });
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     backgroundColor: colorFn.mix(themeColor.primary, 'white', 10),
     borderColor: colorFn.alpha(themeColor.secondary, 0.3),

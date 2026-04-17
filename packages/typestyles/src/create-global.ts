@@ -13,7 +13,11 @@ import type { GlobalStyleTuple } from './global-style-tuple';
 import { parseGlobalStyleArgs } from './global-style-tuple';
 
 type CreateGlobalOptions = {
-  /** Prefixes inserted rule keys so globals from different bundles dedupe independently. */
+  /**
+   * Prefixes inserted rule keys so globals from different bundles dedupe independently.
+   * Within one scope, each `selector` (+ optional `layer`) maps to a single rule: a second
+   * `global.style('body', …)` with different properties is ignored; non-production builds warn.
+   */
   scopeId?: string;
 };
 

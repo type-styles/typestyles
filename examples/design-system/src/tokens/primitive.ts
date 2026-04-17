@@ -19,7 +19,7 @@ export const radiusValues = {
 } as const;
 
 export const fontFamilyValues = {
-  sans: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+  sans: '"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   mono: "ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, monospace",
 } as const;
 

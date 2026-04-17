@@ -1,0 +1,4 @@
+Space Grotesk typeface © Florian Karsten (fonts.floriankarsten.com).
+Distributed via Google Fonts. Latin subset woff2 self-hosted for docs/examples.
+
+Licensed under the SIL Open Font License 1.1: https://scripts.sil.org/OFL

@@ -1,4 +1,4 @@
-import type { CSSProperties, FontFaceProps } from './types';
+import type { CSSProperties, FontFaceProps, FontFaceSrc } from './types';
 import { serializeStyle } from './css';
 import { insertRule, insertRules } from './sheet';
 import type { GlobalStyleTuple } from './global-style-tuple';
@@ -56,12 +56,17 @@ export function globalApply(...tuples: GlobalStyleTuple[]): void {
   }
 }
 
+/** Join `src` fragments for CSS `src` and for dedupe keys. */
+function normalizeFontFaceSrc(src: FontFaceSrc): string {
+  return typeof src === 'string' ? src : src.join(', ');
+}
+
 /**
  * Declare a `@font-face` rule to load a custom font.
  *
  * Multiple weights/styles of the same family can be registered by calling
  * this function multiple times with different `src` values — each call is
- * deduplicated by `family + src`.
+ * deduplicated by `family +` normalized `src`.
  *
  * @example
  * ```ts
@@ -79,15 +84,37 @@ export function globalApply(...tuples: GlobalStyleTuple[]): void {
  *   fontDisplay: 'swap',
  * });
  * ```
+ *
+ * @example Variable font (weight range)
+ * ```ts
+ * global.fontFace('InterVar', {
+ *   src: "url('/fonts/Inter.var.woff2') format('woff2')",
+ *   fontWeight: '100 900',
+ *   fontDisplay: 'swap',
+ * });
+ * ```
+ *
+ * @example Multiple `src` entries (e.g. `local()` then remote)
+ * ```ts
+ * global.fontFace('Inter', {
+ *   src: [`local('Inter')`, "url('/fonts/Inter.woff2') format('woff2')"],
+ *   fontDisplay: 'swap',
+ * });
+ * ```
  */
 export function globalFontFace(family: string, props: FontFaceProps): void {
-  const decls: string[] = [`font-family: "${family}"`, `src: ${props.src}`];
+  const srcCss = normalizeFontFaceSrc(props.src);
+  const decls: string[] = [`font-family: "${family}"`, `src: ${srcCss}`];
   if (props.fontWeight != null) decls.push(`font-weight: ${props.fontWeight}`);
   if (props.fontStyle) decls.push(`font-style: ${props.fontStyle}`);
   if (props.fontDisplay) decls.push(`font-display: ${props.fontDisplay}`);
   if (props.fontStretch) decls.push(`font-stretch: ${props.fontStretch}`);
   if (props.unicodeRange) decls.push(`unicode-range: ${props.unicodeRange}`);
+  if (props.sizeAdjust) decls.push(`size-adjust: ${props.sizeAdjust}`);
+  if (props.ascentOverride) decls.push(`ascent-override: ${props.ascentOverride}`);
+  if (props.descentOverride) decls.push(`descent-override: ${props.descentOverride}`);
+  if (props.lineGapOverride) decls.push(`line-gap-override: ${props.lineGapOverride}`);
   const css = `@font-face { ${decls.join('; ')}; }`;
   // Key includes src for uniqueness (multiple weights per family)
-  insertRule(`font-face:${family}:${props.src}`, css);
+  insertRule(`font-face:${family}:${srcCss}`, css);
 }

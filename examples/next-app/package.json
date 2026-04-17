@@ -13,6 +13,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@examples/design-system": "workspace:*",
     "@examples/react-design-system": "workspace:*",
     "@typestyles/next": "workspace:*",
     "next": "14.2.0",

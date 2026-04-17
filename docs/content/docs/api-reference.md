@@ -97,7 +97,7 @@ See [TypeScript Tips — Complex CSS values](/docs/typescript-tips).
 
 ### `createTypeStyles(options)`
 
-Returns **`{ styles, tokens }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. See [Cascade layers](/docs/cascade-layers).
+Returns **`{ styles, tokens, global }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. See [Cascade layers](/docs/cascade-layers).
 
 ### Cascade layers (types)
 
@@ -107,8 +107,8 @@ Exported types include **`CascadeLayersInput`**, **`CascadeLayersObjectInput`**,
 
 Global CSS helpers (not scoped to a component class):
 
-- `global.style(selector, styles)`: Insert rules for an arbitrary selector
-- `global.fontFace(family, props)`: Register `@font-face`
+- `global.style(selector, styles)`: Insert rules for an arbitrary selector. Rules dedupe by an internal key (`scopeId` + selector + layer when layered). A second call with the **same** key and **different** CSS is skipped; in non-`production` builds, TypeStyles logs a **console warning** so overlapping selectors (for example reset `body` plus your own `body`) are not silent failures. Reuse one call, merge properties, or use a more specific selector (e.g. `html body`).
+- `global.fontFace(family, props)`: Register `@font-face` (supports `src` as a string or array of fragments, variable font weight ranges, `font-display`, `unicode-range`, and metric overrides — see [Fonts](/docs/fonts))
 
 ### `cx(...parts)`
 
@@ -124,7 +124,7 @@ const card = styles.component('card', {
   elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
 });
 
-cx(card('base'), isElevated && card('elevated'), externalClassName);
+cx(card(), isElevated && card.elevated, externalClassName);
 ```
 
 ### CSS variables (advanced)

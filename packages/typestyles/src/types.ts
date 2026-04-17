@@ -532,13 +532,29 @@ export type ComponentVariants<T> = T extends (selections?: ComponentSelections<i
   : never;
 
 /**
+ * `src` value for {@link FontFaceProps}: a single CSS `src` fragment or multiple
+ * fragments joined with commas (same as authoring `url(...), local(...)` by hand).
+ */
+export type FontFaceSrc = string | readonly string[];
+
+/**
  * Font face property declarations.
+ *
+ * Maps to standard `@font-face` descriptors. Values are emitted verbatim in CSS.
  */
 export type FontFaceProps = {
-  src: string;
+  src: FontFaceSrc;
   fontWeight?: string | number;
   fontStyle?: 'normal' | 'italic' | 'oblique' | string;
   fontDisplay?: 'auto' | 'block' | 'swap' | 'fallback' | 'optional';
   fontStretch?: string;
   unicodeRange?: string;
+  /** `size-adjust` — fallback tuning and font-size-adjust related metrics. */
+  sizeAdjust?: string;
+  /** `ascent-override` */
+  ascentOverride?: string;
+  /** `descent-override` */
+  descentOverride?: string;
+  /** `line-gap-override` */
+  lineGapOverride?: string;
 };

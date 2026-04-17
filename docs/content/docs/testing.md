@@ -15,16 +15,34 @@ Since typestyles returns regular class names, test your components the same way 
 
 ```tsx
 // Button.tsx
+import type { ReactNode } from 'react';
 import { styles } from 'typestyles';
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: { padding: '8px 16px' },
   primary: { backgroundColor: '#0066ff' },
   large: { fontSize: '18px' },
 });
 
-export function Button({ variant, size, children }) {
-  return <button className={button('base', variant, size)}>{children}</button>;
+export function Button({
+  variant,
+  size,
+  children,
+}: {
+  variant?: 'primary';
+  size?: 'large';
+  children: ReactNode;
+}) {
+  return (
+    <button
+      className={button({
+        primary: variant === 'primary',
+        large: size === 'large',
+      })}
+    >
+      {children}
+    </button>
+  );
 }
 
 // Button.test.tsx
@@ -67,9 +85,17 @@ describe('Button', () => {
 When variants are applied conditionally, test both states:
 
 ```tsx
-function Button({ isLoading, children }) {
+import { cx } from 'typestyles';
+
+const btn = styles.component('button', {
+  base: { padding: '8px 16px' },
+  loading: { cursor: 'wait', opacity: 0.8 },
+});
+const { loading: loadingClass } = btn;
+
+function Button({ isLoading, children }: { isLoading?: boolean; children: React.ReactNode }) {
   return (
-    <button className={button('base', isLoading && 'loading')}>
+    <button className={cx(btn(), isLoading && loadingClass)}>
       {isLoading ? 'Loading...' : children}
     </button>
   );
@@ -367,13 +393,13 @@ import { styles } from 'typestyles';
 
 describe('Button styles', () => {
   it('generates consistent class names', () => {
-    const button = styles.create('button', {
+    const button = styles.component('button', {
       base: { padding: '8px' },
       primary: { color: 'blue' },
     });
 
-    expect(button('base')).toMatchInlineSnapshot(`"button-base"`);
-    expect(button('base', 'primary')).toMatchInlineSnapshot(`"button-base button-primary"`);
+    expect(button()).toMatchInlineSnapshot(`"button-base"`);
+    expect(button({ primary: true })).toMatchInlineSnapshot(`"button-base button-primary"`);
   });
 });
 ```
@@ -385,12 +411,16 @@ In rare cases, you might want to mock typestyles:
 ```ts
 // __mocks__/typestyles.ts
 export const styles = {
-  create: (namespace: string, definitions: Record<string, any>) => {
-    return (...variants: (string | false | undefined)[]) => {
-      return variants
-        .filter(Boolean)
-        .map((v) => `${namespace}-${v}`)
-        .join(' ');
+  component: (namespace: string, definitions: Record<string, unknown>) => {
+    const keys = Object.keys(definitions);
+    return (options?: Record<string, boolean>) => {
+      const parts = [`${namespace}-base`];
+      if (options) {
+        for (const [k, on] of Object.entries(options)) {
+          if (on && k !== 'base') parts.push(`${namespace}-${k}`);
+        }
+      }
+      return parts.join(' ');
     };
   },
 };

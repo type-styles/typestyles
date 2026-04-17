@@ -2,8 +2,8 @@ import type { CSSProperties } from './types';
 import type { ResolvedCascadeLayers } from './layers';
 
 /**
- * How generated class names are formed for `styles.create`, `styles.class`,
- * `styles.component`, and related APIs.
+ * How generated class names are formed for `styles.class`, `styles.component`,
+ * and related APIs.
  *
  * - `semantic` — readable names like `button-base`, `button-intent-primary` (default).
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
@@ -118,7 +118,7 @@ export function buildSingleClassName(
 }
 
 /**
- * `styles.create` / `styles.component` / components with `slots`: logical namespace plus
+ * `styles.component` / components with `slots`: logical namespace plus
  * a variant segment (`base`, `intent-primary`, `root-trigger-primary`, …).
  */
 export function buildComponentClassName(

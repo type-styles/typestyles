@@ -1,4 +1,4 @@
-import { global, tokens } from 'typestyles';
+import { global, tokens } from './runtime';
 
 /** Apply on a root section to flip slate + brand for dark UI (tokens cascade). */
 export const darkShell = tokens.createTheme('typewind-dark', {

@@ -16,47 +16,49 @@ TypeStyles works seamlessly with React. This guide shows common patterns for int
 import { styles } from 'typestyles';
 import { color, space } from '../../tokens';
 
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: `${space.sm} ${space.md}`,
     borderRadius: '6px',
-    fontSize: '14px',
     fontWeight: 500,
     cursor: 'pointer',
     border: 'none',
     transition: 'background-color 150ms ease',
   },
-  primary: {
-    backgroundColor: color.primary,
-    color: '#fff',
-    '&:hover': {
-      backgroundColor: color.primaryHover,
+  variants: {
+    intent: {
+      primary: {
+        backgroundColor: color.primary,
+        color: '#fff',
+        '&:hover': { backgroundColor: color.primaryHover },
+      },
+      secondary: {
+        backgroundColor: color.secondary,
+        color: '#fff',
+        '&:hover': { backgroundColor: color.secondaryHover },
+      },
+    },
+    size: {
+      small: { padding: `${space.xs} ${space.sm}`, fontSize: '12px' },
+      medium: { padding: `${space.sm} ${space.md}`, fontSize: '14px' },
+      large: { padding: `${space.md} ${space.lg}`, fontSize: '16px' },
+    },
+    disabled: {
+      on: { opacity: 0.5, cursor: 'not-allowed' },
+      off: {},
+    },
+    loading: {
+      on: { cursor: 'wait' },
+      off: {},
     },
   },
-  secondary: {
-    backgroundColor: color.secondary,
-    color: '#fff',
-    '&:hover': {
-      backgroundColor: color.secondaryHover,
-    },
-  },
-  small: {
-    padding: `${space.xs} ${space.sm}`,
-    fontSize: '12px',
-  },
-  large: {
-    padding: `${space.md} ${space.lg}`,
-    fontSize: '16px',
-  },
-  disabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-  loading: {
-    cursor: 'wait',
+  defaultVariants: {
+    intent: 'primary',
+    size: 'medium',
+    disabled: 'off',
+    loading: 'off',
   },
 });
 
@@ -79,14 +81,12 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={button(
-        'base',
-        variant,
-        size === 'small' && 'small',
-        size === 'large' && 'large',
-        disabled && 'disabled',
-        loading && 'loading',
-      )}
+      className={button({
+        intent: variant,
+        size,
+        disabled: disabled ? 'on' : 'off',
+        loading: loading ? 'on' : 'off',
+      })}
       onClick={onClick}
       disabled={disabled || loading}
     >
@@ -121,11 +121,11 @@ function App() {
 
 ```tsx
 // components/Box/Box.tsx
-import { styles } from 'typestyles';
+import { cx, styles } from 'typestyles';
 import { space } from '../../tokens';
 import type { ElementType, ComponentPropsWithoutRef } from 'react';
 
-const box = styles.create('box', {
+const box = styles.component('box', {
   base: {},
   flex: { display: 'flex' },
   block: { display: 'block' },
@@ -151,6 +151,30 @@ const box = styles.create('box', {
   m3: { margin: space[3] },
   m4: { margin: space[4] },
 });
+
+const {
+  base,
+  flex,
+  block,
+  inline,
+  hidden,
+  gap1,
+  gap2,
+  gap3,
+  gap4,
+  row,
+  column,
+  wrap: wrapClass,
+  center: centerClass,
+  p1,
+  p2,
+  p3,
+  p4,
+  m1,
+  m2,
+  m3,
+  m4,
+} = box;
 
 type BoxProps<T extends ElementType = 'div'> = {
   as?: T;
@@ -179,15 +203,28 @@ export function Box<T extends ElementType = 'div'>({
 
   return (
     <Component
-      className={box(
-        'base',
-        display,
-        gap && `gap${gap}`,
-        direction,
-        wrap && 'wrap',
-        center && 'center',
-        padding && `p${padding}`,
-        margin && `m${margin}`,
+      className={cx(
+        base,
+        display === 'flex' && flex,
+        display === 'block' && block,
+        display === 'inline' && inline,
+        display === 'hidden' && hidden,
+        gap === 1 && gap1,
+        gap === 2 && gap2,
+        gap === 3 && gap3,
+        gap === 4 && gap4,
+        direction === 'row' && row,
+        direction === 'column' && column,
+        wrap && wrapClass,
+        center && centerClass,
+        padding === 1 && p1,
+        padding === 2 && p2,
+        padding === 3 && p3,
+        padding === 4 && p4,
+        margin === 1 && m1,
+        margin === 2 && m2,
+        margin === 3 && m3,
+        margin === 4 && m4,
         className,
       )}
       {...props}
@@ -226,11 +263,11 @@ export function Box<T extends ElementType = 'div'>({
 
 ```tsx
 // components/Card/Card.tsx
-import { styles } from 'typestyles';
+import { cx, styles } from 'typestyles';
 import { color, space } from '../../tokens';
 import { createContext, useContext, type ReactNode } from 'react';
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     borderRadius: '8px',
     backgroundColor: color.surface,
@@ -249,20 +286,22 @@ const card = styles.create('card', {
   },
 });
 
-const cardHeader = styles.create('card-header', {
+const { elevated, interactive } = card;
+
+const cardHeader = styles.component('card-header', {
   base: {
     padding: `${space.md} ${space.lg}`,
     borderBottom: `1px solid ${color.border}`,
   },
 });
 
-const cardBody = styles.create('card-body', {
+const cardBody = styles.component('card-body', {
   base: {
     padding: space.lg,
   },
 });
 
-const cardFooter = styles.create('card-footer', {
+const cardFooter = styles.component('card-footer', {
   base: {
     padding: `${space.md} ${space.lg}`,
     borderTop: `1px solid ${color.border}`,
@@ -289,7 +328,7 @@ export function Card({ elevated = false, interactive = false, onClick, children 
   return (
     <CardContext.Provider value={{ isInteractive: interactive }}>
       <div
-        className={card('base', elevated && 'elevated', interactive && 'interactive')}
+        className={cx(card(), elevated && elevated, interactive && interactive)}
         onClick={onClick}
         role={interactive ? 'button' : undefined}
         tabIndex={interactive ? 0 : undefined}
@@ -302,17 +341,17 @@ export function Card({ elevated = false, interactive = false, onClick, children 
 
 // Card.Header
 Card.Header = function CardHeader({ children }: { children: ReactNode }) {
-  return <div className={cardHeader('base')}>{children}</div>;
+  return <div className={cardHeader()}>{children}</div>;
 };
 
 // Card.Body
 Card.Body = function CardBody({ children }: { children: ReactNode }) {
-  return <div className={cardBody('base')}>{children}</div>;
+  return <div className={cardBody()}>{children}</div>;
 };
 
 // Card.Footer
 Card.Footer = function CardFooter({ children }: { children: ReactNode }) {
-  return <div className={cardFooter('base')}>{children}</div>;
+  return <div className={cardFooter()}>{children}</div>;
 };
 ```
 
@@ -344,11 +383,42 @@ function Example() {
 
 ```tsx
 // components/Input/Input.tsx
-import { styles } from 'typestyles';
+import { cx, styles } from 'typestyles';
 import { color, space } from '../../tokens';
 import { forwardRef } from 'react';
 
-const input = styles.create('input', {
+const inputWrapper = styles.component('input-wrapper', {
+  base: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: space.sm,
+  },
+});
+
+const inputLabel = styles.component('input-label', {
+  base: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: color.text,
+  },
+});
+
+const inputHelper = styles.component('input-helper', {
+  base: {
+    fontSize: '12px',
+    color: color.textMuted,
+  },
+  variants: {
+    tone: {
+      neutral: {},
+      error: { color: color.danger },
+      success: { color: color.success },
+    },
+  },
+  defaultVariants: { tone: 'neutral' },
+});
+
+const input = styles.component('input', {
   base: {
     width: '100%',
     padding: `${space.sm} ${space.md}`,
@@ -375,22 +445,26 @@ const input = styles.create('input', {
       cursor: 'not-allowed',
     },
   },
-  error: {
-    borderColor: color.danger,
-
-    '&:focus': {
-      borderColor: color.danger,
-      boxShadow: `0 0 0 3px ${color.alpha(color.danger, 0.1)}`,
+  variants: {
+    validation: {
+      none: {},
+      error: {
+        borderColor: color.danger,
+        '&:focus': {
+          borderColor: color.danger,
+          boxShadow: `0 0 0 3px ${color.alpha(color.danger, 0.1)}`,
+        },
+      },
+      success: {
+        borderColor: color.success,
+        '&:focus': {
+          borderColor: color.success,
+          boxShadow: `0 0 0 3px ${color.alpha(color.success, 0.1)}`,
+        },
+      },
     },
   },
-  success: {
-    borderColor: color.success,
-
-    '&:focus': {
-      borderColor: color.success,
-      boxShadow: `0 0 0 3px ${color.alpha(color.success, 0.1)}`,
-    },
-  },
+  defaultVariants: { validation: 'none' },
 });
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -402,55 +476,20 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ error, success, label, helperText, className, ...props }, ref) => {
+    const validation = error ? 'error' : success ? 'success' : 'none';
+    const helperTone = error ? 'error' : success ? 'success' : 'neutral';
+
     return (
-      <div className={inputWrapper('base')}>
-        {label && <label className={inputLabel('base')}>{label}</label>}
-        <input
-          ref={ref}
-          className={input('base', error && 'error', success && 'success', className)}
-          {...props}
-        />
-        {helperText && (
-          <span className={inputHelper('base', error && 'error', success && 'success')}>
-            {helperText}
-          </span>
-        )}
+      <div className={inputWrapper()}>
+        {label && <label className={inputLabel()}>{label}</label>}
+        <input ref={ref} className={cx(input({ validation }), className)} {...props} />
+        {helperText && <span className={inputHelper({ tone: helperTone })}>{helperText}</span>}
       </div>
     );
   },
 );
 
 Input.displayName = 'Input';
-
-// Additional styles for the wrapper, label, and helper
-const inputWrapper = styles.create('input-wrapper', {
-  base: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: space.sm,
-  },
-});
-
-const inputLabel = styles.create('input-label', {
-  base: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: color.text,
-  },
-});
-
-const inputHelper = styles.create('input-helper', {
-  base: {
-    fontSize: '12px',
-    color: color.textMuted,
-  },
-  error: {
-    color: color.danger,
-  },
-  success: {
-    color: color.success,
-  },
-});
 ```
 
 ## Lists and grids
@@ -463,70 +502,35 @@ import { styles } from 'typestyles';
 import { space } from '../../tokens';
 import type { ReactNode } from 'react';
 
-const grid = styles.create('grid', {
-  base: {
-    display: 'grid',
-    gap: space.md,
+const grid = styles.component('grid', {
+  base: { display: 'grid' },
+  variants: {
+    columns: {
+      1: { gridTemplateColumns: 'repeat(1, 1fr)' },
+      2: { gridTemplateColumns: 'repeat(2, 1fr)' },
+      3: { gridTemplateColumns: 'repeat(3, 1fr)' },
+      4: { gridTemplateColumns: 'repeat(4, 1fr)' },
+      6: { gridTemplateColumns: 'repeat(6, 1fr)' },
+      12: { gridTemplateColumns: 'repeat(12, 1fr)' },
+    },
+    gap: {
+      none: { gap: 0 },
+      sm: { gap: space.sm },
+      md: { gap: space.md },
+      lg: { gap: space.lg },
+    },
   },
-  cols1: { gridTemplateColumns: 'repeat(1, 1fr)' },
-  cols2: { gridTemplateColumns: 'repeat(2, 1fr)' },
-  cols3: { gridTemplateColumns: 'repeat(3, 1fr)' },
-  cols4: { gridTemplateColumns: 'repeat(4, 1fr)' },
-  cols6: { gridTemplateColumns: 'repeat(6, 1fr)' },
-  cols12: { gridTemplateColumns: 'repeat(12, 1fr)' },
-
-  // Responsive columns
-  '@media (min-width: 640px)': {
-    smCols1: { gridTemplateColumns: 'repeat(1, 1fr)' },
-    smCols2: { gridTemplateColumns: 'repeat(2, 1fr)' },
-    smCols3: { gridTemplateColumns: 'repeat(3, 1fr)' },
-  },
-  '@media (min-width: 768px)': {
-    mdCols1: { gridTemplateColumns: 'repeat(1, 1fr)' },
-    mdCols2: { gridTemplateColumns: 'repeat(2, 1fr)' },
-    mdCols3: { gridTemplateColumns: 'repeat(3, 1fr)' },
-    mdCols4: { gridTemplateColumns: 'repeat(4, 1fr)' },
-  },
-  '@media (min-width: 1024px)': {
-    lgCols1: { gridTemplateColumns: 'repeat(1, 1fr)' },
-    lgCols2: { gridTemplateColumns: 'repeat(2, 1fr)' },
-    lgCols3: { gridTemplateColumns: 'repeat(3, 1fr)' },
-    lgCols4: { gridTemplateColumns: 'repeat(4, 1fr)' },
-    lgCols6: { gridTemplateColumns: 'repeat(6, 1fr)' },
-  },
+  defaultVariants: { columns: 1, gap: 'md' },
 });
 
 interface GridProps {
   columns?: 1 | 2 | 3 | 4 | 6 | 12;
-  smColumns?: 1 | 2 | 3 | 4;
-  mdColumns?: 1 | 2 | 3 | 4;
-  lgColumns?: 1 | 2 | 3 | 4 | 6;
   gap?: 'none' | 'sm' | 'md' | 'lg';
   children: ReactNode;
 }
 
-export function Grid({
-  columns = 1,
-  smColumns,
-  mdColumns,
-  lgColumns,
-  gap = 'md',
-  children,
-}: GridProps) {
-  return (
-    <div
-      className={grid(
-        'base',
-        `cols${columns}`,
-        smColumns && `smCols${smColumns}`,
-        mdColumns && `mdCols${mdColumns}`,
-        lgColumns && `lgCols${lgColumns}`,
-      )}
-      style={{ gap: gap === 'none' ? 0 : undefined }}
-    >
-      {children}
-    </div>
-  );
+export function Grid({ columns = 1, gap = 'md', children }: GridProps) {
+  return <div className={grid({ columns, gap })}>{children}</div>;
 }
 ```
 
@@ -610,9 +614,23 @@ For components that re-render frequently, you can memoize class name generation:
 import { useMemo } from 'react';
 import { button } from './button.styles';
 
-function OptimizedButton({ variant, size, disabled }) {
+function OptimizedButton({
+  variant,
+  size,
+  disabled,
+}: {
+  variant: 'primary' | 'secondary';
+  size: 'small' | 'medium' | 'large';
+  disabled: boolean;
+}) {
   const className = useMemo(
-    () => button('base', variant, size, disabled && 'disabled'),
+    () =>
+      button({
+        intent: variant,
+        size,
+        disabled: disabled ? 'on' : 'off',
+        loading: 'off',
+      }),
     [variant, size, disabled],
   );
 

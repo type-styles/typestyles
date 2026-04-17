@@ -17,7 +17,7 @@ TypeStyles automatically infers types from your definitions:
 import { styles } from 'typestyles';
 
 // Types are inferred automatically
-const button = styles.create('button', {
+const button = styles.component('button', {
   base: {
     padding: '8px 16px',
     backgroundColor: '#0066ff',
@@ -27,8 +27,8 @@ const button = styles.create('button', {
   },
 });
 
-// selector function is typed
-const classes = button('base', 'primary');
+// Calling the recipe returns a class string (base is always included)
+const classes = button({ primary: true });
 //     ^? string
 ```
 
@@ -118,21 +118,27 @@ Make your component props type-safe:
 ```ts
 import { styles } from 'typestyles';
 
-const button = styles.create('button', {
-  base: { ... },
-  primary: { ... },
-  secondary: { ... },
-  ghost: { ... },
-  small: { ... },
-  medium: { ... },
-  large: { ... },
+const button = styles.component('button', {
+  base: { fontWeight: 500 },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#2563eb', color: 'white' },
+      secondary: { backgroundColor: '#e5e7eb', color: '#111' },
+      ghost: { backgroundColor: 'transparent', color: '#111' },
+    },
+    size: {
+      small: { fontSize: '12px', padding: '4px 8px' },
+      medium: { fontSize: '14px', padding: '8px 12px' },
+      large: { fontSize: '16px', padding: '10px 16px' },
+    },
+  },
+  defaultVariants: { intent: 'primary', size: 'medium' },
 });
 
-// Extract variant types
-type ButtonVariants = Parameters<typeof button>;
-//   ^? ('base' | 'primary' | 'secondary' | 'ghost' | 'small' | 'medium' | 'large' | false | null | undefined)[]
+// First argument: partial variant overrides (typed from your recipe)
+type ButtonOptions = Parameters<typeof button>[0];
+//   ^? { intent?: 'primary' | 'secondary' | 'ghost'; size?: 'small' | 'medium' | 'large' } | undefined
 
-// Or define explicitly
 interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'small' | 'medium' | 'large';
@@ -141,7 +147,7 @@ interface ButtonProps {
 
 function Button({ variant = 'primary', size = 'medium', children }: ButtonProps) {
   return (
-    <button className={button('base', variant, size)}>
+    <button className={button({ intent: variant, size })}>
       {children}
     </button>
   );
@@ -159,18 +165,18 @@ You can add `as const` to **nested values** when you want literal types preserve
 ```ts
 import { styles } from 'typestyles';
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: { ... },
   elevated: { ... },
 });
 
-// Get the style definition type
-type CardStyle = Parameters<typeof card>[number];
-//   ^? 'base' | 'elevated' | null | undefined | false
+// Optional argument is a partial of flat variant flags
+type CardOptions = Parameters<typeof card>[0];
+//   ^? { elevated?: boolean } | undefined
 
 // Create a type for your component props
 type CardProps = {
-  variant?: Extract<CardStyle, string>; // Only the string variants
+  elevated?: boolean;
 };
 ```
 
@@ -270,28 +276,29 @@ function ThemedComponent({ color, space }: ThemedComponentProps) {
 ```ts
 import { styles } from 'typestyles';
 
-// Generic component that accepts any style set
-function StyledBox<T extends string>({
-  styleSet,
-  variant,
+const box = styles.component('box', {
+  base: { padding: '16px' },
+  variants: {
+    tone: {
+      default: {},
+      elevated: { boxShadow: '0 4px 6px rgba(0,0,0,0.1)' },
+    },
+  },
+  defaultVariants: { tone: 'default' },
+});
+
+function StyledBox({
+  tone = 'default',
   children,
 }: {
-  styleSet: { (...variants: (T | false | null | undefined)[]): string };
-  variant?: T;
+  tone?: 'default' | 'elevated';
   children: React.ReactNode;
 }) {
-  return <div className={styleSet('base', variant)}>{children}</div>;
+  return <div className={box({ tone })}>{children}</div>;
 }
 
 // Usage
-const box = styles.create('box', {
-  base: { padding: '16px' },
-  elevated: { boxShadow: '0 4px 6px rgba(0,0,0,0.1)' },
-});
-
-<StyledBox styleSet={box} variant="elevated">
-  Content
-</StyledBox>;
+<StyledBox tone="elevated">Content</StyledBox>;
 ```
 
 ## Conditional types
@@ -355,6 +362,20 @@ declare module 'typestyles' {
 ### Safe variant checking
 
 ```ts
+import { styles } from 'typestyles';
+
+const button = styles.component('button', {
+  base: { padding: '8px 12px' },
+  variants: {
+    intent: {
+      primary: { color: 'white', backgroundColor: '#2563eb' },
+      secondary: { color: '#111', backgroundColor: '#e5e7eb' },
+      ghost: { color: '#111', backgroundColor: 'transparent' },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+
 function isValidVariant(
   variant: string
 ): variant is 'primary' | 'secondary' | 'ghost' {
@@ -362,9 +383,9 @@ function isValidVariant(
 }
 
 function Button({ variant }: { variant?: string }) {
-  const safeVariant = variant && isValidVariant(variant) ? variant : 'primary';
+  const intent = variant && isValidVariant(variant) ? variant : 'primary';
 
-  return <button className={button('base', safeVariant)}>Click</button>;
+  return <button className={button({ intent })}>Click</button>;
 }
 ```
 
@@ -374,29 +395,29 @@ function Button({ variant }: { variant?: string }) {
 
 ```ts
 // styles/config.ts
-import { styles } from 'typestyles';
+import { type CSSProperties, styles } from 'typestyles';
 
-interface StyleConfig<V extends string> {
+interface StyleConfig {
   namespace: string;
-  variants: Record<V, CSSProperties>;
+  base: CSSProperties;
+  variants: Record<string, CSSProperties>;
 }
 
-function createStrictStyles<V extends string>(config: StyleConfig<V>) {
-  return styles.create(config.namespace, config.variants);
+function createStrictStyles(config: StyleConfig) {
+  const { namespace, base, variants } = config;
+  return styles.component(namespace, { base, ...variants });
 }
 
 // Usage with full type safety
 const button = createStrictStyles({
   namespace: 'button',
+  base: { padding: '8px' },
   variants: {
-    base: { padding: '8px' },
     primary: { backgroundColor: 'blue' },
   },
 });
 
-// TypeScript knows these are the only valid variants
-button('base', 'primary'); // ✓
-button('invalid'); // ✗ Type error
+button({ primary: true }); // ✓ base + primary classes
 ```
 
 ## Type narrowing
@@ -404,21 +425,32 @@ button('invalid'); // ✗ Type error
 ### Narrowing with type predicates
 
 ```ts
-// Define your variant type
+import { styles } from 'typestyles';
+
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
-// Type predicate function
 function isButtonVariant(value: string): value is ButtonVariant {
   return ['primary', 'secondary', 'ghost'].includes(value);
 }
 
-// Use in component
+const button = styles.component('button', {
+  base: { padding: '8px 12px' },
+  variants: {
+    intent: {
+      primary: { color: 'white', backgroundColor: '#2563eb' },
+      secondary: { color: '#111', backgroundColor: '#e5e7eb' },
+      ghost: { color: '#111', backgroundColor: 'transparent' },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+
 function Button({ variant: variantProp }: { variant?: string }) {
-  const variant: ButtonVariant = isButtonVariant(variantProp ?? '')
+  const intent: ButtonVariant = isButtonVariant(variantProp ?? '')
     ? variantProp
     : 'primary';
 
-  return <button className={button('base', variant)}>Click</button>;
+  return <button className={button({ intent })}>Click</button>;
 }
 ```
 
@@ -503,7 +535,7 @@ This can happen with very complex nested styles. Solution: simplify nesting or a
 
 ```ts
 // If you get deep type errors, add explicit return type
-const complex = styles.create('complex', {
+const complex = styles.component('complex', {
   base: {
     // very deep nesting
   },
@@ -528,16 +560,16 @@ Break complex styles into smaller pieces:
 
 ```ts
 // ❌ Avoid very complex single definitions
-const complex = styles.create('complex', {
+const complex = styles.component('complex', {
   base: {
     // hundreds of lines
   },
 });
 
 // ✅ Break into logical groups
-const header = styles.create('header', { ... });
-const content = styles.create('content', { ... });
-const footer = styles.create('footer', { ... });
+const header = styles.component('header', { ... });
+const content = styles.component('content', { ... });
+const footer = styles.component('footer', { ... });
 ```
 
 ## Summary

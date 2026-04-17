@@ -608,20 +608,17 @@ body,
 }
 ```
 
-Or with typestyles:
+Or with typestyles global CSS:
 
 ```ts
-const global = styles.create('global', {
-  root: {
-    transition: 'background-color 0.3s ease, color 0.3s ease',
-  },
-});
+import { global } from 'typestyles';
 
-// Apply to root element
-<div className={global('root')}>
-  {/* app content */}
-</div>
+global.style('html', {
+  transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease',
+});
 ```
+
+Use a scoped `global` from `createTypeStyles({ layers, globalLayer })` when you emit globals into a cascade layer (see [Cascade layers](/docs/cascade-layers)).
 
 ### Prevent flash during theme switch
 

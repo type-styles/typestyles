@@ -7,7 +7,7 @@ description: Type-safe atomic CSS utilities with @typestyles/props
 
 The `@typestyles/props` package provides a type-safe way to generate atomic CSS utility classes, similar to Tailwind CSS but with full TypeScript inference and zero runtime overhead.
 
-Runtime APIs such as `styles.create` and `styles.component` use a separate naming system; to change those class strings (semantic vs hashed), see [Class naming](/docs/class-naming).
+Runtime APIs such as `styles.class`, `styles.component`, and `styles.hashClass` use a separate naming system; to change those class strings (semantic vs hashed), see [Class naming](/docs/class-naming).
 
 ## Installation
 
@@ -279,7 +279,7 @@ const atoms = createProps(
   }),
 );
 
-const card = styles.create('card', {
+const card = styles.component('card', {
   base: {
     borderRadius: '8px',
     border: '1px solid #e5e5e5',
@@ -290,7 +290,7 @@ const card = styles.create('card', {
 // Compose together
 const flexCard = styles.compose(card, atoms({ display: 'flex', gap: 2, padding: 3 }));
 
-flexCard('base');
+flexCard();
 // "card-base atom-display-flex atom-gap-2 atom-padding-3"
 ```
 

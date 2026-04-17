@@ -32,6 +32,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
         { slug: 'compose', title: 'Style Composition' },
         { slug: 'atomic-css', title: 'Atomic CSS Utilities' },
         { slug: 'tokens', title: 'Tokens' },
+        { slug: 'fonts', title: 'Fonts' },
         { slug: 'keyframes', title: 'Keyframes' },
         { slug: 'color', title: 'Color Helpers' },
       ],

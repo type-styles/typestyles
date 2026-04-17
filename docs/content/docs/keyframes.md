@@ -23,11 +23,15 @@ const fadeIn = keyframes.create('fadeIn', {
 The function returns the animation name as a string, which you can use directly in your styles:
 
 ```ts
-const card = styles.create('card', {
+import { styles } from 'typestyles';
+
+const card = styles.component('card', {
   base: {
     animation: `${fadeIn} 300ms ease`,
   },
 });
+
+// className={card()}
 ```
 
 ## Keyframe stops
@@ -55,7 +59,7 @@ const spin = keyframes.create('spin', {
   to: { transform: 'rotate(360deg)' },
 });
 
-const loader = styles.create('loader', {
+const loader = styles.component('loader', {
   base: {
     width: '24px',
     height: '24px',
