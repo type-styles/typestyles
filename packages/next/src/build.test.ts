@@ -48,8 +48,7 @@ describe('withTypestylesExtract', () => {
     mkdirSync(join(dir, 'styles'), { recursive: true });
     writeFileSync(join(dir, 'styles/typestyles-entry.ts'), 'export {}\n');
 
-    const prev = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
     try {
       const merged = withTypestyles({ env: { CUSTOM: 'y' } }, { root: dir });
       expect(merged.env).toEqual({
@@ -57,7 +56,7 @@ describe('withTypestylesExtract', () => {
         NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED: 'true',
       });
     } finally {
-      process.env.NODE_ENV = prev;
+      vi.unstubAllEnvs();
     }
 
     rmSync(dir, { recursive: true, force: true });
@@ -68,13 +67,12 @@ describe('withTypestylesExtract', () => {
     mkdirSync(join(dir, 'styles'), { recursive: true });
     writeFileSync(join(dir, 'styles/typestyles-entry.ts'), 'export {}\n');
 
-    const prev = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     try {
       const merged = withTypestyles({ env: { CUSTOM: 'y' } }, { root: dir });
       expect(merged.env).toEqual({ CUSTOM: 'y' });
     } finally {
-      process.env.NODE_ENV = prev;
+      vi.unstubAllEnvs();
     }
 
     rmSync(dir, { recursive: true, force: true });
