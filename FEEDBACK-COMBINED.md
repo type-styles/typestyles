@@ -801,7 +801,7 @@ dialog.missing; // TS error: Property 'missing' does not exist
 
 ### 3.4 Namespace Collision Should Be an Error, Not a Warning
 
-**Status: Partial** — duplicate **`styles.class`** registrations **throw** in development; **`styles.component`** reserves namespaces in dev in an **HMR-tolerant** way (invalidation / re-registration rather than always throwing). Production behavior still favors safety over crashing.
+**Status: Shipped (bundler + runtime class API)** — **`@typestyles/vite`** and **`@typestyles/rollup`** now **fail the build** (`this.error`) when the same logical `styles.component` or `styles.class` namespace appears in **more than one module** (still overridable with `warnDuplicates: false`). Extraction includes `styles.class('…')` alongside `styles.component` for that check. Duplicate **`styles.class`** registrations in the **runtime** API still **throw** in development (unchanged). **`styles.component`** at runtime remains **HMR-tolerant** in dev (invalidation / re-registration when the same module re-executes before dispose); production still deduplicates without throwing.
 
 **Problem:** Duplicate registrations for the same logical name in the same scope used to surface as easy-to-ignore **warnings**. That hides real collisions until production.
 
@@ -821,6 +821,8 @@ styles.component('button', { base: { color: 'blue' } });
 - In production: silently deduplicate (same as today, for safety)
 - Better: automatic scoping by file path by default (like CSS Modules), with opt-in semantic naming
 - The `scopeId` config should be prominently documented and easy to set up, not a post-collision discovery
+
+**Follow-up (not required for this item):** default file-path scoping and broader docs for `scopeId` / `fileScopeId` remain improvement areas; see project docs for current guidance.
 
 ---
 

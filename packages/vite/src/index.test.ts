@@ -34,6 +34,16 @@ describe('extractNamespaces', () => {
     expect(result.keys).toEqual([]);
   });
 
+  it('extracts styles.class namespaces as prefixes', () => {
+    const code = `
+      import { styles } from 'typestyles';
+      styles.class('card', { padding: '1rem' });
+    `;
+    const result = extractNamespaces(code);
+    expect(result.prefixes).toEqual(['.card-']);
+    expect(result.keys).toEqual([]);
+  });
+
   it('extracts tokens.create namespaces as keys', () => {
     const code = `
       import { tokens } from 'typestyles';
@@ -215,6 +225,28 @@ styles.component('docs-sidebar', { base: { color: 'red' } });`;
     expect(result.code).toContain("from 'typestyles/hmr'");
     expect(result.code).toContain('__typestylesInvalidateKeys');
     expect(result.code).toContain('.docs-sidebar-');
+  });
+
+  it('errors when the same style namespace is used in another module', async () => {
+    const mod = await import('./index');
+    const plugin = mod.default();
+    const transform = viteHookFn(plugin.transform);
+    if (transform == null) throw new Error('expected plugin.transform');
+    const codeA = `import { styles } from 'typestyles';
+styles.component('shared-ns', { base: { color: 'red' } });`;
+    const codeB = `import { styles } from 'typestyles';
+styles.component('shared-ns', { base: { color: 'blue' } });`;
+
+    const ctx = {
+      error(message: string) {
+        throw new Error(message);
+      },
+    };
+
+    await transform.call(ctx as never, codeA, '/src/a.ts');
+    expect(() => transform.call(ctx as never, codeB, '/src/b.ts')).toThrow(
+      /\[typestyles\] Style namespace "shared-ns"/,
+    );
   });
 
   it('does not inject HMR during vite build', async () => {

@@ -13,6 +13,7 @@ export {
  *
  * Matches:
  *   styles.component('button', ...)   → prefix ".button-"
+ *   styles.class('card', ...)         → prefix ".card-"
  *   tokens.create('color', ...)       → key "tokens:color"
  *   tokens.createTheme('dark', ...)   → key "theme:dark"  (also createTheme('dark', ...))
  *   keyframes.create('fadeIn', ...)   → key "keyframes:fadeIn"
@@ -20,6 +21,7 @@ export {
  *   global.fontFace('Inter', ...)     → prefix "font-face:Inter"
  */
 const STYLES_COMPONENT_RE = /styles\.component\(\s*['"]([^'"]+)['"]/g;
+const STYLES_CLASS_RE = /styles\.class\(\s*['"]([^'"]+)['"]/g;
 const TOKENS_CREATE_RE = /tokens\.create\(\s*['"]([^'"]+)['"]/g;
 const CREATE_THEME_RE = /(?:tokens\.)?createTheme\(\s*['"]([^'"]+)['"]/g;
 const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
@@ -43,7 +45,10 @@ export interface TypestylesExtractOptions {
 }
 
 export interface TypestylesPluginOptions {
-  /** Warn about duplicate namespaces across modules. Defaults to true. */
+  /**
+   * When true (default), fail the build if the same logical `styles.component` / `styles.class`
+   * namespace appears in more than one module. Set to `false` to skip this check.
+   */
   warnDuplicates?: boolean;
   /**
    * Mode for typestyles integration:
@@ -93,6 +98,10 @@ export function extractNamespaces(code: string): {
     prefixes.push(`.${match[1]}-`);
   }
 
+  for (const match of code.matchAll(STYLES_CLASS_RE)) {
+    prefixes.push(`.${match[1]}-`);
+  }
+
   for (const match of code.matchAll(TOKENS_CREATE_RE)) {
     keys.push(`tokens:${match[1]}`);
   }
@@ -119,7 +128,7 @@ export function extractNamespaces(code: string): {
 /**
  * Vite plugin for typestyles HMR support.
  *
- * When a module that registers typestyles (e.g. `styles.component`, `tokens.create`) is edited,
+ * When a module that registers typestyles (e.g. `styles.component`, `styles.class`, `tokens.create`) is edited,
  * this plugin injects HMR accept/dispose handlers that invalidate that module's registrations
  * before re-execution. Files may import from a local re-export such as `./typestyles` rather
  * than `from 'typestyles'` directly — we key off API call patterns in the source, not the import path.
@@ -251,16 +260,17 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
       // Nothing to invalidate (no typestyles registration calls in this file)
       if (keys.length === 0 && prefixes.length === 0) return null;
 
-      // Duplicate namespace detection
+      // Duplicate namespace detection (build error — not a warning)
       if (warnDuplicates) {
         for (const [otherId, other] of moduleNamespaces) {
           if (otherId === id) continue;
           for (const prefix of prefixes) {
             if (other.prefixes.includes(prefix)) {
               const ns = prefix.slice(1, -1); // strip leading "." and trailing "-"
-              this.warn(
-                `Style namespace "${ns}" is also used in ${otherId}. ` +
-                  `Duplicate namespaces cause class name collisions.`,
+              this.error(
+                `[typestyles] Style namespace "${ns}" is also used in ${otherId}. ` +
+                  `Duplicate namespaces cause class name collisions. ` +
+                  `Use a distinct name or isolate with createStyles({ scopeId: fileScopeId(import.meta) }).`,
               );
             }
           }

@@ -2,6 +2,7 @@ import type { Plugin } from 'rollup';
 import { runTypestylesBuild } from '@typestyles/build-runner';
 
 const STYLES_COMPONENT_RE = /styles\.component\(\s*['"]([^'"]+)['"]/g;
+const STYLES_CLASS_RE = /styles\.class\(\s*['"]([^'"]+)['"]/g;
 const TOKENS_CREATE_RE = /tokens\.create\(\s*['"]([^'"]+)['"]/g;
 const CREATE_THEME_RE = /(?:tokens\.)?createTheme\(\s*['"]([^'"]+)['"]/g;
 const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
@@ -22,7 +23,10 @@ export interface TypestylesExtractOptions {
 }
 
 export interface TypestylesRollupPluginOptions {
-  /** Warn about duplicate namespaces across modules. Defaults to true. */
+  /**
+   * When true (default), fail the build if the same logical `styles.component` / `styles.class`
+   * namespace appears in more than one module. Set to `false` to skip this check.
+   */
   warnDuplicates?: boolean;
   /**
    * Integration mode:
@@ -50,6 +54,9 @@ export function extractNamespaces(code: string): {
   const prefixes: string[] = [];
 
   for (const match of code.matchAll(STYLES_COMPONENT_RE)) {
+    prefixes.push(`.${match[1]}-`);
+  }
+  for (const match of code.matchAll(STYLES_CLASS_RE)) {
     prefixes.push(`.${match[1]}-`);
   }
   for (const match of code.matchAll(TOKENS_CREATE_RE)) {
@@ -112,9 +119,10 @@ export default function typestylesRollupPlugin(
           for (const prefix of prefixes) {
             if (other.prefixes.includes(prefix)) {
               const ns = prefix.slice(1, -1);
-              this.warn(
-                `Style namespace "${ns}" is also used in ${otherId}. ` +
-                  `Duplicate namespaces cause class name collisions.`,
+              this.error(
+                `[typestyles] Style namespace "${ns}" is also used in ${otherId}. ` +
+                  `Duplicate namespaces cause class name collisions. ` +
+                  `Use a distinct name or isolate with createStyles({ scopeId: fileScopeId(import.meta) }).`,
               );
             }
           }
