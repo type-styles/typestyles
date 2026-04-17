@@ -1,5 +1,92 @@
 # typestyles
 
+## 0.5.0
+
+### Minor Changes
+
+- 6c696fb: Add built-in `cx()` utility for joining class names with falsy-value filtering
+- 439960c: Add first-class container query helpers: `container()` for typed `@container` keys, readable `containerRef()` / `createContainerRef()` for `container-name`, and `atRuleBlock()` / `styles.atRuleBlock()` so computed `@…` nests type-check without casting. Documentation and design-system example updated.
+- 7a7b212: Add **opt-in CSS cascade layers** (`@layer`) and a unified **`createTypeStyles`** factory.
+  - **`createStyles({ layers })`** — Pass a layer tuple (`as const`) or `{ order, prependFrameworkLayers? }`. Emits a single `@layer …;` preamble (once per stack) and wraps rules in `@layer name { … }`. When enabled, every **`class`**, **`hashClass`**, and **`component`** call must pass a third argument **`{ layer: … }`** (with `hashClass`, use **`{ layer, label? }`** instead of a positional label).
+  - **`createTokens({ layers, tokenLayer })`** — When `layers` is set, `tokenLayer` is required; `:root` and theme CSS are emitted into that layer.
+  - **`createTypeStyles(options)`** — Returns **`{ styles, tokens }`** with one shared `scopeId` and optional `layers` / `tokenLayer` for both class and token output.
+  - **`createTheme`** / **`createDarkMode`** — Optional fourth argument for layer context when using tokens with layers.
+
+  Default behavior is unchanged when **`layers`** is omitted (flat CSS, no `layer` option).
+
+  New exports include **`createTypeStyles`**, **`StylesApiWithLayers`**, **`CreateStylesInput`**, **`LayerOption`**, **`LayeredComponentFn`**, cascade layer types (**`CascadeLayersInput`**, **`ResolvedCascadeLayers`**, etc.), and **`ThemeEmitLayerContext`**.
+
+  `ClassNamingConfig` may include resolved **`cascadeLayers`**. The sheet exposes **`registerCascadeLayerOrder`** for the preamble.
+
+  Documentation: new cascade-layers doc (`docs/content/docs/cascade-layers.md`), updates to class naming, API reference, and tokens. The design-system example uses **`createTypeStyles`**.
+
+- 0db6aab: Add function overload for `styles.component(namespace, (ctx) => config)` with component-scoped internal custom properties: `ctx.var(id, options?)` and `ctx.vars(definitions)` using the same nested shape as tokens (string/number leaves or `{ value, syntax?, inherits? }`). Default `value`s are merged into `base`; optional `syntax` registers `@property`. `ctx.var` now takes `value` (not `initialValue`) for defaults and typed registration. New exports: `ComponentConfigContext`, `ComponentVarDefinitions`, `ComponentVarDescriptor`, `ComponentVarNode`, `ComponentVarRefTree`, and related `*Input` types for the component overload.
+- c467888: **typestyles:** Extend `global.fontFace` / `FontFaceProps`: `src` may be a string or an array of fragments (joined into one CSS `src`); optional `@font-face` descriptors `sizeAdjust`, `ascentOverride`, `descentOverride`, and `lineGapOverride`; dedupe keys use normalized `src` (including array vs equivalent comma-separated string). Export `FontFaceSrc`. When the same rule dedupe key is registered again with different CSS, the later rule is skipped and non-production builds warn on the mismatch (re-registration with identical CSS stays silent). Tests cover multi-`src` font faces, metric overrides, and global dedupe warnings.
+
+  **@typestyles/next:** README examples use `styles.component` and default variant calls; add **Fonts and local files** guidance for Next extraction (`public/fonts/`, root-relative URLs) versus Vite asset URLs.
+
+- 6d8114a: Add **`createGlobal`** for scoped global CSS (optional cascade **`layers`** and default **`globalLayer`**), wire **`global`** into **`createTypeStyles`**, and ship a **`typestyles/globals`** entry with Josh Comeau’s **`reset`** (plus **`layer`** support for layered stacks) and small selector recipes.
+  - **`createTypeStyles`** now returns **`{ styles, tokens, global }`**. With **`layers`**, pass optional **`globalLayer`** so `global.style` / **`global.apply`** defaults match your stack; **`tokenLayer`** remains required when layers are enabled.
+  - **`global.style`** accepts **`GlobalStyleTuple`** recipes (from **`typestyles/globals`**) in addition to selector + properties; root **`global`** ignores per-call **`layer`** (dev warning) — use **`createGlobal`** / layered **`createTypeStyles`** for `@layer`.
+  - **`global.apply(...tuples)`** applies multiple tuples in one call.
+  - New **`content`** helper for typed CSS **`content`** values on the main export.
+  - Types: **`GlobalApiUnlayered`**, **`GlobalApiLayered`**, **`GlobalStyleTuple`**.
+
+- 82ebd9c: Replace global class naming with **instance-based** APIs.
+
+  **Breaking:** Remove `configureClassNaming`, `getClassNamingConfig`, and `resetClassNaming`. Use **`createStyles({ mode?, prefix?, scopeId? })`** for a dedicated style API (same surface as the default `styles` export). The default `import { styles } from 'typestyles'` is `createStyles()` with default options.
+
+  **Breaking:** **`createTokens({ scopeId? })`** returns the token and theme API (`create`, `use`, `createTheme`, `createDarkMode`, `when`, `colorMode`, plus read-only `scopeId`). The default `import { tokens } from 'typestyles'` is `createTokens()`. When `scopeId` is set, emitted custom properties and theme class segments are prefixed (sanitized) so multiple bundles on one page do not collide.
+
+  **Breaking:** Low-level **`createComponent`**, **`createClass`**, and **`createHashClass`** now take **`ClassNamingConfig`** as the first argument when imported from implementation modules; application code should use `createStyles()` or the default `styles` object.
+
+  **Breaking:** **`createTheme`** and **`createDarkMode`** accept an optional third argument **`scopeId`** for unscoped usage; instances from `createTokens({ scopeId })` bind scope automatically.
+
+  New exports: **`mergeClassNaming`**, **`defaultClassNamingConfig`**, **`scopedTokenNamespace`**, **`StylesApi`**, **`TokensApi`**, **`CreateTokensOptions`**. Style instances expose read-only **`classNaming`**.
+
+  Documentation, examples, and the design-system package are updated to describe and use the new pattern.
+
+- d9c8078: Add ESLint configuration across all packages, examples, and docs. Create shared `eslint.base.js` config with TypeScript rules and add lint scripts to all package.json files. Update CI workflow to run lint via turbo.
+- 3758a98: Support nested token objects in `tokens.create` and the same nested shape in `tokens.createTheme`. Nested keys become hyphenated CSS custom properties (for example `color.text.primary` → `--color-text-primary` and `var(--color-text-primary)`).
+
+  Export `flattenTokenEntries` and the `FlatTokenEntry` type so consumers can build `--namespace-key` declarations with the same rules as the token APIs.
+
+  The design-system example now uses this pattern directly instead of local flatten/ref helpers.
+
+- e6f1cb2: Add `fileScopeId(import.meta)` for per-file `scopeId` so the same logical class or component name in different modules does not collide. In development, registering the same `styles.class` or `styles.component` name twice under one scope throws (with guidance to use `scopeId` / `fileScopeId`); production behavior is unchanged. In development, unknown variant dimensions, invalid option values, and unknown flat variant keys emit `console.error`. `createComponent` and `styles.component` overloads use `const` type parameters for sharper literal inference.
+- 6daacd1: Infer multipart **`slots`** from the array literal passed to **`styles.component`** (and **`createComponent`**) using a `const` type parameter on `Slots extends readonly string[]`. Slot names are typed as `Slots[number]`, so destructuring and `()` return **`Record<…>`** with known keys and errors on unknown properties—**without `as const` on `slots`** when the array is written inline.
+
+  **Type-only:** `MultiSlotConfig`, `MultiSlotReturn`, `SlotComponentConfig`, `SlotComponentFunction`, and related inputs now take a **readonly string tuple** type parameter (the `slots` array) instead of a single string union `S`. Call-site inference is unchanged for typical object literals; advanced `extends` / explicit generics may need a small adjustment.
+
+  Docs and the design-system example drop redundant `as const` on `slots` where inference applies.
+
+- b8f21ad: **Breaking:** `tokens.createTheme` now takes a config object with `base`, and either `modes` or `colorMode` (presets). Namespace overrides must live under `base` (for example `{ base: { color: { … } } }`). It returns a **`ThemeSurface`** (`className`, `name`, string coercion) instead of a plain class string—use `surface.className` or `` `${surface}` `` where a string is required.
+
+  Adds **`tokens.when`** (media, `prefersDark` / `prefersLight`, attribute/class scope, `selector` escape hatch, `and` / `or` / **`not`**) and **`tokens.colorMode`** presets (`mediaOnly`, `attributeOnly`, `mediaOrAttribute`, `systemWithLightDarkOverride`), plus **`tokens.createDarkMode`** as a shorthand for media-only dark overrides.
+
+  Theme rules use stable dedupe keys (`theme:{name}:base`, `theme:{name}:mode:{id}:branch:{n}`). In development, empty mode overrides and dubious `when.selector` / `when.not` shapes log warnings.
+
+  **Types:** `ThemeOverrides` allows deep partial nested token maps; new exports include `ThemeConditionNot` and `DeepPartialTokenValues`.
+
+- eee07e5: Unify multi-variant styling on `styles.component` with a CVA-style return value: call it for a composed class string (base always applied) or destructure named class strings. Supports dimensioned variants (`variants`, `compoundVariants`, `defaultVariants`), flat variant maps, and slot-based configs.
+
+  Remove `styles.create` from the public `styles` API; use `styles.component` instead.
+
+  Update Vite and Rollup static namespace extraction to match `styles.component(...)` only (no longer scans `styles.create(...)`).
+
+- f7b9ed2: Add `has`, `is`, and `where` helpers for `:has()`, `:is()`, and `:where()` nested keys (also on `styles`). Infer literal `@container …` keys from typed `container()` arguments so bracket notation mixes with longhands without `as CSSProperties`; use `atRuleBlock` when the key is only a generic `string`. Export `ContainerObjectKey` and document the pattern in the docs.
+
+### Patch Changes
+
+- ca46784: Add comprehensive test coverage for previously untested modules: props utils/generate/runtime, typestyles build, and migrate transform/css/files.
+- 015bb99: `withTypestylesExtract` now sets `NEXT_PUBLIC_TYPESTYLES_RUNTIME_DISABLED` via `next.config` `env` so client bundles disable runtime style injection under **Turbopack** as well as webpack (webpack `DefinePlugin` alone does not run for Turbopack). Core `sheet` reads this env flag alongside `__TYPESTYLES_RUNTIME_DISABLED__`.
+
+  README: build-time CSS / Turbopack notes; clarify `getTypestylesMetadata` and fix the previous `generateMetadata` example. Add `@typestyles/next` tests for `withTypestylesExtract`.
+
+  TypeScript: module augmentation + `client.d.ts` declaration for `useServerInsertedHTML` (aligned `@types/react` / `@types/react-dom`); add `typecheck` script; restore `webpack` + `typestyles` devDependencies and `server.d.ts` / `./build` exports. `buildTypestylesForNext` now uses `collectStylesFromModules` from `typestyles/build` (no separate `@typestyles/build` package).
+
+- f65c570: Add lint-staged for prettier formatting on pre-commit hook and format entire codebase
+
 ## Unreleased
 
 ### Breaking changes
