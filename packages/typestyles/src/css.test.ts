@@ -71,6 +71,22 @@ describe('serializeStyle', () => {
     expect(rules[2].css).toBe('.button:disabled { opacity: 0.5; }');
   });
 
+  it('serializes ancestor-prefixed selectors that end with &', () => {
+    const rules = serializeStyle('.docs-prose-root', {
+      fontSize: '14px',
+      'html[data-mode="dark"] &': { lineHeight: 1.82 },
+      '@media (prefers-color-scheme: dark)': {
+        'html:not([data-mode="light"]) &': { lineHeight: 1.82 },
+      },
+    });
+
+    expect(rules.map((r) => r.css)).toEqual([
+      '.docs-prose-root { font-size: 14px; }',
+      'html[data-mode="dark"] .docs-prose-root { line-height: 1.82; }',
+      '@media (prefers-color-scheme: dark) { html:not([data-mode="light"]) .docs-prose-root { line-height: 1.82; } }',
+    ]);
+  });
+
   it('serializes descendant selectors', () => {
     const rules = serializeStyle('.nav', {
       '& a': { textDecoration: 'none' },

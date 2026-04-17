@@ -118,7 +118,8 @@ export function serializeStyle(selector: string, properties: CSSProperties): CSS
 }
 
 function resolveNestedSelector(parentSelector: string, key: string): string | null {
-  if (key.startsWith('&')) {
+  // Parent placeholder anywhere in the key (e.g. `html[data-mode="dark"] &`, `.wrap &`).
+  if (key.includes('&')) {
     return key.replace(/&/g, parentSelector);
   }
 

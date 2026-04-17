@@ -23,6 +23,11 @@ export type CSSValue = string | number;
 export interface CSSProperties extends CSS.Properties<CSSValue> {
   /** Nested selector (e.g., '&:hover', `has('.x')`, '& .child', '&::before', '&[data-variant]') */
   [selector: `&${string}`]: CSSProperties;
+  /**
+   * Ancestor-prefixed selector where `&` is the styled element (e.g. `html[data-mode="dark"] &`,
+   * `html:not([data-mode="light"]) &`). Runtime serialization replaces every `&` with the class selector.
+   */
+  [selectorWithAncestor: `${string}&${string}`]: CSSProperties;
   /** Attribute selector (e.g., '[data-variant]', '[data-variant="primary"]', '[disabled]') */
   [attribute: `[${string}]`]: CSSProperties;
   /** At-rule (e.g., '@media (max-width: 768px)', '@container', '@supports') */
@@ -52,6 +57,7 @@ export type CSSPropertiesWithUtils<U extends StyleUtils> = CSS.Properties<CSSVal
   [K in keyof U]?: UtilityValue<U, K>;
 } & {
   [selector: `&${string}`]: CSSPropertiesWithUtils<U>;
+  [selectorWithAncestor: `${string}&${string}`]: CSSPropertiesWithUtils<U>;
   [attribute: `[${string}]`]: CSSPropertiesWithUtils<U>;
   [atRule: `@${string}`]: CSSPropertiesWithUtils<U>;
 };
