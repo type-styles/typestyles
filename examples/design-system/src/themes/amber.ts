@@ -6,12 +6,23 @@ import {
   defaultLightSyntaxValues,
   type DesignColorValues,
 } from '../tokens/semantic';
+import {
+  neoBrutalistBorderDarkDefault,
+  neoBrutalistBorderDarkStrong,
+  neoBrutalistShadow,
+  neoBrutalistShadowOffsetDark,
+  neoBrutalistShadowOffsetLight,
+} from './neo-brutalist-shadows';
+
+const amberDarkHue = 65;
+
+const amberLightSubtle = p.palette['sand-2'];
 
 const amberLightColorValues: DesignColorValues = {
   background: {
     app: p.palette['sand-1'],
     surface: p.palette['neutral-1'],
-    subtle: p.palette['sand-2'],
+    subtle: amberLightSubtle,
     elevated: p.palette['neutral-1'],
   },
   text: {
@@ -26,6 +37,7 @@ const amberLightColorValues: DesignColorValues = {
     strong: '#000',
     focus: p.palette['orange-5'],
   },
+  shadow: { offset: neoBrutalistShadowOffsetLight(amberLightSubtle) },
   danger: { default: p.palette['red-7'], solid: p.palette['red-8'] },
   success: { default: p.palette['green-7'], solid: p.palette['green-8'] },
   warning: { default: p.palette['amber-7'], onSolid: p.palette['stone-10'] },
@@ -48,10 +60,11 @@ const amberDarkColorValues: DesignColorValues = {
   },
   accent: { default: p.palette['amber-3'], hover: p.palette['amber-2'] },
   border: {
-    default: '#000',
-    strong: '#000',
+    default: neoBrutalistBorderDarkDefault(amberDarkHue),
+    strong: neoBrutalistBorderDarkStrong(amberDarkHue),
     focus: p.palette['amber-4'],
   },
+  shadow: { offset: neoBrutalistShadowOffsetDark(amberDarkHue) },
   danger: { default: p.palette['red-4'], solid: p.palette['red-7'] },
   success: { default: p.palette['green-4'], solid: p.palette['green-7'] },
   warning: { default: p.palette['amber-4'], onSolid: p.palette['stone-10'] },
@@ -61,6 +74,14 @@ const amberDarkColorValues: DesignColorValues = {
 
 export const amberTheme = createDesignTheme({
   name: 'amber',
-  light: { color: amberLightColorValues, syntax: defaultLightSyntaxValues },
-  dark: { color: amberDarkColorValues, syntax: defaultDarkSyntaxValues },
+  light: {
+    color: amberLightColorValues,
+    syntax: defaultLightSyntaxValues,
+    shadow: neoBrutalistShadow,
+  },
+  dark: {
+    color: amberDarkColorValues,
+    syntax: defaultDarkSyntaxValues,
+    shadow: neoBrutalistShadow,
+  },
 });

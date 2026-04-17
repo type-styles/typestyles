@@ -11,7 +11,7 @@
     "@examples/design-system",
     "@examples/react-design-system",
     "@examples/next",
-    "typestyles-docs",
+    "docs",
     "typestyles-rolldown-example",
     "typestyles-rollup-example",
     "typestyles-vite-example"

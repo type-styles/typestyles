@@ -16,6 +16,14 @@ export const proseContent = styles.component(
     root: {
       fontSize: t.fontSize.md,
       lineHeight: 1.75,
+      'html[data-mode="dark"] &': {
+        lineHeight: 1.82,
+      },
+      '@media (prefers-color-scheme: dark)': {
+        'html:not([data-mode="light"]) &': {
+          lineHeight: 1.82,
+        },
+      },
       color: t.color.text.primary,
       '& h1': {
         fontSize: '28px',
@@ -107,7 +115,7 @@ export const proseContent = styles.component(
         backgroundColor: t.color.background.subtle,
         padding: `2px ${t.space[2]}`,
         borderRadius: t.radius.sm,
-        border: `1px solid ${t.color.border.default}`,
+        // border: `1px solid ${t.color.border.default}`,
       },
       '& pre:not([data-codeblock-pre])': {
         fontFamily:

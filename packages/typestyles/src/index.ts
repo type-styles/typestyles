@@ -1,6 +1,7 @@
 import { createStyles } from './styles';
 import { createTokens } from './tokens';
 import { createTypeStyles } from './create-type-styles';
+import { createGlobal } from './create-global';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
 import { createKeyframes } from './keyframes';
 import * as colorFns from './color';
@@ -11,13 +12,14 @@ import {
   flushSync,
   ensureDocumentStylesAttached,
 } from './sheet';
-import { globalStyle, globalFontFace } from './global';
+import { globalStyle, globalFontFace, globalApply } from './global';
 import { createVar, assignVars } from './vars';
 import { cx } from './cx';
 import { container, createContainerRef } from './container';
 import { atRuleBlock } from './at-rule-block';
 import { has, is, where } from './relational-pseudo';
 import { calc, clamp } from './css-math';
+import { content } from './css-content';
 
 export type {
   StylesApi,
@@ -38,11 +40,15 @@ export {
   fileScopeId,
 } from './class-naming';
 
-export { createStyles, createTokens, createTypeStyles };
+export { createStyles, createTokens, createTypeStyles, createGlobal };
+
+export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';
+
+export type { GlobalStyleTuple } from './global-style-tuple';
 
 export { container, createContainerRef, atRuleBlock, has, is, where };
 
-export { calc, clamp };
+export { calc, clamp, content };
 
 export type { CssMathValue } from './css-math';
 
@@ -148,11 +154,13 @@ export const styles = createStyles();
  * @example
  * ```ts
  * global.style('body', { margin: 0 });
+ * global.apply(...reset());
  * global.fontFace('Inter', { src: "url('/Inter.woff2') format('woff2')", fontWeight: 400 });
  * ```
  */
 export const global = {
   style: globalStyle,
+  apply: globalApply,
   fontFace: globalFontFace,
 } as const;
 

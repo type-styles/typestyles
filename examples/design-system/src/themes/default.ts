@@ -6,12 +6,24 @@ import {
   defaultLightSyntaxValues,
   type DesignColorValues,
 } from '../tokens/semantic';
+import {
+  neoBrutalistBorderDarkDefault,
+  neoBrutalistBorderDarkStrong,
+  neoBrutalistShadow,
+  neoBrutalistShadowOffsetDark,
+  neoBrutalistShadowOffsetLight,
+} from './neo-brutalist-shadows';
+
+/** Matches `background.app` hue in {@link defaultDarkColorValues}. */
+const defaultDarkHue = 260;
+
+const defaultLightSubtle = p.palette['slate-2'];
 
 export const defaultLightColorValues: DesignColorValues = {
   background: {
     app: p.palette['neutral-1'],
     surface: p.palette['neutral-1'],
-    subtle: p.palette['slate-2'],
+    subtle: defaultLightSubtle,
     elevated: p.palette['neutral-1'],
   },
   text: {
@@ -26,6 +38,7 @@ export const defaultLightColorValues: DesignColorValues = {
     strong: '#000',
     focus: p.palette['blue-5'],
   },
+  shadow: { offset: neoBrutalistShadowOffsetLight(defaultLightSubtle) },
   danger: { default: p.palette['red-7'], solid: p.palette['red-8'] },
   success: { default: p.palette['green-7'], solid: p.palette['green-8'] },
   warning: { default: p.palette['amber-7'], onSolid: p.palette['stone-10'] },
@@ -48,10 +61,11 @@ export const defaultDarkColorValues: DesignColorValues = {
   },
   accent: { default: p.palette['blue-4'], hover: p.palette['blue-3'] },
   border: {
-    default: '#000',
-    strong: '#000',
+    default: neoBrutalistBorderDarkDefault(defaultDarkHue),
+    strong: neoBrutalistBorderDarkStrong(defaultDarkHue),
     focus: p.palette['blue-4'],
   },
+  shadow: { offset: neoBrutalistShadowOffsetDark(defaultDarkHue) },
   danger: { default: p.palette['red-4'], solid: p.palette['red-7'] },
   success: { default: p.palette['green-4'], solid: p.palette['green-7'] },
   warning: { default: p.palette['amber-4'], onSolid: p.palette['stone-10'] },
@@ -62,8 +76,13 @@ export const defaultDarkColorValues: DesignColorValues = {
 export const defaultLightValues = {
   color: defaultLightColorValues,
   syntax: defaultLightSyntaxValues,
+  shadow: neoBrutalistShadow,
 };
-export const defaultDarkValues = { color: defaultDarkColorValues, syntax: defaultDarkSyntaxValues };
+export const defaultDarkValues = {
+  color: defaultDarkColorValues,
+  syntax: defaultDarkSyntaxValues,
+  shadow: neoBrutalistShadow,
+};
 
 export const defaultTheme = createDesignTheme({
   name: 'default',

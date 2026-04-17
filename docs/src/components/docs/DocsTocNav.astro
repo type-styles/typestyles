@@ -26,8 +26,13 @@ const padForDepth = (depth: number) => Math.max(0, depth - 2) * 12;
   <ul class={toc.list}>
     {
       headings.map((h) => (
-        <li class={toc.item} style={{ paddingLeft: `${padForDepth(h.depth)}px` }}>
-          <a href={`#${h.id}`} class={toc.link} data-docs-toc-link>
+        <li class={toc.item}>
+          <a
+            href={`#${h.id}`}
+            class={toc.link}
+            data-docs-toc-link
+            style={{ '--docs-toc-depth': `${padForDepth(h.depth)}px` }}
+          >
             {h.text}
           </a>
         </li>

@@ -125,6 +125,22 @@ describe('cascade layers', () => {
     expect(css).toContain('@layer components');
   });
 
+  it('tokens.create can override tokenLayer', () => {
+    const { tokens } = createTypeStyles({
+      scopeId: 'ov',
+      layers: ['tokens', 'components'] as const,
+      tokenLayer: 'tokens',
+    });
+    tokens.create('space', { md: '8px' });
+    tokens.create('radius', { sm: '4px' }, { layer: 'components' });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/@layer tokens[\s\S]*:root/);
+    expect(css).toMatch(/@layer components[\s\S]*:root/);
+    expect(css).toContain('--ov-space-md');
+    expect(css).toContain('--ov-radius-sm');
+  });
+
   it('resolveCascadeLayers throws on duplicate layer names', () => {
     expect(() => resolveCascadeLayers(['a', 'a'], undefined)).toThrow(/Duplicate/);
   });

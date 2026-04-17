@@ -1,6 +1,8 @@
 import type { CSSProperties, FontFaceProps } from './types';
 import { serializeStyle } from './css';
 import { insertRule, insertRules } from './sheet';
+import type { GlobalStyleTuple } from './global-style-tuple';
+import { parseGlobalStyleArgs } from './global-style-tuple';
 
 /**
  * Apply styles to an arbitrary CSS selector.
@@ -14,10 +16,44 @@ import { insertRule, insertRules } from './sheet';
  * global.style('a:hover', { textDecoration: 'underline' });
  * global.style('*, *::before, *::after', { boxSizing: 'border-box' });
  * ```
+ *
+ * Also accepts a tuple from `typestyles/globals` recipes:
+ *
+ * ```ts
+ * import { boxSizing, body } from 'typestyles/globals';
+ * global.style(boxSizing());
+ * global.style(body({ margin: 0 }));
+ * ```
+ *
+ * Optional `{ layer }` on the tuple or as a third argument is ignored on the root `global` object —
+ * use `createGlobal({ layers })` or `createTypeStyles({ layers }).global` for `@layer`.
  */
-export function globalStyle(selector: string, properties: CSSProperties): void {
+export function globalStyle(tuple: GlobalStyleTuple): void;
+export function globalStyle(
+  selector: string,
+  properties: CSSProperties,
+  options?: { layer?: string },
+): void;
+export function globalStyle(
+  first: string | GlobalStyleTuple,
+  second?: CSSProperties,
+  third?: { layer?: string },
+): void {
+  const { selector, properties, options } = parseGlobalStyleArgs(first, second, third);
+  if (process.env.NODE_ENV !== 'production' && options?.layer != null) {
+    console.warn(
+      '[typestyles] `layer` on root `global.style(...)` is ignored — use `createGlobal({ layers })` or `createTypeStyles({ layers }).global` for cascade layers.',
+    );
+  }
   const rules = serializeStyle(selector, properties);
   insertRules(rules);
+}
+
+/** Apply multiple `typestyles/globals` tuples (e.g. {@link reset}) in one call. */
+export function globalApply(...tuples: GlobalStyleTuple[]): void {
+  for (const t of tuples) {
+    globalStyle(t);
+  }
 }
 
 /**

@@ -46,6 +46,7 @@ const emptyThemeColorValues: DesignColorValues = {
   text: { primary: '', secondary: '', onAccent: '', onDanger: '' },
   accent: { default: '', hover: '' },
   border: { default: '', strong: '', focus: '' },
+  shadow: { offset: '' },
   danger: { default: '', solid: '' },
   success: { default: '', solid: '' },
   warning: { default: '', onSolid: '' },
@@ -65,7 +66,8 @@ const colorRefShape: DesignColorRefs = {
   },
   accent: {
     ...emptyThemeColorValues.accent,
-    subtle: `color-mix(in oklch, ${cref('accent-default')} 15%, transparent)`,
+    /** Mix with app background so active rows / chips read clearly in dark mode (transparent mix muddies on deep surfaces). */
+    subtle: `color-mix(in oklch, ${cref('accent-default')} 24%, ${cref('background-app')})`,
   },
   danger: {
     ...emptyThemeColorValues.danger,

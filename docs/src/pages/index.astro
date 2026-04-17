@@ -1,10 +1,21 @@
 ---
 import { home } from '../styles';
 import DocsLayout from '../layouts/DocsLayout.astro';
+import Code from '../components/docs/Code.astro';
 import { getAllDocs } from '../lib/docs';
 
 const docs = await getAllDocs();
 const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.slug, title: doc.title }]));
+
+const themeTsSample = `const button = styles.component('button', {
+  base: { border: '3px solid #000' },
+  variants: {
+    intent: {
+      primary: { background: token.accent },
+      ghost: { background: 'transparent' },
+    },
+  },
+});`;
 ---
 
 <DocsLayout docsBySlug={docsBySlug}>
@@ -32,17 +43,8 @@ const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.s
         GitHub
       </a>
     </div>
-    <div class={home.codeExample}>
-      <div class={home.codeExampleHeader}>theme.ts</div>
-      <div class={home.codeExampleBody}>{`const button = styles.component('button', {
-  base: { border: '3px solid #000' },
-  variants: {
-    intent: {
-      primary: { background: token.accent },
-      ghost: { background: 'transparent' },
-    },
-  },
-});`}</div>
+    <div class={home.codeExampleWrap}>
+      <Code code={themeTsSample} lang="typescript" headerLabel="theme.ts" />
     </div>
   </div>
 </DocsLayout>

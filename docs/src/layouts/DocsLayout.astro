@@ -10,6 +10,7 @@ import {
 import type { DocHeading } from '../lib/docs';
 import DocsHead from '../components/docs/DocsHead.astro';
 import DocsSkipLink from '../components/docs/DocsSkipLink.astro';
+import DocsSiteHeader from '../components/docs/DocsSiteHeader.astro';
 import DocsMobileBar from '../components/docs/DocsMobileBar.astro';
 import DocsSidebar from '../components/docs/DocsSidebar.astro';
 import DocsCodeBlockCopy from '../components/docs/DocsCodeBlockCopy.astro';
@@ -59,6 +60,9 @@ const appearanceBootstrap = {
   <body>
     <div transition:persist="docs-skip">
       <DocsSkipLink />
+    </div>
+    <div transition:persist="docs-site-header">
+      <DocsSiteHeader />
     </div>
     <div transition:persist="docs-mobile-bar">
       <DocsMobileBar />

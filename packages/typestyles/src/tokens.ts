@@ -18,7 +18,8 @@ export type CreateTokensOptions = {
    */
   layers?: CascadeLayersInput;
   /**
-   * Which layer from **`layers`** receives token and theme CSS. Required when **`layers`** is set.
+   * Default `@layer` from **`layers`** for token and theme CSS (`:root`, themes). Required when **`layers`** is set.
+   * Override per call: `tokens.create('color', { … }, { layer: '…' })`.
    */
   tokenLayer?: string;
 };
@@ -29,7 +30,11 @@ export type CreateTokensOptions = {
 export type TokensApi = {
   /** Same `scopeId` passed to `createTokens`, if any. */
   readonly scopeId: string | undefined;
-  create: <T extends TokenValues>(namespace: string, values: T) => TokenRef<T>;
+  create: <T extends TokenValues>(
+    namespace: string,
+    values: T,
+    options?: { layer?: string },
+  ) => TokenRef<T>;
   use: <T extends TokenValues = TokenValues>(namespace: string) => TokenRef<T>;
   createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
@@ -164,7 +169,17 @@ export function createTokens(options: CreateTokensOptions = {}): TokensApi {
   const registeredNamespaces = new Set<string>();
   const createdTokenKeys = new Map<string, Set<string>>();
 
-  function create<T extends TokenValues>(namespace: string, values: T): TokenRef<T> {
+  function create<T extends TokenValues>(
+    namespace: string,
+    values: T,
+    options?: { layer?: string },
+  ): TokenRef<T> {
+    if (options?.layer != null && !themeLayerContext) {
+      throw new Error(
+        '[typestyles] `tokens.create(..., { layer })` requires `createTokens({ layers, tokenLayer })`.',
+      );
+    }
+
     registeredNamespaces.add(namespace);
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
@@ -174,13 +189,13 @@ export function createTokens(options: CreateTokensOptions = {}): TokensApi {
       .join('; ');
 
     const css = `:root { ${declarations}; }`;
-    const key = `tokens:${cssNs}`;
     if (themeLayerContext) {
-      insertRules(
-        applyLayerToRules([{ key, css }], themeLayerContext.layer, themeLayerContext.stack),
-      );
+      const layer = options?.layer ?? themeLayerContext.layer;
+      assertOwnLayer(themeLayerContext.stack, layer, 'tokens.create');
+      const key = `tokens:${cssNs}@${layer}`;
+      insertRules(applyLayerToRules([{ key, css }], layer, themeLayerContext.stack));
     } else {
-      insertRule(key, css);
+      insertRule(`tokens:${cssNs}`, css);
     }
 
     const allKeys = getAllKeys(values);

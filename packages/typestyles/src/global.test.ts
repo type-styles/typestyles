@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { globalStyle, globalFontFace } from './global';
+import { boxSizing, body } from './globals';
 import { reset, flushSync, getRegisteredCss } from './sheet';
 
 describe('globalStyle', () => {
@@ -32,6 +33,16 @@ describe('globalStyle', () => {
 
     const css = getRegisteredCss();
     expect(css).toContain('box-sizing: border-box');
+  });
+
+  it('accepts a globals recipe tuple', () => {
+    globalStyle(boxSizing());
+    globalStyle(body({ margin: 0 }));
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('box-sizing: border-box');
+    expect(css).toContain('body { margin: 0');
   });
 
   it('deduplicates identical rules', () => {

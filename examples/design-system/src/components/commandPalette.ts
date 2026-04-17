@@ -61,7 +61,7 @@ export const commandPalette = styles.component(
         fontFamily: t.fontFamily.sans,
         backgroundColor: t.color.background.surface,
         borderRadius: t.radius.lg,
-        border: `1px solid ${t.color.border.default}`,
+        border: `${t.borderWidth.default} solid ${t.color.border.default}`,
         boxShadow: t.shadow.xl,
         overflow: 'hidden',
         opacity: 0,
@@ -73,7 +73,7 @@ export const commandPalette = styles.component(
         alignItems: 'center',
         gap: t.space[2],
         padding: `${t.space[3]} ${t.space[4]}`,
-        borderBottom: `1px solid ${t.color.border.default}`,
+        borderBottom: `${t.borderWidth.default} solid ${t.color.border.default}`,
       },
       inputIcon: {
         flexShrink: 0,

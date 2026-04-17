@@ -11,16 +11,19 @@ import { highlightDocCode } from '../../lib/highlightDocCode';
 interface Props {
   code: string;
   lang?: string;
+  /** Header label (e.g. filename). Defaults to the highlight language id (`typescript`, `bash`, …). */
+  headerLabel?: string;
 }
 
-const { code, lang: langProp } = Astro.props;
+const { code, lang: langProp, headerLabel } = Astro.props;
 const { safeLang, highlighted } = highlightDocCode(code, langProp);
+const headerText = headerLabel?.trim() || safeLang;
 ---
 
 <div class={codeBlock.root} data-codeblock>
   <div class={codeBlock.header} data-codeblock-header>
     <div class={codeBlock.title}>
-      <span class={codeBlock.language} data-codeblock-language>{safeLang}</span>
+      <span class={codeBlock.language} data-codeblock-language>{headerText}</span>
     </div>
     <div class={codeBlock.actions}>
       <button
@@ -37,7 +40,7 @@ const { safeLang, highlighted } = highlightDocCode(code, langProp);
   </div>
   <div class={codeBlock.body} data-codeblock-body>
     <pre class={codeBlock.pre} data-codeblock-pre>
-      <code class:list={['hljs', `language-${safeLang}`, codeBlock.code]} set:html={highlighted} />
+      <code class:list={['hljs', `language-${safeLang}`, codeBlock.code]} set:html={highlighted}></code>
     </pre>
   </div>
 </div>

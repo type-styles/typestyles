@@ -436,8 +436,10 @@ function ruleMatchesPrefix(rule: CSSRule, prefix: string): boolean {
 
 function ruleMatchesKey(cssText: string, key: string): boolean {
   if (key.startsWith('tokens:')) {
-    // tokens:color -> :root rule with --color- custom properties
-    const namespace = key.slice('tokens:'.length);
+    // tokens:color or tokens:color@layerName -> :root rule with --color- custom properties
+    const rest = key.slice('tokens:'.length);
+    const at = rest.lastIndexOf('@');
+    const namespace = at === -1 ? rest : rest.slice(0, at);
     return cssText.includes(`:root`) && cssText.includes(`--${namespace}-`);
   }
   if (key.startsWith('theme:')) {

@@ -3,6 +3,8 @@ export type DesignColorValues = {
   text: { primary: string; secondary: string; onAccent: string; onDanger: string };
   accent: { default: string; hover: string };
   border: { default: string; strong: string; focus: string };
+  /** Hard-offset / neo-brutalist shadow fill; light from `background.subtle`, dark a deep hue-matched block. */
+  shadow: { offset: string };
   danger: { default: string; solid: string };
   success: { default: string; solid: string };
   warning: { default: string; onSolid: string };

@@ -46,13 +46,16 @@ export const lineHeightValues = {
   relaxed: '1.625',
 } as const;
 
-export const shadowValues = {
+export type DesignShadowKeys = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+export type DesignShadowValues = Record<DesignShadowKeys, string>;
+
+export const shadowValues: DesignShadowValues = {
   xs: '2px 2px 0 0 #000',
   sm: '3px 3px 0 0 #000',
   md: '4px 4px 0 0 #000',
   lg: '6px 6px 0 0 #000',
   xl: '8px 8px 0 0 #000',
-} as const;
+};
 
 export const durationValues = {
   fast: '80ms',
@@ -90,7 +93,6 @@ export type DesignFontFamilyValues = typeof fontFamilyValues;
 export type DesignFontSizeValues = typeof fontSizeValues;
 export type DesignFontWeightValues = typeof fontWeightValues;
 export type DesignLineHeightValues = typeof lineHeightValues;
-export type DesignShadowValues = typeof shadowValues;
 export type DesignDurationValues = typeof durationValues;
 export type DesignEasingValues = typeof easingValues;
 export type DesignTransitionValues = typeof transitionValues;

@@ -114,7 +114,7 @@ function bindPalette(): (() => void) | undefined {
   const dialogEl = document.getElementById('docs-search-palette-dialog');
   const inputEl = document.getElementById('docs-palette-input') as HTMLInputElement | null;
   const listEl = document.getElementById('docs-palette-results');
-  const triggerEl = document.getElementById('docs-search-trigger');
+  const triggerEls = document.querySelectorAll<HTMLElement>('[data-docs-search-trigger]');
   if (!paletteRoot || !backdropEl || !dialogEl || !inputEl || !listEl) return undefined;
 
   const parsed = readSlotClasses();
@@ -238,7 +238,10 @@ function bindPalette(): (() => void) | undefined {
   }
 
   const onBackdropClick = (): void => closePalette();
-  const onTriggerClick = (): void => openPalette();
+  const onTriggerClick = (e: Event): void => {
+    e.preventDefault();
+    openPalette();
+  };
   const onInput = (): void => {
     activeIndex = -1;
     search();
@@ -288,7 +291,7 @@ function bindPalette(): (() => void) | undefined {
   };
 
   backdropEl.addEventListener('click', onBackdropClick);
-  triggerEl?.addEventListener('click', onTriggerClick);
+  triggerEls.forEach((el) => el.addEventListener('click', onTriggerClick));
   inputEl.addEventListener('input', onInput);
   inputEl.addEventListener('keydown', onInputKeydown);
   document.addEventListener('keydown', onDocKeydown);
@@ -296,7 +299,7 @@ function bindPalette(): (() => void) | undefined {
 
   return () => {
     backdropEl.removeEventListener('click', onBackdropClick);
-    triggerEl?.removeEventListener('click', onTriggerClick);
+    triggerEls.forEach((el) => el.removeEventListener('click', onTriggerClick));
     inputEl.removeEventListener('input', onInput);
     inputEl.removeEventListener('keydown', onInputKeydown);
     document.removeEventListener('keydown', onDocKeydown);

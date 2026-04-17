@@ -46,6 +46,16 @@
         "types": "./dist/build.d.cts",
         "default": "./dist/build.cjs"
       }
+    },
+    "./globals": {
+      "import": {
+        "types": "./dist/globals.d.ts",
+        "default": "./dist/globals.js"
+      },
+      "require": {
+        "types": "./dist/globals.d.cts",
+        "default": "./dist/globals.cjs"
+      }
     }
   },
   "files": [
