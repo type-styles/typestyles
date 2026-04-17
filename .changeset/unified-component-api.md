@@ -1,5 +1,5 @@
 ---
-'typestyles': major
+'typestyles': minor
 '@typestyles/vite': patch
 '@typestyles/rollup': patch
 ---

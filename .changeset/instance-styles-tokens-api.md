@@ -1,5 +1,5 @@
 ---
-'typestyles': major
+'typestyles': minor
 ---
 
 Replace global class naming with **instance-based** APIs.
