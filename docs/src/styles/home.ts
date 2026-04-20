@@ -2,24 +2,67 @@ import { designTokens as t } from '@examples/design-system';
 import { styles } from './typestyles';
 
 const bp = '@media (max-width: 768px)';
-
+const desktop = '@media (min-width: 769px)';
 const heroTitleSize = `calc(${t.space[8]} + ${t.space[2]})`;
 
 export const home = styles.component(
   'docs-home',
   {
     hero: {
+      position: 'relative',
       paddingTop: t.space[12],
-      paddingBottom: t.space[8],
+      paddingBottom: t.space[12],
+      overflow: 'hidden',
       [bp]: {
         paddingTop: t.space[8],
+        paddingBottom: t.space[8],
       },
+    },
+    heroGrid: {
+      position: 'absolute',
+      inset: 0,
+      backgroundImage: `radial-gradient(circle at 1px 1px, ${t.color.border.default} 1px, transparent 0)`,
+      backgroundSize: '28px 28px',
+      opacity: 0.4,
+      pointerEvents: 'none',
+      maskImage: 'radial-gradient(ellipse 80% 70% at 50% 0%, black 20%, transparent 75%)',
+    },
+    heroInner: {
+      position: 'relative',
+      zIndex: 1,
+    },
+    heroTop: {
+      display: 'grid',
+      gap: t.space[12],
+      alignItems: 'start',
+      [desktop]: {
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(280px, 440px)',
+        gap: t.space[12],
+        alignItems: 'center',
+      },
+    },
+    eyebrow: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: t.space[2],
+      fontSize: t.fontSize.sm,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase',
+      color: t.color.text.secondary,
+      marginBottom: t.space[4],
+    },
+    eyebrowDot: {
+      width: '6px',
+      height: '6px',
+      borderRadius: t.radius.full,
+      backgroundColor: t.color.accent.default,
     },
     title: {
       fontSize: heroTitleSize,
       fontWeight: t.fontWeight.bold,
       letterSpacing: '-0.035em',
-      lineHeight: 1.1,
+      lineHeight: 1.08,
       marginBottom: t.space[4],
       color: t.color.text.primary,
       [bp]: {
@@ -37,22 +80,38 @@ export const home = styles.component(
       fontSize: t.fontSize.xl,
       color: t.color.text.secondary,
       lineHeight: t.lineHeight.relaxed,
-      maxWidth: '33.75rem',
+      maxWidth: '36rem',
       marginBottom: t.space[6],
+    },
+    pillRow: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: t.space[2],
+      marginBottom: t.space[6],
+    },
+    pill: {
+      fontSize: t.fontSize.sm,
+      fontWeight: t.fontWeight.medium,
+      color: t.color.text.onAccent,
+      backgroundColor: t.color.accent.default,
+      // border: t.stroke.default,
+      borderRadius: t.radius.full,
+      padding: `${t.space[1]} ${t.space[3]}`,
     },
     actions: {
       display: 'flex',
       alignItems: 'center',
       gap: t.space[4],
-      marginBottom: t.space[8],
+      flexWrap: 'wrap',
       [bp]: {
         flexDirection: 'column',
-        alignItems: 'flex-start',
+        alignItems: 'stretch',
       },
     },
     cta: {
       display: 'inline-flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: t.space[2],
       fontSize: t.fontSize.lg,
       fontWeight: t.fontWeight.bold,
@@ -78,6 +137,7 @@ export const home = styles.component(
     ctaSecondary: {
       display: 'inline-flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: t.space[2],
       fontSize: t.fontSize.lg,
       fontWeight: t.fontWeight.bold,
@@ -100,9 +160,188 @@ export const home = styles.component(
         boxShadow: 'none',
       },
     },
-    /** Max width for the homepage sample (same `Code.astro` + `codeBlock` recipe as markdown docs). */
     codeExampleWrap: {
-      maxWidth: '520px',
+      width: '100%',
+      maxWidth: '100%',
+      [desktop]: {
+        justifySelf: 'end',
+      },
+    },
+    section: {
+      paddingTop: t.space[12],
+      paddingBottom: t.space[12],
+      borderTop: t.stroke.default,
+      [bp]: {
+        paddingTop: t.space[8],
+        paddingBottom: t.space[8],
+      },
+    },
+    sectionHead: {
+      maxWidth: '40rem',
+      marginBottom: t.space[8],
+    },
+    sectionKicker: {
+      fontSize: t.fontSize.sm,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      color: t.color.accent.default,
+      marginBottom: t.space[2],
+    },
+    sectionTitle: {
+      fontSize: t.fontSize['2xl'],
+      fontWeight: t.fontWeight.bold,
+      letterSpacing: '-0.02em',
+      lineHeight: 1.2,
+      color: t.color.text.primary,
+      margin: 0,
+      marginBottom: t.space[3],
+    },
+    sectionLead: {
+      fontSize: t.fontSize.lg,
+      color: t.color.text.secondary,
+      lineHeight: t.lineHeight.relaxed,
+      margin: 0,
+    },
+    benefitGrid: {
+      display: 'grid',
+      gap: t.space[4],
+      gridTemplateColumns: '1fr',
+      [desktop]: {
+        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      },
+    },
+    benefitCard: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: t.space[3],
+      padding: t.space[5],
+      borderRadius: t.radius.md,
+      border: `${t.borderWidth.default} solid ${t.color.border.default}`,
+      backgroundColor: t.color.background.surface,
+      boxShadow: t.shadow.xs,
+      transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+      '&:hover': {
+        borderColor: t.color.border.strong,
+        boxShadow: t.shadow.sm,
+      },
+    },
+    benefitIconWrap: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '40px',
+      height: '40px',
+      borderRadius: t.radius.md,
+      backgroundColor: t.color.accent.subtle,
+      color: t.color.accent.default,
+      flexShrink: 0,
+    },
+    benefitTitle: {
+      fontSize: t.fontSize.lg,
+      fontWeight: t.fontWeight.semibold,
+      color: t.color.text.primary,
+      margin: 0,
+      lineHeight: 1.3,
+    },
+    benefitText: {
+      fontSize: t.fontSize.md,
+      color: t.color.text.secondary,
+      lineHeight: 1.55,
+      margin: 0,
+      '& code': {
+        fontFamily: t.fontFamily.mono,
+        fontSize: '0.9em',
+        padding: `0 ${t.space[1]}`,
+        backgroundColor: t.color.background.subtle,
+      },
+    },
+    split: {
+      display: 'grid',
+      gap: t.space[8],
+      alignItems: 'center',
+      [desktop]: {
+        gridTemplateColumns: '1fr 1fr',
+        gap: t.space[12],
+      },
+    },
+    /** Desktop: visual column order without duplicate markup (default: prose then media). */
+    splitProseFirst: {
+      [desktop]: { order: 1 },
+    },
+    splitMediaSecond: {
+      [desktop]: { order: 2 },
+    },
+    splitProseSecond: {
+      [desktop]: { order: 2 },
+    },
+    splitMediaFirst: {
+      [desktop]: { order: 1 },
+    },
+    proseList: {
+      margin: 0,
+      paddingLeft: t.space[5],
+      color: t.color.text.secondary,
+      fontSize: t.fontSize.md,
+      lineHeight: 1.65,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: t.space[3],
+    },
+    integrations: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: t.space[3],
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: t.space[4],
+    },
+    integrationChip: {
+      fontSize: t.fontSize.sm,
+      fontWeight: t.fontWeight.semibold,
+      color: t.color.text.primary,
+      backgroundColor: t.color.background.surface,
+      border: t.stroke.default,
+      borderRadius: t.radius.md,
+      padding: `${t.space[2]} ${t.space[4]}`,
+    },
+    ctaBand: {
+      marginTop: t.space[4],
+      padding: t.space[12],
+      borderRadius: t.radius.lg,
+      border: t.stroke.default,
+      background: `linear-gradient(135deg, ${t.color.background.surface} 0%, ${t.color.background.subtle} 100%)`,
+      textAlign: 'center',
+      boxShadow: t.shadow.sm,
+      [bp]: {
+        padding: `${t.space[8]} ${t.space[5]}`,
+      },
+    },
+    ctaBandTitle: {
+      fontSize: t.fontSize['2xl'],
+      fontWeight: t.fontWeight.bold,
+      color: t.color.text.primary,
+      margin: 0,
+      marginBottom: t.space[3],
+      letterSpacing: '-0.02em',
+    },
+    ctaBandLead: {
+      fontSize: t.fontSize.lg,
+      color: t.color.text.secondary,
+      margin: '0 auto',
+      marginBottom: t.space[6],
+      maxWidth: '32rem',
+      lineHeight: t.lineHeight.relaxed,
+    },
+    ctaBandActions: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: t.space[4],
+      flexWrap: 'wrap',
+      [bp]: {
+        flexDirection: 'column',
+        alignItems: 'stretch',
+      },
     },
   },
   { layer: 'components' },

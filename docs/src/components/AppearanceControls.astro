@@ -1,0 +1,67 @@
+---
+/**
+ * Theme + palette controls for the docs chrome (desktop header and mobile bar).
+ * Client behavior lives in `../lib/initDocsAppearanceControls.ts`.
+ */
+import { Sun, Moon, Palette } from '@lucide/astro';
+import { appearanceControls as ac } from '../styles/appearanceControls';
+import { designPaletteList } from '../tokens';
+import type { AppearanceBootstrap } from '../lib/docsAppearanceRuntime';
+
+type Props = {
+  appearanceBootstrap: AppearanceBootstrap;
+};
+
+const { appearanceBootstrap } = Astro.props;
+---
+
+<div
+  class:list={[ac.cluster]}
+  data-appearance-controls
+  data-appearance-config={JSON.stringify(appearanceBootstrap)}
+>
+  <button type="button" class:list={[ac.iconButton]} data-appearance-mode-toggle aria-label="Color mode">
+    <span class:list={[ac.modeIcon]} data-appearance-icon-sun hidden aria-hidden="true">
+      <Sun size={18} stroke-width={2} />
+    </span>
+    <span class:list={[ac.modeIcon]} data-appearance-icon-moon aria-hidden="true">
+      <Moon size={18} stroke-width={2} />
+    </span>
+  </button>
+  <div class:list={[ac.paletteHost]} data-appearance-palette-host>
+    <button
+      type="button"
+      class:list={[ac.iconButton]}
+      data-appearance-palette-trigger
+      aria-haspopup="listbox"
+      aria-expanded="false"
+      aria-label="Color palette"
+    >
+      <span aria-hidden="true">
+        <Palette size={18} stroke-width={2} />
+      </span>
+    </button>
+    <div
+      class:list={[ac.dropdown]}
+      data-appearance-palette-menu
+      role="listbox"
+      aria-label="Palettes"
+      hidden
+    >
+      {
+        designPaletteList.map(({ id, label }) => (
+          <button type="button" role="option" class:list={[ac.menuItem]} data-appearance-palette-id={id}>
+            {label}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<script>
+  import { initDocsAppearanceControls } from '../lib/initDocsAppearanceControls';
+
+  document.addEventListener('astro:page-load', initDocsAppearanceControls);
+  initDocsAppearanceControls();
+</script>

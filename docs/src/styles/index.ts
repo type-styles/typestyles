@@ -5,8 +5,8 @@ export const docProseRoot = proseContent.root;
 
 export { layout } from './layout';
 export { sidebar } from './sidebar';
-export { mobileBar } from './mobileBar';
 export { siteHeader } from './siteHeader';
+export { appearanceControls } from './appearanceControls';
 export { doc } from './doc';
 export { skipLink } from './skipLink';
 export { toc } from './toc';

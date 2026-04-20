@@ -1,26 +1,23 @@
 ---
 // @ts-nocheck
 import { Search } from '@lucide/astro';
-import { sidebar } from '../../styles';
-import { docNavigation } from '../../navigation';
-import type { DocMeta } from '../../lib/docs';
-import type { AppearanceBootstrap } from '../../lib/docsAppearanceRuntime';
-import DocsLogo from './DocsLogo.astro';
-import DocsAppearanceControls from './DocsAppearanceControls.astro';
+import { sidebar } from '../styles';
+import { docNavigation } from '../navigation';
+import type { DocMeta } from '../lib/docs';
+import Logo from './Logo.astro';
 
 type Props = {
   docsBySlug: Record<string, DocMeta>;
   currentSlug: string;
-  appearanceBootstrap: AppearanceBootstrap;
 };
 
-const { docsBySlug, currentSlug, appearanceBootstrap } = Astro.props;
+const { docsBySlug, currentSlug } = Astro.props;
 ---
 
 <div className={sidebar.backdrop} id="sidebar-backdrop" aria-hidden="true"></div>
 <aside className={sidebar.root} id="docs-sidebar">
   <div className={sidebar.header}>
-    <DocsLogo className={sidebar.logo} accentClassName={sidebar.logoAccent} />
+    <Logo className={sidebar.logo} accentClassName={sidebar.logoAccent} />
   </div>
   <div className={sidebar.searchWrapper}>
     <span className={sidebar.searchIcon} aria-hidden="true">
@@ -65,7 +62,6 @@ const { docsBySlug, currentSlug, appearanceBootstrap } = Astro.props;
       ))
     }
   </nav>
-  <DocsAppearanceControls appearanceBootstrap={appearanceBootstrap} />
 </aside>
 
 <script>
@@ -84,7 +80,10 @@ const { docsBySlug, currentSlug, appearanceBootstrap } = Astro.props;
     const slug = currentDocsSlugFromPath();
     nav.querySelectorAll<HTMLAnchorElement>('a[href^="/docs/"]').forEach((a) => {
       const href = (a.getAttribute('href') ?? '').replace(/\/$/, '');
-      const isActive = href === slug && slug !== '';
+      const isChangelogSection = slug.startsWith('/docs/changelog');
+      const isActive =
+        slug !== '' &&
+        (href === slug || (isChangelogSection && href === '/docs/changelog'));
       a.className = isActive ? `${linkBase} ${linkActive}` : linkBase;
       if (isActive) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');

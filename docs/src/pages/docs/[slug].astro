@@ -1,16 +1,16 @@
 ---
 // @ts-nocheck
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import Alert from '../../components/docs/Alert.astro';
-import Aside from '../../components/docs/Aside.astro';
-import Badge from '../../components/docs/Badge.astro';
-import Card from '../../components/docs/Card.astro';
-import CardGrid from '../../components/docs/CardGrid.astro';
-import LinkCard from '../../components/docs/LinkCard.astro';
-import Steps from '../../components/docs/Steps.astro';
-import FileTree from '../../components/docs/FileTree.astro';
-import DocsDocFooter from '../../components/docs/DocsDocFooter.astro';
-import DocsPagination from '../../components/docs/DocsPagination.astro';
+import Alert from '../../components/Alert.astro';
+import Aside from '../../components/Aside.astro';
+import Badge from '../../components/Badge.astro';
+import Card from '../../components/Card.astro';
+import CardGrid from '../../components/CardGrid.astro';
+import LinkCard from '../../components/LinkCard.astro';
+import Steps from '../../components/Steps.astro';
+import FileTree from '../../components/FileTree.astro';
+import PageFooter from '../../components/PageFooter.astro';
+import Pagination from '../../components/Pagination.astro';
 import { doc, docProseRoot } from '../../styles';
 import { fileTree as fileTreeStyles, linkButton } from '@examples/design-system';
 import { extractDocHeadings, getAllDocs, getDocBySlug, getDocNeighbors } from '../../lib/docs';
@@ -166,7 +166,7 @@ const editHref = editUrlForDocSlug(slug);
       ) : null
     }
 
-    <DocsDocFooter lastModified={entry.lastModified} editHref={editHref} />
-    <DocsPagination prev={neighbors.prev} next={neighbors.next} />
+    <PageFooter lastModified={entry.lastModified} editHref={editHref} />
+    <Pagination prev={neighbors.prev} next={neighbors.next} />
   </article>
 </DocsLayout>

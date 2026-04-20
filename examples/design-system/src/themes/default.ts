@@ -29,7 +29,7 @@ export const defaultLightColorValues: DesignColorValues = {
   text: {
     primary: p.palette['slate-10'],
     secondary: p.palette['slate-7'],
-    onAccent: '#000',
+    onAccent: p.palette['neutral-1'],
     onDanger: p.palette['neutral-1'],
   },
   accent: { default: p.palette['blue-6'], hover: p.palette['blue-7'] },
@@ -56,7 +56,7 @@ export const defaultDarkColorValues: DesignColorValues = {
   text: {
     primary: p.palette['slate-1'],
     secondary: p.palette['slate-3'],
-    onAccent: '#000',
+    onAccent: p.palette['neutral-1'],
     onDanger: p.palette['neutral-1'],
   },
   accent: { default: p.palette['blue-4'], hover: p.palette['blue-3'] },

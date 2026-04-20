@@ -1,50 +1,236 @@
 ---
+import { Binary, Braces, Layers, Palette, PlugZap, Puzzle } from '@lucide/astro';
 import { home } from '../styles';
 import DocsLayout from '../layouts/DocsLayout.astro';
-import Code from '../components/docs/Code.astro';
+import Code from '../components/Code.astro';
 import { getAllDocs } from '../lib/docs';
 
 const docs = await getAllDocs();
 const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.slug, title: doc.title }]));
 
-const themeTsSample = `const button = styles.component('button', {
-  base: { border: '3px solid #000' },
+const heroSample = `const button = styles.component('button', {
+  base: {
+    border: '3px solid #000',
+    transition: 'transform 120ms ease',
+  },
   variants: {
     intent: {
       primary: { background: token.accent },
       ghost: { background: 'transparent' },
     },
   },
+  defaultVariants: { intent: 'primary' },
 });`;
+
+const tokenSample = `const spacing = tokens.create('spacing', {
+  md: '16px',
+  lg: '24px',
+});
+
+export const card = styles.component('card', {
+  base: {
+    padding: spacing.md,
+    gap: spacing.lg,
+  },
+});
+
+/* legacy.css — same custom properties */
+.card-legacy { padding: var(--spacing-md); }`;
 ---
 
-<DocsLayout docsBySlug={docsBySlug}>
+<DocsLayout docsBySlug={docsBySlug} hideDesktopSidebar mainVariant="landing">
   <div class={home.hero}>
-    <h1 class={home.title}>
-      CSS-in-TypeScript that
-      <br />
-      <span class={home.titleAccent}>embraces CSS</span>
-    </h1>
-    <p class={home.subtitle}>
-      Design tokens, style variants, and keyframes — with full control over the CSS. No runtime
-      overhead, no magic, just types.
+    <div class={home.heroGrid} aria-hidden="true"></div>
+    <div class={home.heroInner}>
+      <div class={home.heroTop}>
+        <div>
+          <p class={home.eyebrow}>
+            <span class={home.eyebrowDot} aria-hidden="true"></span>
+            CSS-in-TypeScript
+          </p>
+          <h1 class={home.title}>
+            Styles that live in TypeScript,
+            <br />
+            <span class={home.titleAccent}>behave like real CSS</span>
+          </h1>
+          <p class={home.subtitle}>
+            Typed variants, design tokens as CSS variables, and predictable class names — without
+            locking you into a proprietary runtime or unreadable hashes in the DOM.
+          </p>
+          <div class={home.pillRow} aria-label="Highlights">
+            <span class={home.pill}>Readable class names</span>
+            <span class={home.pill}>Tokens you can share with plain CSS</span>
+            <span class={home.pill}>Typed variants & composition</span>
+          </div>
+          <div class={home.actions}>
+            <a href="/docs/getting-started" class={home.cta}>
+              Get started
+              <span aria-hidden="true">&rarr;</span>
+            </a>
+            <a
+              href="https://github.com/typestyles/typestyles"
+              class={home.ctaSecondary}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+        <div class={home.codeExampleWrap}>
+          <Code code={heroSample} lang="typescript" headerLabel="theme.ts" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class={home.section} aria-labelledby="benefits-heading">
+    <header class={home.sectionHead}>
+      <p class={home.sectionKicker}>Why TypeStyles</p>
+      <h2 id="benefits-heading" class={home.sectionTitle}>CSS ergonomics with TypeScript rigor</h2>
+      <p class={home.sectionLead}>
+        Most CSS-in-JS forces a tradeoff: readable output or great types. TypeStyles is built around
+        CSS primitives — variables, layers, selectors — so your styles stay inspectable and your API
+        stays strict.
+      </p>
+    </header>
+    <div class={home.benefitGrid}>
+      <div class={home.benefitCard}>
+        <div class={home.benefitIconWrap}>
+          <Braces size={22} stroke-width={2} aria-hidden="true" />
+        </div>
+        <h3 class={home.benefitTitle}>Human-readable classes</h3>
+        <p class={home.benefitText}>
+          Class names mirror what you author — variants like <code>button-intent-primary</code> show up
+          in DevTools exactly as you’d expect. No opaque hashes, no archeology when debugging.
+        </p>
+      </div>
+      <div class={home.benefitCard}>
+        <div class={home.benefitIconWrap}>
+          <Layers size={22} stroke-width={2} aria-hidden="true" />
+        </div>
+        <h3 class={home.benefitTitle}>Variants &amp; composition</h3>
+        <p class={home.benefitText}>
+          Define component styles once, call them with typed props, or destructure individual class
+          strings and combine with <code>cx()</code> — same pattern from quick prototypes to design
+          systems.
+        </p>
+      </div>
+      <div class={home.benefitCard}>
+        <div class={home.benefitIconWrap}>
+          <Palette size={22} stroke-width={2} aria-hidden="true" />
+        </div>
+        <h3 class={home.benefitTitle}>Tokens as CSS variables</h3>
+        <p class={home.benefitText}>
+          Design tokens compile to real custom properties on the cascade, so legacy stylesheets and
+          third-party CSS can consume the same values — one source of truth across the stack.
+        </p>
+      </div>
+      <div class={home.benefitCard}>
+        <div class={home.benefitIconWrap}>
+          <Puzzle size={22} stroke-width={2} aria-hidden="true" />
+        </div>
+        <h3 class={home.benefitTitle}>Incremental adoption</h3>
+        <p class={home.benefitText}>
+          Ship TypeStyles next to existing CSS and frameworks. Colocate or split files, adopt one
+          component at a time, and mix with global styles without an all-or-nothing migration.
+        </p>
+      </div>
+      <div class={home.benefitCard}>
+        <div class={home.benefitIconWrap}>
+          <Binary size={22} stroke-width={2} aria-hidden="true" />
+        </div>
+        <h3 class={home.benefitTitle}>The full CSS surface</h3>
+        <p class={home.benefitText}>
+          Pseudo-classes, media and container queries, nesting, keyframes, <code>@layer</code> — write
+          the CSS you already know; TypeStyles keeps it structured and typed at the boundaries that
+          matter.
+        </p>
+      </div>
+      <div class={home.benefitCard}>
+        <div class={home.benefitIconWrap}>
+          <PlugZap size={22} stroke-width={2} aria-hidden="true" />
+        </div>
+        <h3 class={home.benefitTitle}>Lean output</h3>
+        <p class={home.benefitText}>
+          No heavyweight styled-runtime in the browser: styles register up front, CSS injects when
+          needed, and the runtime story stays small and predictable compared to classic CSS-in-JS.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class={home.section} aria-labelledby="tokens-heading">
+    <div class={home.split}>
+      <div class:list={[home.splitProseFirst]}>
+        <header class={home.sectionHead}>
+          <p class={home.sectionKicker}>Tokens</p>
+          <h2 id="tokens-heading" class={home.sectionTitle}>One definition, every runtime surface</h2>
+          <p class={home.sectionLead}>
+            Tokens become standard custom properties, so TypeStyles, plain CSS, and even static assets
+            can agree on spacing, color, and type scales — including nested theme overrides when you
+            need them.
+          </p>
+        </header>
+        <ul class={home.proseList}>
+          <li>Theming via scoped class surfaces — swap palettes without rewiring components.</li>
+          <li>Autocomplete and literal types on token references inside your style objects.</li>
+          <li>Interop with hand-written stylesheets during long migrations.</li>
+        </ul>
+      </div>
+      <div class:list={[home.splitMediaSecond, home.codeExampleWrap]}>
+        <Code code={tokenSample} lang="typescript" headerLabel="tokens + legacy CSS" />
+      </div>
+    </div>
+  </section>
+
+  <section class={home.section} aria-labelledby="workflow-heading">
+    <div class={home.split}>
+      <div class:list={[home.splitMediaFirst, home.codeExampleWrap]}>
+        <Code code={heroSample} lang="typescript" headerLabel="Variants in practice" />
+      </div>
+      <div class:list={[home.splitProseSecond]}>
+        <header class={home.sectionHead}>
+          <p class={home.sectionKicker}>Workflow</p>
+          <h2 id="workflow-heading" class={home.sectionTitle}>From single file to design system</h2>
+          <p class={home.sectionLead}>
+            Keep styles beside components for speed, or extract shared definitions when patterns
+            stabilize. The API stays the same: callable style objects, destructurable classes, and
+            composition helpers that scale with your codebase.
+          </p>
+        </header>
+        <ul class={home.proseList}>
+          <li>Components are callable for props-driven class lists and destructurable for granular control.</li>
+          <li>Shared utilities like <code>cx()</code> merge internal and external classes safely.</li>
+          <li>Works with Vite, Next.js, Rollup, and Astro — pick the integration that matches your app.</li>
+        </ul>
+      </div>
+    </div>
+    <div class={home.integrations}>
+      <span class={home.integrationChip}>Vite</span>
+      <span class={home.integrationChip}>Next.js</span>
+      <span class={home.integrationChip}>Rollup</span>
+      <span class={home.integrationChip}>Astro</span>
+    </div>
+  </section>
+
+  <section class={home.ctaBand} aria-labelledby="cta-heading">
+    <h2 id="cta-heading" class={home.ctaBandTitle}>Build the design system you actually want to maintain</h2>
+    <p class={home.ctaBandLead}>
+      Start with one component, keep your CSS mental model, and let TypeScript catch mistakes before
+      they ship.
     </p>
-    <div class={home.actions}>
+    <div class={home.ctaBandActions}>
       <a href="/docs/getting-started" class={home.cta}>
-        Get started
+        Read the docs
         <span aria-hidden="true">&rarr;</span>
       </a>
       <a
-        href="https://github.com/typestyles/typestyles"
+        href="/docs/framework-comparison"
         class={home.ctaSecondary}
-        target="_blank"
-        rel="noopener noreferrer"
       >
-        GitHub
+        Compare approaches
       </a>
     </div>
-    <div class={home.codeExampleWrap}>
-      <Code code={themeTsSample} lang="typescript" headerLabel="theme.ts" />
-    </div>
-  </div>
+  </section>
 </DocsLayout>
