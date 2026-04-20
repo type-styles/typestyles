@@ -8,15 +8,14 @@ import {
   type DesignPaletteId,
 } from '../tokens';
 import type { DocHeading } from '../lib/docs';
-import DocsHead from '../components/docs/DocsHead.astro';
-import DocsSkipLink from '../components/docs/DocsSkipLink.astro';
-import DocsSiteHeader from '../components/docs/DocsSiteHeader.astro';
-import DocsMobileBar from '../components/docs/DocsMobileBar.astro';
-import DocsSidebar from '../components/docs/DocsSidebar.astro';
-import DocsCodeBlockCopy from '../components/docs/DocsCodeBlockCopy.astro';
-import DocsMobileSidebar from '../components/docs/DocsMobileSidebar.astro';
-import DocsToc from '../components/docs/DocsToc.astro';
-import DocsSearchPalette from '../components/docs/DocsSearchPalette.astro';
+import Head from '../components/Head.astro';
+import SkipLink from '../components/SkipLink.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import Sidebar from '../components/Sidebar.astro';
+import CodeBlockCopy from '../components/CodeBlockCopy.astro';
+import MobileSidebar from '../components/MobileSidebar.astro';
+import Toc from '../components/Toc.astro';
+import SearchPalette from '../components/SearchPalette.astro';
 import { codeHljsScope } from '@examples/design-system';
 
 type Props = {
@@ -24,10 +23,20 @@ type Props = {
   currentSlug?: string;
   docsBySlug: Record<string, import('../lib/docs').DocMeta>;
   tocHeadings?: DocHeading[];
+  /** Hide the persistent docs sidebar on large screens (e.g. homepage has top nav already). */
+  hideDesktopSidebar?: boolean;
+  /** Wider main column for marketing layouts. */
+  mainVariant?: 'doc' | 'landing';
 };
 
-const { title = 'typestyles - CSS-in-TypeScript', currentSlug = '', docsBySlug, tocHeadings = [] } =
-  Astro.props;
+const {
+  title = 'typestyles - CSS-in-TypeScript',
+  currentSlug = '',
+  docsBySlug,
+  tocHeadings = [],
+  hideDesktopSidebar = false,
+  mainVariant = 'doc',
+} = Astro.props;
 const sidebarRootOpenClass = sidebar.rootOpen;
 const sidebarBackdropVisibleClass = sidebar.backdropVisible;
 const hasToc = tocHeadings.length > 0;
@@ -51,7 +60,7 @@ const appearanceBootstrap = {
 
 <html lang="en">
   <head>
-    <DocsHead
+    <Head
       title={title}
       appearanceBootstrap={appearanceBootstrap}
       typestylesCssHref={typestylesCssHref}
@@ -59,22 +68,19 @@ const appearanceBootstrap = {
   </head>
   <body>
     <div transition:persist="docs-skip">
-      <DocsSkipLink />
+      <SkipLink />
     </div>
     <div transition:persist="docs-site-header">
-      <DocsSiteHeader />
-    </div>
-    <div transition:persist="docs-mobile-bar">
-      <DocsMobileBar />
+      <SiteHeader appearanceBootstrap={appearanceBootstrap} />
     </div>
 
     <div class:list={[layout.root, codeHljsScope.root]}>
-      <div transition:persist="docs-sidebar-shell" style="flex-shrink: 0; align-self: stretch">
-        <DocsSidebar
-          docsBySlug={docsBySlug}
-          currentSlug={currentSlug}
-          appearanceBootstrap={appearanceBootstrap}
-        />
+      <div
+        data-docs-sidebar-shell
+        class:list={[layout.sidebarShell, hideDesktopSidebar && layout.sidebarShellHiddenDesktop]}
+        transition:persist="docs-sidebar-shell"
+      >
+        <Sidebar docsBySlug={docsBySlug} currentSlug={currentSlug} />
       </div>
 
       <div className={layout.content} transition:name="docs-main">
@@ -82,16 +88,24 @@ const appearanceBootstrap = {
           hasToc ? (
             <div class:list={[layout.docPageWrap, layout.docPageWrapWithToc]}>
               <aside class={layout.tocAside} aria-label="On this page">
-                <DocsToc headings={tocHeadings} />
+                <Toc headings={tocHeadings} />
               </aside>
               <div class={layout.mainColumn}>
-                <main id="main-content" tabindex="-1" class={layout.main}>
+                <main
+                  id="main-content"
+                  tabindex="-1"
+                  class:list={[mainVariant === 'landing' ? layout.mainLanding : layout.main]}
+                >
                   <slot />
                 </main>
               </div>
             </div>
           ) : (
-            <main id="main-content" tabindex="-1" class={layout.main}>
+            <main
+              id="main-content"
+              tabindex="-1"
+              class:list={[mainVariant === 'landing' ? layout.mainLanding : layout.main]}
+            >
               <slot />
             </main>
           )
@@ -99,12 +113,29 @@ const appearanceBootstrap = {
       </div>
     </div>
 
-    <DocsCodeBlockCopy />
-    <DocsMobileSidebar
+    <CodeBlockCopy />
+    <MobileSidebar
       sidebarRootOpenClass={sidebarRootOpenClass}
       sidebarBackdropVisibleClass={sidebarBackdropVisibleClass}
     />
 
-    <DocsSearchPalette />
+    <SearchPalette />
+
+    <script define:vars={{ sidebarHiddenDesktopClass: layout.sidebarShellHiddenDesktop }}>
+      /**
+       * `transition:persist` keeps the sidebar shell across client navigations, so classes from the
+       * first visited page (e.g. homepage hide-desktop) would stick. Re-sync after each navigation.
+       */
+      function syncSidebarShellDesktopVisibility() {
+        const shell = document.querySelector('[data-docs-sidebar-shell]');
+        if (!shell || !sidebarHiddenDesktopClass) return;
+        const path = window.location.pathname.replace(/\/$/, '') || '/';
+        const hideDesktopSidebar = path === '/';
+        shell.classList.toggle(sidebarHiddenDesktopClass, hideDesktopSidebar);
+      }
+
+      document.addEventListener('astro:page-load', syncSidebarShellDesktopVisibility);
+      syncSidebarShellDesktopVisibility();
+    </script>
   </body>
 </html>

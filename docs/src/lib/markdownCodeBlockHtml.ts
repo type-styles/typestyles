@@ -2,7 +2,7 @@ import { codeBlock } from '@examples/design-system';
 
 /**
  * HTML for a fenced markdown code block (highlighted inner HTML only).
- * Keep in sync with `components/docs/Code.astro` selectors; copy wiring via `DocsCodeBlockCopy.astro`.
+ * Keep in sync with `components/Code.astro` selectors; copy wiring via `CodeBlockCopy.astro`.
  */
 export function markdownCodeBlockHtml(safeLang: string, highlighted: string): string {
   return [

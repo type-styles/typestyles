@@ -1,0 +1,61 @@
+---
+// @ts-nocheck
+import DocsLayout from '../../../../layouts/DocsLayout.astro';
+import PageFooter from '../../../../components/PageFooter.astro';
+import { doc, docProseRoot } from '../../../../styles';
+import { linkButton } from '@examples/design-system';
+import { extractDocHeadings, getAllDocs } from '../../../../lib/docs';
+import {
+  listChangelogRefs,
+  loadChangelogPage,
+  type ChangelogScope,
+} from '../../../../lib/changelogs';
+import { editUrlForChangelogPath } from '../../../../lib/site';
+
+export async function getStaticPaths() {
+  const refs = await listChangelogRefs();
+  return refs.map((ref) => ({
+    params: { scope: ref.scope, name: ref.name },
+  }));
+}
+
+const scope = Astro.params.scope as ChangelogScope | undefined;
+const name = Astro.params.name;
+
+if (scope !== 'packages' && scope !== 'examples') {
+  return Astro.redirect('/docs/changelog');
+}
+if (!name) {
+  return Astro.redirect('/docs/changelog');
+}
+
+const page = await loadChangelogPage({ scope, name });
+if (!page) {
+  return Astro.redirect('/docs/changelog');
+}
+
+const docs = await getAllDocs();
+const docsBySlug = Object.fromEntries(docs.map((entry) => [entry.slug, entry]));
+const tocHeadings = extractDocHeadings(page.html);
+const path = `/docs/changelog/${scope}/${name}`;
+const editHref = editUrlForChangelogPath(scope, name);
+---
+
+<DocsLayout
+  docsBySlug={docsBySlug}
+  currentSlug={path}
+  title={`${page.title} changelog - typestyles documentation`}
+  tocHeadings={tocHeadings}
+>
+  <article class={doc.root}>
+    <p class={doc.eyebrowRow}>
+      <a class:list={[linkButton.base, linkButton.ghost]} href="/docs/changelog">← All changelogs</a>
+    </p>
+    <h1 class={doc.title}>{page.title}</h1>
+    <p class={doc.description}>
+      <code>{scope}/{name}/CHANGELOG.md</code>
+    </p>
+    <div class:list={[docProseRoot, doc.content]} set:html={page.html} />
+    <PageFooter lastModified={page.lastModified} editHref={editHref} />
+  </article>
+</DocsLayout>

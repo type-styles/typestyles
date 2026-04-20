@@ -24,6 +24,8 @@ const { sidebarRootOpenClass, sidebarBackdropVisibleClass } = Astro.props;
     backdropElement.classList.toggle(sidebarBackdropVisibleClass, isOpen);
     document.body.style.overflow = isOpen ? 'hidden' : '';
     menuIconElement.textContent = isOpen ? '✕' : '☰';
+    menuToggleElement?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuToggleElement?.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
   }
 
   menuToggleElement?.addEventListener('click', () => setSidebar(!isOpen));

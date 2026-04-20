@@ -104,6 +104,11 @@ function withHeadingAnchors(html: string): string {
   );
 }
 
+/** Markdown body (no frontmatter) through the same pipeline as documentation pages. */
+export function renderDocBodyToHtml(markdown: string): string {
+  return withHeadingAnchors(wrapCodeBlocks(marked.parse(markdown) as string));
+}
+
 function parseFrontmatter(markdown: string): { data: Record<string, string>; body: string } {
   if (!markdown.startsWith('---\n')) {
     return { data: {}, body: markdown };

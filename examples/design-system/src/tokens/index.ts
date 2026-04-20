@@ -97,6 +97,15 @@ const colorRefShape: DesignColorRefs = {
 
 export const colorTokens = tokens.create('color', colorRefShape);
 
+/** Full `border` / `border-*` shorthand built from width + semantic border color. */
+export const strokeTokens = tokens.create('stroke', {
+  /**
+   * Testing
+   */
+  default: `${borderWidthTokens.default} solid ${colorTokens.border.default}`,
+  strong: `${borderWidthTokens.default} solid ${colorTokens.border.strong}`,
+});
+
 const emptySyntaxValues: DesignSyntaxValues = {
   base: '',
   keyword: '',
@@ -142,6 +151,7 @@ export const designPrimitiveTokens = {
 export const designSemanticTokens = {
   color: colorTokens,
   syntax: syntaxTokens,
+  stroke: strokeTokens,
 } as const;
 
 export const designComponentTokens = {

@@ -1,0 +1,56 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import { doc, docProseRoot } from '../../../styles';
+import { getAllDocs } from '../../../lib/docs';
+import { listChangelogRefs, type ChangelogScope } from '../../../lib/changelogs';
+
+const docs = await getAllDocs();
+const docsBySlug = Object.fromEntries(docs.map((entry) => [entry.slug, entry]));
+const refs = await listChangelogRefs();
+
+function labelForScope(scope: ChangelogScope): string {
+  return scope === 'packages' ? 'Packages' : 'Examples';
+}
+
+const byScope = refs.reduce(
+  (acc, ref) => {
+    (acc[ref.scope] ??= []).push(ref);
+    return acc;
+  },
+  {} as Record<ChangelogScope, typeof refs>,
+);
+---
+
+<DocsLayout
+  docsBySlug={docsBySlug}
+  currentSlug="/docs/changelog"
+  title="Changelog - typestyles documentation"
+>
+  <article class={doc.root}>
+    <h1 class={doc.title}>Changelog</h1>
+    <p class={doc.description}>
+      Version history for published packages and examples, generated from each workspace{' '}
+      <code>CHANGELOG.md</code> (maintained with Changesets).
+    </p>
+    <div class:list={[docProseRoot, doc.content]}>
+      {
+        (['packages', 'examples'] as const).map((scope) => {
+          const items = byScope[scope];
+          if (!items?.length) return null;
+          return (
+            <div>
+              <h2>{labelForScope(scope)}</h2>
+              <ul>
+                {items.map((ref) => (
+                  <li>
+                    <a href={`/docs/changelog/${ref.scope}/${ref.name}`}>{ref.name}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })
+      }
+    </div>
+  </article>
+</DocsLayout>

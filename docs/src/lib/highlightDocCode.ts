@@ -1,6 +1,6 @@
 import hljs from 'highlight.js';
 
-/** Highlighting for docs prose / {@link ../components/docs/Code.astro Code}; matches marked pipeline. */
+/** Highlighting for docs prose / {@link ../components/Code.astro Code}; matches marked pipeline. */
 export function highlightDocCode(
   code: string,
   lang?: string,

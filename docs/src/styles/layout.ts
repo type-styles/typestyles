@@ -5,30 +5,46 @@ const bp = '@media (max-width: 768px)';
 const desktop = '@media (min-width: 769px)';
 const tocBp = '@media (min-width: 1024px)';
 
-/** Shared by desktop site header and mobile top bar (`space.8` + `space.2` = 56px). */
+/** Offset for fixed docs site header (`space.8` + `space.2` = 56px). */
 const siteHeaderHeight = `calc(${t.space[8]} + ${t.space[2]})`;
 
 const layoutBase = styles.component(
   'docs-layout',
   {
+    /** Wraps `Sidebar` — inline legacy was flex-shrink + align-self. */
+    sidebarShell: {
+      flexShrink: 0,
+      alignSelf: 'stretch',
+    },
+    /** Homepage: no duplicate nav beside top bar; sidebar stays mounted for mobile overlay. */
+    sidebarShellHiddenDesktop: {
+      [desktop]: {
+        display: 'none',
+      },
+    },
     root: {
       display: 'flex',
       minHeight: '100vh',
       color: t.color.text.primary,
       backgroundColor: t.color.background.app,
-      [desktop]: {
-        paddingTop: siteHeaderHeight,
-      },
+      paddingTop: siteHeaderHeight,
     },
     content: {
       flex: 1,
       minWidth: 0,
-      [bp]: {
-        paddingTop: siteHeaderHeight,
-      },
     },
     main: {
       maxWidth: '768px',
+      padding: t.space[8],
+      [bp]: {
+        padding: `${t.space[5]} ${t.space[4]}`,
+      },
+    },
+    /** Marketing homepage: wider measure than doc articles. */
+    mainLanding: {
+      maxWidth: 'min(1120px, 100%)',
+      margin: '0 auto',
+      width: '100%',
       padding: t.space[8],
       [bp]: {
         padding: `${t.space[5]} ${t.space[4]}`,

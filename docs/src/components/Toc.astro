@@ -1,8 +1,8 @@
 ---
 // @ts-nocheck
-import { toc } from '../../styles';
-import type { DocHeading } from '../../lib/docs';
-import DocsTocNav from './DocsTocNav.astro';
+import { toc } from '../styles';
+import type { DocHeading } from '../lib/docs';
+import TocNav from './TocNav.astro';
 
 interface Props {
   headings: DocHeading[];
@@ -17,7 +17,7 @@ const detailsId = 'docs-page-toc';
   <details class={toc.details} id={detailsId}>
     <summary class={toc.summary}>On this page</summary>
     <div class={toc.panel}>
-      <DocsTocNav headings={headings} labelledBy={labelId} />
+      <TocNav headings={headings} labelledBy={labelId} />
     </div>
   </details>
 </div>
