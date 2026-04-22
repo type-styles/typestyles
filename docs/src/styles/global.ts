@@ -1,4 +1,3 @@
-import { content } from 'typestyles';
 import { reset, selection } from 'typestyles/globals';
 import { designTokens as t } from '@examples/design-system';
 
