@@ -1,4 +1,3 @@
-import { content } from 'typestyles';
 import { reset, selection } from 'typestyles/globals';
 import { designTokens as t } from '@examples/design-system';
 
@@ -32,15 +31,4 @@ global.style(
 
 global.style('html:root', {
   scrollBehavior: 'smooth',
-  '&::after': {
-    content: content(''),
-    position: 'fixed',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    border: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
-    zIndex: 9999,
-    pointerEvents: 'none',
-  },
 });

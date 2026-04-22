@@ -3,8 +3,6 @@ title: Animation Patterns
 description: Common animation patterns and techniques with typestyles
 ---
 
-# Animation Patterns
-
 TypeStyles supports CSS animations through the `keyframes` API. This guide covers common animation patterns and best practices.
 
 ## Basic animations

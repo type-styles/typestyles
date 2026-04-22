@@ -14,25 +14,26 @@ import {
   neoBrutalistShadowOffsetLight,
 } from './neo-brutalist-shadows';
 
-/** Matches `background.app` hue in {@link defaultDarkColorValues}. */
-const defaultDarkHue = 260;
+/** Hue for dark chrome borders / shadow offset (aligned with soft dark field). */
+const defaultDarkHue = 88;
 
-const defaultLightSubtle = p.palette['slate-2'];
+/** Warm paper field (editorial / technical print). */
+const defaultLightSubtle = p.palette['sand-2'];
 
 export const defaultLightColorValues: DesignColorValues = {
   background: {
-    app: p.palette['neutral-1'],
-    surface: p.palette['neutral-1'],
+    app: '#F5F1E9',
+    surface: '#FAF8F2',
     subtle: defaultLightSubtle,
-    elevated: p.palette['neutral-1'],
+    elevated: '#FFFCF6',
   },
   text: {
-    primary: p.palette['slate-10'],
-    secondary: p.palette['slate-7'],
+    primary: '#14110D',
+    secondary: p.palette['stone-8'],
     onAccent: p.palette['neutral-1'],
     onDanger: p.palette['neutral-1'],
   },
-  accent: { default: p.palette['blue-6'], hover: p.palette['blue-7'] },
+  accent: { default: p.palette['sky-7'], hover: p.palette['sky-8'] },
   border: {
     default: '#000',
     strong: '#000',
@@ -48,10 +49,11 @@ export const defaultLightColorValues: DesignColorValues = {
 
 export const defaultDarkColorValues: DesignColorValues = {
   background: {
-    app: color.oklch('12%', 0.028, 260),
-    surface: p.palette['slate-9'],
-    subtle: p.palette['slate-8'],
-    elevated: p.palette['slate-9'],
+    /** Soft warm field — not ink-black; pairs with cream light mode. */
+    app: color.oklch('23%', 0.012, 88),
+    surface: color.oklch('27%', 0.011, 88),
+    subtle: color.oklch('31%', 0.01, 88),
+    elevated: color.oklch('27%', 0.011, 88),
   },
   text: {
     primary: p.palette['slate-1'],

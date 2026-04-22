@@ -37,9 +37,9 @@ const offsetColor = colorTokens.shadow.offset;
  * {@link neoBrutalistShadowOffsetDark} (per-theme hue, aligned with `background.app`).
  */
 export const neoBrutalistShadow: DesignShadowValues = {
-  xs: `2px 2px 0 0 ${offsetColor}`,
-  sm: `3px 3px 0 0 ${offsetColor}`,
-  md: `4px 4px 0 0 ${offsetColor}`,
-  lg: `6px 6px 0 0 ${offsetColor}`,
-  xl: `8px 8px 0 0 ${offsetColor}`,
+  xs: `1px 1px 0 0 ${offsetColor}`,
+  sm: `2px 2px 0 0 ${offsetColor}`,
+  md: `3px 3px 0 0 ${offsetColor}`,
+  lg: `4px 4px 0 0 ${offsetColor}`,
+  xl: `5px 5px 0 0 ${offsetColor}`,
 };

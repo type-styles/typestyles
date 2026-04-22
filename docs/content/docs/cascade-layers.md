@@ -3,8 +3,6 @@ title: Cascade layers (@layer)
 description: Opt-in CSS cascade layers for predictable specificity against global CSS
 ---
 
-# Cascade layers (`@layer`)
-
 By default, TypeStyles emits **flat** rules (no `@layer`), matching legacy behavior and keeping the API surface small.
 
 When you opt in with a **`layers`** tuple on `createStyles`, `createTokens`, or the unified **`createTypeStyles`** factory, TypeStyles:

@@ -8,11 +8,13 @@ export const docsNavLinkInteraction = {
   /** Default link hover */
   hover: {
     color: t.color.accent.default,
-    backgroundColor: t.color.accent.subtle,
+    backgroundColor: t.color.background.surface,
   },
   /** Current page / in-page location (combine with border/offset rules per surface) */
   current: {
     color: t.color.text.primary,
-    backgroundColor: t.color.background.subtle,
+    backgroundColor: t.color.background.surface,
+    borderTop: t.stroke.strong,
+    borderBottom: t.stroke.strong,
   },
 } as const;

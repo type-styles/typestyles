@@ -14,6 +14,7 @@ import Pagination from '../../components/Pagination.astro';
 import { doc, docProseRoot } from '../../styles';
 import { fileTree as fileTreeStyles, linkButton } from '@examples/design-system';
 import { extractDocHeadings, getAllDocs, getDocBySlug, getDocNeighbors } from '../../lib/docs';
+import { findDoc } from '../../navigation';
 import { editUrlForDocSlug } from '../../lib/site';
 
 export async function getStaticPaths() {
@@ -39,6 +40,9 @@ if (!entry) {
 const neighbors = getDocNeighbors(slug);
 const tocHeadings = extractDocHeadings(entry.html);
 const editHref = editUrlForDocSlug(slug);
+const navEntry = findDoc(slug);
+/** Surface the parent nav category as a kicker above H1 (falls back to "Documentation"). */
+const kicker = navEntry?.category?.title ?? 'Documentation';
 ---
 
 <DocsLayout
@@ -48,6 +52,10 @@ const editHref = editUrlForDocSlug(slug);
   tocHeadings={tocHeadings}
 >
   <article class={doc.root}>
+    <p class={doc.kicker} aria-hidden="true">
+      <span class={doc.kickerDot}></span>
+      {kicker}
+    </p>
     <h1 class={doc.title}>{entry.title}</h1>
     {entry.description && <p class={doc.description}>{entry.description}</p>}
     <div class:list={[docProseRoot, doc.content]} set:html={entry.html} />

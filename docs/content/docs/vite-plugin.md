@@ -3,8 +3,6 @@ title: Vite Plugin
 description: Enhance your Vite development experience with HMR and style validation
 ---
 
-# Vite Plugin
-
 The optional `@typestyles/vite` plugin enhances your development experience with Hot Module Replacement (HMR) and helpful warnings.
 
 ## Installation

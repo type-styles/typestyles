@@ -11,75 +11,61 @@ export const doc = styles.component(
     eyebrowRow: {
       marginBottom: t.space[2],
     },
-    title: {
-      fontSize: t.space[6],
+    /** Mono kicker above H1 surfacing the parent navigation category (e.g. CORE CONCEPTS —). */
+    kicker: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: t.space[2],
+      margin: 0,
+      marginBottom: t.space[3],
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.xs,
       fontWeight: t.fontWeight.bold,
-      marginBottom: t.space[2],
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: t.color.text.secondary,
+    },
+    kickerDot: {
+      width: '6px',
+      height: '6px',
+      backgroundColor: t.color.accent.default,
+    },
+    title: {
+      fontFamily: t.fontFamily.display,
+      fontStyle: 'italic',
+      fontSize: 'clamp(2rem, 2.2vw + 1.25rem, 2.75rem)',
+      fontWeight: t.fontWeight.bold,
+      marginTop: 0,
+      marginBottom: t.space[3],
       color: t.color.text.primary,
       letterSpacing: '-0.025em',
-      lineHeight: t.lineHeight.tight,
+      lineHeight: 1.1,
+      textWrap: 'balance',
     },
     description: {
       fontSize: t.fontSize.lg,
       color: t.color.text.secondary,
+      marginTop: 0,
       marginBottom: t.space[6],
       lineHeight: t.lineHeight.relaxed,
+      maxWidth: '60ch',
+      textWrap: 'pretty',
     },
+    /**
+     * Component-specific layer over `proseContent.root`. Prose (link, inline code, table, blockquote)
+     * styling lives exclusively in `proseContent` so there's a single source of truth. This file
+     * only resets highlighted code tokens inside fenced blocks so the inline-code prose treatment
+     * doesn't bleed into `hljs` spans.
+     */
     content: {
-      '& a:not([data-prose-heading-anchor]):not([data-alert-action])': {
-        color: t.color.accent.default,
-        textDecoration: 'none',
-        transition: 'color 0.12s ease',
-        '&:hover': {
-          color: t.color.accent.hover,
-          textDecoration: 'underline',
-        },
-      },
-      '& a[data-prose-heading-anchor]': {
-        color: t.color.text.secondary,
-        fontWeight: t.fontWeight.medium,
-        '&:hover': {
-          color: t.color.accent.default,
-        },
-      },
-      '& a[data-alert-action]': {
-        color: 'inherit',
-        fontWeight: 'inherit',
-        textDecoration: 'underline',
-        '&:hover': {
-          color: 'inherit',
-          textDecoration: 'none',
-        },
-      },
       '& [data-codeblock] code': {
         fontFamily: 'inherit',
         fontSize: 'inherit',
+        fontWeight: 'inherit',
+        color: 'inherit',
         backgroundColor: 'transparent',
         padding: 0,
         borderRadius: 0,
-        border: 'none',
-      },
-      '& code': {
-        fontFamily: t.fontFamily.mono,
-        fontSize: t.fontSize.sm,
-        backgroundColor: t.color.background.subtle,
-        padding: `2px ${t.space[1]}`,
-        borderRadius: t.radius.sm,
-      },
-      '& pre:not([data-codeblock-pre])': {
-        fontFamily: t.fontFamily.mono,
-        fontSize: t.fontSize.sm,
-        lineHeight: 1.6,
-        backgroundColor: t.color.background.subtle,
-        padding: t.space[4],
-        borderRadius: t.radius.md,
-        border: `1px solid ${t.color.border.default}`,
-        overflow: 'auto',
-        marginBottom: t.space[4],
-      },
-      '& pre code': {
-        backgroundColor: 'transparent',
-        padding: 0,
         border: 'none',
       },
     },

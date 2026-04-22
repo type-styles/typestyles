@@ -3,8 +3,6 @@ title: API Reference
 description: Complete API reference for typestyles
 ---
 
-# API Reference
-
 Auto-generated documentation for all typestyles APIs.
 
 ## Core Exports

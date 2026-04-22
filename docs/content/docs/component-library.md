@@ -3,8 +3,6 @@ title: Component Library Setup
 description: Building a reusable component library with typestyles
 ---
 
-# Component Library Setup
-
 This guide shows you how to set up a reusable component library using typestyles, suitable for publishing to npm.
 
 ## Project structure

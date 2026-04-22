@@ -16,7 +16,7 @@ export const tabs = styles.component(
     },
     tab: {
       border: 'none',
-      borderBottom: '2px solid transparent',
+      borderBottom: `${t.borderWidth.default} solid transparent`,
       backgroundColor: 'transparent',
       padding: `${t.space[2]} ${t.space[3]}`,
       color: t.color.text.secondary,

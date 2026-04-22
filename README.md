@@ -422,7 +422,7 @@ color.primary; // "var(--color-primary)"
 
 ## Comparison
 
-High-level tradeoffs (details and nuance: [docs — TypeStyles vs alternatives](./docs/content/docs/framework-comparison.md)):
+High-level tradeoffs (details and nuance: [docs — framework comparison](./docs/content/docs/framework-comparison.md)):
 
 | Feature                    | TypeStyles                   | StyleX           | Emotion / styled-components | Panda CSS    | vanilla-extract  | CSS Modules | Tailwind        |
 | -------------------------- | ---------------------------- | ---------------- | --------------------------- | ------------ | ---------------- | ----------- | --------------- |

@@ -3,8 +3,6 @@ title: Migration Guide
 description: Migrate to typestyles from other CSS-in-JS libraries
 ---
 
-# Migration Guide
-
 Switching to typestyles from other styling solutions is straightforward. This guide covers the most common migration paths.
 
 If you are adopting the variant API, start with [Components](/docs/components).

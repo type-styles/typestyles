@@ -3,8 +3,6 @@ title: TypeScript Tips
 description: TypeScript best practices and advanced types for typestyles
 ---
 
-# TypeScript Tips
-
 TypeStyles is built with TypeScript in mind. This guide covers tips for getting the most out of types.
 
 ## Basic types

@@ -3,8 +3,6 @@ title: Keyframes
 description: Create CSS animations with type-safe keyframe definitions
 ---
 
-# Keyframes
-
 The `keyframes` API lets you define CSS animations with type-safe keyframe stops. Like styles and tokens, keyframes generate readable names and integrate seamlessly with the rest of your typestyles.
 
 ## Creating animations

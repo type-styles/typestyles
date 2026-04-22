@@ -3,8 +3,6 @@ title: Open Props
 description: Type-safe access to Open Props CSS custom properties
 ---
 
-# Open Props
-
 [Open Props](https://open-props.style/) is a collection of expertly crafted CSS design tokens. This package provides type-safe access to all Open Props tokens directly in TypeScript.
 
 ## Installation

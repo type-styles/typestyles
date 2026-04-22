@@ -33,7 +33,8 @@ export const codeBlock = styles.component(
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: t.space[2],
-      padding: `${t.space[2]} ${t.space[4]}`,
+      paddingBlock: t.space[1],
+      paddingInline: t.space[3],
       borderBottom: `${t.borderWidth.default} solid ${t.color.border.default}`,
       backgroundColor: t.codeBlock.backgroundHeader,
     },
@@ -74,45 +75,46 @@ export const codeBlock = styles.component(
       gap: t.space[1],
       flexShrink: 0,
     },
+    /**
+     * Copy button reads as a mono uppercase text action rather than a boxed button. The header
+     * already has its own hairline + toolbar tint; a second bordered chip inside it reads as
+     * double chrome.
+     */
     copyButton: {
       appearance: 'none',
-      border: `${t.borderWidth.default} solid ${t.color.border.default}`,
-      backgroundColor: t.codeBlock.background,
-      color: t.color.text.primary,
-      borderRadius: t.radius.md,
-      padding: '6px 10px',
-      fontSize: t.fontSize.sm,
-      fontWeight: t.fontWeight.bold,
+      border: 'none',
+      backgroundColor: 'transparent',
+      color: t.color.text.secondary,
+      borderRadius: t.radius.sm,
+      paddingBlock: t.space[1],
+      paddingInline: t.space[2],
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.xs,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
       cursor: 'pointer',
-      boxShadow: t.shadow.xs,
-      transition: t.transition.controlSurface,
+      transition: t.transition.colorShift,
       '&:hover': {
+        color: t.color.text.primary,
         backgroundColor: t.color.background.subtle,
-      },
-      '&:active': {
-        transform: 'translate(2px, 2px)',
-        boxShadow: 'none',
       },
       '&:focus-visible': {
         outline: `${t.borderWidth.thin} solid ${t.color.border.focus}`,
         outlineOffset: '2px',
       },
       '&[data-copied]': {
-        borderColor: t.color.success.default,
         color: t.color.success.default,
       },
       '&[data-error]': {
-        borderColor: t.color.danger.default,
         color: t.color.danger.default,
       },
     },
     copyButtonIdle: {},
     copyButtonCopied: {
-      borderColor: t.color.success.default,
       color: t.color.success.default,
     },
     copyButtonError: {
-      borderColor: t.color.danger.default,
       color: t.color.danger.default,
     },
     feedback: {

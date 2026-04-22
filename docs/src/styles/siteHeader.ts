@@ -6,6 +6,7 @@ const desktop = '@media (min-width: 769px)';
 
 const siteHeaderHeight = `calc(${t.space[8]} + ${t.space[2]})`;
 const compactControl = `calc(${t.space[6]} + ${t.space[1]})`;
+const sidebarWidth = '280px';
 
 export const siteHeader = styles.component(
   'docs-site-header',
@@ -25,13 +26,18 @@ export const siteHeader = styles.component(
       display: 'flex',
       alignItems: 'stretch',
       justifyContent: 'space-between',
-      gap: t.space[2],
+      gap: 0,
       height: siteHeaderHeight,
       minHeight: siteHeaderHeight,
       paddingInline: t.space[4],
       boxSizing: 'border-box',
       [desktop]: {
-        gap: t.space[6],
+        /**
+         * Flush horizontal edges so the header grid lines (logo | nav | … | search | tools) line up
+         * with a straight vertical rhythm; insets are applied to individual cells instead.
+         */
+        paddingInline: 0,
+        gap: 0,
       },
     },
     menuToggle: {
@@ -43,6 +49,7 @@ export const siteHeader = styles.component(
       padding: 0,
       margin: 0,
       flexShrink: 0,
+      alignSelf: 'center',
       backgroundColor: t.color.background.surface,
       border: `${t.borderWidth.default} solid ${t.color.border.default}`,
       color: t.color.text.primary,
@@ -71,29 +78,43 @@ export const siteHeader = styles.component(
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      [bp]: {
+        marginInline: t.space[1],
+        gap: t.space[1],
+      },
       [desktop]: {
         flex: 'initial',
         flexGrow: 0,
         justifyContent: 'flex-start',
         alignItems: 'stretch',
+        marginInline: 0,
+        borderInlineEnd: t.stroke.strong,
       },
     },
     logo: {
+      fontFamily: t.fontFamily.display,
+      fontStyle: 'italic',
       fontSize: t.fontSize.xl,
       fontWeight: t.fontWeight.bold,
       color: t.color.text.primary,
       textDecoration: 'none',
-      letterSpacing: '-0.03em',
+      letterSpacing: '0.02em',
       textTransform: 'uppercase',
       flexShrink: 0,
       alignSelf: 'center',
-      paddingInlineStart: t.space[4],
-      paddingInlineEnd: t.space[6],
+      paddingInline: t.space[2],
+      paddingBlock: t.space[1],
+      [desktop]: {
+        width: sidebarWidth,
+        boxSizing: 'border-box',
+        paddingInlineStart: t.space[4],
+        paddingInlineEnd: t.space[4],
+        paddingBlock: 0,
+      },
       '&:hover': { color: t.color.accent.default },
       [bp]: {
         fontSize: t.fontSize.lg,
-        paddingInlineStart: t.space[2],
-        paddingInlineEnd: t.space[2],
+        paddingInline: t.space[2],
       },
     },
     logoAccent: {
@@ -107,12 +128,13 @@ export const siteHeader = styles.component(
         gap: 0,
         alignSelf: 'stretch',
         height: '100%',
-        borderInlineStart: `${t.borderWidth.default} solid ${t.color.border.default}`,
+        borderInlineStart: t.stroke.strong,
+        marginInlineStart: '-1px',
       },
     },
     /**
-     * Sidebar/TOC-style type and colors. Current item: `::after` bar sits in the header’s bottom border lane
-     * (translated past the link box) so it overlaps the root `border-bottom` instead of stacking above it.
+     * Primary nav tab — mono + uppercase to match doc chrome; active state is a full ink “stamp”
+     * (tinted field) so it reads at a glance next to the logo.
      */
     navLink: {
       display: 'flex',
@@ -120,16 +142,18 @@ export const siteHeader = styles.component(
       boxSizing: 'border-box',
       height: '100%',
       margin: 0,
-      fontSize: t.fontSize.md,
-      fontFamily: t.fontFamily.sans,
-      lineHeight: 1.35,
+      fontSize: t.fontSize.sm,
+      fontFamily: t.fontFamily.mono,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.04em',
+      lineHeight: 1.2,
       color: t.color.text.secondary,
       textDecoration: 'none',
-      paddingInline: t.space[5],
-      borderRight: t.stroke.default,
+      paddingInline: t.space[4],
       backgroundColor: 'transparent',
       cursor: 'pointer',
       zIndex: 2,
+      transition: t.transition.colorShift,
       '&:hover': {
         color: t.color.text.primary,
         backgroundColor: t.color.background.subtle,
@@ -138,8 +162,8 @@ export const siteHeader = styles.component(
         position: 'relative',
         zIndex: 3,
         color: t.color.accent.default,
-        fontWeight: t.fontWeight.medium,
         backgroundColor: t.color.accent.subtle,
+        boxShadow: `inset 0 -2px 0 0 ${t.color.accent.default}`,
         '&:hover': {
           color: t.color.accent.default,
           backgroundColor: t.color.accent.subtle,
@@ -152,17 +176,27 @@ export const siteHeader = styles.component(
       flexShrink: 0,
       alignSelf: 'center',
       height: '100%',
+      [desktop]: {
+        flex: 1,
+        minWidth: 0,
+        alignSelf: 'stretch',
+        justifyContent: 'flex-end',
+      },
     },
     searchWrapper: {
       display: 'flex',
-      alignItems: 'center',
-      position: 'relative',
+      alignItems: 'stretch',
       flexShrink: 0,
-      borderInlineStart: `${t.borderWidth.default} solid ${t.color.border.default}`,
-      paddingInline: t.space[3],
       [bp]: {
         borderInlineStart: 'none',
-        paddingInline: 0,
+      },
+      [desktop]: {
+        flex: '0 1 12rem',
+        minWidth: 0,
+        maxWidth: 'min(19rem, 100%)',
+        alignSelf: 'stretch',
+        marginInline: 0,
+        borderInlineStart: t.stroke.strong,
       },
     },
     searchIcon: {
@@ -172,18 +206,10 @@ export const siteHeader = styles.component(
       color: t.color.text.placeholder,
       pointerEvents: 'none',
       lineHeight: 0,
-      [bp]: {
-        display: 'none',
-      },
-    },
-    searchTriggerIconMobile: {
-      display: 'none',
-      alignItems: 'center',
-      justifyContent: 'center',
-      lineHeight: 0,
-      color: t.color.text.primary,
-      [bp]: {
-        display: 'inline-flex',
+      flexShrink: 0,
+      [desktop]: {
+        color: t.color.text.placeholder,
+        opacity: 0.8,
       },
     },
     searchTriggerLabel: {
@@ -195,9 +221,12 @@ export const siteHeader = styles.component(
       width: '100%',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'flex-start',
+      justifyContent: 'space-between',
+      gap: t.space[2],
       margin: 0,
-      paddingInline: t.space[4],
+      minWidth: 0,
+      boxSizing: 'border-box',
+      paddingInline: t.space[3],
       paddingBlock: t.space[2],
       fontSize: t.fontSize.sm,
       fontFamily: t.fontFamily.sans,
@@ -211,15 +240,30 @@ export const siteHeader = styles.component(
         backgroundColor: t.color.background.subtle,
         color: t.color.text.primary,
       },
+      '&:active': {
+        backgroundColor: t.color.accent.subtle,
+      },
       '&:focus-visible': {
         outline: `${t.borderWidth.thin} solid ${t.color.accent.default}`,
-        outlineOffset: '-2px',
+        outlineOffset: '2px',
+      },
+      [desktop]: {
+        minHeight: siteHeaderHeight,
+        alignSelf: 'stretch',
+        paddingBlock: 0,
+        paddingInline: t.space[4],
+        transition: t.transition.colorShift,
+        '&:focus-visible': {
+          outline: `${t.borderWidth.thin} solid ${t.color.accent.default}`,
+          outlineOffset: '2px',
+        },
       },
       [bp]: {
         width: compactControl,
         height: compactControl,
         padding: 0,
         justifyContent: 'center',
+        gap: 0,
         backgroundColor: t.color.background.surface,
         border: `${t.borderWidth.default} solid ${t.color.border.default}`,
         boxShadow: t.shadow.xs,
@@ -243,15 +287,23 @@ export const siteHeader = styles.component(
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: t.fontSize.xs,
-      color: t.color.text.placeholder,
-      backgroundColor: t.color.accent.subtle,
-      paddingInline: t.space[2],
-      paddingBlock: t.space[3],
-      fontFamily: t.fontFamily.sans,
       lineHeight: 1,
+      color: t.color.text.secondary,
+      backgroundColor: 'transparent',
+      border: 'none',
+      fontFamily: t.fontFamily.mono,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.04em',
+      paddingInline: 0,
+      paddingBlock: 0,
       pointerEvents: 'none',
+      flexShrink: 0,
+      opacity: 0.8,
       [bp]: {
         display: 'none',
+      },
+      [desktop]: {
+        marginInlineStart: 'auto',
       },
     },
     githubIcon: {
@@ -262,9 +314,10 @@ export const siteHeader = styles.component(
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: t.space[2],
-      paddingInline: t.space[4],
-      minHeight: compactControl,
+      boxSizing: 'border-box',
+      minWidth: siteHeaderHeight,
+      width: siteHeaderHeight,
+      padding: 0,
       fontSize: t.fontSize.sm,
       fontWeight: t.fontWeight.bold,
       fontFamily: t.fontFamily.sans,
@@ -272,16 +325,25 @@ export const siteHeader = styles.component(
       color: t.color.text.primary,
       backgroundColor: 'transparent',
       border: 'none',
-      borderInlineStart: `${t.borderWidth.default} solid ${t.color.border.strong}`,
+      borderInlineStart: t.stroke.strong,
       boxShadow: 'none',
-      minWidth: 'unset',
+      alignSelf: 'stretch',
+      transition: t.transition.colorShift,
       '&:hover': {
-        backgroundColor: t.color.accent.default,
-        color: t.color.text.onAccent,
+        backgroundColor: t.color.background.subtle,
+        color: t.color.accent.default,
       },
       '&:active': {
-        boxShadow: 'none',
-        transform: 'translate(2px, 2px)',
+        backgroundColor: t.color.accent.subtle,
+      },
+      '&:focus-visible': {
+        outline: `${t.borderWidth.thin} solid ${t.color.accent.default}`,
+        outlineOffset: '2px',
+        zIndex: 1,
+      },
+      [bp]: {
+        minWidth: compactControl,
+        width: compactControl,
       },
     },
   },

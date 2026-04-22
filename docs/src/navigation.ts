@@ -20,7 +20,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       slug: 'getting-started',
       items: [
         { slug: 'getting-started', title: 'Getting Started' },
-        { slug: 'framework-comparison', title: 'TypeStyles vs alternatives' },
+        { slug: 'framework-comparison', title: 'Framework comparison' },
         { slug: 'api-reference', title: 'API Reference' },
         { href: '/docs/changelog', title: 'Changelog' },
       ],

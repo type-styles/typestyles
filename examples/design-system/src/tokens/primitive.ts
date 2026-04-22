@@ -19,8 +19,12 @@ export const radiusValues = {
 } as const;
 
 export const fontFamilyValues = {
-  sans: '"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  mono: "ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, monospace",
+  /** Editorial display: page titles, hero, masthead. */
+  display:
+    '"Fraunces", "Iowan Old Style", "Apple Garamond", Baskerville, "Palatino Linotype", Palatino, Georgia, serif',
+  /** UI, body, and data labels — monospace technical rhythm. */
+  sans: '"JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Monaco, Consolas, monospace',
+  mono: '"JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Monaco, Consolas, monospace',
 } as const;
 
 export const fontSizeValues = {
@@ -50,11 +54,11 @@ export type DesignShadowKeys = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type DesignShadowValues = Record<DesignShadowKeys, string>;
 
 export const shadowValues: DesignShadowValues = {
-  xs: '2px 2px 0 0 #000',
-  sm: '3px 3px 0 0 #000',
-  md: '4px 4px 0 0 #000',
-  lg: '6px 6px 0 0 #000',
-  xl: '8px 8px 0 0 #000',
+  xs: '1px 1px 0 0 #000',
+  sm: '2px 2px 0 0 #000',
+  md: '3px 3px 0 0 #000',
+  lg: '4px 4px 0 0 #000',
+  xl: '5px 5px 0 0 #000',
 };
 
 export const durationValues = {
@@ -81,9 +85,9 @@ export const transitionValues = {
 } as const;
 
 export const borderWidthValues = {
-  thin: '2px',
-  default: '3px',
-  thick: '4px',
+  thin: '1px',
+  default: '1px',
+  thick: '1px',
 } as const;
 
 export type DesignSpaceValues = typeof spaceValues;

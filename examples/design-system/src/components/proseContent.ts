@@ -14,6 +14,7 @@ export const proseContent = styles.component(
   {
     slots: ['root', 'tableWrap', 'headingAnchor'],
     root: {
+      fontFamily: t.fontFamily.sans,
       fontSize: t.fontSize.md,
       lineHeight: 1.75,
       'html[data-mode="dark"] &': {
@@ -26,9 +27,11 @@ export const proseContent = styles.component(
       },
       color: t.color.text.primary,
       '& h1': {
+        fontFamily: t.fontFamily.display,
+        fontStyle: 'italic',
         fontSize: '28px',
-        fontWeight: t.fontWeight.semibold,
-        letterSpacing: '-0.02em',
+        fontWeight: t.fontWeight.bold,
+        letterSpacing: '-0.015em',
         lineHeight: 1.25,
         marginTop: 0,
         marginBottom: t.space[3],
@@ -38,28 +41,45 @@ export const proseContent = styles.component(
           marginBottom: t.space[2],
         },
       },
+      /**
+       * H2 as editorial section break — italic Fraunces with a full-width hairline rule above it.
+       * First H2 after an intro gets no rule (description block already provides one).
+       */
       '& h2': {
-        fontSize: '22px',
-        fontWeight: t.fontWeight.semibold,
+        fontFamily: t.fontFamily.display,
+        fontStyle: 'italic',
+        fontSize: '24px',
+        fontWeight: t.fontWeight.bold,
         letterSpacing: '-0.015em',
-        lineHeight: 1.3,
-        marginTop: t.space[6],
-        marginBottom: t.space[2],
+        lineHeight: 1.25,
+        marginTop: t.space[8],
+        marginBottom: t.space[3],
+        paddingTop: t.space[5],
+        borderTop: t.stroke.strong,
         color: t.color.text.primary,
         [bp]: {
-          fontSize: '19px',
-          marginTop: t.space[5],
+          fontSize: '21px',
+          marginTop: t.space[6],
+          paddingTop: t.space[4],
         },
+      },
+      '& > h2:first-of-type, & > h2:first-child': {
+        marginTop: t.space[4],
+        paddingTop: 0,
+        borderTop: 'none',
+      },
+      '& h2:first-child': {
+        marginTop: 0,
       },
       '& h3': {
         fontSize: '17px',
         fontWeight: t.fontWeight.semibold,
         lineHeight: 1.35,
-        marginTop: t.space[4],
-        marginBottom: t.space[1],
+        marginTop: t.space[5],
+        marginBottom: t.space[2],
         color: t.color.text.primary,
         [bp]: {
-          marginTop: t.space[3],
+          marginTop: t.space[4],
         },
       },
       '& h4, & h5, & h6': {
@@ -76,9 +96,9 @@ export const proseContent = styles.component(
         position: 'relative',
       },
       '& p': {
-        marginBottom: t.space[3],
+        marginBottom: t.space[4],
         [bp]: {
-          marginBottom: t.space[2],
+          marginBottom: t.space[3],
         },
       },
       '& ul, & ol': {
@@ -92,15 +112,21 @@ export const proseContent = styles.component(
       '& li': {
         marginBottom: t.space[1],
       },
+      /**
+       * Links carry an always-on tinted underline so they're distinguishable from inline `code`
+       * (which is mono + color only). On hover the underline snaps to full accent.
+       */
       '& a': {
         color: t.color.accent.default,
-        textDecoration: 'none',
+        textDecoration: 'underline',
+        textDecorationThickness: '1px',
+        textUnderlineOffset: '3px',
+        textDecorationColor: `color-mix(in srgb, ${t.color.accent.default} 40%, transparent)`,
         fontWeight: t.fontWeight.medium,
         transition: t.transition.colorShift,
         '&:hover': {
           color: t.color.accent.hover,
-          textDecoration: 'underline',
-          textUnderlineOffset: '2px',
+          textDecorationColor: 'currentColor',
         },
         '&:focus-visible': {
           outline: `2px solid ${t.color.border.focus}`,
@@ -108,18 +134,37 @@ export const proseContent = styles.component(
           borderRadius: t.radius.sm,
         },
       },
+      /**
+       * Inline `code` — typographic treatment (mono + tinted color), no box, no underline.
+       * Color and font change alone mark it as code; the absence of an underline differentiates it
+       * from anchors.
+       */
       '& code': {
-        fontFamily:
-          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-        fontSize: t.fontSize.sm,
-        backgroundColor: t.color.background.subtle,
-        padding: `2px ${t.space[2]}`,
-        borderRadius: t.radius.sm,
-        // border: `1px solid ${t.color.border.default}`,
+        fontFamily: t.fontFamily.mono,
+        fontSize: '0.92em',
+        fontWeight: t.fontWeight.medium,
+        color: t.color.accent.hover,
+        whiteSpace: 'nowrap',
+      },
+      '& a code': {
+        color: 'inherit',
+      },
+      /**
+       * Alert / callout anchor links inherit the callout's color and invert the underline behavior
+       * (always present, removed on hover) so they read as integrated copy, not detached CTAs.
+       */
+      '& a[data-alert-action]': {
+        color: 'inherit',
+        fontWeight: 'inherit',
+        textDecoration: 'underline',
+        textDecorationColor: 'currentColor',
+        '&:hover': {
+          color: 'inherit',
+          textDecoration: 'none',
+        },
       },
       '& pre:not([data-codeblock-pre])': {
-        fontFamily:
-          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        fontFamily: t.fontFamily.mono,
         fontSize: t.fontSize.sm,
         lineHeight: 1.6,
         backgroundColor: t.color.background.subtle,
@@ -138,18 +183,42 @@ export const proseContent = styles.component(
         padding: 0,
         border: 'none',
         fontSize: 'inherit',
+        fontWeight: 'inherit',
+        color: 'inherit',
+        whiteSpace: 'pre',
       },
+      /**
+       * Fenced code blocks (rendered via `markdownCodeBlockHtml`) sit as siblings of prose.
+       * Give them generous breathing room from surrounding prose, but collapse the gap when two
+       * blocks sit adjacent — consecutive examples should read as a pair, not two islands.
+       */
+      '& [data-codeblock]': {
+        marginBlock: t.space[5],
+        [bp]: {
+          marginBlock: t.space[4],
+        },
+      },
+      '& [data-codeblock] + [data-codeblock]': {
+        marginTop: t.space[3],
+      },
+      '& [data-codeblock]:first-child': {
+        marginTop: 0,
+      },
+      '& [data-codeblock]:last-child': {
+        marginBottom: 0,
+      },
+      /** Brutalist callout — full ink border + hard shadow offset, no side stripe. */
       '& blockquote': {
-        margin: `${t.space[4]} 0`,
-        padding: `${t.space[3]} ${t.space[4]}`,
-        borderLeft: `3px solid ${t.color.accent.default}`,
-        borderRadius: t.radius.md,
+        margin: `${t.space[5]} 0`,
+        padding: `${t.space[4]} ${t.space[5]}`,
+        border: `${t.borderWidth.default} solid ${t.color.border.strong}`,
         backgroundColor: t.color.background.subtle,
-        color: t.color.text.secondary,
+        boxShadow: t.shadow.sm,
+        color: t.color.text.primary,
         fontStyle: 'normal',
         [bp]: {
-          margin: `${t.space[3]} 0`,
-          padding: `${t.space[2]} ${t.space[3]}`,
+          margin: `${t.space[4]} 0`,
+          padding: `${t.space[3]} ${t.space[4]}`,
         },
       },
       '& blockquote p': {
@@ -159,8 +228,7 @@ export const proseContent = styles.component(
         marginBottom: 0,
       },
       '& kbd': {
-        fontFamily:
-          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        fontFamily: t.fontFamily.mono,
         fontSize: t.fontSize.sm,
         fontWeight: t.fontWeight.medium,
         padding: `2px ${t.space[2]}`,
@@ -215,11 +283,13 @@ export const proseContent = styles.component(
       '& table': {
         width: '100%',
         borderCollapse: 'collapse',
-        marginBottom: t.space[3],
+        marginBlock: `${t.space[4]} ${t.space[5]}`,
         fontSize: t.fontSize.sm,
+        border: `${t.borderWidth.default} solid ${t.color.border.strong}`,
       },
       '& thead': {
-        borderBottom: `2px solid ${t.color.border.default}`,
+        backgroundColor: t.color.background.subtle,
+        borderBottom: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
       },
       '& th, & td': {
         textAlign: 'left',
@@ -228,11 +298,12 @@ export const proseContent = styles.component(
         verticalAlign: 'top',
       },
       '& th': {
-        fontWeight: t.fontWeight.semibold,
-        fontSize: t.fontSize.sm,
-        color: t.color.text.secondary,
+        fontWeight: t.fontWeight.bold,
+        fontSize: t.fontSize.xs,
+        color: t.color.text.primary,
         textTransform: 'uppercase',
-        letterSpacing: '0.04em',
+        letterSpacing: '0.06em',
+        fontFamily: t.fontFamily.mono,
       },
       '& tr:last-child td': {
         borderBottom: 'none',

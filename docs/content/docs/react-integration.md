@@ -3,8 +3,6 @@ title: React Integration
 description: Using typestyles with React patterns and best practices
 ---
 
-# React Integration
-
 TypeStyles works seamlessly with React. This guide shows common patterns for integrating typestyles into React applications.
 
 ## Basic component setup

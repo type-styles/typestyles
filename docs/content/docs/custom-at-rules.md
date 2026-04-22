@@ -3,8 +3,6 @@ title: Custom Selectors & At-Rules
 description: Using @container, @supports, and other CSS features
 ---
 
-# Custom Selectors & At-Rules
-
 TypeStyles supports all CSS at-rules and advanced selectors through special key prefixes.
 
 ## Pseudo-classes and pseudo-elements

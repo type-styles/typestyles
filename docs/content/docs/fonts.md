@@ -3,8 +3,6 @@ title: Fonts
 description: Loading web fonts with global.fontFace, Vite, and Next.js
 ---
 
-# Fonts
-
 TypeStyles does not replace the platform font stack: you still choose **families** with normal CSS properties (`fontFamily`, `fontWeight`, tokens, and so on). For **loading** files or tuning fallbacks, use **`global.fontFace()`** from the same `createTypeStyles` / `createGlobal` instance as the rest of your app styles.
 
 ## `global.fontFace(family, props)`

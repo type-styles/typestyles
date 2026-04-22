@@ -34,7 +34,8 @@ const layoutBase = styles.component(
       minWidth: 0,
     },
     main: {
-      maxWidth: '768px',
+      /** ~68ch of JetBrains Mono body after 48px padding on each side. */
+      maxWidth: '720px',
       padding: t.space[8],
       [bp]: {
         padding: `${t.space[5]} ${t.space[4]}`,

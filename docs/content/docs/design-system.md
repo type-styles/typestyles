@@ -3,8 +3,6 @@ title: Design System with Tokens
 description: Building a comprehensive design system using typestyles tokens
 ---
 
-# Design System with Tokens
-
 A design system is more than just components—it's a complete set of standards for design and code. This guide shows how to build a token-based design system with typestyles.
 
 ## Token architecture

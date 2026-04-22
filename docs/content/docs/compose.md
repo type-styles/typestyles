@@ -3,8 +3,6 @@ title: Style Composition
 description: Combine multiple style functions and class strings with styles.compose
 ---
 
-# Style Composition
-
 The `styles.compose()` function lets you merge multiple component style functions or class name strings into a single reusable function.
 
 ## Basic Usage

@@ -1,8 +1,13 @@
 import { designTokens as t } from '@examples/design-system';
 import { styles } from './typestyles';
 
+const bp = '@media (max-width: 768px)';
 /** Matches fixed `siteHeader` chrome (viewport breakpoints; duplicate mount is `display: none`). */
 const desktop = '@media (min-width: 769px)';
+
+/** Aligned to fixed `siteHeader` height — square tool slots in the right rail. */
+const headerToolSlot = `calc(${t.space[8]} + ${t.space[2]})`;
+const compactControl = `calc(${t.space[6]} + ${t.space[1]})`;
 
 export const appearanceControls = styles.component(
   'docs-appearance-controls',
@@ -23,27 +28,33 @@ export const appearanceControls = styles.component(
       alignItems: 'center',
       justifyContent: 'center',
       margin: 0,
+      boxSizing: 'border-box',
+      width: headerToolSlot,
+      minWidth: headerToolSlot,
+      padding: 0,
       backgroundColor: 'transparent',
       color: t.color.text.primary,
       cursor: 'pointer',
       flexShrink: 0,
-      width: 'auto',
-      height: 'auto',
-      minWidth: `calc(${t.space[7]} + ${t.space[4]})`,
-      paddingInline: t.space[4],
       alignSelf: 'stretch',
       border: 'none',
-      borderInlineStart: `${t.borderWidth.default} solid ${t.color.border.strong}`,
+      borderInlineStart: t.stroke.strong,
+      transition: t.transition.colorShift,
       '&:hover': {
-        backgroundColor: t.color.accent.default,
-        color: t.color.text.onAccent,
+        backgroundColor: t.color.background.subtle,
+        color: t.color.accent.default,
       },
       '&:active': {
-        transform: 'translate(2px, 2px)',
+        backgroundColor: t.color.accent.subtle,
       },
       '&:focus-visible': {
         outline: `${t.borderWidth.thin} solid ${t.color.accent.default}`,
-        outlineOffset: '-2px',
+        outlineOffset: '2px',
+        zIndex: 1,
+      },
+      [bp]: {
+        width: compactControl,
+        minWidth: compactControl,
       },
     },
     paletteHost: {
