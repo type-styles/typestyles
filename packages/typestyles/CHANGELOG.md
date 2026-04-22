@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.6.0
+
+### Minor Changes
+
+- [#78](https://github.com/type-styles/typestyles/pull/78) [`aa88d25`](https://github.com/type-styles/typestyles/commit/aa88d251c352c617841f2aefed730c2b2871e50d) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add **`createStyles({ utils })`** (and **`createTypeStyles({ utils })`**) so shorthand style expanders attach to one styles instance without a separate `withUtils` object. **`styles.withUtils`** remains on the default export; there is no global **`registerUtils`**.
+
 ## 0.5.0
 
 ### Minor Changes
