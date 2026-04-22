@@ -291,4 +291,4 @@ Planned enhancements (not yet implemented):
 - **Dead style detection**: Warn when styles are defined but never used
 - **Source maps**: Map generated CSS back to your style definitions
 
-Stay tuned to the [GitHub repository](https://github.com/dbanksdesign/typestyles) for updates.
+Stay tuned to the [GitHub repository](https://github.com/type-styles/typestyles) for updates.

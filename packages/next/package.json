@@ -49,7 +49,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dbanksdesign/typestyles",
+    "url": "https://github.com/type-styles/typestyles",
     "directory": "packages/next"
   },
   "peerDependencies": {

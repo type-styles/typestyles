@@ -78,7 +78,7 @@ Install the official integration so App Router, `useServerInsertedHTML`, and ser
 pnpm add @typestyles/next typestyles
 ```
 
-See the [`@typestyles/next` package README](https://github.com/dbanksdesign/typestyles/tree/main/packages/next) for build-time extraction (`withTypestylesExtract`) and Turbopack notes.
+See the [`@typestyles/next` package README](https://github.com/type-styles/typestyles/tree/main/packages/next) for build-time extraction (`withTypestylesExtract`) and Turbopack notes.
 
 ### App Router (recommended)
 
