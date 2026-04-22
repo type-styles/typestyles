@@ -97,6 +97,8 @@ See [TypeScript Tips — Complex CSS values](/docs/typescript-tips).
 
 Returns **`{ styles, tokens, global }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. See [Cascade layers](/docs/cascade-layers).
 
+**Default singleton:** `import { styles, tokens } from 'typestyles'` is the same as calling `createStyles()` and `createTokens()` with **no** `scopeId`. That is fine for throwaway demos, but **prefer `createTypeStyles({ scopeId })`** in real apps and libraries so tokens and themes stay namespaced. Add **`global`** from the same constructor when you register [cascade layers](/docs/cascade-layers) or shared `@layer` stacks.
+
 ### Cascade layers (types)
 
 Exported types include **`CascadeLayersInput`**, **`CascadeLayersObjectInput`**, **`ResolvedCascadeLayers`**, and **`ThemeEmitLayerContext`** (theme emission with layers).

@@ -6,6 +6,7 @@ import { proseContent } from '@examples/design-system';
 import { docNavigation } from '../navigation';
 import { highlightDocCode } from './highlightDocCode';
 import { markdownCodeBlockHtml } from './markdownCodeBlockHtml';
+import { prepareDocMarkdown } from './expandInstallTabGroups';
 
 export type DocHeading = {
   depth: number;
@@ -106,7 +107,7 @@ function withHeadingAnchors(html: string): string {
 
 /** Markdown body (no frontmatter) through the same pipeline as documentation pages. */
 export function renderDocBodyToHtml(markdown: string): string {
-  return withHeadingAnchors(wrapCodeBlocks(marked.parse(markdown) as string));
+  return withHeadingAnchors(wrapCodeBlocks(marked.parse(prepareDocMarkdown(markdown)) as string));
 }
 
 function parseFrontmatter(markdown: string): { data: Record<string, string>; body: string } {
@@ -160,7 +161,7 @@ async function loadDocByPath(filePath: string): Promise<DocEntry> {
   const markdown = await readFile(filePath, 'utf8');
   const { data, body } = parseFrontmatter(markdown);
   const slug = slugFromAbsolutePath(filePath);
-  const html = withHeadingAnchors(wrapCodeBlocks(marked.parse(body) as string));
+  const html = withHeadingAnchors(wrapCodeBlocks(marked.parse(prepareDocMarkdown(body)) as string));
   let lastModified: string | undefined;
   try {
     const st = await stat(filePath);

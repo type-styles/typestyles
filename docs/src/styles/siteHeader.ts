@@ -161,12 +161,11 @@ export const siteHeader = styles.component(
       '&[aria-current="page"]': {
         position: 'relative',
         zIndex: 3,
-        color: t.color.accent.default,
-        backgroundColor: t.color.accent.subtle,
-        boxShadow: `inset 0 -2px 0 0 ${t.color.accent.default}`,
+        color: t.color.text.primary,
+        backgroundColor: t.color.background.surface,
         '&:hover': {
-          color: t.color.accent.default,
-          backgroundColor: t.color.accent.subtle,
+          color: t.color.text.primary,
+          backgroundColor: t.color.background.surface,
         },
       },
     },

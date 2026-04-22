@@ -1,31 +1,71 @@
 ---
 title: Framework comparison
-description: How TypeStyles compares to StyleX, Panda CSS, vanilla-extract, Emotion, CSS Modules, and plain CSS—with concrete API examples
+description: How TypeStyles compares to StyleX, Panda CSS, vanilla-extract, Emotion, CSS Modules, and plain CSS—with a shared button example and a topic-by-topic comparison
 ---
 
-Most teams choose a styling layer alongside a framework and a design system. This page is a **decision lens**: it shows the **same button** in several ecosystems, then summarizes tradeoffs in smaller tables so you are not staring at one giant grid.
+This page is a **decision lens**: same button pattern across ecosystems, then a **topic-by-topic** comparison (easier to scan on a laptop than a wide grid of cards or a seven-column table). For API-by-API moves, use the [Migration guide](/docs/migration). For install and your first component, see [Getting started](/docs/getting-started).
 
-For step-by-step API mapping when you already know what you are leaving, use the [Migration guide](/docs/migration).
+## Compared at a glance
+
+Each subsection below is one decision axis. Lists use normal body typography—**tool names** and `inline code` carry the emphasis.
+
+### Build
+
+- **TypeStyles** — Optional; runtime by default, [zero-runtime](/docs/zero-runtime) when you want.
+- **StyleX** — **Required** compiler (Babel / SWC).
+- **Panda CSS** — **Required** codegen + config.
+- **vanilla-extract** — **Required** `.css.ts` + bundler.
+- **Emotion / styled-components** — Bundler only; runtime in the loop.
+- **CSS Modules** — Bundler maps your authored class names to **per-file scoped** output.
+- **Plain CSS** — None for CSS itself.
+
+### Typical DOM classes
+
+- **TypeStyles** — Readable names (`button-intent-primary`); scoped `--scope-token-*`.
+- **StyleX** — Atomic, hashed.
+- **Panda CSS** — Utilities / recipes from your preset.
+- **vanilla-extract** — Usually hashed / scoped.
+- **Emotion / styled-components** — Hashed.
+- **CSS Modules** — You choose readable names in CSS; the bundler emits **scoped** class strings in the DOM, **usually with a short content hash** so files cannot collide (for example `._primary_abc123`).
+- **Plain CSS** — Whatever you author.
+
+### Tokens
+
+- **TypeStyles** — `tokens.create` → real CSS variables.
+- **StyleX** — `defineVars` + compiler.
+- **Panda CSS** — Config-first scales (`blue.600`, etc.).
+- **vanilla-extract** — You wire CSS vars / contracts.
+- **Emotion / styled-components** — Theme objects / your own vars.
+- **CSS Modules** — Your globals / vars.
+- **Plain CSS** — Your conventions.
+
+### Good fit when…
+
+- **TypeStyles** — TS variants **and** inspectable CSS **without** a compiler on day one.
+- **StyleX** — Meta stack, static guarantees, atomic output.
+- **Panda CSS** — You want Panda’s pipeline and strict token schema.
+- **vanilla-extract** — **Zero runtime by default**, file-based CSS.
+- **Emotion / styled-components** — Classic styled API; fine with runtime (or separate extraction).
+- **CSS Modules** — Mostly hand-written CSS; variants via `clsx` / toggles.
+- **Plain CSS** — Maximum portability; TS ergonomics are DIY.
+
+**SSR / production CSS:** TypeStyles can [collect styles for SSR](/docs/ssr) and optionally [extract static CSS](/docs/zero-runtime). StyleX, Panda, and vanilla-extract generally emit CSS at build time. Emotion’s story depends on your bundler and extraction setup. CSS Modules and plain CSS ship as stylesheets like any static asset.
 
 ---
 
 ## Same button: primary vs ghost
 
-Each example is a **typed** `intent` prop with **primary** (filled) and **ghost** (outline) looks. Snippets are trimmed for length; real projects add focus states, sizing, and tokens.
+Each snippet is a **typed** `intent` (`primary` = filled, `ghost` = outline). Real apps add focus, sizing, and tokens; lengths are trimmed.
 
-### TypeStyles (scoped instance)
+### TypeStyles (recommended shape)
 
-One `createTypeStyles` call keeps **tokens** and **class names** on the same `scopeId`—the pattern we recommend in [Getting started](/docs/getting-started).
+[`createTypeStyles`](/docs/api-reference#createtypestyles-options) keeps **styles** and **tokens** on one **`scopeId`** (see [Getting started](/docs/getting-started)).
 
 ```ts
 import { createTypeStyles } from 'typestyles';
 
 const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
-
-const color = tokens.create('color', {
-  primary: '#2563eb',
-  surface: '#ffffff',
-});
+const color = tokens.create('color', { primary: '#2563eb', surface: '#ffffff' });
 
 export const button = styles.component('button', {
   base: {
@@ -55,16 +95,14 @@ export const button = styles.component('button', {
 </button>
 ```
 
-You get readable classes (for example `button-base`, `button-intent-primary`) and scoped CSS variables (for example `--app-color-primary`).
+### StyleX (compiler, atomic classes)
 
-### StyleX
-
-Styles are **author-time objects** merged with **`stylex.props`**. A **compiler** (Babel / SWC) is required; the DOM usually sees **atomic, hashed** classes.
+Author-time objects; **`stylex.props`** merges styles at compile time. Hashed atomic classes in the DOM.
 
 ```ts
 import * as stylex from '@stylexjs/stylex';
 
-const styles = stylex.create({
+const s = stylex.create({
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -72,10 +110,7 @@ const styles = stylex.create({
     border: 'none',
     cursor: 'pointer',
   },
-  primary: {
-    backgroundColor: '#2563eb',
-    color: '#fff',
-  },
+  primary: { backgroundColor: '#2563eb', color: '#fff' },
   ghost: {
     backgroundColor: 'transparent',
     color: '#2563eb',
@@ -87,38 +122,24 @@ const styles = stylex.create({
 ```
 
 ```tsx
-<button
-  type="button"
-  {...stylex.props(styles.base, intent === 'ghost' ? styles.ghost : styles.primary)}
->
+<button type="button" {...stylex.props(s.base, intent === 'ghost' ? s.ghost : s.primary)}>
   {children}
 </button>
 ```
 
 ### Panda CSS (`cva` / recipes)
 
-Panda leans on **codegen** from `panda.config` and generated imports (paths vary by project). Token strings like `blue.600` come from **your** token scale, not the library defaults.
+Codegen from **`panda.config`**; import paths vary (`../styled-system/css` here is illustrative). Token strings like `blue.600` are **your** scale.
 
 ```ts
 import { cva } from '../styled-system/css';
 
 export const button = cva({
-  base: {
-    px: '4',
-    py: '2',
-    rounded: 'md',
-    fontWeight: 'medium',
-    cursor: 'pointer',
-  },
+  base: { px: '4', py: '2', rounded: 'md', fontWeight: 'medium', cursor: 'pointer' },
   variants: {
     intent: {
       primary: { bg: 'blue.600', color: 'white', borderWidth: '0' },
-      ghost: {
-        bg: 'transparent',
-        color: 'blue.600',
-        borderWidth: '1px',
-        borderColor: 'blue.600',
-      },
+      ghost: { bg: 'transparent', color: 'blue.600', borderWidth: '1px', borderColor: 'blue.600' },
     },
   },
   defaultVariants: { intent: 'primary' },
@@ -133,7 +154,7 @@ export const button = cva({
 
 ### vanilla-extract (`recipe`)
 
-Author styles in **`.css.ts`** files; the bundler emits a **static CSS** artifact. Variants are typed; class strings are typically **hashed** unless you choose otherwise.
+**`.css.ts`** files; bundler emits **static CSS**. Typed variants; class strings usually **hashed**.
 
 ```ts
 import { recipe } from '@vanilla-extract/recipes';
@@ -149,11 +170,7 @@ export const button = recipe({
   variants: {
     intent: {
       primary: { background: '#2563eb', color: '#fff' },
-      ghost: {
-        background: 'transparent',
-        color: '#2563eb',
-        border: '1px solid #2563eb',
-      },
+      ghost: { background: 'transparent', color: '#2563eb', border: '1px solid #2563eb' },
     },
   },
   defaultVariants: { intent: 'primary' },
@@ -168,7 +185,7 @@ export const button = recipe({
 
 ### Emotion / styled-components
 
-The classic pattern is a **styled component** or `css` prop with **template strings** or objects. Output classes are **hashed**; you usually **wire tokens yourself** (theme objects, variables, or both).
+**Styled component** or `css` prop; **hashed** classes; **tokens** are usually theme objects or vars you wire.
 
 ```tsx
 import styled from '@emotion/styled';
@@ -181,21 +198,18 @@ export const Button = styled.button<{ intent?: 'primary' | 'ghost' }>`
   border: none;
   ${(p) =>
     p.intent === 'ghost'
-      ? `
-    background: transparent;
-    color: #2563eb;
-    border: 1px solid #2563eb;
-  `
-      : `
-    background: #2563eb;
-    color: #fff;
-  `}
+      ? `background: transparent; color: #2563eb; border: 1px solid #2563eb;`
+      : `background: #2563eb; color: #fff;`}
 `;
+```
+
+```tsx
+<Button intent={intent}>{children}</Button>
 ```
 
 ### CSS Modules
 
-You write **plain CSS** (or Sass) in a `.module.css` file and import **scoped class names**. Variants are **manual** (toggle classes, BEM modifiers, or a small helper such as `clsx`).
+**Plain CSS** in `.module.css`; bundler scopes names. Variants are **manual** (`clsx`, toggles, BEM).
 
 ```css
 /* Button.module.css */
@@ -231,58 +245,34 @@ import clsx from 'clsx';
 
 ### Plain CSS
 
-Same idea as modules without the bundler renaming step: **global stylesheets**, **BEM-style** modifiers, or **attribute selectors**. Typing and variant composition live **outside** CSS unless you add your own conventions.
-
----
-
-## Compare by workflow
-
-These tables are intentionally smaller than a single “everything × everyone” matrix.
-
-### Build and day-one setup
-
-|                          | TypeStyles                                                       | StyleX                                       | Panda CSS                                             | vanilla-extract                |
-| ------------------------ | ---------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------- | ------------------------------ |
-| **Build required?**      | No for the default runtime path; optional plugins for extraction | Yes — compiler is the product                | Yes — CLI / PostCSS + codegen                         | Yes — `.css.ts` pipeline       |
-| **Typical DOM classes**  | Readable semantic names by default                               | Atomic hashed classes                        | Utility / recipe classes from preset                  | Hashed or locally scoped       |
-| **Incremental adoption** | Strong — one component at a time                                 | Harder — styles want the compiler everywhere | Moderate — generated output expects Panda conventions | Moderate — files are VE-native |
-
-### Tokens, legacy CSS, and SSR
-
-|                             | TypeStyles                                                                                       | StyleX                                                                         | Panda CSS                                          | vanilla-extract                                      |
-| --------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------- | ---------------------------------------------------- |
-| **Design tokens**           | `tokens.create` → CSS custom properties (scoped with `scopeId`)                                  | `defineVars` / theming patterns; less “drop into any stylesheet” than raw vars | Config-first tokens + codegen utilities            | Contracts / Sprinkles; you wire variables explicitly |
-| **Coexist with non-TS CSS** | Strong — same `var(--…)` in legacy sheets                                                        | Moderate — authored as JS objects                                              | Moderate — utilities assume Panda output           | Good — static CSS file                               |
-| **SSR / production CSS**    | `collectStyles` from `typestyles/server`; optional [zero-runtime](/docs/zero-runtime) extraction | Compiler emits CSS ahead of time                                               | Build-time CSS + runtime pieces depending on setup | Import emitted CSS like any static bundle            |
-
-**Emotion / styled-components** — Runtime-friendly, familiar component API; optional extraction; hashed classes. **CSS Modules** and **plain CSS** — Ship CSS files directly; you bring your own variant and token discipline.
+Global stylesheets, BEM modifiers, or attribute selectors—**no** TS variant layer unless you add one yourself. Maximum portability; colocation and typing are DIY.
 
 ---
 
 ## When TypeStyles is a strong default
 
-- You want **human-readable classes** and **scoped CSS variables** so DevTools, legacy sheets, and third-party markup stay legible.
-- You want **typed variants** (similar ergonomics to CVA / Panda recipes) **without** committing to a compiler on day one.
-- You need **incremental adoption** and **scoped instances** (`createTypeStyles`, `scopeId`) for libraries or micro-frontends.
-- You are fine with **runtime injection in development** and want an **optional** path to **static CSS** when you enable [zero-runtime extraction](/docs/zero-runtime).
+- **Readable classes** and **scoped CSS variables** for DevTools, legacy CSS, and third-party markup.
+- **Typed variants** (CVA-/recipe-like) **without** a compiler on day one.
+- **Incremental adoption** and **`createTypeStyles` + `scopeId`** for libraries or micro-frontends.
+- Comfortable with **runtime injection in dev**, with an **optional** [zero-runtime](/docs/zero-runtime) path when you need static CSS.
 
 ## When another tool might win
 
-- **StyleX** — You have standardized on Meta’s compiler, want maximum static guarantees, and accept hashed atomic classes plus stricter authoring rules.
-- **Emotion / styled-components** — You want the classic styled API and accept runtime cost (or a separate extraction story).
-- **Panda CSS** — You want codegen utilities, strict token schemas in config, and a Panda-first pipeline.
-- **vanilla-extract** — You want **zero runtime by default** and are comfortable with build configuration and file contracts.
-- **CSS Modules** — Your UI is mostly global tokens plus small scoped files; you do not need a first-class variant API in the styling layer.
-- **Plain CSS** — Maximum portability and zero JS styling layer; you trade colocated TypeScript ergonomics unless you layer helpers yourself.
+- **StyleX** — Standardized on Meta’s compiler; want static guarantees and atomic output.
+- **Panda CSS** — Want codegen utilities and a strict config-first token pipeline.
+- **vanilla-extract** — Want **zero runtime by default** and are fine with `.css.ts` contracts.
+- **Emotion / styled-components** — Want the classic styled API and accept runtime (or a separate extraction story).
+- **CSS Modules** — Mostly hand-written CSS; no first-class variant API in the styling layer.
+- **Plain CSS** — Zero JS styling layer; maximum portability.
 
 ## Practical migration
 
-Start with the [Migration guide](/docs/migration). Panda and CVA-like APIs map closely to `styles.component`; Emotion and CSS Modules map well to `styles.class` plus the [`cx` utility](/docs/compose) from `'typestyles'`.
+Start with [Migration](/docs/migration): Panda- and CVA-like APIs map closely to **`styles.component`**; Emotion and CSS Modules map well to **`styles.class`** plus [`cx`](/docs/compose) from `'typestyles'`.
 
 ## Related docs
 
-- [Getting started](/docs/getting-started) — install, `createTypeStyles`, and first components
-- [Design system with tokens](/docs/design-system) — token layers and governance
-- [Cascade layers](/docs/cascade-layers) — `createTypeStyles` and `@layer`
-- [Zero-runtime extraction](/docs/zero-runtime) — production CSS files
-- [Component library setup](/docs/component-library) — publishing packages
+- [Getting started](/docs/getting-started)
+- [Design system with tokens](/docs/design-system)
+- [Cascade layers](/docs/cascade-layers)
+- [Zero-runtime extraction](/docs/zero-runtime)
+- [Component library setup](/docs/component-library)

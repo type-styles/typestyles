@@ -56,6 +56,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       slug: 'guides',
       items: [
         { slug: 'migration', title: 'Migration Guide' },
+        { slug: 'style-dictionary', title: 'Style Dictionary & W3C tokens' },
         { slug: 'best-practices', title: 'Best Practices' },
         { slug: 'testing', title: 'Testing' },
         { slug: 'performance', title: 'Performance' },
