@@ -47,10 +47,10 @@ const amberLightColorValues: DesignColorValues = {
 
 const amberDarkColorValues: DesignColorValues = {
   background: {
-    app: color.oklch('12%', 0.02, 65),
-    surface: p.palette['sand-9'],
-    subtle: p.palette['sand-8'],
-    elevated: p.palette['sand-9'],
+    app: color.oklch('23%', 0.016, 65),
+    surface: color.oklch('27%', 0.014, 65),
+    subtle: color.oklch('31%', 0.013, 65),
+    elevated: color.oklch('27%', 0.014, 65),
   },
   text: {
     primary: p.palette['sand-1'],

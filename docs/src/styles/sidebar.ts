@@ -80,20 +80,8 @@ const sidebarBase = styles.component(
     logoAccent: {
       color: t.color.accent.default,
     },
-    search: {
-      margin: `0 ${t.space[4]} ${t.space[4]}`,
-      padding: `${t.space[2]} ${t.space[4]}`,
-      fontSize: t.fontSize.sm,
-      fontFamily: t.fontFamily.sans,
-      backgroundColor: t.color.background.subtle,
-      color: t.color.text.secondary,
-      outline: 'none',
-      '&:focus': { borderColor: t.color.accent.default },
-      '&::placeholder': { color: t.color.text.placeholder },
-    },
     searchWrapper: {
       position: 'relative',
-      // containerType: 'size',
       borderTop: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
       borderBottom: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
       [desktop]: {
@@ -112,27 +100,11 @@ const sidebarBase = styles.component(
       pointerEvents: 'none',
       lineHeight: 0,
     },
-    searchInput: {
-      width: '100%',
-      padding: `${t.space[2]} ${t.space[4]} ${t.space[2]} 32px`,
-      fontSize: t.fontSize.sm,
-      fontFamily: t.fontFamily.sans,
-      border: 'none',
-      backgroundColor: 'transparent',
-      color: t.color.text.secondary,
-      outline: 'none',
-      '&:focus': {
-        backgroundColor: t.color.background.subtle,
-      },
-      '&::placeholder': { color: t.color.text.placeholder },
-    },
     searchKbd: {
       position: 'absolute',
       right: 0,
       top: 0,
       height: '100%',
-      /* Abspos shrink-to-fit ignores aspect-ratio; width tracks wrapper height via container units */
-      // width: '100cqh',
       aspectRatio: 1,
       boxSizing: 'border-box',
       display: 'inline-flex',
@@ -172,34 +144,37 @@ const sidebarBase = styles.component(
     nav: {
       flex: 1,
       overflowY: 'auto',
-      /**
-       * Right gutter lets link rows extend with negative margin without horizontal overflow
-       * (so the active stripe can sit flush on the chrome border while `overflow-y: auto` stays scrollable).
-       */
-      // padding: `0 ${t.borderWidth.thick} 0 0`,
+      paddingBlock: t.space[2],
     },
     section: {
-      marginBottom: t.space[2],
+      /**
+       * Use the parent flex gap + section dividers to create the spine feeling; no bottom margin
+       * needed because we put the separator on the section title itself.
+       */
     },
     sectionTitle: {
+      fontFamily: t.fontFamily.mono,
       fontSize: t.fontSize.xs,
       fontWeight: t.fontWeight.bold,
       textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      color: t.color.text.placeholder,
-      padding: `${t.space[2]} ${t.space[5]}`,
-      marginTop: t.space[2],
+      letterSpacing: '0.1em',
+      color: t.color.text.secondary,
+      padding: `${t.space[4]} ${t.space[5]} ${t.space[2]}`,
+      marginTop: t.space[3],
+      borderTop: t.stroke.default,
+    },
+    /** First section title in the nav has no rule above — flows directly from the search chrome. */
+    sectionTitleFirst: {
+      borderTop: 'none',
+      marginTop: 0,
     },
     link: {
       display: 'block',
       boxSizing: 'border-box',
-      width: `calc(100% + ${t.borderWidth.thick})`,
-      marginRight: `calc(-2 * ${t.borderWidth.thick})`,
       fontSize: t.fontSize.md,
       color: t.color.text.secondary,
       textDecoration: 'none',
       padding: `6px ${t.space[5]}`,
-      borderRight: `${t.borderWidth.default} solid transparent`,
       zIndex: 2,
       '&:hover': { ...docsNavLinkInteraction.hover },
     },
@@ -207,10 +182,6 @@ const sidebarBase = styles.component(
       position: 'relative',
       zIndex: 1,
       ...docsNavLinkInteraction.current,
-      borderRightWidth: t.borderWidth.thick,
-      borderRightStyle: 'solid',
-      borderRightColor: t.color.accent.default,
-      paddingRight: `calc(${t.space[5]} + ${t.borderWidth.default} - ${t.borderWidth.thick})`,
       '&:hover': { ...docsNavLinkInteraction.hover },
     },
     footer: {

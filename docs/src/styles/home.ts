@@ -3,7 +3,9 @@ import { styles } from './typestyles';
 
 const bp = '@media (max-width: 768px)';
 const desktop = '@media (min-width: 769px)';
-const heroTitleSize = `calc(${t.space[8]} + ${t.space[2]})`;
+
+/** Fluid hero scale — tight on mobile, generous on desktop, never sub-readable. */
+const heroTitleSize = 'clamp(2.25rem, 6vw + 0.75rem, 4rem)';
 
 export const home = styles.component(
   'docs-home',
@@ -11,11 +13,11 @@ export const home = styles.component(
     hero: {
       position: 'relative',
       paddingTop: t.space[12],
-      paddingBottom: t.space[12],
+      paddingBottom: t.space[8],
       overflow: 'hidden',
       [bp]: {
         paddingTop: t.space[8],
-        paddingBottom: t.space[8],
+        paddingBottom: t.space[6],
       },
     },
     heroGrid: {
@@ -25,7 +27,8 @@ export const home = styles.component(
       backgroundSize: '28px 28px',
       opacity: 0.4,
       pointerEvents: 'none',
-      maskImage: 'radial-gradient(ellipse 80% 70% at 50% 0%, black 20%, transparent 75%)',
+      /** Focal point aligned with the left-aligned hero copy, not dead-center. */
+      maskImage: 'radial-gradient(ellipse 80% 70% at 30% 0%, black 20%, transparent 75%)',
     },
     heroInner: {
       position: 'relative',
@@ -36,10 +39,16 @@ export const home = styles.component(
       gap: t.space[12],
       alignItems: 'start',
       [desktop]: {
-        gridTemplateColumns: 'minmax(0, 1fr) minmax(280px, 440px)',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 520px)',
         gap: t.space[12],
         alignItems: 'center',
       },
+    },
+    heroCopy: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: t.space[5],
+      alignItems: 'flex-start',
     },
     eyebrow: {
       display: 'inline-flex',
@@ -50,7 +59,7 @@ export const home = styles.component(
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
       color: t.color.text.secondary,
-      marginBottom: t.space[4],
+      margin: 0,
     },
     eyebrowDot: {
       width: '6px',
@@ -59,53 +68,105 @@ export const home = styles.component(
       backgroundColor: t.color.accent.default,
     },
     title: {
+      fontFamily: t.fontFamily.display,
+      fontStyle: 'italic',
       fontSize: heroTitleSize,
       fontWeight: t.fontWeight.bold,
-      letterSpacing: '-0.035em',
+      letterSpacing: '-0.02em',
       lineHeight: 1.08,
-      marginBottom: t.space[4],
+      margin: 0,
       color: t.color.text.primary,
-      [bp]: {
-        fontSize: t.space[6],
-      },
+      textWrap: 'balance',
     },
+    /** `real CSS` literally rendered in mono so the visual pun lands. */
     titleAccent: {
-      backgroundColor: t.color.accent.default,
-      color: t.color.text.onAccent,
-      padding: `0 ${t.space[2]}`,
-      display: 'inline',
+      fontFamily: t.fontFamily.mono,
+      fontStyle: 'normal',
+      fontSize: '0.82em',
+      fontWeight: t.fontWeight.bold,
+      letterSpacing: '-0.01em',
+      paddingInline: t.space[3],
+      paddingBlock: '0.05em',
+      display: 'inline-block',
       boxDecorationBreak: 'clone',
+      border: t.stroke.strong,
+      backgroundColor: t.color.background.surface,
+      verticalAlign: '0.08em',
     },
     subtitle: {
       fontSize: t.fontSize.xl,
       color: t.color.text.secondary,
       lineHeight: t.lineHeight.relaxed,
       maxWidth: '36rem',
-      marginBottom: t.space[6],
+      margin: 0,
+      textWrap: 'pretty',
     },
-    pillRow: {
+    installChip: {
+      display: 'inline-flex',
+      alignItems: 'stretch',
+      maxWidth: '100%',
+      border: t.stroke.strong,
+      backgroundColor: t.color.background.surface,
+      boxShadow: t.shadow.md,
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.md,
+    },
+    installChipPre: {
+      margin: 0,
+      padding: `${t.space[3]} ${t.space[4]}`,
       display: 'flex',
-      flexWrap: 'wrap',
-      gap: t.space[2],
-      marginBottom: t.space[6],
+      alignItems: 'center',
+      overflow: 'auto',
+      color: t.color.text.primary,
+      whiteSpace: 'nowrap',
+      '&::before': {
+        content: '"$"',
+        color: t.color.text.secondary,
+        marginRight: t.space[2],
+        userSelect: 'none',
+      },
+      '& code': {
+        fontFamily: 'inherit',
+        fontSize: 'inherit',
+        background: 'none',
+        padding: 0,
+      },
     },
-    pill: {
-      fontSize: t.fontSize.sm,
-      fontWeight: t.fontWeight.medium,
-      color: t.color.text.onAccent,
-      backgroundColor: t.color.accent.default,
-      // border: t.stroke.default,
-      borderRadius: t.radius.full,
-      padding: `${t.space[1]} ${t.space[3]}`,
+    installChipCopy: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: `0 ${t.space[4]}`,
+      borderLeft: t.stroke.strong,
+      borderTop: 0,
+      borderRight: 0,
+      borderBottom: 0,
+      background: t.color.background.subtle,
+      color: t.color.text.primary,
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.xs,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      cursor: 'pointer',
+      transition: 'background-color 120ms ease',
+      '&:hover:not(:disabled)': {
+        backgroundColor: t.color.accent.subtle,
+      },
+      '&[data-copied="true"]': {
+        backgroundColor: t.color.accent.default,
+        color: t.color.text.onAccent,
+      },
     },
     actions: {
       display: 'flex',
       alignItems: 'center',
-      gap: t.space[4],
+      gap: t.space[3],
       flexWrap: 'wrap',
       [bp]: {
         flexDirection: 'column',
         alignItems: 'stretch',
+        width: '100%',
       },
     },
     cta: {
@@ -160,6 +221,24 @@ export const home = styles.component(
         boxShadow: 'none',
       },
     },
+    metaRow: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: `${t.space[2]} ${t.space[3]}`,
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.xs,
+      color: t.color.text.secondary,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+    },
+    metaDivider: {
+      display: 'inline-block',
+      width: '4px',
+      height: '4px',
+      backgroundColor: t.color.border.default,
+      opacity: 0.5,
+    },
     codeExampleWrap: {
       width: '100%',
       maxWidth: '100%',
@@ -176,6 +255,15 @@ export const home = styles.component(
         paddingBottom: t.space[8],
       },
     },
+    /** Denser rhythm on the benefits block to break cadence with the split sections. */
+    sectionDense: {
+      paddingTop: t.space[8],
+      paddingBottom: t.space[8],
+      [bp]: {
+        paddingTop: t.space[6],
+        paddingBottom: t.space[6],
+      },
+    },
     sectionHead: {
       maxWidth: '40rem',
       marginBottom: t.space[8],
@@ -187,6 +275,7 @@ export const home = styles.component(
       textTransform: 'uppercase',
       color: t.color.accent.default,
       marginBottom: t.space[2],
+      fontFamily: t.fontFamily.mono,
     },
     sectionTitle: {
       fontSize: t.fontSize['2xl'],
@@ -196,6 +285,8 @@ export const home = styles.component(
       color: t.color.text.primary,
       margin: 0,
       marginBottom: t.space[3],
+      fontFamily: t.fontFamily.display,
+      fontStyle: 'italic',
     },
     sectionLead: {
       fontSize: t.fontSize.lg,
@@ -203,7 +294,83 @@ export const home = styles.component(
       lineHeight: t.lineHeight.relaxed,
       margin: 0,
     },
-    benefitGrid: {
+    /** Asymmetric benefits: one hero card, three smaller cards. */
+    benefitStack: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: t.space[4],
+    },
+    benefitHero: {
+      display: 'grid',
+      gap: t.space[6],
+      padding: t.space[8],
+      border: t.stroke.strong,
+      backgroundColor: t.color.background.surface,
+      boxShadow: t.shadow.lg,
+      alignItems: 'center',
+      [desktop]: {
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 480px)',
+        gap: t.space[8],
+      },
+      [bp]: {
+        padding: t.space[5],
+      },
+    },
+    benefitHeroCopy: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: t.space[3],
+    },
+    benefitHeroTitle: {
+      fontSize: t.fontSize['2xl'],
+      fontFamily: t.fontFamily.display,
+      fontStyle: 'italic',
+      fontWeight: t.fontWeight.bold,
+      letterSpacing: '-0.02em',
+      lineHeight: 1.15,
+      color: t.color.text.primary,
+      margin: 0,
+    },
+    benefitHeroText: {
+      fontSize: t.fontSize.lg,
+      color: t.color.text.secondary,
+      lineHeight: t.lineHeight.relaxed,
+      margin: 0,
+      '& code': {
+        fontFamily: t.fontFamily.mono,
+        fontSize: '0.9em',
+        padding: `0 ${t.space[1]}`,
+        backgroundColor: t.color.background.subtle,
+      },
+    },
+    /** DOM preview showing actual class names on the page — the whole selling point. */
+    classPreview: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: t.space[2],
+      padding: t.space[4],
+      border: t.stroke.default,
+      backgroundColor: t.color.background.app,
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.sm,
+      color: t.color.text.primary,
+      overflow: 'auto',
+    },
+    classPreviewLine: {
+      whiteSpace: 'pre',
+    },
+    classPreviewLabel: {
+      fontSize: t.fontSize.xs,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase',
+      color: t.color.text.secondary,
+      marginBottom: t.space[1],
+    },
+    classPreviewToken: {
+      color: t.color.accent.default,
+    },
+    benefitRow: {
       display: 'grid',
       gap: t.space[4],
       gridTemplateColumns: '1fr',
@@ -214,28 +381,24 @@ export const home = styles.component(
     benefitCard: {
       display: 'flex',
       flexDirection: 'column',
-      gap: t.space[3],
+      gap: t.space[2],
       padding: t.space[5],
-      borderRadius: t.radius.md,
-      border: `${t.borderWidth.default} solid ${t.color.border.default}`,
+      border: t.stroke.default,
       backgroundColor: t.color.background.surface,
       boxShadow: t.shadow.xs,
-      transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+      transition: 'transform 120ms ease, box-shadow 120ms ease',
       '&:hover': {
-        borderColor: t.color.border.strong,
+        transform: 'translate(-1px, -1px)',
         boxShadow: t.shadow.sm,
       },
     },
-    benefitIconWrap: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '40px',
-      height: '40px',
-      borderRadius: t.radius.md,
-      backgroundColor: t.color.accent.subtle,
+    benefitNumber: {
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.xs,
+      fontWeight: t.fontWeight.semibold,
+      letterSpacing: '0.1em',
       color: t.color.accent.default,
-      flexShrink: 0,
+      marginBottom: t.space[1],
     },
     benefitTitle: {
       fontSize: t.fontSize.lg,
@@ -305,19 +468,22 @@ export const home = styles.component(
       borderRadius: t.radius.md,
       padding: `${t.space[2]} ${t.space[4]}`,
     },
+    /** Brutalist CTA band: flat paper surface, thick ink border, hard shadow offset. */
     ctaBand: {
       marginTop: t.space[4],
       padding: t.space[12],
-      borderRadius: t.radius.lg,
-      border: t.stroke.default,
-      background: `linear-gradient(135deg, ${t.color.background.surface} 0%, ${t.color.background.subtle} 100%)`,
+      border: t.stroke.strong,
+      backgroundColor: t.color.background.surface,
+      boxShadow: t.shadow.xl,
       textAlign: 'center',
-      boxShadow: t.shadow.sm,
       [bp]: {
         padding: `${t.space[8]} ${t.space[5]}`,
+        boxShadow: t.shadow.lg,
       },
     },
     ctaBandTitle: {
+      fontFamily: t.fontFamily.display,
+      fontStyle: 'italic',
       fontSize: t.fontSize['2xl'],
       fontWeight: t.fontWeight.bold,
       color: t.color.text.primary,
@@ -342,6 +508,10 @@ export const home = styles.component(
         flexDirection: 'column',
         alignItems: 'stretch',
       },
+    },
+    ghIcon: {
+      display: 'inline-flex',
+      alignItems: 'center',
     },
   },
   { layer: 'components' },

@@ -3,8 +3,6 @@ title: Theming Patterns
 description: Light/dark mode, multi-brand theming, and advanced theme strategies
 ---
 
-# Theming Patterns
-
 TypeStyles uses CSS custom properties for theming, making it flexible and powerful. This guide covers common theming patterns.
 
 ## Theme surfaces

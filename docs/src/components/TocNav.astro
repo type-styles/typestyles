@@ -144,4 +144,6 @@ const padForDepth = (depth: number) => Math.max(0, depth - 2) * 12;
   } else {
     run();
   }
+
+  document.addEventListener('astro:page-load', run);
 </script>

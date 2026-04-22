@@ -47,10 +47,10 @@ const roseLightColorValues: DesignColorValues = {
 
 const roseDarkColorValues: DesignColorValues = {
   background: {
-    app: color.oklch('12%', 0.03, 355),
-    surface: p.palette['rose-9'],
-    subtle: p.palette['rose-8'],
-    elevated: p.palette['rose-9'],
+    app: color.oklch('23%', 0.024, 355),
+    surface: color.oklch('27%', 0.022, 355),
+    subtle: color.oklch('31%', 0.02, 355),
+    elevated: color.oklch('27%', 0.022, 355),
   },
   text: {
     primary: p.palette['rose-1'],

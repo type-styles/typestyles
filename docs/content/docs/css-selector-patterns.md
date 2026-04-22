@@ -3,8 +3,6 @@ title: CSS Class and Selector Pattern Inspiration
 description: Survey of class naming and selector strategies for design systems, with typestyles feature ideas
 ---
 
-# CSS Class and Selector Pattern Inspiration
-
 This document surveys common class naming and selector patterns used in modern design systems and CSS tooling. The goal is to help `typestyles` support the full practical range of CSS authoring styles: semantic classes, utility classes, variants, slot-based parts, and state via data/ARIA attributes.
 
 ## Why this matters for typestyles

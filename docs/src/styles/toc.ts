@@ -1,5 +1,4 @@
 import { designTokens as t } from '@examples/design-system';
-import { docsNavLinkInteraction } from './docsNavLink';
 import { styles } from './typestyles';
 
 const belowTocBp = '@media (max-width: 1023px)';
@@ -12,12 +11,14 @@ export const toc = styles.component(
       fontFamily: t.fontFamily.sans,
     },
     title: {
-      margin: `0 0 ${t.space[2]}`,
+      marginBlock: `0 ${t.space[3]}`,
+      marginInline: t.space[4],
+      fontFamily: t.fontFamily.mono,
       fontSize: t.fontSize.xs,
       fontWeight: t.fontWeight.bold,
       textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      color: t.color.text.placeholder,
+      letterSpacing: '0.1em',
+      color: t.color.text.secondary,
       [belowTocBp]: {
         display: 'none',
       },
@@ -26,44 +27,53 @@ export const toc = styles.component(
       listStyle: 'none',
       padding: 0,
       margin: 0,
+      /**
+       * Desktop TOC grows a left ink rail so active state reads against a visible spine
+       * rather than floating in the gap.
+       */
+      [tocBp]: {
+        borderLeft: t.stroke.strong,
+      },
     },
     item: {
       margin: 0,
-      marginBottom: t.borderWidth.thin,
     },
     link: {
       display: 'block',
+      position: 'relative',
       fontSize: t.fontSize.sm,
-      lineHeight: 1.35,
+      lineHeight: 1.4,
       color: t.color.text.secondary,
       textDecoration: 'none',
-      padding: `4px ${t.space[2]}`,
-      paddingLeft: `calc(${t.space[2]} + var(--docs-toc-depth, 0px))`,
-      borderLeft: `${t.borderWidth.default} solid transparent`,
-      '&:hover': { ...docsNavLinkInteraction.hover },
+      padding: `${t.space[1]} ${t.space[4]}`,
+      paddingLeft: `calc(${t.space[4]} + var(--docs-toc-depth, 0px))`,
+      transition: 'color 120ms ease',
+      '&:hover': {
+        color: t.color.accent.default,
+      },
+      /**
+       * Active item: accent color + semibold + a small square marker on the rail.
+       * Much less jumpy than stacking border-top/bottom strips on every scroll tick.
+       */
       '&[aria-current="location"]': {
-        position: 'relative',
-        zIndex: 1,
-        ...docsNavLinkInteraction.current,
-        borderLeftStyle: 'solid',
-        borderLeftColor: t.color.accent.default,
-        borderLeftWidth: t.borderWidth.thick,
-        [belowTocBp]: {
-          /** Pull to the TOC card’s left inner edge so the accent bar shares one stroke with the outer border. */
-          marginLeft: `calc(-1 * (${t.space[4]} + ${t.borderWidth.default}))`,
-          paddingLeft: `calc(${t.space[4]} + ${t.space[2]} - ${t.borderWidth.default} + (${t.borderWidth.thick} - ${t.borderWidth.default}) * 2 + var(--docs-toc-depth, 0px))`,
-        },
+        color: t.color.accent.default,
+        fontWeight: t.fontWeight.semibold,
         [tocBp]: {
-          /** Same overlap against the desktop column rule (`toc.root` border-left). */
-          marginLeft: `calc(-1 * (${t.space[4]} + ${t.borderWidth.thick}))`,
-          paddingLeft: `calc(${t.space[4]} + ${t.space[2]} + ${t.borderWidth.default} + var(--docs-toc-depth, 0px))`,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: '-5px',
+            top: '50%',
+            width: '8px',
+            height: '8px',
+            backgroundColor: t.color.accent.default,
+            transform: 'translateY(-50%)',
+          },
         },
-        '&:hover': { ...docsNavLinkInteraction.hover },
       },
     },
     root: {
       marginBottom: t.space[5],
-      border: `${t.borderWidth.default} solid ${t.color.border.default}`,
       backgroundColor: t.color.background.subtle,
       overflow: 'hidden',
       position: 'sticky',
@@ -71,14 +81,11 @@ export const toc = styles.component(
       zIndex: 20,
       [tocBp]: {
         marginBottom: 0,
-        border: 'none',
-        borderLeft: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
         backgroundColor: 'transparent',
         overflow: 'visible',
         position: 'static',
         top: 'auto',
         zIndex: 'auto',
-        paddingLeft: t.space[4],
       },
     },
     details: {
@@ -87,8 +94,11 @@ export const toc = styles.component(
     summary: {
       listStyle: 'none',
       cursor: 'pointer',
+      fontFamily: t.fontFamily.mono,
       fontSize: t.fontSize.sm,
       fontWeight: t.fontWeight.bold,
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
       color: t.color.text.primary,
       padding: `${t.space[2]} ${t.space[4]}`,
       '&::-webkit-details-marker': {

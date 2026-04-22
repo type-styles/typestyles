@@ -24,13 +24,14 @@ const detailsId = 'docs-page-toc';
 <script is:inline define:vars={{ detailsId }}>
   (function () {
     var mq = window.matchMedia('(min-width: 1024px)');
-    var el = document.getElementById(detailsId);
     function sync() {
+      var el = document.getElementById(detailsId);
       if (!(el instanceof HTMLDetailsElement)) return;
       if (mq.matches) el.setAttribute('open', '');
       else el.removeAttribute('open');
     }
     mq.addEventListener('change', sync);
+    document.addEventListener('astro:page-load', sync);
     sync();
   })();
 </script>

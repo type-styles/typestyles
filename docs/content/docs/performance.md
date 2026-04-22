@@ -3,8 +3,6 @@ title: Performance
 description: Understanding and optimizing typestyles performance
 ---
 
-# Performance
-
 TypeStyles is designed to be fast. This guide explains how it works under the hood and how to keep your apps running smoothly.
 
 ## How typestyles performs

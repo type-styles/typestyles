@@ -3,8 +3,6 @@ title: Styles
 description: Create and compose style variants with styles.component
 ---
 
-# Styles
-
 The `styles` API lets you define named style variants and compose them at the call site.
 
 `styles.component()` is the unified API for creating component styles. It supports both **flat** configs (simple named variants) and **dimensioned** configs (typed `variants`, `compoundVariants`, `defaultVariants`). For the full dimensioned variant API, see [Components](/docs/components).

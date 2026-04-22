@@ -3,8 +3,6 @@ title: Class naming
 description: Per-instance semantic, hashed, or atomic class names via createStyles; scoped tokens via createTokens
 ---
 
-# Class naming
-
 By default, typestyles emits **readable semantic** class names: `button-base`, `card-elevated`, `button-intent-primary`. You can switch to **hashed** or **hash-only** names for smaller strings, fewer accidental collisions across packages, or closer parity with CSS-in-JS tools that minify class names.
 
 Naming applies to:

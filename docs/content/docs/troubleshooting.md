@@ -3,8 +3,6 @@ title: Troubleshooting
 description: Common issues and how to fix them
 ---
 
-# Troubleshooting
-
 Common issues you might encounter and their solutions.
 
 ## Styles not applying

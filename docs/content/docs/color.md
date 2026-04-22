@@ -3,8 +3,6 @@ title: Color
 description: Type-safe helpers for CSS color functions
 ---
 
-# Color
-
 The `color` API provides type-safe helpers for modern CSS color functions. These functions return plain CSS strings (no runtime color math), so they compose naturally with token references and other CSS values.
 
 ## Basic color functions

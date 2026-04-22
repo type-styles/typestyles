@@ -1,5 +1,4 @@
 ---
-import { Binary, Braces, Layers, Palette, PlugZap, Puzzle } from '@lucide/astro';
 import { home } from '../styles';
 import DocsLayout from '../layouts/DocsLayout.astro';
 import Code from '../components/Code.astro';
@@ -10,7 +9,7 @@ const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.s
 
 const heroSample = `const button = styles.component('button', {
   base: {
-    border: '3px solid #000',
+    border: '1px solid #000',
     transition: 'transform 120ms ease',
   },
   variants: {
@@ -36,6 +35,8 @@ export const card = styles.component('card', {
 
 /* legacy.css — same custom properties */
 .card-legacy { padding: var(--spacing-md); }`;
+
+const frameworks = ['Vite', 'Next.js', 'Astro', 'Rollup'];
 ---
 
 <DocsLayout docsBySlug={docsBySlug} hideDesktopSidebar mainVariant="landing">
@@ -43,25 +44,33 @@ export const card = styles.component('card', {
     <div class={home.heroGrid} aria-hidden="true"></div>
     <div class={home.heroInner}>
       <div class={home.heroTop}>
-        <div>
+        <div class={home.heroCopy}>
           <p class={home.eyebrow}>
             <span class={home.eyebrowDot} aria-hidden="true"></span>
-            CSS-in-TypeScript
+            v0.5 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp; Zero runtime
           </p>
           <h1 class={home.title}>
-            Styles that live in TypeScript,
-            <br />
-            <span class={home.titleAccent}>behave like real CSS</span>
+            Styles that live in TypeScript, but behave like <span class={home.titleAccent}>real CSS</span>
           </h1>
           <p class={home.subtitle}>
             Typed variants, design tokens as CSS variables, and predictable class names — without
             locking you into a proprietary runtime or unreadable hashes in the DOM.
           </p>
-          <div class={home.pillRow} aria-label="Highlights">
-            <span class={home.pill}>Readable class names</span>
-            <span class={home.pill}>Tokens you can share with plain CSS</span>
-            <span class={home.pill}>Typed variants & composition</span>
+
+          <div class={home.installChip} data-codeblock aria-label="Install TypeStyles">
+            <pre class={home.installChipPre}><code>npm i typestyles</code></pre>
+            <button
+              type="button"
+              class={home.installChipCopy}
+              data-codeblock-copy
+              data-copy-label="Copy install command"
+              data-copied-label="Copied"
+              aria-label="Copy install command"
+            >
+              Copy
+            </button>
           </div>
+
           <div class={home.actions}>
             <a href="/docs/getting-started" class={home.cta}>
               Get started
@@ -73,18 +82,40 @@ export const card = styles.component('card', {
               target="_blank"
               rel="noopener noreferrer"
             >
+              <span class={home.ghIcon} aria-hidden="true">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+                  ></path>
+                </svg>
+              </span>
               GitHub
             </a>
           </div>
+
+          <p class={home.metaRow} aria-label="Quick facts">
+            <span>No runtime deps</span>
+            <span class={home.metaDivider} aria-hidden="true"></span>
+            <span>Tree-shakable ESM</span>
+            <span class={home.metaDivider} aria-hidden="true"></span>
+            <span>Works with {frameworks.join(' · ')}</span>
+          </p>
         </div>
         <div class={home.codeExampleWrap}>
-          <Code code={heroSample} lang="typescript" headerLabel="theme.ts" />
+          <Code code={heroSample} lang="typescript" headerLabel="button.ts" />
         </div>
       </div>
     </div>
   </div>
 
-  <section class={home.section} aria-labelledby="benefits-heading">
+  <section class:list={[home.section, home.sectionDense]} aria-labelledby="benefits-heading">
     <header class={home.sectionHead}>
       <p class={home.sectionKicker}>Why TypeStyles</p>
       <h2 id="benefits-heading" class={home.sectionTitle}>CSS ergonomics with TypeScript rigor</h2>
@@ -94,68 +125,50 @@ export const card = styles.component('card', {
         stays strict.
       </p>
     </header>
-    <div class={home.benefitGrid}>
-      <div class={home.benefitCard}>
-        <div class={home.benefitIconWrap}>
-          <Braces size={22} stroke-width={2} aria-hidden="true" />
+
+    <div class={home.benefitStack}>
+      <article class={home.benefitHero}>
+        <div class={home.benefitHeroCopy}>
+          <h3 class={home.benefitHeroTitle}>Class names you can actually read</h3>
+          <p class={home.benefitHeroText}>
+            Variants compile to predictable, hyphenated selectors that mirror what you author.
+            Open DevTools and you’ll see <code>button-intent-primary</code>, not
+            <code>_1g8a3b2</code>. No more archeology; no more guessing which style came from where.
+          </p>
         </div>
-        <h3 class={home.benefitTitle}>Human-readable classes</h3>
-        <p class={home.benefitText}>
-          Class names mirror what you author — variants like <code>button-intent-primary</code> show up
-          in DevTools exactly as you’d expect. No opaque hashes, no archeology when debugging.
-        </p>
-      </div>
-      <div class={home.benefitCard}>
-        <div class={home.benefitIconWrap}>
-          <Layers size={22} stroke-width={2} aria-hidden="true" />
+        <div class={home.classPreview} aria-label="Example compiled class names">
+          <p class={home.classPreviewLabel}>In the DOM</p>
+          <span class={home.classPreviewLine}>&lt;button class=<span class={home.classPreviewToken}>"button button-intent-primary"</span>&gt;</span>
+          <span class={home.classPreviewLine}>&lt;button class=<span class={home.classPreviewToken}>"button button-intent-ghost"</span>&gt;</span>
+          <span class={home.classPreviewLine}>&lt;div class=<span class={home.classPreviewToken}>"card card-tone-warning"</span>&gt;</span>
         </div>
-        <h3 class={home.benefitTitle}>Variants &amp; composition</h3>
-        <p class={home.benefitText}>
-          Define component styles once, call them with typed props, or destructure individual class
-          strings and combine with <code>cx()</code> — same pattern from quick prototypes to design
-          systems.
-        </p>
-      </div>
-      <div class={home.benefitCard}>
-        <div class={home.benefitIconWrap}>
-          <Palette size={22} stroke-width={2} aria-hidden="true" />
-        </div>
-        <h3 class={home.benefitTitle}>Tokens as CSS variables</h3>
-        <p class={home.benefitText}>
-          Design tokens compile to real custom properties on the cascade, so legacy stylesheets and
-          third-party CSS can consume the same values — one source of truth across the stack.
-        </p>
-      </div>
-      <div class={home.benefitCard}>
-        <div class={home.benefitIconWrap}>
-          <Puzzle size={22} stroke-width={2} aria-hidden="true" />
-        </div>
-        <h3 class={home.benefitTitle}>Incremental adoption</h3>
-        <p class={home.benefitText}>
-          Ship TypeStyles next to existing CSS and frameworks. Colocate or split files, adopt one
-          component at a time, and mix with global styles without an all-or-nothing migration.
-        </p>
-      </div>
-      <div class={home.benefitCard}>
-        <div class={home.benefitIconWrap}>
-          <Binary size={22} stroke-width={2} aria-hidden="true" />
-        </div>
-        <h3 class={home.benefitTitle}>The full CSS surface</h3>
-        <p class={home.benefitText}>
-          Pseudo-classes, media and container queries, nesting, keyframes, <code>@layer</code> — write
-          the CSS you already know; TypeStyles keeps it structured and typed at the boundaries that
-          matter.
-        </p>
-      </div>
-      <div class={home.benefitCard}>
-        <div class={home.benefitIconWrap}>
-          <PlugZap size={22} stroke-width={2} aria-hidden="true" />
-        </div>
-        <h3 class={home.benefitTitle}>Lean output</h3>
-        <p class={home.benefitText}>
-          No heavyweight styled-runtime in the browser: styles register up front, CSS injects when
-          needed, and the runtime story stays small and predictable compared to classic CSS-in-JS.
-        </p>
+      </article>
+
+      <div class={home.benefitRow}>
+        <article class={home.benefitCard}>
+          <p class={home.benefitNumber}>01 — Tokens</p>
+          <h3 class={home.benefitTitle}>Design tokens as CSS variables</h3>
+          <p class={home.benefitText}>
+            Tokens compile to real custom properties on the cascade, so legacy stylesheets and
+            third-party CSS can consume the same values — one source of truth across the stack.
+          </p>
+        </article>
+        <article class={home.benefitCard}>
+          <p class={home.benefitNumber}>02 — Adoption</p>
+          <h3 class={home.benefitTitle}>Incremental by default</h3>
+          <p class={home.benefitText}>
+            Ship TypeStyles beside existing CSS and frameworks. Colocate or split files, adopt one
+            component at a time, and mix with global styles without an all-or-nothing migration.
+          </p>
+        </article>
+        <article class={home.benefitCard}>
+          <p class={home.benefitNumber}>03 — Runtime</p>
+          <h3 class={home.benefitTitle}>Lean output, predictable shape</h3>
+          <p class={home.benefitText}>
+            No heavyweight styled-runtime in the browser: styles register up front, CSS injects when
+            needed, and the runtime story stays small compared to classic CSS-in-JS.
+          </p>
+        </article>
       </div>
     </div>
   </section>
@@ -187,7 +200,7 @@ export const card = styles.component('card', {
   <section class={home.section} aria-labelledby="workflow-heading">
     <div class={home.split}>
       <div class:list={[home.splitMediaFirst, home.codeExampleWrap]}>
-        <Code code={heroSample} lang="typescript" headerLabel="Variants in practice" />
+        <Code code={heroSample} lang="typescript" headerLabel="button.ts" />
       </div>
       <div class:list={[home.splitProseSecond]}>
         <header class={home.sectionHead}>
@@ -207,10 +220,7 @@ export const card = styles.component('card', {
       </div>
     </div>
     <div class={home.integrations}>
-      <span class={home.integrationChip}>Vite</span>
-      <span class={home.integrationChip}>Next.js</span>
-      <span class={home.integrationChip}>Rollup</span>
-      <span class={home.integrationChip}>Astro</span>
+      {frameworks.map((name) => <span class={home.integrationChip}>{name}</span>)}
     </div>
   </section>
 

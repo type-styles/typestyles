@@ -3,8 +3,6 @@ title: Testing
 description: Testing strategies for typestyles components
 ---
 
-# Testing
-
 Testing components styled with typestyles is straightforward. Since typestyles generates regular CSS class names, you can use standard testing tools without any special setup.
 
 ## Unit testing components

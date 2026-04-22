@@ -31,10 +31,7 @@ const { appearanceBootstrap } = Astro.props;
       </nav>
     </div>
     <div class={siteHeader.right}>
-      <div class={siteHeader.searchWrapper}>
-        <span class={siteHeader.searchIcon} aria-hidden="true">
-          <Search size={16} stroke-width={2} />
-        </span>
+      <div class={siteHeader.searchWrapper} data-docs-search-field>
         <button
           type="button"
           class={siteHeader.searchTrigger}
@@ -42,12 +39,12 @@ const { appearanceBootstrap } = Astro.props;
           aria-label="Open search (Command+K)"
           aria-keyshortcuts="Meta+K Control+K"
         >
-          <span class={siteHeader.searchTriggerIconMobile} aria-hidden="true">
-            <Search size={20} stroke-width={2} />
+          <span class={siteHeader.searchIcon} aria-hidden="true">
+            <Search size={16} stroke-width={2} />
           </span>
           <span class={siteHeader.searchTriggerLabel}>Search docs…</span>
+          <span class={siteHeader.searchKbd} aria-hidden="true">⌘K</span>
         </button>
-        <span class={siteHeader.searchKbd} aria-hidden="true">⌘K</span>
       </div>
       <AppearanceControls appearanceBootstrap={appearanceBootstrap} />
       <a

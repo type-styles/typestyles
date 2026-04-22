@@ -19,6 +19,9 @@ export type CSSValue = string | number;
  * `[container({ minWidth: 400 })]` mixes with longhands without casting. For **dynamic** `@…` strings, spread
  * **`atRuleBlock` / `styles.atRuleBlock`**. Same idea for **`has` / `is` / `where`**: variadic literals narrow
  * to `&:…` keys; if the key is only known as `string`, spread a one-key object or use `atRuleBlock`.
+ *
+ * **`@supports`** uses the same `` `@${string}` `` / `atRuleBlock` path; a first-class **`supports()`** helper
+ * (mirroring `container()`) would improve literals and authoring ergonomics for feature queries.
  */
 export interface CSSProperties extends CSS.Properties<CSSValue> {
   /** Nested selector (e.g., '&:hover', `has('.x')`, '& .child', '&::before', '&[data-variant]') */
@@ -30,7 +33,10 @@ export interface CSSProperties extends CSS.Properties<CSSValue> {
   [selectorWithAncestor: `${string}&${string}`]: CSSProperties;
   /** Attribute selector (e.g., '[data-variant]', '[data-variant="primary"]', '[disabled]') */
   [attribute: `[${string}]`]: CSSProperties;
-  /** At-rule (e.g., '@media (max-width: 768px)', '@container', '@supports') */
+  /**
+   * At-rule (e.g., '@media (max-width: 768px)', '@container', '@supports').
+   * TODO(typestyles): `supports()` helper for @supports (mirror `container()` literals and typing).
+   */
   [atRule: `@${string}`]: CSSProperties;
 }
 
@@ -59,6 +65,7 @@ export type CSSPropertiesWithUtils<U extends StyleUtils> = CSS.Properties<CSSVal
   [selector: `&${string}`]: CSSPropertiesWithUtils<U>;
   [selectorWithAncestor: `${string}&${string}`]: CSSPropertiesWithUtils<U>;
   [attribute: `[${string}]`]: CSSPropertiesWithUtils<U>;
+  /** @see {@link CSSProperties} at-rule index signature (TODO: `supports()` helper). */
   [atRule: `@${string}`]: CSSPropertiesWithUtils<U>;
 };
 

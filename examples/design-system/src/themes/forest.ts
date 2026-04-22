@@ -47,10 +47,10 @@ const forestLightColorValues: DesignColorValues = {
 
 const forestDarkColorValues: DesignColorValues = {
   background: {
-    app: color.oklch('12%', 0.03, 165),
-    surface: p.palette['sage-9'],
-    subtle: p.palette['sage-8'],
-    elevated: p.palette['sage-9'],
+    app: color.oklch('23%', 0.022, 165),
+    surface: color.oklch('27%', 0.02, 165),
+    subtle: color.oklch('31%', 0.018, 165),
+    elevated: color.oklch('27%', 0.02, 165),
   },
   text: {
     primary: p.palette['sage-1'],

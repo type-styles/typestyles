@@ -3,8 +3,6 @@ title: Components
 description: Build typed variant APIs with styles.component
 ---
 
-# Components
-
 `styles.component()` is the first-class API for variant-driven component styling.
 
 `styles.component()` is the unified API for all component styling. For flat configs (no dimensioned `variants`), see [Styles](/docs/styles).

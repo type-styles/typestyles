@@ -3,8 +3,6 @@ title: Best Practices
 description: Tips for organizing and maintaining typestyles in your project
 ---
 
-# Best Practices
-
 These guidelines will help you write maintainable, scalable code with typestyles.
 
 ## Naming conventions

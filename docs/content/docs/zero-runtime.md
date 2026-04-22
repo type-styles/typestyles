@@ -3,8 +3,6 @@ title: Zero-Runtime Build Extraction
 description: How to eliminate the typestyles runtime in production and emit a static CSS file
 ---
 
-# Zero-Runtime Build Extraction
-
 Without a bundler integration, typestyles injects CSS at runtime when components render. With **`@typestyles/vite`**, you can make **production** zero-runtime by default: if the plugin finds a [convention entry file](#vite) under the project root, it resolves an extraction module and defaults to `mode: 'build'` (runtime + HMR in dev, static CSS + no client injection on `vite build`). Apps that prefer injection-only can set `mode: 'runtime'` or omit a convention entry and any `extract.modules` list.
 
 Typestyles supports an optional **build extraction** mode through its bundler integrations. When enabled:

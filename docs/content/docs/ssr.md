@@ -3,8 +3,6 @@ title: Server-Side Rendering (SSR)
 description: Render typestyles on the server for better performance and SEO
 ---
 
-# Server-Side Rendering (SSR)
-
 TypeStyles supports SSR out of the box. Instead of injecting styles into the DOM during rendering, you can collect all the CSS on the server and include it in the HTML response.
 
 ## Basic setup

@@ -3,8 +3,6 @@ title: Tokens
 description: Design tokens and theming with tokens.create, createTheme, and color modes
 ---
 
-# Tokens
-
 Tokens are design primitives (colors, spacing, etc.) exposed as CSS custom properties. They keep your styles consistent and make theming straightforward.
 
 ## Scoped token instances
