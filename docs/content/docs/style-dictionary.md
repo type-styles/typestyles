@@ -1,0 +1,256 @@
+---
+title: Style Dictionary & W3C tokens
+description: Use TypeStyles alongside the W3C Design Tokens Community Group (DTCG) format and Style Dictionary for a design-tool-to-code pipeline
+---
+
+TypeStyles already stores your design tokens as **real CSS custom properties** from TypeScript. The **W3C Design Tokens Community Group** (DTCG) format and **[Style Dictionary](https://styledictionary.com/)** solve a different problem: **exchange**. They let designers, documentation sites, iOS / Android apps, and your TypeStyles app all agree on one canonical token set.
+
+This guide shows how to combine them without losing the parts that make TypeStyles pleasant: typed access, scoped variables, and no required compiler.
+
+## Who does what
+
+- **W3C DTCG** — A **JSON file format**. Each token is an object with `$value`, `$type`, optional `$description`, and `$extensions`. Groups nest tokens; aliases reference other tokens with `"{color.brand.500}"`. This is the interchange layer consumed by Figma plugins, Tokens Studio, documentation tools, etc.
+- **Style Dictionary** — A **build-time transformer**. It reads DTCG (or its own legacy format), resolves aliases, and emits CSS, SCSS, JS/TS, iOS, Android, and custom formats. It does **not** run at runtime.
+- **TypeStyles** — The **runtime** that turns TypeScript objects into `var(--…)` custom properties, typed style APIs, themes, and SSR output. It does not read DTCG directly — it consumes plain TS values.
+
+The natural split: **DTCG is your source of truth**, **Style Dictionary generates a TypeScript module**, and **TypeStyles consumes that module** through `tokens.create(…)`.
+
+```
+Figma / Tokens Studio → tokens.json (DTCG) → Style Dictionary → tokens/generated.ts → tokens.create(...)
+                                                                                         │
+                                                                                         ▼
+                                                                             real CSS custom properties
+```
+
+## A minimal DTCG file
+
+```json
+// tokens/core.tokens.json
+{
+  "color": {
+    "brand": {
+      "500": { "$value": "#3b82f6", "$type": "color" },
+      "600": { "$value": "#2563eb", "$type": "color" }
+    },
+    "text": {
+      "default": { "$value": "{color.brand.600}", "$type": "color" }
+    }
+  },
+  "space": {
+    "sm": { "$value": "0.5rem", "$type": "dimension" },
+    "md": { "$value": "1rem", "$type": "dimension" },
+    "lg": { "$value": "1.5rem", "$type": "dimension" }
+  }
+}
+```
+
+The aliased value `{color.brand.600}` is resolved by Style Dictionary at build time — by the time your TS module runs, `color.text.default` is already `#2563eb`.
+
+## Workflow A — DTCG → Style Dictionary → TypeStyles
+
+### 1. Install and configure
+
+<!-- doc-install-tabs -->
+
+```bash
+pnpm add -D style-dictionary
+```
+
+```bash
+npm install -D style-dictionary
+```
+
+```bash
+yarn add -D style-dictionary
+```
+
+<!-- /doc-install-tabs -->
+
+Style Dictionary v4 parses the DTCG format natively. Create a config that emits **a flat TypeScript primitives module** — no CSS output, because TypeStyles owns CSS generation.
+
+```js
+// sd.config.mjs
+import StyleDictionary from 'style-dictionary';
+
+const sd = new StyleDictionary({
+  source: ['tokens/**/*.tokens.json'],
+  platforms: {
+    ts: {
+      transformGroup: 'js',
+      buildPath: 'src/tokens/generated/',
+      files: [{ destination: 'primitives.ts', format: 'typestyles/primitives' }],
+    },
+  },
+});
+
+StyleDictionary.registerFormat({
+  name: 'typestyles/primitives',
+  format: ({ dictionary }) => {
+    const groups = {};
+    for (const token of dictionary.allTokens) {
+      const [group, ...rest] = token.path;
+      const key = rest.join('-'); // e.g. "brand-500"
+      (groups[group] ??= {})[key] = token.$value ?? token.value;
+    }
+    const body = Object.entries(groups)
+      .map(([name, vals]) => `export const ${name} = ${JSON.stringify(vals, null, 2)} as const;`)
+      .join('\n\n');
+    return `// AUTO-GENERATED. Do not edit by hand.\n${body}\n`;
+  },
+});
+
+await sd.buildAllPlatforms();
+```
+
+Run it whenever tokens change:
+
+```bash
+node sd.config.mjs
+```
+
+This produces `src/tokens/generated/primitives.ts`:
+
+```ts
+// AUTO-GENERATED. Do not edit by hand.
+export const color = {
+  'brand-500': '#3b82f6',
+  'brand-600': '#2563eb',
+  'text-default': '#2563eb',
+} as const;
+
+export const space = {
+  sm: '0.5rem',
+  md: '1rem',
+  lg: '1.5rem',
+} as const;
+```
+
+### 2. Feed primitives into `tokens.create`
+
+Keep the DTCG-derived primitives **separate** from your semantic token layer, so the code stays readable and refactors at the semantic level do not touch design-tool output.
+
+```ts
+// src/tokens/index.ts
+import { createTypeStyles } from 'typestyles';
+import { color as corePrimitives, space as corePrimitivesSpace } from './generated/primitives';
+
+export const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+
+export const color = tokens.create('color', {
+  brand: corePrimitives['brand-500'],
+  brandHover: corePrimitives['brand-600'],
+  text: corePrimitives['text-default'],
+});
+
+export const space = tokens.create('space', corePrimitivesSpace);
+```
+
+`color.brand` is now `var(--app-color-brand)`; the underlying hex came from DTCG.
+
+### 3. Wire it into your build
+
+Add a prebuild script so the generated file is fresh before type-checking:
+
+```json
+// package.json
+{
+  "scripts": {
+    "tokens:build": "node sd.config.mjs",
+    "dev": "pnpm tokens:build && vite",
+    "build": "pnpm tokens:build && vite build"
+  }
+}
+```
+
+Commit `src/tokens/generated/*.ts` so tooling (editors, CI, TypeScript) always sees the resolved values.
+
+## Workflow B — TypeStyles → DTCG (export to design tools)
+
+Going the other direction — making your TS primitives discoverable to Figma plugins or Tokens Studio — takes a few lines of plain JavaScript. Export the **primitive objects** (not `tokens.create` outputs — those are `var(...)` strings) and walk them into DTCG shape:
+
+```ts
+// scripts/export-dtcg.ts
+import { writeFile } from 'node:fs/promises';
+import { primitiveColors } from '../src/tokens/primitives/colors';
+import { primitiveSpacing } from '../src/tokens/primitives/spacing';
+
+function toDtcg(values: Record<string, unknown>, $type: string): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (value && typeof value === 'object') {
+      out[key] = toDtcg(value as Record<string, unknown>, $type);
+    } else {
+      out[key] = { $value: value, $type };
+    }
+  }
+  return out;
+}
+
+const bundle = {
+  color: toDtcg(primitiveColors, 'color'),
+  space: toDtcg(primitiveSpacing, 'dimension'),
+};
+
+await writeFile('dist/tokens.json', JSON.stringify(bundle, null, 2));
+```
+
+This emits a valid DTCG file your design team can import. The **primitives** are the right export boundary — semantic tokens like `color.text` are often aliases whose meaning depends on theme and are better expressed as DTCG aliases rather than baked values.
+
+## Themes and color modes across the boundary
+
+DTCG does not yet standardise multi-mode tokens. Two pragmatic patterns work well with TypeStyles:
+
+### Pattern 1 — one file per mode
+
+```
+tokens/
+  core.tokens.json          # mode-agnostic (spacing, radii, typography)
+  color.light.tokens.json   # color/* in light mode
+  color.dark.tokens.json    # color/* in dark mode
+```
+
+Run Style Dictionary twice (one platform per mode) into separate primitive modules, then feed each into a `tokens.createTheme`:
+
+```ts
+import { color as lightColor } from './generated/light';
+import { color as darkColor } from './generated/dark';
+
+export const darkTheme = tokens.createTheme('dark', {
+  base: { color: { brand: darkColor['brand-500'], text: darkColor['text-default'] } },
+});
+```
+
+### Pattern 2 — DTCG `$extensions` for modes
+
+Tokens Studio and many design tools carry mode variants under `$extensions`. Read them in a **custom Style Dictionary format** and emit one primitive module per mode. From TypeStyles' perspective it looks exactly like Pattern 1 — `tokens.createTheme` plus `tokens.colorMode.*` presets (see [Tokens](/docs/tokens) and [Theming patterns](/docs/theming-patterns)).
+
+## Aliases: build-time vs runtime
+
+You have two valid strategies for DTCG aliases like `{color.brand.500}`:
+
+- **Resolve at build time** — the default Style Dictionary behavior. `color.text.default` lands in your TS module as a literal hex. **Pro:** simple, zero runtime cost. **Con:** the link between semantic and primitive is lost in code.
+- **Preserve as `var(...)` at runtime** — emit the primitives with `tokens.create`, then reference them from a second `tokens.create` call. Aliases resolve via the CSS cascade. **Pro:** themes can swap primitives without rebuilding. **Con:** requires two token namespaces.
+
+```ts
+const primitive = tokens.create('primitive-color', { brand500: '#3b82f6' });
+const semantic = tokens.create('color', {
+  brand: primitive.brand500, // var(--app-primitive-color-brand500)
+});
+```
+
+The second strategy is worth the extra layer when you ship **multiple brand themes** that share the same semantic contract.
+
+## Gotchas
+
+- **Do not let Style Dictionary emit the CSS.** If both Style Dictionary and TypeStyles ship `:root { --color-brand: … }`, you get duplicate declarations and scoping conflicts. Keep TypeStyles as the single source of CSS.
+- **Do not pass `tokens.create` output to DTCG exporters.** It contains `var(--…)` strings, not literal values. Export the underlying primitive objects instead.
+- **Type your generated module.** Keep `as const` in the Style Dictionary format so TypeStyles' inference preserves literal key types. Missing keys become type errors at the `tokens.create` call site.
+- **Version the JSON, generate the TS.** Treat `tokens/*.tokens.json` as the reviewed artefact and `src/tokens/generated/**` as derived output. Some teams commit both; some gitignore the generated TS and rebuild in CI. Either works — pick one and stick with it.
+- **Scope still matters.** Style Dictionary does not know about TypeStyles' `scopeId`. When you change `scopeId`, only the TypeStyles side updates — the DTCG file is unchanged because it describes design intent, not emission naming.
+
+## Related
+
+- [Tokens](/docs/tokens) — the `tokens.create`, `createTokens`, and `createTheme` APIs.
+- [Design system](/docs/design-system) — three-layer token architecture (primitives / semantic / component) that this pipeline slots into.
+- [Theming patterns](/docs/theming-patterns) — multi-theme and color-mode strategies.
+- [Open Props](/docs/open-props) — pre-built primitive tokens, an alternative starting point when you do not have a design-tool source of truth yet.

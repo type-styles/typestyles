@@ -7,6 +7,25 @@ The `styles` API lets you define named style variants and compose them at the ca
 
 `styles.component()` is the unified API for creating component styles. It supports both **flat** configs (simple named variants) and **dimensioned** configs (typed `variants`, `compoundVariants`, `defaultVariants`). For the full dimensioned variant API, see [Components](/docs/components).
 
+## How TypeStyles runs
+
+1. **Registration** — When your module loads, definitions are registered. Nothing paints until a class is actually used.
+2. **First use** — The first time a returned class name is applied, TypeStyles injects the rules into a managed `<style>` tag (lazy injection, batched for performance).
+3. **Stable names** — Class strings are deterministic from your namespace and variant keys, which keeps SSR and tests predictable when [collection APIs](/docs/ssr) wrap your render.
+4. **Production** — You can keep this model, or switch to extracted CSS and a no-op runtime via the [zero-runtime](/docs/zero-runtime) path when you are ready.
+
+## Choosing an API
+
+| You want to…                                                            | Use                                     | Why                                                                                         |
+| ----------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Style a component with base + flat toggles (`elevated`, `compact`)      | `styles.component` (flat config)        | Small surface area; base applies automatically when you call the function.                  |
+| Build typed variant axes (`intent`, `size`) with defaults and compounds | `styles.component` (dimensioned config) | First-class variant model: `variants`, `compoundVariants`, `defaultVariants`.               |
+| One reusable class from a single style object                           | `styles.class`                          | One class string, no variant machinery.                                                     |
+| Merge several style groups                                              | `styles.compose`                        | Reuse groups without repeating objects.                                                     |
+| Join class names conditionally                                          | `cx()` from `'typestyles'`              | Filters falsy values; pairs well with props from parents (not tied to a `styles` instance). |
+
+**Practical default:** one [`createTypeStyles`](/docs/api-reference#createtypestyles-options) module per app or package; then use `styles.component` for UI components, `styles.class` for one-off utilities, and `import { cx } from 'typestyles'` when you merge external `className` strings.
+
 ## Creating styles (flat config)
 
 Call `styles.component(namespace, definitions)` with a unique namespace and an object of variant names to style definitions:

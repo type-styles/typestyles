@@ -121,6 +121,11 @@ const appearanceBootstrap = {
 
     <SearchPalette />
 
+    <script>
+      import { attachDocInstallTabs } from '../scripts/docInstallTabs';
+      attachDocInstallTabs();
+    </script>
+
     <script define:vars={{ sidebarHiddenDesktopClass: layout.sidebarShellHiddenDesktop }}>
       /**
        * `transition:persist` keeps the sidebar shell across client navigations, so classes from the

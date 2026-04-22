@@ -50,6 +50,19 @@ padding: space.md,        // var(--space-md)
 backgroundColor: color.primary,  // var(--color-primary)
 ```
 
+When you use **`createTypeStyles({ scopeId: 'app' })`**, the same `tokens` instance emits scoped names (for example `--app-space-md`). Add new namespaces in any module that imports `tokens` from your shared `./typestyles` module:
+
+```ts
+import { tokens } from './typestyles';
+
+export const space = tokens.create('space', {
+  sm: '8px',
+  md: '16px',
+});
+
+// With scopeId 'app': padding: space.md  →  var(--app-space-md)
+```
+
 ## Referencing tokens defined elsewhere
 
 When tokens are created in another module or package, use `tokens.use(namespace)` to get the same `var(--namespace-key)` references **without** emitting another `:root` rule. The namespace must already be registered (via `tokens.create`) before those variables exist in CSS.
@@ -109,3 +122,7 @@ const shell = tokens.createTheme('shell', {
 Other presets: `tokens.colorMode.mediaOnly`, `attributeOnly`, `mediaOrAttribute`. Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`.
 
 See [Theming patterns](/docs/theming-patterns) for end-to-end examples.
+
+## Interop with DTCG and Style Dictionary
+
+If your tokens originate in Figma, Tokens Studio, or another design tool that emits the **W3C Design Tokens Community Group (DTCG)** JSON format, use **Style Dictionary** as a build step that emits a plain TypeScript primitives module — then feed that module into `tokens.create(…)` here. See [Style Dictionary & W3C tokens](/docs/style-dictionary) for the full pipeline in both directions.
