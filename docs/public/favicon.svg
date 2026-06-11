@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="favicon-title">
+  <title id="favicon-title">TypeStyles</title>
+  <desc>TypeScript-style union of initials: T pipe S.</desc>
+  <style>
+    /* SVG favicons cannot fetch external resources, so rely on system mono stacks. */
+    .mark {
+      font-family: ui-monospace, 'Cascadia Code', Menlo, Monaco, Consolas, monospace;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      fill: #14110d;
+    }
+    .pipe {
+      fill: oklch(47% 0.126 238);
+    }
+    @media (prefers-color-scheme: dark) {
+      .mark {
+        fill: #f4f1ec;
+      }
+      .pipe {
+        fill: oklch(72% 0.11 238);
+      }
+    }
+  </style>
+  <text
+    class="mark"
+    x="50%"
+    y="50%"
+    dominant-baseline="central"
+    text-anchor="middle"
+  >T<tspan class="pipe"> | </tspan>S</text>
+</svg>

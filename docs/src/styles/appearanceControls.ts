@@ -47,6 +47,20 @@ export const appearanceControls = styles.component(
       '&:active': {
         backgroundColor: t.color.accent.subtle,
       },
+      'html[data-style="ai-glow"] &': {
+        borderInlineStartColor: t.color.border.default,
+      },
+      'html[data-style="windows-95"] &': {
+        backgroundColor: t.color.background.surface,
+        borderInlineStart: `${t.borderWidth.default} solid ${t.color.border.default}`,
+        boxShadow: t.shadow.xs,
+      },
+      'html[data-style="classic-system"] &': {
+        borderInlineStart: t.stroke.strong,
+      },
+      'html[data-style="new-wave"] &': {
+        textTransform: 'uppercase',
+      },
       '&:focus-visible': {
         outline: `${t.borderWidth.thin} solid ${t.color.accent.default}`,
         outlineOffset: '2px',
@@ -57,7 +71,7 @@ export const appearanceControls = styles.component(
         minWidth: compactControl,
       },
     },
-    paletteHost: {
+    styleHost: {
       position: 'relative',
       display: 'flex',
       alignItems: 'center',
@@ -81,7 +95,7 @@ export const appearanceControls = styles.component(
       top: '100%',
       right: 0,
       marginTop: t.space[2],
-      minWidth: '11rem',
+      minWidth: '13rem',
       maxHeight: 'min(50vh, 16rem)',
       overflowY: 'auto',
       padding: t.space[1],
@@ -89,6 +103,22 @@ export const appearanceControls = styles.component(
       border: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
       boxShadow: t.shadow.md,
       zIndex: 400,
+      'html[data-style="ai-glow"] &': {
+        backgroundColor: `color-mix(in oklch, ${t.color.background.surface} 92%, transparent)`,
+        backgroundImage: `radial-gradient(circle at 18% 18%, color-mix(in oklch, #F0ABFC 24%, transparent) 0 3rem, transparent 7rem),
+          radial-gradient(circle at 86% 12%, color-mix(in oklch, #67E8F9 22%, transparent) 0 2rem, transparent 6rem)`,
+        backdropFilter: 'blur(16px) saturate(1.25)',
+      },
+      'html[data-style="windows-95"] &': {
+        borderColor: t.color.border.default,
+        boxShadow: t.shadow.md,
+      },
+      'html[data-style="classic-system"] &': {
+        backgroundImage: `repeating-linear-gradient(45deg, transparent 0 2px, ${t.color.background.subtle} 2px 4px)`,
+      },
+      'html[data-style="new-wave"] &': {
+        transform: 'rotate(-1deg)',
+      },
     },
     menuItem: {
       display: 'block',
@@ -109,6 +139,17 @@ export const appearanceControls = styles.component(
       '&[aria-selected="true"]': {
         backgroundColor: t.color.accent.subtle,
         fontWeight: t.fontWeight.medium,
+      },
+      'html[data-style="ai-glow"] &[aria-selected="true"]': {
+        boxShadow: 'inset 0 0 0 1px color-mix(in oklch, #7C3AED 34%, transparent)',
+      },
+      'html[data-style="windows-95"] &[aria-selected="true"]': {
+        color: t.color.text.onAccent,
+        backgroundColor: t.color.accent.default,
+      },
+      'html[data-style="classic-system"] &[aria-selected="true"]': {
+        color: t.color.text.onAccent,
+        backgroundColor: t.color.accent.default,
       },
     },
   },

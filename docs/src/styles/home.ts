@@ -15,9 +15,16 @@ export const home = styles.component(
       paddingTop: t.space[12],
       paddingBottom: t.space[8],
       overflow: 'hidden',
+      'html[data-style="ai-glow"] &': {
+        overflow: 'visible',
+        paddingBottom: `calc(${t.space[8]} + ${t.space[8]})`,
+      },
       [bp]: {
         paddingTop: t.space[8],
         paddingBottom: t.space[6],
+        'html[data-style="ai-glow"] &': {
+          paddingBottom: `calc(${t.space[6]} + ${t.space[6]})`,
+        },
       },
     },
     heroGrid: {
@@ -29,6 +36,31 @@ export const home = styles.component(
       pointerEvents: 'none',
       /** Focal point aligned with the left-aligned hero copy, not dead-center. */
       maskImage: 'radial-gradient(ellipse 80% 70% at 30% 0%, black 20%, transparent 75%)',
+      'html[data-style="ai-glow"] &': {
+        inset: `-${t.space[8]} -8vw -${t.space[12]}`,
+        backgroundImage: `radial-gradient(circle at 12% 18%, #FFFFFF 0 1px, transparent 2px),
+          radial-gradient(circle at 24% 36%, color-mix(in oklch, #F0ABFC 74%, transparent) 0 2px, transparent 3px),
+          radial-gradient(circle at 72% 18%, color-mix(in oklch, #67E8F9 74%, transparent) 0 2px, transparent 3px),
+          radial-gradient(circle at 88% 54%, color-mix(in oklch, #FDE68A 76%, transparent) 0 1px, transparent 3px),
+          radial-gradient(circle at 44% 72%, color-mix(in oklch, #6EE7B7 72%, transparent) 0 2px, transparent 3px)`,
+        backgroundSize: '88px 88px, 120px 120px, 140px 140px, 104px 104px, 132px 132px',
+        maskImage: 'radial-gradient(ellipse 96% 82% at 34% 18%, black 18%, transparent 78%)',
+        opacity: 0.82,
+      },
+      'html[data-style="new-wave"] &': {
+        backgroundImage: `linear-gradient(135deg, ${t.color.accent.default} 0 10px, transparent 10px 30px),
+          radial-gradient(circle at 1px 1px, ${t.color.border.default} 1px, transparent 0)`,
+        backgroundSize: '40px 40px, 24px 24px',
+        opacity: 0.28,
+      },
+      'html[data-style="windows-95"] &': {
+        backgroundImage: 'none',
+      },
+      'html[data-style="classic-system"] &': {
+        backgroundImage: `repeating-linear-gradient(45deg, ${t.color.border.default} 0 1px, transparent 1px 8px)`,
+        backgroundSize: 'auto',
+        opacity: 0.12,
+      },
     },
     heroInner: {
       position: 'relative',
@@ -77,6 +109,23 @@ export const home = styles.component(
       margin: 0,
       color: t.color.text.primary,
       textWrap: 'balance',
+      'html[data-style="ai-glow"] &': {
+        fontStyle: 'normal',
+        letterSpacing: '-0.045em',
+      },
+      'html[data-style="new-wave"] &': {
+        textTransform: 'uppercase',
+        letterSpacing: '0.02em',
+        fontStyle: 'normal',
+      },
+      'html[data-style="windows-95"] &': {
+        fontStyle: 'normal',
+        letterSpacing: 0,
+      },
+      'html[data-style="classic-system"] &': {
+        fontStyle: 'normal',
+        letterSpacing: 0,
+      },
     },
     /** `real CSS` literally rendered in mono so the visual pun lands. */
     titleAccent: {
@@ -92,6 +141,23 @@ export const home = styles.component(
       border: t.stroke.strong,
       backgroundColor: t.color.background.surface,
       verticalAlign: '0.08em',
+      'html[data-style="ai-glow"] &': {
+        borderColor: t.color.border.default,
+        borderRadius: t.radius.md,
+        backgroundImage: `linear-gradient(120deg, color-mix(in oklch, #F0ABFC 22%, transparent), color-mix(in oklch, #67E8F9 20%, transparent), color-mix(in oklch, #6EE7B7 18%, transparent), color-mix(in oklch, #FDE68A 22%, transparent))`,
+        boxShadow: t.shadow.md,
+      },
+      'html[data-style="windows-95"] &': {
+        borderColor: t.color.border.default,
+        boxShadow: t.shadow.xs,
+      },
+      'html[data-style="classic-system"] &': {
+        borderRadius: t.radius.full,
+        backgroundImage: `repeating-linear-gradient(45deg, transparent 0 2px, ${t.color.background.subtle} 2px 4px)`,
+      },
+      'html[data-style="new-wave"] &': {
+        transform: 'rotate(-2deg)',
+      },
     },
     subtitle: {
       fontSize: t.fontSize.xl,
@@ -110,6 +176,11 @@ export const home = styles.component(
       boxShadow: t.shadow.md,
       fontFamily: t.fontFamily.mono,
       fontSize: t.fontSize.md,
+      'html[data-style="ai-glow"] &': {
+        backgroundColor: `color-mix(in oklch, ${t.color.background.surface} 90%, transparent)`,
+        backgroundImage: `linear-gradient(110deg, color-mix(in oklch, #F0ABFC 10%, transparent), color-mix(in oklch, #67E8F9 10%, transparent), color-mix(in oklch, #FDE68A 8%, transparent))`,
+        backdropFilter: 'blur(12px) saturate(1.2)',
+      },
     },
     installChipPre: {
       margin: 0,
@@ -190,6 +261,24 @@ export const home = styles.component(
         transform: 'translate(2px, 2px)',
         boxShadow: t.shadow.xs,
       },
+      'html[data-style="ai-glow"] &': {
+        borderColor: 'transparent',
+        borderRadius: t.radius.md,
+        backgroundColor: t.color.accent.default,
+        backgroundImage: `linear-gradient(110deg, color-mix(in oklch, #7C3AED 42%, #0EA5E9), #0EA5E9 58%, color-mix(in oklch, #10B981 42%, #0EA5E9))`,
+      },
+      'html[data-style="ai-glow"] &:hover': {
+        transform: 'translateY(-1px)',
+        boxShadow: t.shadow.lg,
+      },
+      'html[data-style="windows-95"] &': {
+        boxShadow: t.shadow.xs,
+        textTransform: 'none',
+      },
+      'html[data-style="classic-system"] &': {
+        borderRadius: t.radius.full,
+        textTransform: 'none',
+      },
       '&:active': {
         transform: 'translate(4px, 4px)',
         boxShadow: 'none',
@@ -215,6 +304,18 @@ export const home = styles.component(
       '&:hover': {
         transform: 'translate(2px, 2px)',
         boxShadow: t.shadow.xs,
+      },
+      'html[data-style="ai-glow"] &:hover': {
+        transform: 'translateY(-1px)',
+        boxShadow: t.shadow.lg,
+      },
+      'html[data-style="windows-95"] &': {
+        boxShadow: t.shadow.xs,
+        textTransform: 'none',
+      },
+      'html[data-style="classic-system"] &': {
+        borderRadius: t.radius.full,
+        textTransform: 'none',
       },
       '&:active': {
         transform: 'translate(4px, 4px)',

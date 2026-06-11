@@ -25,7 +25,7 @@ dist-ssr
 *.sw?
 
 
-.claude/settings.local.json
+.claude/
 .turbo
 .pnpm-store
 .content-collections

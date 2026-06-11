@@ -4,7 +4,7 @@ import type { AppearanceBootstrap } from '../lib/docsAppearanceRuntime';
 
 type Props = {
   title: string;
-  /** Used by the blocking boot script to prevent palette flash. */
+  /** Used by the blocking boot script to prevent appearance flash. */
   appearanceBootstrap: AppearanceBootstrap;
   /** Pre-extracted Typestyles stylesheet (`@typestyles/vite` serves it in dev and emits it on build). */
   typestylesCssHref?: string;
@@ -15,6 +15,7 @@ const { title, appearanceBootstrap, typestylesCssHref } = Astro.props;
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <title>{title}</title>
 <ClientRouter />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,11 +34,13 @@ const { title, appearanceBootstrap, typestylesCssHref } = Astro.props;
         if (!el || !el.textContent || !el.textContent.trim()) return;
 
         var P = JSON.parse(el.textContent);
-        var palette = localStorage.getItem('typestyles-palette') || 'default';
-        if (!P.map[palette]) palette = 'default';
+        /* Keep in sync with `readStoredStyle`/`readStoredMode` in ../lib/docsAppearanceRuntime.ts. */
+        var style = localStorage.getItem('typestyles-style') || '';
+        if (!P.map[style]) {
+          style = 'default';
+        }
 
         var mode = localStorage.getItem('typestyles-theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (mode !== 'light' && mode !== 'dark' && mode !== 'system') mode = 'system';
 
         for (var i = 0; i < P.clear.length; i++) {
@@ -45,8 +48,9 @@ const { title, appearanceBootstrap, typestylesCssHref } = Astro.props;
           if (cls) rootEl.classList.remove(cls);
         }
 
-        var nextClass = P.map[palette] && P.map[palette].className;
+        var nextClass = P.map[style] && P.map[style].className;
         if (nextClass) rootEl.classList.add(nextClass);
+        rootEl.setAttribute('data-style', (P.map[style] && P.map[style].dataStyle) || style);
         if (mode === 'system') rootEl.removeAttribute('data-mode');
         else rootEl.setAttribute('data-mode', mode);
       } catch (e) {

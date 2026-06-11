@@ -2,10 +2,10 @@
 // @ts-nocheck
 import { layout, sidebar } from '../styles';
 import {
-  designPaletteList,
+  designStyleList,
   docsAppearanceClassesToClear,
   getDocsAppearanceClass,
-  type DesignPaletteId,
+  type DesignStyleId,
 } from '../tokens';
 import type { DocHeading } from '../lib/docs';
 import Head from '../components/Head.astro';
@@ -45,11 +45,14 @@ const hasToc = tocHeadings.length > 0;
 const typestylesCssHref = `${import.meta.env.BASE_URL}typestyles.css`;
 
 const appearanceMap = Object.fromEntries(
-  designPaletteList.map(({ id }) => [
+  designStyleList.map(({ id }) => [
     id,
     getDocsAppearanceClass(id, 'light'),
   ])
-) as Record<DesignPaletteId, { className: string; dataMode: 'light' | 'dark' | undefined }>;
+) as Record<
+  DesignStyleId,
+  { className: string; dataMode: 'light' | 'dark' | undefined; dataStyle: DesignStyleId }
+>;
 
 const appearanceBootstrap = {
   clear: docsAppearanceClassesToClear.filter(Boolean),

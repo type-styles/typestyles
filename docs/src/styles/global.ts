@@ -22,6 +22,34 @@ global.style('html body', {
   MozOsxFontSmoothing: 'grayscale',
 });
 
+global.style('html[data-style="new-wave"] body', {
+  backgroundColor: t.color.background.app,
+  backgroundImage: `linear-gradient(135deg, transparent 0 72%, ${t.color.accent.subtle} 72% 78%, transparent 78%),
+    radial-gradient(circle at 8% 12%, ${t.color.accent.default} 0 5px, transparent 6px)`,
+  backgroundAttachment: 'fixed',
+});
+
+global.style('html[data-style="ai-glow"] body', {
+  backgroundColor: t.color.background.app,
+  backgroundImage: `radial-gradient(circle at 12% 10%, color-mix(in oklch, #F0ABFC 34%, transparent) 0 12rem, transparent 24rem),
+    radial-gradient(circle at 88% 14%, color-mix(in oklch, #67E8F9 36%, transparent) 0 11rem, transparent 25rem),
+    radial-gradient(circle at 74% 76%, color-mix(in oklch, #6EE7B7 28%, transparent) 0 10rem, transparent 23rem),
+    radial-gradient(circle at 22% 82%, color-mix(in oklch, #FDE68A 32%, transparent) 0 10rem, transparent 24rem),
+    linear-gradient(135deg, color-mix(in oklch, ${t.color.background.app} 86%, #FFFFFF), ${t.color.background.app})`,
+  backgroundAttachment: 'fixed',
+});
+
+global.style('html[data-style="windows-95"] body', {
+  backgroundColor: t.color.background.app,
+  backgroundImage: 'none',
+});
+
+global.style('html[data-style="classic-system"] body', {
+  backgroundColor: t.color.background.app,
+  backgroundImage: `repeating-linear-gradient(45deg, transparent 0 2px, ${t.color.background.subtle} 2px 4px)`,
+  backgroundAttachment: 'fixed',
+});
+
 global.style(
   selection({
     backgroundColor: t.color.accent.subtle,
