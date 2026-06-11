@@ -21,6 +21,25 @@ export const siteHeader = styles.component(
       zIndex: 300,
       backgroundColor: t.color.background.app,
       borderBottom: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
+      'html[data-style="ai-glow"] &': {
+        backgroundColor: `color-mix(in oklch, ${t.color.background.surface} 84%, transparent)`,
+        borderBottomColor: t.color.border.default,
+        boxShadow: '0 12px 36px color-mix(in oklch, #7C3AED 12%, transparent)',
+        backdropFilter: 'blur(18px) saturate(1.35)',
+      },
+      'html[data-style="new-wave"] &': {
+        borderBottomWidth: '3px',
+        textTransform: 'uppercase',
+      },
+      'html[data-style="windows-95"] &': {
+        backgroundColor: t.color.background.surface,
+        borderBottom: `${t.borderWidth.default} solid ${t.color.shadow.offset}`,
+        boxShadow: `inset 0 1px 0 ${t.color.background.elevated}`,
+      },
+      'html[data-style="classic-system"] &': {
+        backgroundColor: t.color.background.surface,
+        borderBottom: `${t.borderWidth.default} solid ${t.color.border.strong}`,
+      },
     },
     inner: {
       display: 'flex',
@@ -63,6 +82,14 @@ export const siteHeader = styles.component(
       '&:active': {
         boxShadow: 'none',
         transform: 'translate(2px, 2px)',
+      },
+      'html[data-style="windows-95"] &': {
+        boxShadow: t.shadow.xs,
+        borderColor: t.color.border.default,
+      },
+      'html[data-style="classic-system"] &': {
+        borderRadius: t.radius.full,
+        boxShadow: 'none',
       },
       '&:focus-visible': {
         outline: `${t.borderWidth.thin} solid ${t.color.accent.default}`,
@@ -112,6 +139,25 @@ export const siteHeader = styles.component(
         paddingBlock: 0,
       },
       '&:hover': { color: t.color.accent.default },
+      'html[data-style="ai-glow"] &': {
+        fontStyle: 'normal',
+        letterSpacing: '-0.02em',
+        textTransform: 'none',
+      },
+      'html[data-style="new-wave"] &': {
+        letterSpacing: '0.08em',
+        fontStyle: 'normal',
+      },
+      'html[data-style="windows-95"] &': {
+        fontStyle: 'normal',
+        letterSpacing: 0,
+        textTransform: 'none',
+      },
+      'html[data-style="classic-system"] &': {
+        fontStyle: 'normal',
+        letterSpacing: 0,
+        textTransform: 'none',
+      },
       [bp]: {
         fontSize: t.fontSize.lg,
         paddingInline: t.space[2],

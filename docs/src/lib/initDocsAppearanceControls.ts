@@ -1,9 +1,9 @@
-import { designPaletteList } from '../tokens';
+import { designStyleList } from '../tokens';
 import {
   type AppearanceBootstrap,
   persistAppearance,
   readStoredMode,
-  readStoredPalette,
+  readStoredStyle,
   syncDocumentClass,
 } from './docsAppearanceRuntime';
 
@@ -45,22 +45,22 @@ function syncModeIconVisibility(
   moon?.toggleAttribute('hidden', showSun);
 }
 
-function setPaletteMenuOpen(root: HTMLElement, open: boolean) {
-  const trigger = root.querySelector<HTMLButtonElement>('[data-appearance-palette-trigger]');
-  const menu = root.querySelector<HTMLElement>('[data-appearance-palette-menu]');
+function setStyleMenuOpen(root: HTMLElement, open: boolean) {
+  const trigger = root.querySelector<HTMLButtonElement>('[data-appearance-style-trigger]');
+  const menu = root.querySelector<HTMLElement>('[data-appearance-style-menu]');
   if (!trigger || !menu) return;
   menu.hidden = !open;
   trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
-function closeAllPaletteMenus() {
+function closeAllStyleMenus() {
   for (const root of roots()) {
-    setPaletteMenuOpen(root, false);
+    setStyleMenuOpen(root, false);
   }
 }
 
 function syncOneRoot(root: HTMLElement, cfg: AppearanceBootstrap) {
-  const palette = readStoredPalette(cfg);
+  const style = readStoredStyle(cfg);
   const stored = readStoredMode();
 
   const modeBtn = root.querySelector<HTMLButtonElement>('[data-appearance-mode-toggle]');
@@ -72,15 +72,15 @@ function syncOneRoot(root: HTMLElement, cfg: AppearanceBootstrap) {
     syncModeIconVisibility(modeBtn, stored);
   }
 
-  for (const btn of root.querySelectorAll<HTMLButtonElement>('[data-appearance-palette-id]')) {
-    const id = btn.getAttribute('data-appearance-palette-id');
-    btn.setAttribute('aria-selected', id === palette ? 'true' : 'false');
+  for (const btn of root.querySelectorAll<HTMLButtonElement>('[data-appearance-style-id]')) {
+    const styleId = btn.getAttribute('data-appearance-style-id');
+    btn.setAttribute('aria-selected', styleId === style ? 'true' : 'false');
   }
 
-  const trigger = root.querySelector<HTMLButtonElement>('[data-appearance-palette-trigger]');
+  const trigger = root.querySelector<HTMLButtonElement>('[data-appearance-style-trigger]');
   if (trigger) {
-    const label = designPaletteList.find((p) => p.id === palette)?.label ?? palette;
-    trigger.setAttribute('aria-label', `Color palette: ${label}`);
+    const label = designStyleList.find((p) => p.id === style)?.label ?? style;
+    trigger.setAttribute('aria-label', `Visual style: ${label}`);
   }
 }
 
@@ -92,11 +92,11 @@ function syncEveryRoot() {
   }
 }
 
-function apply(cfg: AppearanceBootstrap, palette: string, mode: 'light' | 'dark' | 'system') {
-  syncDocumentClass(cfg, palette, mode);
-  persistAppearance(palette, mode);
+function apply(cfg: AppearanceBootstrap, style: string, mode: 'light' | 'dark' | 'system') {
+  syncDocumentClass(cfg, style, mode);
+  persistAppearance(style, mode);
   syncEveryRoot();
-  closeAllPaletteMenus();
+  closeAllStyleMenus();
 }
 
 function bindDocumentHandlersOnce() {
@@ -106,17 +106,17 @@ function bindDocumentHandlersOnce() {
   document.addEventListener('click', (e) => {
     if (!(e.target instanceof Node)) return;
     for (const root of roots()) {
-      const host = root.querySelector('[data-appearance-palette-host]');
-      const menu = root.querySelector<HTMLElement>('[data-appearance-palette-menu]');
+      const host = root.querySelector('[data-appearance-style-host]');
+      const menu = root.querySelector<HTMLElement>('[data-appearance-style-menu]');
       if (!(host instanceof HTMLElement) || !menu || menu.hidden) continue;
       if (!host.contains(e.target)) {
-        setPaletteMenuOpen(root, false);
+        setStyleMenuOpen(root, false);
       }
     }
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeAllPaletteMenus();
+    if (e.key === 'Escape') closeAllStyleMenus();
   });
 }
 
@@ -128,23 +128,23 @@ function bindRoot(root: HTMLElement, cfg: AppearanceBootstrap) {
     .querySelector<HTMLButtonElement>('[data-appearance-mode-toggle]')
     ?.addEventListener('click', () => {
       const next = readStoredMode() === 'dark' ? 'light' : 'dark';
-      apply(cfg, readStoredPalette(cfg), next);
+      apply(cfg, readStoredStyle(cfg), next);
     });
 
   root
-    .querySelector<HTMLButtonElement>('[data-appearance-palette-trigger]')
+    .querySelector<HTMLButtonElement>('[data-appearance-style-trigger]')
     ?.addEventListener('click', (e) => {
       e.stopPropagation();
-      const menu = root.querySelector<HTMLElement>('[data-appearance-palette-menu]');
+      const menu = root.querySelector<HTMLElement>('[data-appearance-style-menu]');
       if (!menu) return;
       const wasOpen = !menu.hidden;
-      closeAllPaletteMenus();
-      setPaletteMenuOpen(root, !wasOpen);
+      closeAllStyleMenus();
+      setStyleMenuOpen(root, !wasOpen);
     });
 
-  for (const btn of root.querySelectorAll<HTMLButtonElement>('[data-appearance-palette-id]')) {
+  for (const btn of root.querySelectorAll<HTMLButtonElement>('[data-appearance-style-id]')) {
     btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-appearance-palette-id');
+      const id = btn.getAttribute('data-appearance-style-id');
       if (!id || !cfg.map[id]) return;
       apply(cfg, id, readStoredMode());
     });

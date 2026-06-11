@@ -19,6 +19,25 @@ const sidebarBase = styles.component(
       display: 'flex',
       flexDirection: 'column',
       borderRight: `${t.borderWidth.thick} solid ${t.color.border.strong}`,
+      'html[data-style="ai-glow"] &': {
+        backgroundColor: `color-mix(in oklch, ${t.color.background.surface} 78%, transparent)`,
+        backgroundImage: `radial-gradient(circle at 20% 10%, color-mix(in oklch, #F0ABFC 18%, transparent) 0 4rem, transparent 10rem),
+          radial-gradient(circle at 90% 70%, color-mix(in oklch, #67E8F9 14%, transparent) 0 4rem, transparent 10rem)`,
+        backdropFilter: 'blur(18px) saturate(1.25)',
+        boxShadow: '8px 0 36px color-mix(in oklch, #7C3AED 10%, transparent)',
+      },
+      'html[data-style="windows-95"] &': {
+        backgroundColor: t.color.background.surface,
+        borderRight: `${t.borderWidth.default} solid ${t.color.shadow.offset}`,
+        boxShadow: `inset 1px 0 0 ${t.color.background.elevated}`,
+      },
+      'html[data-style="classic-system"] &': {
+        backgroundColor: t.color.background.surface,
+        backgroundImage: `repeating-linear-gradient(45deg, transparent 0 2px, ${t.color.background.subtle} 2px 4px)`,
+      },
+      'html[data-style="new-wave"] &': {
+        borderRightWidth: '3px',
+      },
       [desktop]: {
         top: siteHeaderHeight,
         height: `calc(100vh - ${siteHeaderHeight})`,

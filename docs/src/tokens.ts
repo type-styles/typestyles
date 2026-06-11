@@ -1,18 +1,15 @@
 import {
+  aiGlowTheme,
   amberTheme,
+  classicSystemTheme,
   defaultTheme,
-  designPaletteList,
+  designStyleList,
   forestTheme,
+  newWaveTheme,
   roseTheme,
-  type DesignPaletteId,
+  type DesignStyleId,
+  windows95Theme,
 } from '@examples/design-system';
-
-const docsThemeByPalette: Record<DesignPaletteId, { className: string }> = {
-  default: defaultTheme,
-  forest: forestTheme,
-  rose: roseTheme,
-  amber: amberTheme,
-};
 
 /** Strip these from `<html>` before applying a new appearance. */
 export const docsAppearanceClassesToClear = [
@@ -20,20 +17,33 @@ export const docsAppearanceClassesToClear = [
   forestTheme.className,
   roseTheme.className,
   amberTheme.className,
+  aiGlowTheme.className,
+  newWaveTheme.className,
+  windows95Theme.className,
+  classicSystemTheme.className,
 ];
+
+const docsThemeByStyle: Record<DesignStyleId, { className: string }> = {
+  default: defaultTheme,
+  'ai-glow': aiGlowTheme,
+  'new-wave': newWaveTheme,
+  'windows-95': windows95Theme,
+  'classic-system': classicSystemTheme,
+};
 
 export type DocsColorMode = 'light' | 'dark' | 'system';
 
 export function getDocsAppearanceClass(
-  palette: DesignPaletteId,
+  style: DesignStyleId,
   mode: DocsColorMode,
-): { className: string; dataMode: 'light' | 'dark' | undefined } {
-  const theme = docsThemeByPalette[palette] ?? defaultTheme;
+): { className: string; dataMode: 'light' | 'dark' | undefined; dataStyle: DesignStyleId } {
+  const theme = docsThemeByStyle[style] ?? defaultTheme;
   return {
     className: theme.className,
     dataMode: mode === 'system' ? undefined : mode,
+    dataStyle: docsThemeByStyle[style] ? style : 'default',
   };
 }
 
-export { designPaletteList };
-export type { DesignPaletteId };
+export { designStyleList };
+export type { DesignStyleId };

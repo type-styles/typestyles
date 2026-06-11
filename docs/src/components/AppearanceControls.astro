@@ -1,11 +1,11 @@
 ---
 /**
- * Theme + palette controls for the docs chrome (desktop header and mobile bar).
+ * Theme + visual style controls for the docs chrome (desktop header and mobile bar).
  * Client behavior lives in `../lib/initDocsAppearanceControls.ts`.
  */
-import { Sun, Moon, Palette } from '@lucide/astro';
+import { Sun, Moon, WandSparkles } from '@lucide/astro';
 import { appearanceControls as ac } from '../styles/appearanceControls';
-import { designPaletteList } from '../tokens';
+import { designStyleList } from '../tokens';
 import type { AppearanceBootstrap } from '../lib/docsAppearanceRuntime';
 
 type Props = {
@@ -28,29 +28,29 @@ const { appearanceBootstrap } = Astro.props;
       <Moon size={18} stroke-width={2} />
     </span>
   </button>
-  <div class:list={[ac.paletteHost]} data-appearance-palette-host>
+  <div class:list={[ac.styleHost]} data-appearance-style-host>
     <button
       type="button"
       class:list={[ac.iconButton]}
-      data-appearance-palette-trigger
+      data-appearance-style-trigger
       aria-haspopup="listbox"
       aria-expanded="false"
-      aria-label="Color palette"
+      aria-label="Visual style"
     >
       <span aria-hidden="true">
-        <Palette size={18} stroke-width={2} />
+        <WandSparkles size={18} stroke-width={2} />
       </span>
     </button>
     <div
       class:list={[ac.dropdown]}
-      data-appearance-palette-menu
+      data-appearance-style-menu
       role="listbox"
-      aria-label="Palettes"
+      aria-label="Visual styles"
       hidden
     >
       {
-        designPaletteList.map(({ id, label }) => (
-          <button type="button" role="option" class:list={[ac.menuItem]} data-appearance-palette-id={id}>
+        designStyleList.map(({ id, label }) => (
+          <button type="button" role="option" class:list={[ac.menuItem]} data-appearance-style-id={id}>
             {label}
           </button>
         ))

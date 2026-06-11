@@ -41,6 +41,23 @@ export const doc = styles.component(
       letterSpacing: '-0.025em',
       lineHeight: 1.1,
       textWrap: 'balance',
+      'html[data-style="ai-glow"] &': {
+        fontStyle: 'normal',
+        letterSpacing: '-0.045em',
+      },
+      'html[data-style="new-wave"] &': {
+        fontStyle: 'normal',
+        textTransform: 'uppercase',
+        letterSpacing: '0.02em',
+      },
+      'html[data-style="windows-95"] &': {
+        fontStyle: 'normal',
+        letterSpacing: 0,
+      },
+      'html[data-style="classic-system"] &': {
+        fontStyle: 'normal',
+        letterSpacing: 0,
+      },
     },
     description: {
       fontSize: t.fontSize.lg,

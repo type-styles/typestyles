@@ -32,6 +32,12 @@ const layoutBase = styles.component(
     content: {
       flex: 1,
       minWidth: 0,
+      'html[data-style="ai-glow"] &': {
+        backgroundImage: `linear-gradient(115deg, color-mix(in oklch, #F0ABFC 30%, transparent), transparent 24%, color-mix(in oklch, #67E8F9 28%, transparent) 50%, color-mix(in oklch, #FDE68A 20%, transparent) 72%, transparent)`,
+        backgroundPosition: 'top center',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: '100% min(760px, 80vh)',
+      },
     },
     main: {
       /** ~68ch of JetBrains Mono body after 48px padding on each side. */
