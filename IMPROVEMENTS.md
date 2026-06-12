@@ -50,7 +50,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
   - Decide on `css-selector-patterns.md` (internal research → remove from build or
     promote)
 
-- [ ] **P0.4 — Request-safe SSR collection** (PR: )
+- [x] **P0.4 — Request-safe SSR collection** (PR: #89)
   - `collectStyles` uses a module-global buffer (`sheet.ts`); concurrent SSR
     requests interleave CSS. Isolate with `AsyncLocalStorage` on Node.
   - Add async render support: `collectStyles(async () => …)`
