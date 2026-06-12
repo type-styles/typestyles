@@ -19,7 +19,7 @@ import { serializeStyle } from './css';
 import { insertRules } from './sheet';
 import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
-import { registeredNamespaces } from './registry';
+import { registeredNamespaces, trackEmittedClassName } from './registry';
 import {
   buildSingleClassName,
   defaultClassNamingConfig,
@@ -132,6 +132,9 @@ export function createHashClass(
   const className = label
     ? `${cfg.prefix}-${sanitizeClassSegment(label)}-${hash}`
     : `${cfg.prefix}-${hash}`;
+  // Same payload → same class is intentional dedup; different payloads
+  // colliding on one class string is a real hash collision.
+  trackEmittedClassName(className, `hashClass:${serialized}`);
   const selector = `.${className}`;
   const rules = serializeStyle(selector, properties);
   if (classNaming.cascadeLayers) {

@@ -7,6 +7,7 @@ import { createKeyframes } from './keyframes';
 import * as colorFns from './color';
 import {
   getRegisteredCss,
+  subscribeRegisteredCss,
   insertRules,
   reset,
   flushSync,
@@ -223,6 +224,12 @@ export const color = colorFns;
  * Return all registered CSS as a string (for SSR).
  */
 export { getRegisteredCss };
+
+/**
+ * Subscribe to changes in the registered CSS. Returns an unsubscribe function.
+ * Compatible with `useSyncExternalStore`.
+ */
+export { subscribeRegisteredCss };
 
 /**
  * Insert multiple CSS rules into the stylesheet.

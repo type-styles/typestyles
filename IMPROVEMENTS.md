@@ -22,7 +22,7 @@ give up TypeScript ergonomics or CSS interop**. Every task below serves one sent
 
 Bugs and credibility issues that lose evaluations on contact. Do these first.
 
-- [ ] **P0.1 — Fix silent-wrong-output bugs** (PR: )
+- [x] **P0.1 — Fix silent-wrong-output bugs** (PR: #86)
   - Refresh the stale unitless property set in `packages/typestyles/src/css.ts`
     (`aspectRatio: 1.5` currently emits invalid `aspect-ratio: 1.5px`; also
     `scale`, `WebkitLineClamp`, `fontSizeAdjust`, …)

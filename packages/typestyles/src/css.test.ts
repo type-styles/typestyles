@@ -58,6 +58,23 @@ describe('serializeStyle', () => {
     expect(rules[0].css).toBe('.box { margin: 0; padding: 0; }');
   });
 
+  it('keeps modern unitless properties as numbers', () => {
+    const rules = serializeStyle('.media', {
+      aspectRatio: 1.5,
+      scale: 1.1,
+      fontSizeAdjust: 0.5,
+    });
+    expect(rules[0].css).toBe('.media { aspect-ratio: 1.5; scale: 1.1; font-size-adjust: 0.5; }');
+  });
+
+  it('treats vendor-prefixed variants of unitless properties as unitless', () => {
+    const rules = serializeStyle('.clamp', {
+      WebkitLineClamp: 3,
+      WebkitBoxFlex: 1,
+    });
+    expect(rules[0].css).toBe('.clamp { -webkit-line-clamp: 3; -webkit-box-flex: 1; }');
+  });
+
   it('serializes nested selectors', () => {
     const rules = serializeStyle('.button', {
       color: 'blue',

@@ -134,6 +134,7 @@ cx(card(), isElevated && card.elevated, externalClassName);
 ### Sheet and testing utilities
 
 - `getRegisteredCss()`: Returns all CSS registered so far (useful with SSR or diagnostics)
+- `subscribeRegisteredCss(listener)`: Subscribe to CSS registration changes; returns an unsubscribe function. Compatible with React `useSyncExternalStore` (used by `@typestyles/next` `useTypestyles`)
 - `reset()`, `flushSync()`, `ensureDocumentStylesAttached()`: Primarily for tests and advanced setup; see [Testing](/docs/testing)
 - `insertRules(rules)`: Low-level rule insertion (mainly for library authors)
 
