@@ -12,7 +12,7 @@ The `color` API provides type-safe helpers for modern CSS color functions. These
 Create `rgb()` colors with space-separated syntax:
 
 ```ts
-import { color } from 'typestyles';
+import { color } from 'typestyles/color';
 
 color.rgb(0, 102, 255); // "rgb(0 102 255)"
 color.rgb(0, 102, 255, 0.5); // "rgb(0 102 255 / 0.5)"
@@ -133,7 +133,8 @@ Note: This requires the browser to support `light-dark()` and the element to hav
 All color functions accept token references since tokens are just CSS `var()` strings:
 
 ```ts
-import { styles, tokens, color as colorFn } from 'typestyles';
+import { styles, tokens } from 'typestyles';
+import { color as colorFn } from 'typestyles/color';
 
 const themeColor = tokens.create('color', {
   primary: '#0066ff',

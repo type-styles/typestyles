@@ -1,4 +1,4 @@
-import { color } from 'typestyles';
+import { color } from 'typestyles/color';
 
 export const PALETTE_STEPS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
 export type PaletteStep = (typeof PALETTE_STEPS)[number];

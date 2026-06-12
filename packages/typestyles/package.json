@@ -56,13 +56,24 @@
         "types": "./dist/globals.d.cts",
         "default": "./dist/globals.cjs"
       }
+    },
+    "./color": {
+      "import": {
+        "types": "./dist/color.d.ts",
+        "default": "./dist/color.js"
+      },
+      "require": {
+        "types": "./dist/color.d.cts",
+        "default": "./dist/color.cjs"
+      }
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/check-bundle-size.mjs",
+    "check:bundle-size": "node scripts/check-bundle-size.mjs",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",

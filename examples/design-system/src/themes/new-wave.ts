@@ -1,4 +1,4 @@
-import { color } from 'typestyles';
+import { color } from 'typestyles/color';
 import { createDesignTheme } from '../create-theme';
 import { designPrimitiveTokens as p } from '../tokens';
 import {

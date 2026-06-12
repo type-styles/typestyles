@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    color: 'src/color-entry.ts',
     globals: 'src/globals.ts',
     server: 'src/server.ts',
     hmr: 'src/hmr.ts',
