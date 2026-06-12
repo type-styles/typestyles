@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useServerInsertedHTML, useSyncExternalStore } from 'react';
-import { getRegisteredCss } from 'typestyles/server';
+import { getRegisteredCss, subscribeRegisteredCss } from 'typestyles/server';
 
 /**
  * Subscribe to typestyles CSS changes. Use this in client components
  * that need to stay up-to-date with dynamically registered styles.
+ * Re-renders whenever new CSS rules are registered on the client.
  *
  * @example
  * ```tsx
@@ -21,9 +22,9 @@ import { getRegisteredCss } from 'typestyles/server';
  */
 export function useTypestyles() {
   return useSyncExternalStore(
-    () => () => {},
+    subscribeRegisteredCss,
     () => getRegisteredCss(),
-    () => '',
+    () => getRegisteredCss(),
   );
 }
 

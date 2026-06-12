@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { fileScopeId } from './class-naming';
 import { createStyles } from './styles';
 import { reset, flushSync } from './sheet';
@@ -107,5 +107,87 @@ describe('class naming modes', () => {
     const sb = createStyles({ scopeId: 's1' });
     const b = sb.hashClass({ width: 10 }, 'x');
     expect(a).not.toBe(b);
+  });
+});
+
+describe('semantic mode with scopeId', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('prefixes component class names with the sanitized scope', () => {
+    const styles = createStyles({ scopeId: 'my-ui' });
+    const button = styles.component('button', {
+      base: { color: 'red' },
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
+    expect(button.base).toBe('my-ui-button-base');
+    expect(button['intent-primary']).toBe('my-ui-button-intent-primary');
+    expect(button({ intent: 'primary' })).toBe('my-ui-button-base my-ui-button-intent-primary');
+  });
+
+  it('sanitizes package-style scope ids', () => {
+    const styles = createStyles({ scopeId: '@acme/design-system' });
+    const cls = styles.class('card', { padding: '1rem' });
+    expect(cls).toBe('acme-design-system-card');
+  });
+
+  it('keeps unscoped names unchanged', () => {
+    const styles = createStyles();
+    const cls = styles.class('card', { padding: '1rem' });
+    expect(cls).toBe('card');
+  });
+
+  it('isolates the same logical namespace across scopes', () => {
+    const sa = createStyles({ scopeId: 'pkg-a' });
+    const sb = createStyles({ scopeId: 'pkg-b' });
+    const a = sa.component('button', { base: { color: 'red' } });
+    const b = sb.component('button', { base: { color: 'blue' } });
+    expect(a.base).not.toBe(b.base);
+  });
+});
+
+describe('class name collision detection (dev)', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('errors when two different definitions emit the same class string', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // scope 'docs' + namespace 'button' and no scope + namespace 'docs-button'
+    // both emit "docs-button-base"
+    const scoped = createStyles({ scopeId: 'docs' });
+    const unscoped = createStyles();
+    scoped.component('button', { base: { color: 'red' } });
+    unscoped.component('docs-button', { base: { color: 'blue' } });
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Class name collision'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('docs-button-base'));
+  });
+
+  it('does not error when the same definition re-registers (HMR)', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const styles = createStyles({ scopeId: 'app' });
+    styles.component('button', { base: { color: 'red' } });
+    // Same scope + namespace re-registered with edited styles — dev HMR path
+    styles.component('button', { base: { color: 'blue' } });
+    const collisionCalls = errorSpy.mock.calls.filter(
+      (args) => typeof args[0] === 'string' && args[0].includes('Class name collision'),
+    );
+    expect(collisionCalls).toHaveLength(0);
+  });
+
+  it('does not error for identical hashClass payloads (intentional dedup)', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const styles = createStyles();
+    const a = styles.hashClass({ color: 'red' });
+    const b = styles.hashClass({ color: 'red' });
+    expect(a).toBe(b);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 });

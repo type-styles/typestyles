@@ -79,7 +79,7 @@ Call the style function wherever you set `className`. The return value is one st
 </button>
 ```
 
-In DevTools you should see classes like `button-base` and `button-intent-ghost`, with token-backed values resolving to scoped custom properties (for example `--app-color-primary`).
+In DevTools you should see classes like `app-button-base` and `app-button-intent-ghost` (the `scopeId` is prefixed onto semantic class names), with token-backed values resolving to scoped custom properties (for example `--app-color-primary`).
 
 **What just happened:** definitions register when the module loads; the first time a class is used, TypeStyles injects rules into a managed `<style>` tag. For SSR, streaming, or static CSS in production, see [SSR](/docs/ssr) and [Zero-runtime extraction](/docs/zero-runtime).
 

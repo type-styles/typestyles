@@ -46,12 +46,12 @@ For **CSS cascade layers** (`@layer`) — optional, and off by default — see [
 
 Returns a style API with the same methods as the default `styles` export. Options are a partial **`ClassNamingConfig`** merged onto defaults:
 
-| Option    | Type                                                        | Default      | Description                                                                                                                                                |
-| --------- | ----------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mode`    | `'semantic' \| 'hashed' \| 'atomic'`                        | `'semantic'` | How class strings are built (see below).                                                                                                                   |
-| `prefix`  | `string`                                                    | `'ts'`       | Leading segment for hashed/atomic output and for `hashClass`.                                                                                              |
-| `scopeId` | `string`                                                    | `''`         | Optional id (package name, app name) mixed into the hash input so two packages can reuse the same logical namespace without sharing the same class string. |
-| `layers`  | `readonly string[]` or `{ order, prependFrameworkLayers? }` | _(omitted)_  | When set, enables `@layer` output and requires `{ layer }` on each `class` / `hashClass` / `component` call. See [Cascade layers](/docs/cascade-layers).   |
+| Option    | Type                                                        | Default      | Description                                                                                                                                                                                                                                                      |
+| --------- | ----------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`    | `'semantic' \| 'hashed' \| 'atomic'`                        | `'semantic'` | How class strings are built (see below).                                                                                                                                                                                                                         |
+| `prefix`  | `string`                                                    | `'ts'`       | Leading segment for hashed/atomic output and for `hashClass`.                                                                                                                                                                                                    |
+| `scopeId` | `string`                                                    | `''`         | Optional id (package name, app name) so two packages can reuse the same logical namespace without sharing the same class string. In `semantic` mode the sanitized scope is prefixed onto class names; in `hashed`/`atomic` mode it is mixed into the hash input. |
+| `layers`  | `readonly string[]` or `{ order, prependFrameworkLayers? }` | _(omitted)_  | When set, enables `@layer` output and requires `{ layer }` on each `class` / `hashClass` / `component` call. See [Cascade layers](/docs/cascade-layers).                                                                                                         |
 
 The instance also exposes **`styles.classNaming`**: a read-only snapshot of the resolved config (useful for debugging).
 
@@ -73,6 +73,13 @@ Human-readable, stable names derived from the namespace and variant segment:
 - `styles.component('button', { … })` → `button-base`, `button-intent-primary`, etc.
 - Components with `slots` → `{namespace}-{slot}`, `{namespace}-{slot}-{dimension}-{option}`, etc.
 
+With **`scopeId`** set, the sanitized scope is prefixed onto every class name — the same way `tokens.create` scopes custom property names:
+
+- `createStyles({ scopeId: 'my-ui' })` + `styles.component('button', { … })` → `my-ui-button-base`
+- `createStyles({ scopeId: '@acme/ds' })` + `styles.class('card', { … })` → `acme-ds-card`
+
+This keeps semantic names readable while making isolation real: two packages can both register `styles.component('button', …)` without their CSS rules overwriting each other. In development, typestyles also logs an error if two different definitions ever emit the same class string (cross-scope collisions, or hash collisions in `hashed`/`atomic` mode).
+
 ### `hashed`
 
 Deterministic names of the form **`{prefix}-{namespace-slug}-{hash}`**. The hash is computed from (when set) `scopeId`, the namespace, a variant segment (e.g. `base`, `intent-primary`, `root-compound-0`), and the serialized style object for that rule. Identical definitions produce identical class strings.
@@ -91,7 +98,7 @@ This mode is a **prototype** for hash-only ergonomics: each component rule is st
 
 ## Monorepos and `scopeId`
 
-Two packages might both use `styles.component('button', …)`. With **`semantic`** mode, you rely on distinct namespaces or separate bundles. With **`hashed`** / **`atomic`**, give each package its own **`createStyles({ scopeId: '…' })`** so identical style objects in different packages do not map to the same class string.
+Two packages might both use `styles.component('button', …)`. Give each package its own **`createStyles({ scopeId: '…' })`**: in **`semantic`** mode the scope is prefixed onto the class name (`pkg-a-button-base` vs `pkg-b-button-base`); in **`hashed`** / **`atomic`** mode the scope is mixed into the hash so identical style objects in different packages do not map to the same class string.
 
 For tokens, use **`createTokens({ scopeId })`** per package so `--color-*` and `.theme-*` rules do not overwrite each other on `:root` or clash by name.
 

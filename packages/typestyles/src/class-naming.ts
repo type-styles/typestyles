@@ -1,11 +1,13 @@
 import type { CSSProperties } from './types';
 import type { ResolvedCascadeLayers } from './layers';
+import { trackEmittedClassName } from './registry';
 
 /**
  * How generated class names are formed for `styles.class`, `styles.component`,
  * and related APIs.
  *
  * - `semantic` — readable names like `button-base`, `button-intent-primary` (default).
+ *   With `scopeId` set, names are prefixed with the sanitized scope: `my-ui-button-base`.
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
  * - `atomic` — hash-only names (shortest); same collision properties as `hashed` when `scopeId` differs.
  */
@@ -17,9 +19,11 @@ export type ClassNamingConfig = {
   prefix: string;
   /**
    * Package, app, or per-file id: same logical `styles.component` / `styles.class` name under different
-   * scopes produces different classes. In development, re-registering the same scope + component name
-   * (e.g. HMR) clears prior rules instead of throwing. Use `fileScopeId(import.meta)` for file-local
-   * isolation (CSS Modules–style).
+   * scopes produces different classes — in `semantic` mode the sanitized scope is prefixed onto the
+   * class name (`my-ui-button-base`); in `hashed`/`atomic` mode it is mixed into the hash. This matches
+   * how `tokens.create` scopes custom property names. In development, re-registering the same
+   * scope + component name (e.g. HMR) clears prior rules instead of throwing. Use
+   * `fileScopeId(import.meta)` for file-local isolation (CSS Modules–style).
    */
   scopeId: string;
   /**
@@ -98,13 +102,44 @@ export function scopedTokenNamespace(
   return `${sanitizeClassSegment(scopeId)}-${logicalNamespace}`;
 }
 
+/**
+ * Sanitized scope prefix used for `semantic` mode class names, mirroring how
+ * `scopedTokenNamespace` scopes custom property names. Empty when no `scopeId`.
+ */
+function semanticScopePrefix(cfg: ClassNamingConfig): string {
+  if (!cfg.scopeId || !cfg.scopeId.trim()) return '';
+  return `${sanitizeClassSegment(cfg.scopeId)}-`;
+}
+
+function ownerKey(cfg: ClassNamingConfig, namespace: string): string {
+  return `${cfg.scopeId || 'default'}:${namespace}`;
+}
+
+/**
+ * The emitted class-name prefix shared by every class a `styles.component(namespace, …)`
+ * call produces under this naming config (no leading dot). `null` in `atomic` mode —
+ * hash-only names share no per-namespace prefix.
+ */
+export function emittedComponentClassPrefix(
+  cfg: ClassNamingConfig,
+  namespace: string,
+): string | null {
+  if (cfg.mode === 'semantic') return `${semanticScopePrefix(cfg)}${namespace}-`;
+  if (cfg.mode === 'hashed') return `${cfg.prefix}-${sanitizeClassSegment(namespace)}-`;
+  return null;
+}
+
 /** `styles.class(name, …)` */
 export function buildSingleClassName(
   cfg: ClassNamingConfig,
   name: string,
   properties: CSSProperties,
 ): string {
-  if (cfg.mode === 'semantic') return name;
+  if (cfg.mode === 'semantic') {
+    const className = `${semanticScopePrefix(cfg)}${name}`;
+    trackEmittedClassName(className, ownerKey(cfg, name));
+    return className;
+  }
 
   const payload = stableSerialize({
     ...(cfg.scopeId ? { scope: cfg.scopeId } : {}),
@@ -113,8 +148,12 @@ export function buildSingleClassName(
     properties,
   });
   const h = hashString(payload);
-  if (cfg.mode === 'atomic') return `${cfg.prefix}-${h}`;
-  return `${cfg.prefix}-${sanitizeClassSegment(name)}-${h}`;
+  const className =
+    cfg.mode === 'atomic'
+      ? `${cfg.prefix}-${h}`
+      : `${cfg.prefix}-${sanitizeClassSegment(name)}-${h}`;
+  trackEmittedClassName(className, ownerKey(cfg, name));
+  return className;
 }
 
 /**
@@ -127,7 +166,11 @@ export function buildComponentClassName(
   suffix: string,
   properties: CSSProperties,
 ): string {
-  if (cfg.mode === 'semantic') return `${namespace}-${suffix}`;
+  if (cfg.mode === 'semantic') {
+    const className = `${semanticScopePrefix(cfg)}${namespace}-${suffix}`;
+    trackEmittedClassName(className, ownerKey(cfg, namespace));
+    return className;
+  }
 
   const payload = stableSerialize({
     ...(cfg.scopeId ? { scope: cfg.scopeId } : {}),
@@ -136,6 +179,10 @@ export function buildComponentClassName(
     properties,
   });
   const h = hashString(payload);
-  if (cfg.mode === 'atomic') return `${cfg.prefix}-${h}`;
-  return `${cfg.prefix}-${sanitizeClassSegment(namespace)}-${h}`;
+  const className =
+    cfg.mode === 'atomic'
+      ? `${cfg.prefix}-${h}`
+      : `${cfg.prefix}-${sanitizeClassSegment(namespace)}-${h}`;
+  trackEmittedClassName(className, ownerKey(cfg, namespace));
+  return className;
 }

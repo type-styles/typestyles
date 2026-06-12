@@ -19,7 +19,7 @@ function serializeValue(prop: string, value: string | number): string {
   if (typeof value === 'number') {
     if (value === 0) return '0';
     // Unitless properties that shouldn't get 'px'
-    if (unitlessProperties.has(prop)) return String(value);
+    if (isUnitlessProperty(prop)) return String(value);
     return value + 'px';
   }
   return value;
@@ -27,9 +27,13 @@ function serializeValue(prop: string, value: string | number): string {
 
 const unitlessProperties = new Set([
   'animationIterationCount',
+  'aspectRatio',
   'borderImageOutset',
   'borderImageSlice',
   'borderImageWidth',
+  'boxFlex',
+  'boxFlexGroup',
+  'boxOrdinalGroup',
   'columnCount',
   'columns',
   'flex',
@@ -38,6 +42,7 @@ const unitlessProperties = new Set([
   'flexShrink',
   'flexNegative',
   'flexOrder',
+  'fontSizeAdjust',
   'fontWeight',
   'gridArea',
   'gridColumn',
@@ -48,11 +53,16 @@ const unitlessProperties = new Set([
   'gridRowEnd',
   'gridRowSpan',
   'gridRowStart',
+  'initialLetter',
   'lineClamp',
   'lineHeight',
+  'maskBorderOutset',
+  'maskBorderSlice',
+  'maskBorderWidth',
   'opacity',
   'order',
   'orphans',
+  'scale',
   'tabSize',
   'widows',
   'zIndex',
@@ -66,6 +76,21 @@ const unitlessProperties = new Set([
   'strokeOpacity',
   'strokeWidth',
 ]);
+
+const VENDOR_PREFIX_RE = /^(Webkit|Moz|ms|O)([A-Z])(.*)$/;
+
+/**
+ * Whether a camelCase property takes unitless numbers. Vendor-prefixed
+ * properties (e.g. `WebkitLineClamp`) defer to their unprefixed equivalent.
+ */
+function isUnitlessProperty(prop: string): boolean {
+  if (unitlessProperties.has(prop)) return true;
+  const match = VENDOR_PREFIX_RE.exec(prop);
+  if (match) {
+    return unitlessProperties.has(match[2].toLowerCase() + match[3]);
+  }
+  return false;
+}
 
 /**
  * Represents a generated CSS rule.

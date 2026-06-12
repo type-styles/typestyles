@@ -25,7 +25,8 @@ describe('cascade layers', () => {
     const wrappedIdx = css.indexOf('@layer reset');
     expect(preambleIdx).toBeLessThan(wrappedIdx);
     expect(css).toContain('@layer reset');
-    expect(css).toContain('.box');
+    // scopeId is prefixed onto semantic class names
+    expect(css).toContain('.ds-box');
   });
 
   it('requires layer on class when layers are enabled', () => {

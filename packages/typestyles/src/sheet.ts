@@ -1,6 +1,7 @@
 import {
   namespacesFromTypestylesHmrPrefixes,
   releaseReservedNamespacesForComponentOrClassNames,
+  resetEmittedClassNameTracking,
 } from './registry';
 
 const STYLE_ELEMENT_ID = 'typestyles';
@@ -209,6 +210,7 @@ export function registerCascadeLayerOrder(preambleKey: string, css: string): voi
   insertedRules.add(key);
 
   allRules.unshift(css);
+  notifyRegisteredCssChanged();
 
   if (ssrBuffer) {
     ssrBuffer.unshift(css);
@@ -246,6 +248,7 @@ export function insertRule(key: string, css: string): void {
   insertedRules.add(key);
   ruleCssByKey.set(key, css);
   allRules.push(css);
+  notifyRegisteredCssChanged();
   if (RUNTIME_DISABLED && !ssrBuffer) return;
   pendingRules.push(css);
   scheduleFlush();
@@ -256,6 +259,7 @@ export function insertRule(key: string, css: string): void {
  */
 export function insertRules(rules: Array<{ key: string; css: string }>): void {
   let added = false;
+  let registered = false;
   for (const { key, css } of rules) {
     if (insertedRules.has(key)) {
       const prev = ruleCssByKey.get(key);
@@ -267,11 +271,13 @@ export function insertRules(rules: Array<{ key: string; css: string }>): void {
     insertedRules.add(key);
     ruleCssByKey.set(key, css);
     allRules.push(css);
+    registered = true;
     if (!RUNTIME_DISABLED || ssrBuffer) {
       pendingRules.push(css);
       added = true;
     }
   }
+  if (registered) notifyRegisteredCssChanged();
   if (added) scheduleFlush();
 }
 
@@ -333,6 +339,32 @@ export function getRegisteredCss(): string {
   return allRules.join('\n');
 }
 
+const registeredCssListeners = new Set<() => void>();
+
+function notifyRegisteredCssChanged(): void {
+  for (const listener of registeredCssListeners) {
+    listener();
+  }
+}
+
+/**
+ * Subscribe to changes in the registered CSS (`getRegisteredCss()`).
+ * Returns an unsubscribe function. Compatible with `useSyncExternalStore`.
+ *
+ * @example
+ * ```ts
+ * import { subscribeRegisteredCss, getRegisteredCss } from 'typestyles/server';
+ *
+ * const css = useSyncExternalStore(subscribeRegisteredCss, getRegisteredCss, getRegisteredCss);
+ * ```
+ */
+export function subscribeRegisteredCss(listener: () => void): () => void {
+  registeredCssListeners.add(listener);
+  return () => {
+    registeredCssListeners.delete(listener);
+  };
+}
+
 /**
  * Reset all state (useful for testing).
  */
@@ -343,6 +375,8 @@ export function reset(): void {
   allRules.length = 0;
   flushScheduled = false;
   ssrBuffer = null;
+  resetEmittedClassNameTracking();
+  notifyRegisteredCssChanged();
   if (isBrowser && styleElement) {
     styleElement.remove();
     styleElement = null;
@@ -450,8 +484,11 @@ export function invalidateKeys(keys: string[], prefixes: string[]): void {
  * `@layer`-wrapped keys (`layer:….:.namespace-…`), and release reserved namespace entries.
  * Used for Vite HMR and for dev recovery when a module re-runs before `hot.dispose`.
  */
-export function invalidateComponentNamespaceForDev(namespace: string): void {
-  const selectorInfix = `.${namespace}-`;
+export function invalidateComponentNamespaceForDev(
+  namespace: string,
+  emittedClassPrefix?: string,
+): void {
+  const selectorInfix = `.${emittedClassPrefix ?? `${namespace}-`}`;
   const keysToDrop: string[] = [];
   for (const k of insertedRules) {
     if (k.includes(selectorInfix)) {

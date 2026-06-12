@@ -1,6 +1,6 @@
-import { startCollection, flushSync, getRegisteredCss } from './sheet';
+import { startCollection, flushSync, getRegisteredCss, subscribeRegisteredCss } from './sheet';
 
-export { getRegisteredCss };
+export { getRegisteredCss, subscribeRegisteredCss };
 
 /**
  * Collect all CSS generated during a render pass (for SSR).

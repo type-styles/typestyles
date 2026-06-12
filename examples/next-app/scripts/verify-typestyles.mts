@@ -17,12 +17,14 @@ if (!existsSync(cssPath)) fail(`Missing ${cssPath} — run pnpm typestyles:build
 const css = readFileSync(cssPath, 'utf8');
 if (css.length < 500) fail(`CSS file unexpectedly small (${css.length} bytes).`);
 
+// Semantic class names are prefixed with the sanitized scopeId
+// (`example-ds` / `example-app`), matching how tokens are scoped.
 const requiredSubstrings = [
   ':root { --example-ds-color-background-app:',
-  '.button-base {',
+  '.example-ds-button-base {',
   '.theme-example-ds-default {',
-  '.ds-layout-base {',
-  '.app-site-page {',
+  '.example-ds-ds-layout-base {',
+  '.example-app-app-site-page {',
 ];
 for (const s of requiredSubstrings) {
   if (!css.includes(s)) fail(`Expected CSS to contain ${JSON.stringify(s)}.`);
