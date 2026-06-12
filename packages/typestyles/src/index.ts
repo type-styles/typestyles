@@ -4,7 +4,6 @@ import { createTypeStyles } from './create-type-styles';
 import { createGlobal } from './create-global';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
 import { createKeyframes } from './keyframes';
-import * as colorFns from './color';
 import {
   getRegisteredCss,
   subscribeRegisteredCss,
@@ -121,8 +120,6 @@ export { flattenTokenEntries } from './types';
 
 export { createVar, assignVars };
 
-export type { ColorMixSpace } from './color';
-
 export { createTheme, createDarkMode, when, colorMode };
 
 export type { ThemeEmitLayerContext } from './theme';
@@ -202,23 +199,6 @@ export const tokens = createTokens();
 export const keyframes = {
   create: createKeyframes,
 } as const;
-
-/**
- * Type-safe CSS color function helpers.
- *
- * Each function returns a plain CSS color string — no runtime color math.
- * Composes naturally with token references.
- *
- * @example
- * ```ts
- * color.rgb(0, 102, 255)                    // "rgb(0 102 255)"
- * color.oklch(0.7, 0.15, 250)               // "oklch(0.7 0.15 250)"
- * color.mix(theme.primary, 'white', 20)      // "color-mix(in srgb, var(--theme-primary) 20%, white)"
- * color.alpha(theme.primary, 0.5)            // "color-mix(in srgb, var(--theme-primary) 50%, transparent)"
- * color.lightDark('#111', '#eee')            // "light-dark(#111, #eee)"
- * ```
- */
-export const color = colorFns;
 
 /**
  * Return all registered CSS as a string (for SSR).

@@ -63,9 +63,10 @@ Keyframe animation API.
 
 - `keyframes.create(name, stops)`: Creates @keyframes animation
 
-### `color`
+### `color` (`typestyles/color`)
 
-Type-safe CSS color function helpers.
+Type-safe CSS color function helpers, on a **separate subpath** so the main `typestyles` entry stays lean. Import `color` (namespace) or named functions from `typestyles/color`.
+
 Each function returns a plain CSS color string — no runtime color math.
 Composes naturally with token references.
 

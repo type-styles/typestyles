@@ -1,4 +1,4 @@
-import { color } from 'typestyles';
+import { color } from 'typestyles/color';
 import { type DesignShadowValues } from '../tokens/primitive';
 import { colorTokens } from '../tokens';
 
