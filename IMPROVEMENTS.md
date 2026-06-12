@@ -57,7 +57,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
 
 ## P1 — Competitive table stakes
 
-- [x] **P1.5 — Cut the runtime for the common path** (PR: )
+- [x] **P1.5 — Cut the runtime for the common path** (PR: #90)
   - Main entry is ~15 KB gzip; `color` namespace and helpers are eagerly bundled.
     Move `color` to a `typestyles/color` subpath entry.
   - Add a size budget check to CI and publish the measured number in the README
