@@ -3,19 +3,9 @@ import {
   releaseReservedNamespacesForComponentOrClassNames,
   resetEmittedClassNameTracking,
 } from './registry';
+import { getSheetState, getGlobalSheetState, resetSheetState } from './sheet-context';
 
 const STYLE_ELEMENT_ID = 'typestyles';
-
-/**
- * Tracks which CSS rules have been inserted to avoid duplicates.
- */
-const insertedRules = new Set<string>();
-
-/**
- * Last emitted CSS per dedupe key (see {@link warnIfDuplicateRuleKeyConflict}).
- * Cleared with {@link reset} and kept in sync when keys are invalidated.
- */
-const ruleCssByKey = new Map<string, string>();
 
 function duplicateRuleKeyConflictWarningsEnabled(): boolean {
   if (typeof process === 'undefined') return true;
@@ -64,31 +54,9 @@ const RUNTIME_DISABLED =
   readNextPublicRuntimeDisabled();
 
 /**
- * Buffer of CSS rules waiting to be flushed.
- */
-let pendingRules: string[] = [];
-
-/**
- * All CSS rules ever registered (for SSR extraction).
- * Unlike pendingRules (which is cleared on flush), this retains every rule
- * so getRegisteredCss() can return the full stylesheet at any point.
- */
-const allRules: string[] = [];
-
-/**
- * Whether a flush is scheduled.
- */
-let flushScheduled = false;
-
-/**
  * The managed <style> element, lazily created.
  */
 let styleElement: HTMLStyleElement | null = null;
-
-/**
- * When in SSR collection mode, CSS is captured here instead of injected.
- */
-let ssrBuffer: string[] | null = null;
 
 /**
  * Whether we're running in a browser environment.
@@ -100,6 +68,7 @@ const isBrowser = typeof document !== 'undefined' && typeof window !== 'undefine
  * Used when the live element was detached (e.g. Astro view transitions replacing <head>).
  */
 function writeAllRulesToStyleElement(el: HTMLStyleElement): void {
+  const { allRules } = getSheetState();
   if (RUNTIME_DISABLED || allRules.length === 0) return;
   const sheet = el.sheet;
   if (sheet) {
@@ -135,7 +104,7 @@ function getStyleElement(): HTMLStyleElement {
   document.head.appendChild(styleElement);
 
   // After a doc swap, we have a new empty sheet but insertRule() won't re-queue (deduped keys).
-  if (reconnectAfterDetach && allRules.length > 0) {
+  if (reconnectAfterDetach && getSheetState().allRules.length > 0) {
     writeAllRulesToStyleElement(styleElement);
   }
 
@@ -152,14 +121,15 @@ export function ensureDocumentStylesAttached(): void {
 }
 
 function flush(): void {
-  flushScheduled = false;
-  if (pendingRules.length === 0) return;
+  const state = getSheetState();
+  state.flushScheduled = false;
+  if (state.pendingRules.length === 0) return;
 
-  const rules = pendingRules;
-  pendingRules = [];
+  const rules = state.pendingRules;
+  state.pendingRules = [];
 
-  if (ssrBuffer) {
-    ssrBuffer.push(...rules);
+  if (state.ssrBuffer) {
+    state.ssrBuffer.push(...rules);
     return;
   }
 
@@ -184,10 +154,11 @@ function flush(): void {
 }
 
 function scheduleFlush(): void {
-  if (flushScheduled) return;
-  flushScheduled = true;
+  const state = getSheetState();
+  if (state.flushScheduled) return;
+  state.flushScheduled = true;
 
-  if (ssrBuffer) {
+  if (state.ssrBuffer) {
     // In SSR mode, flush synchronously
     flush();
     return;
@@ -205,15 +176,16 @@ function scheduleFlush(): void {
  * when injecting into the document.
  */
 export function registerCascadeLayerOrder(preambleKey: string, css: string): void {
+  const state = getSheetState();
   const key = `typestyles:@layer-order:${preambleKey}`;
-  if (insertedRules.has(key)) return;
-  insertedRules.add(key);
+  if (state.insertedRules.has(key)) return;
+  state.insertedRules.add(key);
 
-  allRules.unshift(css);
+  state.allRules.unshift(css);
   notifyRegisteredCssChanged();
 
-  if (ssrBuffer) {
-    ssrBuffer.unshift(css);
+  if (state.ssrBuffer) {
+    state.ssrBuffer.unshift(css);
     return;
   }
 
@@ -238,19 +210,20 @@ export function registerCascadeLayerOrder(preambleKey: string, css: string): voi
  * Insert a CSS rule. Deduplicates by rule key.
  */
 export function insertRule(key: string, css: string): void {
-  if (insertedRules.has(key)) {
-    const prev = ruleCssByKey.get(key);
+  const state = getSheetState();
+  if (state.insertedRules.has(key)) {
+    const prev = state.ruleCssByKey.get(key);
     if (prev != null && prev !== css) {
       warnIfDuplicateRuleKeyConflict(key, prev, css);
     }
     return;
   }
-  insertedRules.add(key);
-  ruleCssByKey.set(key, css);
-  allRules.push(css);
+  state.insertedRules.add(key);
+  state.ruleCssByKey.set(key, css);
+  state.allRules.push(css);
   notifyRegisteredCssChanged();
-  if (RUNTIME_DISABLED && !ssrBuffer) return;
-  pendingRules.push(css);
+  if (RUNTIME_DISABLED && !state.ssrBuffer) return;
+  state.pendingRules.push(css);
   scheduleFlush();
 }
 
@@ -258,22 +231,23 @@ export function insertRule(key: string, css: string): void {
  * Insert multiple CSS rules at once.
  */
 export function insertRules(rules: Array<{ key: string; css: string }>): void {
+  const state = getSheetState();
   let added = false;
   let registered = false;
   for (const { key, css } of rules) {
-    if (insertedRules.has(key)) {
-      const prev = ruleCssByKey.get(key);
+    if (state.insertedRules.has(key)) {
+      const prev = state.ruleCssByKey.get(key);
       if (prev != null && prev !== css) {
         warnIfDuplicateRuleKeyConflict(key, prev, css);
       }
       continue;
     }
-    insertedRules.add(key);
-    ruleCssByKey.set(key, css);
-    allRules.push(css);
+    state.insertedRules.add(key);
+    state.ruleCssByKey.set(key, css);
+    state.allRules.push(css);
     registered = true;
-    if (!RUNTIME_DISABLED || ssrBuffer) {
-      pendingRules.push(css);
+    if (!RUNTIME_DISABLED || state.ssrBuffer) {
+      state.pendingRules.push(css);
       added = true;
     }
   }
@@ -287,8 +261,9 @@ export function insertRules(rules: Array<{ key: string; css: string }>): void {
 export function replaceRule(key: string, css: string): void {
   if (!isBrowser || RUNTIME_DISABLED) return;
 
-  insertedRules.delete(key);
-  ruleCssByKey.delete(key);
+  const state = getSheetState();
+  state.insertedRules.delete(key);
+  state.ruleCssByKey.delete(key);
 
   // Remove existing rule from the sheet if possible
   const el = getStyleElement();
@@ -307,10 +282,11 @@ export function replaceRule(key: string, css: string): void {
  * Start collecting CSS for SSR. Returns a function to stop collection and get the CSS.
  */
 export function startCollection(): () => string {
-  ssrBuffer = [];
+  const state = getSheetState();
+  state.ssrBuffer = [];
   return () => {
-    const css = ssrBuffer ? ssrBuffer.join('\n') : '';
-    ssrBuffer = null;
+    const css = state.ssrBuffer ? state.ssrBuffer.join('\n') : '';
+    state.ssrBuffer = null;
     return css;
   };
 }
@@ -336,7 +312,7 @@ export function startCollection(): () => string {
  * ```
  */
 export function getRegisteredCss(): string {
-  return allRules.join('\n');
+  return getSheetState().allRules.join('\n');
 }
 
 const registeredCssListeners = new Set<() => void>();
@@ -369,12 +345,11 @@ export function subscribeRegisteredCss(listener: () => void): () => void {
  * Reset all state (useful for testing).
  */
 export function reset(): void {
-  insertedRules.clear();
-  ruleCssByKey.clear();
-  pendingRules = [];
-  allRules.length = 0;
-  flushScheduled = false;
-  ssrBuffer = null;
+  resetSheetState(getGlobalSheetState());
+  const active = getSheetState();
+  if (active !== getGlobalSheetState()) {
+    resetSheetState(active);
+  }
   resetEmittedClassNameTracking();
   notifyRegisteredCssChanged();
   if (isBrowser && styleElement) {
@@ -396,10 +371,11 @@ export function flushSync(): void {
  * Used for HMR — allows modules to re-register their styles after editing.
  */
 export function invalidatePrefix(prefix: string): void {
-  for (const key of insertedRules) {
+  const state = getSheetState();
+  for (const key of state.insertedRules) {
     if (key.startsWith(prefix)) {
-      insertedRules.delete(key);
-      ruleCssByKey.delete(key);
+      state.insertedRules.delete(key);
+      state.ruleCssByKey.delete(key);
     }
   }
 
@@ -427,15 +403,16 @@ export function invalidatePrefix(prefix: string): void {
  * Used for HMR to invalidate all styles from a module at once.
  */
 export function invalidateKeys(keys: string[], prefixes: string[]): void {
+  const state = getSheetState();
   for (const key of keys) {
-    insertedRules.delete(key);
-    ruleCssByKey.delete(key);
+    state.insertedRules.delete(key);
+    state.ruleCssByKey.delete(key);
   }
   for (const prefix of prefixes) {
-    for (const key of insertedRules) {
+    for (const key of state.insertedRules) {
       if (key.startsWith(prefix)) {
-        insertedRules.delete(key);
-        ruleCssByKey.delete(key);
+        state.insertedRules.delete(key);
+        state.ruleCssByKey.delete(key);
       }
     }
   }
@@ -489,8 +466,9 @@ export function invalidateComponentNamespaceForDev(
   emittedClassPrefix?: string,
 ): void {
   const selectorInfix = `.${emittedClassPrefix ?? `${namespace}-`}`;
+  const state = getSheetState();
   const keysToDrop: string[] = [];
-  for (const k of insertedRules) {
+  for (const k of state.insertedRules) {
     if (k.includes(selectorInfix)) {
       keysToDrop.push(k);
     }
