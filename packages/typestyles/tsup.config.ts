@@ -13,4 +13,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
+  external: ['node:async_hooks'],
 });

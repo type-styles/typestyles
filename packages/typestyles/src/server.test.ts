@@ -3,7 +3,7 @@ import { collectStyles } from './server';
 import { defaultClassNamingConfig } from './class-naming';
 import { createComponent } from './component';
 import { createTokens } from './tokens';
-import { reset } from './sheet';
+import { insertRule, reset } from './sheet';
 
 describe('collectStyles', () => {
   beforeEach(() => {
@@ -44,5 +44,42 @@ describe('collectStyles', () => {
 
     expect(css).toContain('--ssr-theme-bg');
     expect(css).toContain('.ssr-card-root');
+  });
+
+  it('supports async render functions', async () => {
+    const { html, css } = await collectStyles(async () => {
+      await Promise.resolve();
+      createComponent(defaultClassNamingConfig, 'async-btn', {
+        base: { color: 'green' },
+      });
+      return '<button>async</button>';
+    });
+
+    expect(html).toBe('<button>async</button>');
+    expect(css).toContain('.async-btn-base');
+    expect(css).toContain('color: green');
+  });
+
+  it('isolates concurrent async collectStyles on Node', async () => {
+    const [a, b] = await Promise.all([
+      collectStyles(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 15));
+        insertRule('.iso-a', '.iso-a { color: red; }');
+        return 'a';
+      }),
+      collectStyles(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        insertRule('.iso-b', '.iso-b { color: blue; }');
+        return 'b';
+      }),
+    ]);
+
+    expect(a.html).toBe('a');
+    expect(a.css).toContain('.iso-a');
+    expect(a.css).not.toContain('.iso-b');
+
+    expect(b.html).toBe('b');
+    expect(b.css).toContain('.iso-b');
+    expect(b.css).not.toContain('.iso-a');
   });
 });
