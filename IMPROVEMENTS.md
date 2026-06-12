@@ -44,7 +44,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
   - Fix `@typestyles/open-props` broken `./css` export (`dist/open-props.css` is
     never built) and remove the unused `open-props` dependency
 
-- [ ] **P0.3 — Surface the production story in the docs nav** (PR: )
+- [x] **P0.3 — Surface the production story in the docs nav** (PR: #88)
   - `zero-runtime.md` has 16 inbound links but is not in the sidebar
     (`docs/src/navigation.ts`); `open-props.md` likewise
   - Decide on `css-selector-patterns.md` (internal research → remove from build or

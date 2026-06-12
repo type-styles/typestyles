@@ -34,6 +34,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
         { slug: 'compose', title: 'Style Composition' },
         { slug: 'atomic-css', title: 'Atomic CSS Utilities' },
         { slug: 'tokens', title: 'Tokens' },
+        { slug: 'open-props', title: 'Open Props' },
         { slug: 'fonts', title: 'Fonts' },
         { slug: 'keyframes', title: 'Keyframes' },
         { slug: 'color', title: 'Color Helpers' },
@@ -44,6 +45,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       slug: 'advanced-features',
       items: [
         { slug: 'ssr', title: 'Server-Side Rendering' },
+        { slug: 'zero-runtime', title: 'Zero-runtime extraction' },
         { slug: 'vite-plugin', title: 'Vite Plugin' },
         { slug: 'class-naming', title: 'Class naming' },
         { slug: 'cascade-layers', title: 'Cascade layers (@layer)' },

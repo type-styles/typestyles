@@ -56,7 +56,7 @@ Typestyles occupies a unique position in the CSS-in-JS landscape:
 
 ### CSS Selector and Naming Strategy Initiative
 
-Reference: `docs/content/docs/css-selector-patterns.md`
+Reference: `docs/research/css-selector-patterns.md` (internal research — not published on the docs site)
 
 Goal: support the full range of real-world CSS authoring (semantic classes, utility composition, variants, and data/ARIA attribute-driven state) without locking users into one methodology.
 
