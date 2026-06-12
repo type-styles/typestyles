@@ -37,7 +37,7 @@ Typestyles occupies a unique position in the CSS-in-JS landscape:
 ### 2. Zero-Runtime Build Option
 
 - **Goal**: Optional "no runtime CSS-in-JS" mode that still uses the same `styles`, `tokens`, and `keyframes` APIs. **Shipped** for Vite/Rollup via `@typestyles/build-runner` + plugin `extract`; Next via `@typestyles/next/build` (`buildTypestylesForNext`, **`withTypestyles`** / `withTypestylesExtract`) sharing the same convention entry discovery.
-- **Package**: `@typestyles/build` for build-time CSS collection (Node API); integrations call into `@typestyles/build-runner` for bundler pipelines.
+- **Package**: `typestyles/build` for build-time CSS collection (Node API); integrations call into `@typestyles/build-runner` for bundler pipelines.
 - **Output**:
   - Generates static CSS files at build time (like vanilla-extract).
   - Optional manifest mapping (see `examples/next-app`) for tooling; class APIs stay the same in app code.

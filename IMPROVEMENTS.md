@@ -31,7 +31,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
   - Add dev-mode hash-collision detection (promised in roadmap §6.1, never shipped)
   - Fix `useTypestyles` no-op subscribe in `@typestyles/next/src/client.tsx`
 
-- [ ] **P0.2 — Credibility sweep** (PR: )
+- [x] **P0.2 — Credibility sweep** (PR: #87)
   - Site chrome links to `github.com/typestyles/typestyles`; canonical org is
     `type-styles` (see PR #82). Fix `docs/src/lib/site.ts`, header, landing page.
   - Landing page (`docs/src/pages/index.astro`): DOM preview shows

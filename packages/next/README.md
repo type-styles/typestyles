@@ -329,4 +329,4 @@ Ensure you have `"moduleResolution": "bundler"` or `"node"` in your `tsconfig.js
 
 ## License
 
-MIT
+Apache-2.0
