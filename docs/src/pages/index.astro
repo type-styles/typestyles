@@ -7,14 +7,18 @@ import { getAllDocs } from '../lib/docs';
 const docs = await getAllDocs();
 const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.slug, title: doc.title }]));
 
-const heroSample = `const button = styles.component('button', {
+const heroSample = `import { styles, tokens } from 'typestyles';
+
+const color = tokens.create('color', { accent: '#2563eb' });
+
+const button = styles.component('button', {
   base: {
     border: '1px solid #000',
     transition: 'transform 120ms ease',
   },
   variants: {
     intent: {
-      primary: { background: token.accent },
+      primary: { background: color.accent },
       ghost: { background: 'transparent' },
     },
   },
@@ -77,7 +81,7 @@ const frameworks = ['Vite', 'Next.js', 'Astro', 'Rollup'];
               <span aria-hidden="true">&rarr;</span>
             </a>
             <a
-              href="https://github.com/typestyles/typestyles"
+              href="https://github.com/type-styles/typestyles"
               class={home.ctaSecondary}
               target="_blank"
               rel="noopener noreferrer"
@@ -132,15 +136,15 @@ const frameworks = ['Vite', 'Next.js', 'Astro', 'Rollup'];
           <h3 class={home.benefitHeroTitle}>Class names you can actually read</h3>
           <p class={home.benefitHeroText}>
             Variants compile to predictable, hyphenated selectors that mirror what you author.
-            Open DevTools and you’ll see <code>button-intent-primary</code>, not
+            Open DevTools and you’ll see <code>button-base button-intent-primary</code>, not
             <code>_1g8a3b2</code>. No more archeology; no more guessing which style came from where.
           </p>
         </div>
         <div class={home.classPreview} aria-label="Example compiled class names">
           <p class={home.classPreviewLabel}>In the DOM</p>
-          <span class={home.classPreviewLine}>&lt;button class=<span class={home.classPreviewToken}>"button button-intent-primary"</span>&gt;</span>
-          <span class={home.classPreviewLine}>&lt;button class=<span class={home.classPreviewToken}>"button button-intent-ghost"</span>&gt;</span>
-          <span class={home.classPreviewLine}>&lt;div class=<span class={home.classPreviewToken}>"card card-tone-warning"</span>&gt;</span>
+          <span class={home.classPreviewLine}>&lt;button class=<span class={home.classPreviewToken}>"button-base button-intent-primary"</span>&gt;</span>
+          <span class={home.classPreviewLine}>&lt;button class=<span class={home.classPreviewToken}>"button-base button-intent-ghost"</span>&gt;</span>
+          <span class={home.classPreviewLine}>&lt;div class=<span class={home.classPreviewToken}>"card-base card-tone-warning"</span>&gt;</span>
         </div>
       </article>
 
