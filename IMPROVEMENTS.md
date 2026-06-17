@@ -147,10 +147,46 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
   - Optional `--to-component` pass that groups related `styles.class` calls in a
     file into `styles.component` recipes with a `base` slot.
 
-## P3 — Later (not scheduled)
+## P3 — API & type safety
+
+- [ ] **P3.22 — `styles.compose` type safety**
+  - Today `compose` returns `AnySelectorFunction` — args are `unknown[]`, no variant
+    inference across composed callables. Callers get zero autocomplete or type errors.
+  - Scope: infer a union of accepted variant objects from composed component fns;
+    emit TS errors for unknown keys; dev-mode `console.error` for dynamic mismatches.
+  - Effort: Medium (generic gymnastics on the overload; runtime change is small).
+
+- [ ] **P3.23 — `tokens.use` type inference**
+  - `tokens.use<T>('ns')` defaults to `TokenValues` (untyped). Cross-package consumers
+    must manually sync a type annotation that rots as tokens change upstream.
+  - Scope: export a `TokenRef<typeof created>` from `tokens.create`; make `tokens.use`
+    accept that type or infer from a shared registry generic. Fallback: keep current
+    behavior when no type param is passed.
+  - Effort: Low-Medium (type-level change, no runtime impact).
+
+- [ ] **P3.24 — `@property` on token leaves + `styles.property`**
+  - Component-internal vars via `ctx.var` shipped; token leaves are still plain
+    `var(--…)` strings with no `.name`/`.var` refs and no `@property` registration.
+  - Scope: opt-in `{ value, syntax, inherits }` leaf shape in `tokens.create`;
+    `styles.property(id, opts)` for non-token registered properties; both return
+    `{ name: string; var: string; toString(): string }`.
+  - Effort: Medium (token proxy changes + `@property` CSS emission).
+
+- [ ] **P3.25 — `@typestyles/react` package (css prop + styled API)**
+  - Migration convenience for teams coming from Emotion/styled-components.
+  - Scope: `css` prop via JSX transform (inline styles → `styles.hashClass` at build
+    time or runtime); `styled('button', config)` thin wrapper over `styles.component`
+    that returns a React component with typed variant props.
+  - Effort: High (JSX transform, Babel/SWC plugin for zero-runtime css prop).
+
+## P4 — Future (unscheduled)
 
 - VS Code extension: hover preview of emitted CSS, token autocomplete with swatches
 - Editable playground/REPL
 - Recipes/cookbook section (resurrect the `recipes.astro` redirect)
 - W3C Design Tokens import + Figma sync
+- `@scope` support (document raw nested at-rule usage; add helpers when browser
+  support matures)
+- Responsive object syntax (breakpoint shorthand in style values)
+- Custom CSS variable name control (`nameTemplate` on `tokens.create`)
 - 1.0 stability policy and criteria
