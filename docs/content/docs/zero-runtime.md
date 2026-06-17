@@ -223,6 +223,8 @@ export default withTypestyles({
 
 Run extraction before `next build` (CI or a `prebuild` script). **Defaults** match the Vite story: `buildTypestylesForNext({ root })` discovers a convention entry, then writes **`app/typestyles.css`** and **`app/typestyles.manifest.json`** (override with `cssOutFile`, `manifestOutFile`, or `modules` when you need a custom layout).
 
+When an **`app/`** directory exists, extraction also emits **per-route critical CSS** under **`app/_typestyles/routes/`** and upgrades the manifest to **version 2** with a `routes` map. Disable with `routeCss: false` or customize `routeCssOutDir`.
+
 ```ts
 // scripts/typestyles-build.mts
 import { buildTypestylesForNext } from '@typestyles/next/build';
@@ -230,7 +232,7 @@ import { buildTypestylesForNext } from '@typestyles/next/build';
 await buildTypestylesForNext({ root: process.cwd() });
 ```
 
-Import the emitted CSS from your App Router layout (`import './typestyles.css'`).
+Import the emitted CSS from your App Router layout (`import './typestyles.css'`), or load route-scoped CSS at request time with **`getRouteCss`** (see [SSR — per-route CSS](/docs/ssr#per-route-critical-css-nextjs)).
 
 For full manual control, **`withTypestylesExtract`** is still available (always merges production defines). **`discoverDefaultExtractModules`** and **`DEFAULT_EXTRACT_MODULE_CANDIDATES`** are re-exported from `@typestyles/next/build` (same as `@typestyles/build-runner` / `@typestyles/vite`).
 
@@ -258,7 +260,8 @@ Checks performed:
 
 - CSS file exists and meets `minBytes` (defaults to non-empty when omitted)
 - Optional `requiredCssSubstrings` — catch missing imports from the entry barrel
-- Optional manifest exists with `version: 1` and `css` pointing at your stylesheet path
+- Optional manifest exists with `version: 1` or `version: 2` and `css` pointing at your stylesheet path
+- For v2 manifests, optional `minRouteEntries` and per-route CSS file checks
 
 Wire it into `package.json` before `next build` (see `@examples/next`):
 

@@ -113,4 +113,39 @@ describe('verifyTypestylesBuild', () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it('validates v2 route CSS files', () => {
+    const root = mkdtempSync(join(tmpdir(), 'typestyles-verify-v2-'));
+    mkdirSync(join(root, 'app/_typestyles/routes'), { recursive: true });
+    const { cssFile } = writeFixture(root, '.button { color: red; }');
+    const manifestFile = 'app/typestyles.manifest.json';
+    writeFileSync(join(root, 'app/_typestyles/routes/index.css'), '.home { color: red; }');
+    writeFileSync(
+      join(root, 'app/typestyles.manifest.json'),
+      `${JSON.stringify(
+        {
+          version: 2,
+          css: cssFile,
+          routes: {
+            '/': { css: 'app/_typestyles/routes/index.css' },
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    try {
+      const result = verifyTypestylesBuild({
+        root,
+        cssFile,
+        manifestFile,
+        manifestVersion: 2,
+        minRouteEntries: 1,
+      });
+      expect(result.manifestVersion).toBe(2);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

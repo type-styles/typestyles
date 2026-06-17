@@ -33,6 +33,7 @@ pnpm build   # typestyles:build → typestyles:verify → next build
 | ----------------------------------- | ----------------------------------------------------------------- |
 | Convention entry (no `src/` prefix) | `styles/typestyles-entry.ts`                                      |
 | Pre-build extraction                | `scripts/typestyles-build.mts` → `buildTypestylesForNext`         |
+| Per-route critical CSS              | manifest v2 `routes` map + `app/_typestyles/routes/`              |
 | CI verification                     | `scripts/verify-typestyles.mts` → `verifyTypestylesBuild`         |
 | Static CSS in layout                | `app/layout.tsx` imports `./typestyles.css`                       |
 | Prod runtime disabled               | `next.config.mjs` → `withTypestyles`                              |
@@ -49,7 +50,8 @@ styles/site.ts               # app shell (scoped createTypeStyles)
 scripts/typestyles-build.mts # extraction before next build
 scripts/verify-typestyles.mts
 app/typestyles.css           # generated — do not hand-edit
-app/typestyles.manifest.json # generated manifest for verify step
+app/typestyles.manifest.json # generated manifest (v2 with routes map)
+app/_typestyles/routes/      # per-route critical CSS (when app/ exists)
 app/layout.tsx               # links extracted CSS
 next.config.mjs              # withTypestyles()
 ```

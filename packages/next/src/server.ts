@@ -3,8 +3,9 @@
  * These functions can be used in Server Components without adding "use client".
  */
 import { collectStyles, getRegisteredCss } from 'typestyles/server';
+import { getRouteCss, type GetRouteCssOptions } from '@typestyles/build-runner';
 
-export { getRegisteredCss };
+export { getRegisteredCss, getRouteCss, type GetRouteCssOptions };
 
 /**
  * Collect styles from a React component and return them as a string.

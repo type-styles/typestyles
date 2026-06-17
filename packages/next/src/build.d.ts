@@ -5,6 +5,18 @@ export interface TypestylesExtractManifestV1 {
   css: string;
 }
 
+export interface TypestylesRouteCssEntry {
+  css: string;
+}
+
+export interface TypestylesExtractManifestV2 {
+  version: 2;
+  css: string;
+  routes: Record<string, TypestylesRouteCssEntry>;
+}
+
+export type TypestylesExtractManifest = TypestylesExtractManifestV1 | TypestylesExtractManifestV2;
+
 export declare const DEFAULT_EXTRACT_MODULE_CANDIDATES: readonly string[];
 
 export declare function discoverDefaultExtractModules(root: string): string[];
@@ -15,6 +27,9 @@ export interface BuildTypestylesForNextOptions {
   cssOutFile?: string;
   manifestOutFile?: string | false;
   manifestCssPath?: string;
+  routeCss?: boolean;
+  routeCssOutDir?: string;
+  appDir?: string;
 }
 
 export declare function buildTypestylesForNext(
@@ -39,3 +54,17 @@ export declare function withTypestylesExtract(
   nextConfig?: NextConfig,
   options?: WithTypestylesExtractOptions,
 ): NextConfig;
+
+export interface GetRouteCssOptions {
+  root: string;
+  manifestFile?: string;
+}
+
+export declare function getRouteCss(routePath: string, options: GetRouteCssOptions): string;
+
+export {
+  verifyTypestylesBuild,
+  VerifyTypestylesBuildError,
+  type VerifyTypestylesBuildOptions,
+  type VerifyTypestylesBuildResult,
+} from '@typestyles/build-runner';

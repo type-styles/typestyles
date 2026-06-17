@@ -120,7 +120,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     variants with JSX call-site rewrites.
   - Parse `@media` (and other at-rules) in static templates into nested style objects.
 
-- [ ] **P2.15 — Per-route critical CSS** (PR: )
+- [x] **P2.15 — Per-route critical CSS** (PR: #100)
   - `getRegisteredCss()` returns everything ever registered. Use the extraction
     manifest in `@typestyles/next/build` to emit route-level CSS.
 
