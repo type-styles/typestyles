@@ -87,6 +87,9 @@ importers:
       '@typestyles/astro':
         specifier: workspace:*
         version: link:../packages/astro
+      '@typestyles/build-runner':
+        specifier: workspace:*
+        version: link:../packages/build-runner
       eslint:
         specifier: ^9.39.2
         version: 9.39.2(jiti@2.6.1)

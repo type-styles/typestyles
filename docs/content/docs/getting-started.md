@@ -29,57 +29,11 @@ yarn add typestyles
 
 ## Your first styles
 
-Use [`createTypeStyles`](/docs/api-reference#createtypestyles-options) once so `styles` and `tokens` share one **`scopeId`** (namespaced CSS variables and predictable class names). Put this in a module you import from your UI:
+Use [`createTypeStyles`](/docs/api-reference#createtypestyles-options) once so `styles` and `tokens` share one **`scopeId`** (namespaced CSS variables and predictable class names). Put the module in a file you import from your UI — the live example below includes the full source and a `className` usage snippet.
 
-```ts
-// app/typestyles.ts
-import { createTypeStyles } from 'typestyles';
+<!-- doc-live-demo id="getting-started-button" -->
 
-export const { styles, tokens } = createTypeStyles({
-  scopeId: 'app',
-});
-
-export const color = tokens.create('color', {
-  primary: '#0066ff',
-  surface: '#ffffff',
-});
-
-export const button = styles.component('button', {
-  base: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '8px 16px',
-    borderRadius: '6px',
-    fontWeight: 500,
-    border: 'none',
-    cursor: 'pointer',
-    color: color.surface,
-    backgroundColor: color.primary,
-  },
-  variants: {
-    intent: {
-      primary: { backgroundColor: color.primary, color: color.surface },
-      ghost: {
-        backgroundColor: 'transparent',
-        color: color.primary,
-        border: `1px solid ${color.primary}`,
-      },
-    },
-  },
-  defaultVariants: { intent: 'primary' },
-});
-```
-
-Call the style function wherever you set `className`. The return value is one string (base styles are included automatically):
-
-```tsx
-<button type="button" className={button({ intent: 'ghost' })}>
-  Cancel
-</button>
-```
-
-In DevTools you should see classes like `app-button-base` and `app-button-intent-ghost` (the `scopeId` is prefixed onto semantic class names), with token-backed values resolving to scoped custom properties (for example `--app-color-primary`).
+Toggle **Ghost** in the demo and check the **DOM** and **Emitted CSS** panels (or DevTools on the preview button). Scoped class names are prefixed with your `scopeId`, and token-backed values resolve to custom properties such as `--app-color-primary`.
 
 **What just happened:** definitions register when the module loads; the first time a class is used, TypeStyles injects rules into a managed `<style>` tag. For SSR, streaming, or static CSS in production, see [SSR](/docs/ssr) and [Zero-runtime extraction](/docs/zero-runtime).
 

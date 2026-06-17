@@ -1,0 +1,156 @@
+---
+// @ts-nocheck
+import { codeBlock } from '@examples/design-system';
+import { resolveLiveDemo } from '../lib/resolveLiveDemo';
+import { highlightDocCode } from '../lib/highlightDocCode';
+import { liveDemo } from '../styles/liveDemo';
+
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+const { spec, code, usageCode, usageLang, usageLabel, cardClassName, previewCss, variants } =
+  await resolveLiveDemo(id);
+const defaultVariant = variants[0];
+const bootstrap = JSON.stringify({ variants });
+const domDisplay =
+  spec.preview === 'themed-card'
+    ? defaultVariant.themeClass
+      ? `<div class="${defaultVariant.themeClass}">\n  <div class="${defaultVariant.className}">…</div>\n</div>`
+      : `<div class="${defaultVariant.className}">…</div>`
+    : `class="${defaultVariant.className}"`;
+
+const defaultUsageCode = defaultVariant.usageCode ?? usageCode;
+const defaultUsageLang = defaultVariant.usageLang ?? usageLang;
+
+const { safeLang, highlighted } = highlightDocCode(code, spec.codeLang);
+const usageHighlight = defaultUsageCode
+  ? highlightDocCode(defaultUsageCode, defaultUsageLang)
+  : null;
+const domHighlight = highlightDocCode(domDisplay, 'xml');
+const cssHighlight = highlightDocCode(defaultVariant.css, 'css');
+---
+
+<section
+  class={liveDemo.root}
+  data-live-demo={id}
+  data-live-demo-preview={spec.preview}
+  aria-label={spec.title}
+>
+  {previewCss && <style is:inline set:html={previewCss} data-live-demo-preview-css />}
+  <script type="application/json" data-live-demo-data is:inline set:html={bootstrap}></script>
+
+  <div class={liveDemo.header}>
+    <div class={liveDemo.headerText}>
+      <p class={liveDemo.title}>{spec.title}</p>
+      <p class={liveDemo.caption}>
+        Read-only live output. Toggle variants to see the preview, DOM classes, and emitted CSS
+        update together.
+      </p>
+    </div>
+    <div class={liveDemo.variantList} role="group" aria-label="Demo variants">
+      {
+        variants.map((variant, index) => (
+          <button
+            type="button"
+            class={liveDemo.variantButton}
+            data-live-demo-variant={variant.id}
+            data-active={index === 0 ? 'true' : 'false'}
+          >
+            {variant.label}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class={liveDemo.preview}>
+    {
+      spec.preview === 'button' ? (
+        <button
+          type="button"
+          class:list={[liveDemo.previewButton, defaultVariant.className]}
+          data-live-demo-preview
+          data-live-demo-preview-base={liveDemo.previewButton}
+        >
+          Example button
+        </button>
+      ) : (
+        <div data-live-demo-theme-wrap class={defaultVariant.themeClass ?? ''}>
+          <div
+            class:list={[liveDemo.previewCard, cardClassName]}
+            data-live-demo-preview
+            data-live-demo-preview-base={liveDemo.previewCard}
+          >
+            Themed surface
+          </div>
+        </div>
+      )
+    }
+  </div>
+
+  <div class={liveDemo.section}>
+    <p class={liveDemo.sectionLabel}>
+      Source <span class={liveDemo.sectionFile}>· {spec.headerLabel}</span>
+    </p>
+    <div class={liveDemo.codeShell} data-codeblock>
+      <pre class={codeBlock.pre} data-codeblock-pre>
+        <code class:list={['hljs', `language-${safeLang}`, codeBlock.code]} set:html={highlighted} />
+      </pre>
+    </div>
+  </div>
+
+  {
+    usageHighlight && (
+      <div class={liveDemo.section}>
+        <p class={liveDemo.sectionLabel}>
+          Usage {usageLabel && <span class={liveDemo.sectionFile}>· {usageLabel}</span>}
+        </p>
+        <div
+          class={liveDemo.codeShell}
+          data-codeblock
+          data-live-demo-usage
+        >
+          <pre class={codeBlock.pre} data-codeblock-pre>
+            <code
+              class:list={['hljs', `language-${usageHighlight.safeLang}`, codeBlock.code]}
+              set:html={usageHighlight.highlighted}
+            />
+          </pre>
+        </div>
+      </div>
+    )
+  }
+
+  <div class={liveDemo.detailsGrid}>
+    <div class={liveDemo.detailSection}>
+      <p class={liveDemo.sectionLabel}>DOM</p>
+      <div class:list={[liveDemo.codeShell, liveDemo.outputShell]} data-codeblock data-live-demo-dom>
+        <pre class={codeBlock.pre} data-codeblock-pre>
+          <code
+            class:list={['hljs', `language-${domHighlight.safeLang}`, codeBlock.code]}
+            set:html={domHighlight.highlighted}
+          />
+        </pre>
+      </div>
+    </div>
+    <div class={liveDemo.detailSection}>
+      <p class={liveDemo.sectionLabel}>Emitted CSS</p>
+      <div class:list={[liveDemo.codeShell, liveDemo.outputShell]} data-codeblock data-live-demo-css>
+        <pre class={codeBlock.pre} data-codeblock-pre>
+          <code
+            class:list={['hljs', `language-${cssHighlight.safeLang}`, codeBlock.code]}
+            set:html={cssHighlight.highlighted}
+          />
+        </pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initLiveDemos } from '../scripts/liveDemoClient';
+  initLiveDemos();
+  document.addEventListener('astro:page-load', initLiveDemos);
+</script>

@@ -26,6 +26,7 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
+    "@typestyles/build-runner": "workspace:*",
     "@typestyles/astro": "workspace:*",
     "eslint": "^9.39.2",
     "typescript": "^5.4.0",
