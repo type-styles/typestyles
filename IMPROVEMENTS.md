@@ -92,7 +92,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
 
 ## P2 — Ecosystem & DX
 
-- [ ] **P2.10 — True atomic output** (PR: )
+- [x] **P2.10 — True atomic output** (PR: #95)
   - [x] Rename hash-only `atomic` mode to `compact` (honest naming for whole-object hashes).
   - [x] Ship `atomic` mode with per-declaration decomposition and dedup across components.
   - [x] Docs + changeset; open PR.
