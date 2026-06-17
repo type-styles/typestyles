@@ -1,0 +1,56 @@
+{
+  "name": "@typestyles/eslint-plugin",
+  "version": "0.1.0",
+  "description": "ESLint rules for TypeStyles style objects and namespace usage",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "typestyles",
+    "css-in-ts"
+  ],
+  "peerDependencies": {
+    "eslint": "^8.57.0 || ^9.0.0"
+  },
+  "dependencies": {
+    "@typescript-eslint/utils": "^8.54.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.54.0",
+    "@typescript-eslint/rule-tester": "^8.54.0",
+    "eslint": "^9.39.2",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.0.0"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/type-styles/typestyles",
+    "directory": "packages/eslint-plugin"
+  }
+}

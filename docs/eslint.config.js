@@ -1,6 +1,6 @@
 import tseslint from 'typescript-eslint';
-import { typestylesConfig } from '../eslint.base.js';
+import { typestylesAppConfig } from '../eslint.base.js';
 
-export default tseslint.config(...typestylesConfig, {
+export default tseslint.config(...typestylesAppConfig, {
   ignores: ['.content-collections/**', '.astro/**', 'dist/**'],
 });

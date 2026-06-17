@@ -114,3 +114,17 @@ export const site = {
     componentLayer,
   ),
 } as const;
+
+/**
+ * Intentional shorthand/longhand conflict for `@typestyles/eslint-plugin` coverage in CI.
+ * Without the disable comment, `pnpm lint` in this example fails.
+ */
+export const eslintPluginProbe = styles.class(
+  'eslint-plugin-probe',
+  // eslint-disable-next-line @typestyles/no-shorthand-longhand-conflict -- verify eslint-disable in examples
+  {
+    padding: 8,
+    paddingTop: 4,
+  },
+  componentLayer,
+);

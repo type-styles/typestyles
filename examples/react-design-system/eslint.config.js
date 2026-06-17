@@ -1,3 +1,3 @@
-import { typestylesConfig } from '../../eslint.base.js';
+import { typestylesAppConfig } from '../../eslint.base.js';
 
-export default typestylesConfig;
+export default typestylesAppConfig;

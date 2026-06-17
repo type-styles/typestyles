@@ -97,10 +97,10 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
   - [x] Ship `atomic` mode with per-declaration decomposition and dedup across components.
   - [x] Docs + changeset; open PR.
 
-- [ ] **P2.11 — ESLint plugin MVP** (PR: )
-  - `@typestyles/eslint-plugin` with first rules: shorthand/longhand conflict
-    detection (we do nothing today; StyleX errors), invalid unitless values,
-    duplicate namespace literals.
+- [x] **P2.11 — ESLint plugin MVP** (PR: #96)
+  - [x] `@typestyles/eslint-plugin` with first rules: shorthand/longhand conflict
+        detection (we do nothing today; StyleX errors), invalid unitless values,
+        duplicate namespace literals.
 
 - [ ] **P2.12 — Integration parity + honest claims** (PR: )
   - Rollup plugin: add convention-entry discovery to match Vite/Next defaults

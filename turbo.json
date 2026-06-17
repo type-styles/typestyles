@@ -16,6 +16,7 @@
       "inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
     },
     "lint": {
+      "dependsOn": ["@typestyles/eslint-plugin#build"],
       "inputs": [
         "**/*.ts",
         "**/*.tsx",
