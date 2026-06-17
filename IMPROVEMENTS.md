@@ -164,7 +164,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     behavior when no type param is passed.
   - Effort: Low-Medium (type-level change, no runtime impact).
 
-- [ ] **P3.24 — `@property` on token leaves + `styles.property`**
+- [ ] **P3.24 — `@property` on token leaves + `styles.property`** (PR: )
   - Component-internal vars via `ctx.var` shipped; token leaves are still plain
     `var(--…)` strings with no `.name`/`.var` refs and no `@property` registration.
   - Scope: opt-in `{ value, syntax, inherits }` leaf shape in `tokens.create`;

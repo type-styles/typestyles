@@ -7,13 +7,9 @@ import type {
   ComponentVarNode,
   ComponentVarOptions,
   ComponentVarRefTree,
-  CSSVarRef,
 } from './types';
 import { insertRule } from './sheet';
-
-function escapePropertySyntaxString(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
+import { createRegisteredPropertyRef, registerAtPropertyRule } from './registered-property';
 
 function isVarDescriptor(o: unknown): o is ComponentVarDescriptor {
   return (
@@ -179,15 +175,14 @@ export function createComponentConfigContextPair(
     varBaseDefaults[name] = entry.value;
 
     if (entry.syntax != null) {
-      const inherits = entry.inherits ?? false;
-      const css = `@property ${name} { syntax: "${escapePropertySyntaxString(entry.syntax)}"; inherits: ${inherits}; initial-value: ${entry.value}; }`;
-      insertRule(`@property:${name}`, css);
+      registerAtPropertyRule(name, {
+        value: entry.value,
+        syntax: entry.syntax,
+        inherits: entry.inherits,
+      });
     }
 
-    return {
-      name,
-      var: `var(${name})` as CSSVarRef,
-    };
+    return createRegisteredPropertyRef(name);
   }
 
   function varFn(id: string, options?: ComponentVarOptions): ComponentInternalVarRef {
@@ -215,10 +210,7 @@ export function createComponentConfigContextPair(
       seen.add(safePath);
     }
 
-    return {
-      name,
-      var: `var(${name})` as CSSVarRef,
-    };
+    return createRegisteredPropertyRef(name);
   }
 
   function varsFn<const T extends ComponentVarDefinitions>(definitions: T): ComponentVarRefTree<T> {

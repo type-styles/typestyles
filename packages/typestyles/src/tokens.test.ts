@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, expectTypeOf } from 'vitest';
 import { createTokens } from './tokens';
 import { createTheme } from './theme';
-import { reset, flushSync } from './sheet';
+import { reset, flushSync, getRegisteredCss } from './sheet';
 import type { TokenRef, TokenValues } from './types';
 
 describe('createTokens factory', () => {
@@ -103,6 +103,47 @@ describe('tokens.create', () => {
 
     expect(tokens.simple).toBe('var(--test-simple)');
     expect(tokens.nested.key).toBe('var(--test-nested-key)');
+  });
+
+  it('returns RegisteredPropertyRef leaves and registers @property for descriptor tokens', () => {
+    const api = createTokens();
+    const motion = api.create('motion', {
+      duration: { value: '200ms', syntax: '<time>', inherits: false },
+      easing: 'ease',
+    });
+
+    expect(typeof motion.easing).toBe('string');
+    expect(motion.easing).toBe('var(--motion-easing)');
+
+    const duration = motion.duration;
+    expect(duration).toMatchObject({
+      name: '--motion-duration',
+      var: 'var(--motion-duration)',
+    });
+    expect(String(duration)).toBe('var(--motion-duration)');
+    expect(`${duration}`).toBe('var(--motion-duration)');
+
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('--motion-duration: 200ms');
+    expect(css).toContain('@property --motion-duration');
+    expect(css).toContain('syntax: "<time>"');
+    expect(css).toContain('initial-value: 200ms');
+  });
+
+  it('exposes descriptor refs from tokens.use after create', () => {
+    const api = createTokens();
+    api.create('color', {
+      accent: { value: '#0066ff', syntax: '<color>' },
+    });
+    flushSync();
+
+    const used = api.use('color');
+    expect(used.accent).toMatchObject({
+      name: '--color-accent',
+      var: 'var(--color-accent)',
+    });
   });
 });
 

@@ -72,6 +72,7 @@ export type {
   StyleUtils,
   TokenValues,
   TokenRef,
+  TokenDescriptor,
   CreatedTokenRef,
   InferTokenValues,
   InferTokenNamespace,
@@ -85,6 +86,8 @@ export type {
   ComponentConfigContext,
   ComponentConfigInput,
   ComponentInternalVarRef,
+  RegisteredPropertyRef,
+  RegisteredPropertyOptions,
   ComponentReturn,
   ComponentVarDefinitions,
   ComponentVarDescriptor,
@@ -123,7 +126,7 @@ export type {
   DeepPartialTokenValues,
 } from './types';
 
-export { flattenTokenEntries } from './types';
+export { flattenTokenEntries, isTokenDescriptor } from './types';
 
 export { createVar, assignVars };
 

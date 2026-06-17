@@ -9,7 +9,7 @@ import {
 import { cx } from './index';
 import { createComponent } from './component';
 import { defaultClassNamingConfig } from './class-naming';
-import { reset, flushSync } from './sheet';
+import { reset, flushSync, getRegisteredCss } from './sheet';
 import { registeredNamespaces } from './registry';
 
 describe('createClass', () => {
@@ -427,5 +427,50 @@ describe('createStylesWithUtils', () => {
 
     expect(rule.style.getPropertyValue('width')).toBe('30px');
     expect(rule.style.getPropertyValue('height')).toBe('30px');
+  });
+});
+
+describe('styles.property', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('returns a ref and registers @property when syntax and value are set', () => {
+    const s = createStyles();
+    const opacity = s.property('overlay-opacity', {
+      value: '0.5',
+      syntax: '<number>',
+      inherits: false,
+    });
+
+    expect(opacity).toMatchObject({
+      name: '--property-overlay-opacity',
+      var: 'var(--property-overlay-opacity)',
+    });
+    expect(String(opacity)).toBe('var(--property-overlay-opacity)');
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --property-overlay-opacity');
+    expect(css).toContain('initial-value: 0.5');
+    expect(css).toContain(':root { --property-overlay-opacity: 0.5');
+  });
+
+  it('prefixes property names with scopeId', () => {
+    const s = createStyles({ scopeId: 'acme' });
+    const hue = s.property('accent-hue', { value: '220', syntax: '<number>' });
+
+    expect(hue.name).toBe('--acme-property-accent-hue');
+    expect(hue.var).toBe('var(--acme-property-accent-hue)');
+  });
+
+  it('returns a bare ref when called without options', () => {
+    const s = createStyles();
+    const external = s.property('external-var');
+
+    expect(external.name).toBe('--property-external-var');
+    flushSync();
+    expect(getRegisteredCss()).not.toContain('--property-external-var');
   });
 });

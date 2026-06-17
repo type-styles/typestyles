@@ -21,6 +21,7 @@ per package or micro-frontend for isolation.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
 - `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
 - `styles.hashClass(properties, label?)`: Create a deterministic hashed class
+- `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create a utility-aware styles API (prefer `createStyles({ utils })` for a single instance)
 - `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
@@ -42,7 +43,7 @@ bundles share a page.
 
 **Methods:**
 
-- `tokens.create(namespace, values)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`
+- `tokens.create(namespace, values)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Leaf values may use `{ value, syntax?, inherits? }` to register `@property` and return `{ name, var, toString }` refs instead of plain `var(...)` strings.
 - `tokens.use(namespace | createdRef)`: References existing tokens; infers types from a `tokens.create()` return value or a `createTokens<Registry>()` generic
 - `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch

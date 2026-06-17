@@ -6,10 +6,12 @@ import type {
   ThemeConfig,
   ThemeSurface,
   ThemeOverrides,
+  TokenDescriptor,
 } from './types';
-import { flattenTokenEntries } from './types';
+import { flattenTokenEntries, isTokenDescriptor } from './types';
 import { scopedTokenNamespace } from './class-naming';
 import { insertRule, insertRules } from './sheet';
+import { createRegisteredPropertyRef, registerAtPropertyRule } from './registered-property';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
 import type { CascadeLayersInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
@@ -73,10 +75,22 @@ function getAllKeys(obj: TokenValues, prefix = ''): Set<string> {
 
   if (obj === null || obj === undefined) return keys;
 
+  if (typeof obj === 'string' || typeof obj === 'number') {
+    if (prefix) keys.add(prefix);
+    return keys;
+  }
+
+  if (isTokenDescriptor(obj)) {
+    if (prefix) keys.add(prefix);
+    return keys;
+  }
+
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}-${key}` : key;
 
     if (typeof value !== 'object' || value === null) {
+      keys.add(fullKey);
+    } else if (isTokenDescriptor(value)) {
       keys.add(fullKey);
     } else {
       keys.add(fullKey);
@@ -88,8 +102,59 @@ function getAllKeys(obj: TokenValues, prefix = ''): Set<string> {
   return keys;
 }
 
-function createTokenProxy(namespace: string, prefix: string, allKeys: Set<string>): object {
+function collectDescriptorMeta(
+  obj: TokenValues,
+  prefix = '',
+): Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits'> & { value: string }> {
+  const meta = new Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits'> & { value: string }>();
+
+  if (obj === null || obj === undefined) return meta;
+
+  if (isTokenDescriptor(obj)) {
+    if (prefix) {
+      meta.set(prefix, {
+        value: String(obj.value),
+        syntax: obj.syntax,
+        inherits: obj.inherits,
+      });
+    }
+    return meta;
+  }
+
+  if (typeof obj !== 'object') return meta;
+
+  for (const [key, value] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}-${key}` : key;
+
+    if (isTokenDescriptor(value)) {
+      meta.set(fullKey, {
+        value: String(value.value),
+        syntax: value.syntax,
+        inherits: value.inherits,
+      });
+    } else if (typeof value === 'object' && value !== null) {
+      for (const [path, entry] of collectDescriptorMeta(value as TokenValues, fullKey)) {
+        meta.set(path, entry);
+      }
+    }
+  }
+
+  return meta;
+}
+
+function createTokenProxy(
+  namespace: string,
+  prefix: string,
+  allKeys: Set<string>,
+  descriptorLeaves: Set<string>,
+): object {
   const makeToken = (p: string) => `var(--${namespace}-${p})`;
+  const makeLeaf = (p: string) => {
+    if (descriptorLeaves.has(p)) {
+      return createRegisteredPropertyRef(`--${namespace}-${p}`);
+    }
+    return makeToken(p);
+  };
 
   const handler: ProxyHandler<object> = {
     get(_target, prop: string | symbol): unknown {
@@ -98,10 +163,10 @@ function createTokenProxy(namespace: string, prefix: string, allKeys: Set<string
       }
 
       if (prop === 'toString') {
-        return () => makeToken(prefix);
+        return () => makeLeaf(prefix);
       }
       if (prop === 'valueOf') {
-        return () => makeToken(prefix);
+        return () => makeLeaf(prefix);
       }
       if (prop === 'constructor') {
         return Object;
@@ -116,7 +181,7 @@ function createTokenProxy(namespace: string, prefix: string, allKeys: Set<string
       const newPrefix = prefix ? `${prefix}-${prop}` : prop;
 
       if (allKeys.size === 0) {
-        return makeToken(newPrefix);
+        return makeLeaf(newPrefix);
       }
 
       if (allKeys.has(newPrefix)) {
@@ -124,16 +189,16 @@ function createTokenProxy(namespace: string, prefix: string, allKeys: Set<string
           (k) => k !== newPrefix && k.startsWith(newPrefix + '-'),
         );
         if (hasChildren) {
-          return createTokenProxy(namespace, newPrefix, allKeys);
+          return createTokenProxy(namespace, newPrefix, allKeys, descriptorLeaves);
         }
-        return makeToken(newPrefix);
+        return makeLeaf(newPrefix);
       }
 
       if (prefix !== '') {
-        return makeToken(newPrefix);
+        return makeLeaf(newPrefix);
       }
 
-      return createTokenProxy(namespace, newPrefix, allKeys);
+      return createTokenProxy(namespace, newPrefix, allKeys, descriptorLeaves);
     },
     has(_target, _prop) {
       return true;
@@ -192,6 +257,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
   const registeredNamespaces = new Set<string>();
   const createdTokenKeys = new Map<string, Set<string>>();
+  const createdDescriptorLeaves = new Map<string, Set<string>>();
 
   function create<T extends TokenValues, N extends string>(
     namespace: N,
@@ -223,9 +289,22 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     }
 
     const allKeys = getAllKeys(values);
+    const descriptorMeta = collectDescriptorMeta(values);
+    const descriptorLeaves = new Set(descriptorMeta.keys());
     createdTokenKeys.set(namespace, allKeys);
+    createdDescriptorLeaves.set(namespace, descriptorLeaves);
 
-    const ref = createTokenProxy(cssNs, '', allKeys) as CreatedTokenRef<T, N>;
+    for (const [path, entry] of descriptorMeta) {
+      if (entry.syntax != null) {
+        registerAtPropertyRule(`--${cssNs}-${path}`, {
+          value: entry.value,
+          syntax: entry.syntax,
+          inherits: entry.inherits,
+        });
+      }
+    }
+
+    const ref = createTokenProxy(cssNs, '', allKeys, descriptorLeaves) as CreatedTokenRef<T, N>;
     attachTokenMeta(ref, namespace);
     return ref;
   }
@@ -252,7 +331,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
     const allKeys = createdTokenKeys.get(namespace) ?? new Set<string>();
-    return createTokenProxy(cssNs, '', allKeys) as TokenRef<T>;
+    const descriptorLeaves = createdDescriptorLeaves.get(namespace) ?? new Set<string>();
+    return createTokenProxy(cssNs, '', allKeys, descriptorLeaves) as TokenRef<T>;
   }
 
   return {
