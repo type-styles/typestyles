@@ -203,7 +203,7 @@ describe('compose', () => {
     button({ typoKey: 'x' } as { size?: 'sm'; intent?: 'primary' });
 
     expect(err).toHaveBeenCalledWith(
-      expect.stringContaining('Unknown variant "typoKey" in styles.compose()'),
+      expect.stringContaining('Unknown variant "typoKey" in compose()'),
     );
     err.mockRestore();
   });

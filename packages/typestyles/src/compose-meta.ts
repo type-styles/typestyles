@@ -1,35 +1,23 @@
-export const TYPESTYLES_COMPOSE_META = Symbol.for('typestyles.composeMeta');
-
-export type ComposeVariantMeta =
-  | { kind: 'dimensioned'; dimensions: readonly string[] }
-  | { kind: 'flat'; keys: readonly string[] };
+const COMPOSE_META = '__tsCm';
 
 export type ComposeAwareFn = ((selections?: Record<string, unknown>) => string) & {
-  [TYPESTYLES_COMPOSE_META]?: ComposeVariantMeta;
+  [COMPOSE_META]?: readonly string[];
 };
 
-export function attachComposeMeta(fn: Function, meta: ComposeVariantMeta): void {
-  Object.defineProperty(fn, TYPESTYLES_COMPOSE_META, {
-    value: meta,
+export function attachComposeMeta(fn: object, keys: readonly string[]): void {
+  Object.defineProperty(fn, COMPOSE_META, {
+    value: keys,
     enumerable: false,
     writable: false,
     configurable: true,
   });
 }
 
-function getComposeAllowedKeys(fn: unknown): Set<string> | null {
-  if (typeof fn !== 'function') return null;
-  const meta = (fn as ComposeAwareFn)[TYPESTYLES_COMPOSE_META];
-  if (!meta) return null;
-  if (meta.kind === 'dimensioned') return new Set(meta.dimensions);
-  return new Set(meta.keys);
-}
-
 export function collectComposeAllowedKeys(selectors: Array<ComposeAwareFn | string>): Set<string> {
   const keys = new Set<string>();
   for (const selector of selectors) {
     if (typeof selector !== 'function') continue;
-    const allowed = getComposeAllowedKeys(selector);
+    const allowed = (selector as ComposeAwareFn)[COMPOSE_META];
     if (!allowed) continue;
     for (const key of allowed) keys.add(key);
   }
@@ -44,9 +32,7 @@ export function devWarnComposeUnknownKeys(
   if (!selections || allowedKeys.size === 0) return;
   for (const key of Object.keys(selections)) {
     if (!allowedKeys.has(key)) {
-      console.error(
-        `[typestyles] Unknown variant "${key}" in styles.compose() — not accepted by any composed style function.`,
-      );
+      console.error(`[typestyles] Unknown variant "${key}" in compose().`);
     }
   }
 }

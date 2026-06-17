@@ -452,10 +452,7 @@ function createDimensionedComponent<V extends VariantDefinitions>(
     classMap,
   ) as ComponentReturn<V>;
 
-  attachComposeMeta(result, {
-    kind: 'dimensioned',
-    dimensions: Object.keys(variants),
-  });
+  attachComposeMeta(result, Object.keys(variants));
 
   return result;
 }
@@ -518,7 +515,7 @@ function createFlatComponent<K extends string>(
     classMap,
   ) as FlatComponentReturn<K>;
 
-  attachComposeMeta(result, { kind: 'flat', keys: variantKeys });
+  attachComposeMeta(result, variantKeys);
 
   return result;
 }
