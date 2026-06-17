@@ -37,7 +37,7 @@ Toggle **Ghost** in the demo and check the **DOM** and **Emitted CSS** panels (o
 
 **What just happened:** definitions register when the module loads; the first time a class is used, TypeStyles injects rules into a managed `<style>` tag. For SSR, streaming, or static CSS in production, see [SSR](/docs/ssr) and [Zero-runtime extraction](/docs/zero-runtime).
 
-For React-specific patterns (refs, merging `className`, server components), see [React integration](/docs/react-integration).
+For React-specific patterns (refs, merging `className`, server components), see [React integration](/docs/react-integration). Vue and Svelte work the same way — see `examples/vue-app` and `examples/svelte-app` in the repo.
 
 ## Next steps
 
@@ -51,4 +51,4 @@ For React-specific patterns (refs, merging `className`, server components), see 
 | [Design system with tokens](/docs/design-system)   | Primitives → semantics → components                                               |
 | [Class naming](/docs/class-naming)                 | Semantic vs hashed output                                                         |
 
-**Example projects** in this repo live under `examples/`; from the monorepo root you can run `pnpm vite-app`, `pnpm next-app`, `pnpm design-system`, or `pnpm react-design-system`.
+**Example projects** in this repo live under `examples/`; from the monorepo root you can run `pnpm vite-app`, `pnpm next-app`, `pnpm vue-app`, `pnpm svelte-app`, `pnpm design-system`, or `pnpm react-design-system`.

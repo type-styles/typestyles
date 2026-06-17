@@ -11,12 +11,7 @@ export default {
   },
   plugins: [
     nodeResolve(),
-    typestylesRollupPlugin({
-      mode: 'build',
-      extract: {
-        modules: ['src/styles.js', 'src/tokens.js', 'src/animations.js'],
-        fileName: 'typestyles.css',
-      },
-    }),
+    // Discovers src/typestyles-entry.js and defaults to build extraction.
+    typestylesRollupPlugin(),
   ],
 };

@@ -102,12 +102,11 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
         detection (we do nothing today; StyleX errors), invalid unitless values,
         duplicate namespace literals.
 
-- [ ] **P2.12 — Integration parity + honest claims** (PR: )
-  - Rollup plugin: add convention-entry discovery to match Vite/Next defaults
-  - Root README overclaims "works with webpack, esbuild, Parcel out of the box" —
-    true only for runtime mode; correct it
-  - Getting-started claims Vue/Svelte support with zero examples or tests; soften
-    or substantiate
+- [x] **P2.12 — Integration parity + honest claims** (PR: )
+  - [x] Rollup plugin: convention-entry discovery aligned with Vite/Next defaults
+  - [x] Ship `@typestyles/esbuild` and `@typestyles/webpack` for zero-runtime extraction
+  - [x] README clarifies runtime vs extraction; documents new bundler plugins
+  - [x] Vue/Svelte/esbuild/Parcel examples with build verification tests
 
 - [ ] **P2.13 — READMEs for every published package** (PR: )
   - Missing: `packages/vite`, `packages/astro`, `packages/migrate`,

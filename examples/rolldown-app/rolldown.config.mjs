@@ -9,12 +9,7 @@ export default {
     sourcemap: true,
   },
   plugins: [
-    typestylesRollupPlugin({
-      mode: 'build',
-      extract: {
-        modules: ['src/styles.js', 'src/tokens.js', 'src/animations.js'],
-        fileName: 'typestyles.css',
-      },
-    }),
+    // Same convention discovery as Rollup; explicit modules still supported.
+    typestylesRollupPlugin(),
   ],
 };

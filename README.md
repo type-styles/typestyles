@@ -449,7 +449,7 @@ pnpm add typestyles
 yarn add typestyles
 ```
 
-No bundler plugin required. Works with Vite, webpack, esbuild, Parcel, or any other bundler out of the box.
+No bundler plugin required for the **runtime path** — TypeStyles works with Vite, webpack, esbuild, Parcel, and other bundlers that resolve `node_modules`. For **zero-runtime extraction**, use `@typestyles/vite`, `@typestyles/rollup`, `@typestyles/esbuild`, or `@typestyles/webpack` (Next.js: `@typestyles/next/build`).
 
 Optional Vite plugin for development niceties (style HMR, dead style detection):
 
