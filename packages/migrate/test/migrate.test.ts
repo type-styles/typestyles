@@ -28,13 +28,82 @@ describe('migrateSource', () => {
     expect(result.code).not.toContain(`css\``);
   });
 
+  it('migrates prop-based template interpolations to createVar and assignVars', async () => {
+    const input = `
+import styled from 'styled-components';
+const Button = styled.button\`
+  color: \${(props) => props.color};
+\`;
+function App() {
+  return <Button color="red" />;
+}
+`.trim();
+    const result = migrateSource('button.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('createVar');
+    expect(result.code).toContain('assignVars');
+    expect(result.code).toContain('styles.class("button"');
+    expect(result.code).toContain('<button');
+    expect(result.code).not.toContain('color="red"');
+    expect(result.code).not.toContain('<Button');
+  });
+
+  it('migrates multiple prop interpolations with css suffixes', async () => {
+    const input = await readFile(fixture('interpolated-input.tsx'), 'utf8');
+    const result = migrateSource('interpolated-input.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('createVar');
+    expect(result.code).toContain('assignVars');
+    expect(result.code).toContain('styles.class("box"');
+    expect(result.code).not.toContain('<Box');
+    expect(result.code).not.toContain('width={200}');
+  });
+
+  it('migrates destructured prop interpolations', async () => {
+    const input = await readFile(fixture('destructured-input.tsx'), 'utf8');
+    const result = migrateSource('destructured-input.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('createVar');
+    expect(result.code).toContain('assignVars');
+    expect(result.code).not.toContain('<Button');
+  });
+
+  it('migrates boolean prop ternaries to styles.component variants', async () => {
+    const input = await readFile(fixture('variant-input.tsx'), 'utf8');
+    const result = migrateSource('variant-input.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('styles.component("button"');
+    expect(result.code).toContain('variants');
+    expect(result.code).toContain('defaultVariants');
+    expect(result.code).toContain('primary: true');
+    expect(result.code).not.toContain('<Button');
+  });
+
+  it('migrates static templates with @media rules', async () => {
+    const input = await readFile(fixture('media-input.tsx'), 'utf8');
+    const result = migrateSource('media-input.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('"@media (max-width: 640px)"');
+    expect(result.code).not.toContain('<Card');
+  });
+
   it('skips unsupported interpolated templates with warning', async () => {
     const input = await readFile(fixture('unsupported-input.tsx'), 'utf8');
     const result = migrateSource('unsupported-input.tsx', input);
 
     expect(result.changed).toBe(false);
     expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings[0]?.message).toContain('interpolations');
+    expect(result.warnings[0]?.message).toContain('unsupported interpolations');
   });
 
   it('migrates @emotion/styled default import the same as styled-components', () => {
