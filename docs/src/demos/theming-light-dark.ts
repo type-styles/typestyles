@@ -1,8 +1,8 @@
 import { createStyles, createTokens } from 'typestyles';
 
-const tokens = createTokens();
+const tokens = createTokens({ scopeId: 'theming-light-dark-demo' });
 
-export const color = tokens.create('color', {
+export const themeColor = tokens.create('theme', {
   text: '#111827',
   textMuted: '#6b7280',
   surface: '#ffffff',
@@ -11,7 +11,7 @@ export const color = tokens.create('color', {
 
 export const darkTheme = tokens.createTheme('dark', {
   base: {
-    color: {
+    theme: {
       text: '#e0e0e0',
       textMuted: '#9ca3af',
       surface: '#1a1a2e',
@@ -26,9 +26,9 @@ export const card = styles.component('demo-card', {
   base: {
     padding: '16px 20px',
     borderRadius: '8px',
-    border: '1px solid color-mix(in srgb, var(--color-text) 12%, transparent)',
-    backgroundColor: 'var(--color-surface)',
-    color: 'var(--color-text)',
+    border: '1px solid color-mix(in srgb, var(--theme-text) 12%, transparent)',
+    backgroundColor: 'var(--theme-surface)',
+    color: 'var(--theme-text)',
   },
 });
 

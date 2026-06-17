@@ -45,7 +45,9 @@ export const toc = styles.component(
       lineHeight: 1.4,
       color: t.color.text.secondary,
       textDecoration: 'none',
-      padding: `${t.space[1]} ${t.space[4]}`,
+      paddingTop: t.space[1],
+      paddingRight: t.space[4],
+      paddingBottom: t.space[1],
       paddingLeft: `calc(${t.space[4]} + var(--docs-toc-depth, 0px))`,
       transition: 'color 120ms ease',
       '&:hover': {

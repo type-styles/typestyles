@@ -230,7 +230,7 @@ const sidebarBase = styles.component(
       boxShadow: t.shadow.xs,
       '&:focus': {
         outline: `${t.borderWidth.thin} solid ${t.color.accent.default}`,
-        outlineOffset: '0',
+        outlineOffset: 0,
       },
       /**
        * Chromium+: fully style the closed control + dropdown via customizable `<select>`.

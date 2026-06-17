@@ -273,8 +273,10 @@ export const proseContent = styles.component(
         color: `color-mix(in srgb, ${t.color.accent.default} 75%, ${t.color.text.primary})`,
       },
       '& hr': {
-        border: 'none',
         borderTop: `1px solid ${t.color.border.default}`,
+        borderRight: 'none',
+        borderBottom: 'none',
+        borderLeft: 'none',
         margin: `${t.space[5]} 0`,
         [bp]: {
           margin: `${t.space[4]} 0`,

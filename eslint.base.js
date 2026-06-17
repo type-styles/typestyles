@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import { configs as typestylesEslintConfigs } from '@typestyles/eslint-plugin';
 
 export const typestylesConfig = tseslint.config(
   eslint.configs.recommended,
@@ -26,4 +27,10 @@ export const typestylesConfig = tseslint.config(
       'no-prototype-builtins': 'error',
     },
   },
+);
+
+/** Examples, docs, and other TypeStyles app surfaces — includes `@typestyles/eslint-plugin`. */
+export const typestylesAppConfig = tseslint.config(
+  ...typestylesConfig,
+  typestylesEslintConfigs.recommended,
 );
