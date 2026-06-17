@@ -42,8 +42,8 @@ bundles share a page.
 
 **Methods:**
 
-- `tokens.create(namespace, values)`: Creates CSS custom properties
-- `tokens.use(namespace)`: References existing tokens
+- `tokens.create(namespace, values)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`
+- `tokens.use(namespace | createdRef)`: References existing tokens; infers types from a `tokens.create()` return value or a `createTokens<Registry>()` generic
 - `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
 - `tokens.when` / `tokens.colorMode`: Condition helpers for themes

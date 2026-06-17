@@ -1,10 +1,28 @@
-import type { TokenValues, TokenRef, ThemeConfig, ThemeSurface, ThemeOverrides } from './types';
+import type {
+  TokenValues,
+  TokenRef,
+  CreatedTokenRef,
+  TokenRegistry,
+  ThemeConfig,
+  ThemeSurface,
+  ThemeOverrides,
+} from './types';
 import { flattenTokenEntries } from './types';
 import { scopedTokenNamespace } from './class-naming';
 import { insertRule, insertRules } from './sheet';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
 import type { CascadeLayersInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
+
+const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
+
+function attachTokenMeta(ref: object, namespace: string): void {
+  tokenMetaByRef.set(ref, { namespace });
+}
+
+function getTokenNamespace(ref: object): string | undefined {
+  return tokenMetaByRef.get(ref)?.namespace;
+}
 
 export type CreateTokensOptions = {
   /**
@@ -27,15 +45,19 @@ export type CreateTokensOptions = {
 /**
  * Design token and theme API bound to an optional `scopeId`.
  */
-export type TokensApi = {
+export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
   /** Same `scopeId` passed to `createTokens`, if any. */
   readonly scopeId: string | undefined;
-  create: <T extends TokenValues>(
-    namespace: string,
+  create: <T extends TokenValues, N extends string>(
+    namespace: N,
     values: T,
     options?: { layer?: string },
-  ) => TokenRef<T>;
-  use: <T extends TokenValues = TokenValues>(namespace: string) => TokenRef<T>;
+  ) => CreatedTokenRef<T, N>;
+  use: {
+    <T extends TokenValues, N extends string>(ref: CreatedTokenRef<T, N>): TokenRef<T>;
+    <N extends keyof R & string>(namespace: N): TokenRef<R[N]>;
+    <T extends TokenValues = TokenValues>(namespace: string): TokenRef<T>;
+  };
   createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
   when: typeof when;
@@ -136,7 +158,9 @@ function createTokenProxy(namespace: string, prefix: string, allKeys: Set<string
  * color.primary // var(--design-system-color-primary)
  * ```
  */
-export function createTokens(options: CreateTokensOptions = {}): TokensApi {
+export function createTokens<R extends TokenRegistry = Record<string, never>>(
+  options: CreateTokensOptions = {},
+): TokensApi<R> {
   const scopeId = options.scopeId?.trim() || undefined;
 
   if (process.env.NODE_ENV !== 'production') {
@@ -169,11 +193,11 @@ export function createTokens(options: CreateTokensOptions = {}): TokensApi {
   const registeredNamespaces = new Set<string>();
   const createdTokenKeys = new Map<string, Set<string>>();
 
-  function create<T extends TokenValues>(
-    namespace: string,
+  function create<T extends TokenValues, N extends string>(
+    namespace: N,
     values: T,
     options?: { layer?: string },
-  ): TokenRef<T> {
+  ): CreatedTokenRef<T, N> {
     if (options?.layer != null && !themeLayerContext) {
       throw new Error(
         '[typestyles] `tokens.create(..., { layer })` requires `createTokens({ layers, tokenLayer })`.',
@@ -201,13 +225,23 @@ export function createTokens(options: CreateTokensOptions = {}): TokensApi {
     const allKeys = getAllKeys(values);
     createdTokenKeys.set(namespace, allKeys);
 
-    return createTokenProxy(cssNs, '', allKeys) as TokenRef<T>;
+    const ref = createTokenProxy(cssNs, '', allKeys) as CreatedTokenRef<T, N>;
+    attachTokenMeta(ref, namespace);
+    return ref;
   }
 
-  function use<T extends TokenValues = TokenValues>(namespace: string): TokenRef<T> {
+  function use<T extends TokenValues, N extends string>(
+    namespaceOrRef: string | CreatedTokenRef<T, N>,
+  ): TokenRef<T> {
+    const namespace =
+      typeof namespaceOrRef === 'string'
+        ? namespaceOrRef
+        : (getTokenNamespace(namespaceOrRef) ?? '');
+
     if (
       process.env.NODE_ENV !== 'production' &&
       registeredNamespaces.size > 0 &&
+      namespace &&
       !registeredNamespaces.has(namespace)
     ) {
       console.warn(
@@ -224,7 +258,7 @@ export function createTokens(options: CreateTokensOptions = {}): TokensApi {
   return {
     scopeId,
     create,
-    use,
+    use: use as TokensApi<R>['use'],
     createTheme: (name, config) => createTheme(name, config, scopeId, themeLayerContext),
     createDarkMode: (name, darkOverrides) =>
       createDarkMode(name, darkOverrides, scopeId, themeLayerContext),

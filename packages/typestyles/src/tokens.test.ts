@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, expectTypeOf } from 'vitest';
 import { createTokens } from './tokens';
 import { createTheme } from './theme';
 import { reset, flushSync } from './sheet';
+import type { TokenRef, TokenValues } from './types';
 
 describe('createTokens factory', () => {
   it('exposes scopeId on the instance', () => {
@@ -140,6 +141,53 @@ describe('tokens.use', () => {
     flushSync();
     const tokens = api.use('color');
     expect(tokens.text.primary).toBe('var(--color-text-primary)');
+  });
+
+  it('infers token shape when passed a created ref', () => {
+    const api = createTokens();
+    const space = api.create('space', { sm: '8px', md: '16px' } as const);
+    const used = api.use(space);
+
+    expectTypeOf(used).toEqualTypeOf(space);
+    expectTypeOf(used.sm).toBeString();
+    expectTypeOf(used.md).toBeString();
+    expect(used.sm).toBe('var(--space-sm)');
+    expect(used.md).toBe('var(--space-md)');
+  });
+
+  it('resolves namespace from a created ref without injecting CSS', () => {
+    const api = createTokens();
+    const created = api.create('ref-space', { lg: '24px' });
+    flushSync();
+
+    const stylesBefore = document.getElementById('typestyles') as HTMLStyleElement;
+    const ruleCountBefore = stylesBefore?.sheet?.cssRules.length ?? 0;
+
+    const used = api.use(created);
+    flushSync();
+
+    const ruleCountAfter = stylesBefore?.sheet?.cssRules.length ?? 0;
+    expect(ruleCountAfter).toBe(ruleCountBefore);
+    expect(used.lg).toBe('var(--ref-space-lg)');
+  });
+
+  it('falls back to broad TokenValues for string-only use', () => {
+    const api = createTokens();
+    const used = api.use('anything');
+
+    expectTypeOf(used).toEqualTypeOf<TokenRef<TokenValues>>();
+    expect(used.foo).toBe('var(--anything-foo)');
+  });
+
+  it('infers from a shared registry generic when namespace is a known key', () => {
+    type Registry = {
+      space: { sm: '8px'; md: '16px' };
+      color: { primary: '#000' };
+    };
+    const api = createTokens<Registry>();
+
+    expectTypeOf(api.use('space')).toMatchObjectType<{ sm: string; md: string }>();
+    expectTypeOf(api.use('color')).toMatchObjectType<{ primary: string }>();
   });
 });
 

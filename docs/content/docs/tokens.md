@@ -67,6 +67,34 @@ export const space = tokens.create('space', {
 
 When tokens are created in another module or package, use `tokens.use(namespace)` to get the same `var(--namespace-key)` references **without** emitting another `:root` rule. The namespace must already be registered (via `tokens.create`) before those variables exist in CSS.
 
+### Type inference (cross-package)
+
+`tokens.create()` returns a branded ref. Pass that ref to `tokens.use()` so consumers get the same typed shape without duplicating a manual generic:
+
+```ts
+// design-system/tokens.ts
+export const space = tokens.create('space', { sm: '8px', md: '16px' });
+
+// app/styles.ts
+import { space as spaceTokens } from '@acme/design-system';
+const space = tokens.use(spaceTokens);
+space.md; // string — typed as var(--space-md)
+```
+
+For string-only lookups inside one package, declare a registry on `createTokens<Registry>()`:
+
+```ts
+type DesignTokens = {
+  space: { sm: '8px'; md: '16px' };
+  color: { primary: '#0066ff' };
+};
+
+const tokens = createTokens<DesignTokens>();
+const space = tokens.use('space'); // typed from Registry
+```
+
+Export `InferTokenValues<typeof created>` when consumers must reference tokens by namespace string.
+
 ## Theming
 
 Use `tokens.createTheme(name, config)` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.

@@ -143,6 +143,34 @@ export type TokenRef<T extends TokenValues> = T extends string | number
       readonly [K in keyof T]: T[K] extends TokenValues ? TokenRef<T[K]> : string;
     };
 
+declare const CreatedTokenBrand: unique symbol;
+
+/**
+ * Return type of `tokens.create()` — a `TokenRef` branded with its value shape and namespace
+ * so `tokens.use(created)` can infer types across packages.
+ */
+export type CreatedTokenRef<
+  T extends TokenValues = TokenValues,
+  N extends string = string,
+> = TokenRef<T> & {
+  readonly [CreatedTokenBrand]: { readonly values: T; readonly namespace: N };
+};
+
+/** Extract token value shape from a `tokens.create()` return value. */
+export type InferTokenValues<R> =
+  R extends CreatedTokenRef<infer T, string>
+    ? T extends TokenValues
+      ? T
+      : TokenValues
+    : TokenValues;
+
+/** Extract namespace literal from a `tokens.create()` return value. */
+export type InferTokenNamespace<R> =
+  R extends CreatedTokenRef<TokenValues, infer N> ? (N extends string ? N : string) : string;
+
+/** Registry of token namespaces to value shapes for `createTokens<Registry>()`. */
+export type TokenRegistry = Record<string, TokenValues>;
+
 /**
  * Nested token values where any object level may omit keys (for mode layers that
  * only tweak a subtree of `base`).
