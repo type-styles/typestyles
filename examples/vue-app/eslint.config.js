@@ -1,6 +1,6 @@
 import tseslint from 'typescript-eslint';
-import { typestylesAppConfig } from '../../eslint.base.js';
+import { exampleNodeScriptsConfig, typestylesAppConfig } from '../../eslint.base.js';
 
-export default tseslint.config(...typestylesAppConfig, {
+export default tseslint.config(...typestylesAppConfig, exampleNodeScriptsConfig, {
   ignores: ['dist/**'],
 });
