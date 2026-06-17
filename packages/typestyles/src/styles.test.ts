@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, expectTypeOf } from 'vitest';
 import {
   createClass,
   createHashClass,
@@ -167,6 +167,68 @@ describe('compose', () => {
   it('handles string-only composition', () => {
     const composed = compose('class-a', 'class-b', 'class-c');
     expect(composed()).toBe('class-a class-b class-c');
+  });
+
+  it('forwards variant selections to composed component functions', () => {
+    const size = createComponent(defaultClassNamingConfig, 'compose-size', {
+      variants: {
+        size: { sm: { fontSize: '12px' }, lg: { fontSize: '18px' } },
+      },
+      defaultVariants: { size: 'sm' },
+    });
+    const intent = createComponent(defaultClassNamingConfig, 'compose-intent', {
+      variants: {
+        intent: { primary: { color: 'blue' }, ghost: { color: 'gray' } },
+      },
+      defaultVariants: { intent: 'primary' },
+    });
+    const button = compose(size, intent);
+
+    expect(button({ size: 'lg', intent: 'ghost' })).toBe(
+      'compose-size-size-lg compose-intent-intent-ghost',
+    );
+  });
+
+  it('logs console.error in dev for unknown variant keys in composed function', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const size = createComponent(defaultClassNamingConfig, 'compose-warn-size', {
+      variants: { size: { sm: { fontSize: '12px' } } },
+    });
+    const intent = createComponent(defaultClassNamingConfig, 'compose-warn-intent', {
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
+    const button = compose(size, intent);
+
+    button({ typoKey: 'x' } as { size?: 'sm'; intent?: 'primary' });
+
+    expect(err).toHaveBeenCalledWith(
+      expect.stringContaining('Unknown variant "typoKey" in styles.compose()'),
+    );
+    err.mockRestore();
+  });
+
+  it('infers merged variant selections from composed functions', () => {
+    const size = createComponent(defaultClassNamingConfig, 'compose-type-size', {
+      variants: { size: { sm: {}, lg: {} } },
+    });
+    const intent = createComponent(defaultClassNamingConfig, 'compose-type-intent', {
+      variants: { intent: { primary: {}, ghost: {} } },
+    });
+    const button = compose(size, intent);
+
+    expectTypeOf(button).toBeCallableWith({ size: 'sm', intent: 'primary' });
+    expectTypeOf(button).toBeCallableWith();
+    expectTypeOf(button).parameter(0).toMatchObjectType<{
+      size?: 'sm' | 'lg';
+      intent?: 'primary' | 'ghost';
+    }>();
+  });
+
+  it('returns a no-arg function for string-only composition', () => {
+    const composed = compose('class-a', 'class-b');
+    expectTypeOf(composed).toBeCallableWith();
+    expectTypeOf(composed).parameters.toEqualTypeOf<[]>();
   });
 });
 

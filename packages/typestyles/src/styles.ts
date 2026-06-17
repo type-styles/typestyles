@@ -173,9 +173,19 @@ export function createHashClass(
   return className;
 }
 
+import type { ComposeFn, ComposeSelectorInput } from './types';
+import {
+  collectComposeAllowedKeys,
+  devWarnComposeUnknownKeys,
+  type ComposeAwareFn,
+} from './compose-meta';
+
 /**
  * Compose multiple component functions or class strings into one.
  * Returns a new function that calls all inputs and joins results.
+ *
+ * Variant selections are inferred as the intersection of all composed component
+ * functions' accepted selection objects.
  *
  * @example
  * ```ts
@@ -186,29 +196,30 @@ export function createHashClass(
  * button(); // "base-base primary-base"
  * ```
  */
-type AnySelectorFunction = {
-  (...args: unknown[]): string;
-};
+export function compose<const S extends readonly ComposeSelectorInput[]>(
+  ...selectors: S
+): ComposeFn<S> {
+  const validSelectors = selectors.filter(Boolean) as Array<ComposeAwareFn | string>;
+  const allowedKeys = collectComposeAllowedKeys(validSelectors);
 
-export function compose(
-  ...selectors: Array<AnySelectorFunction | string | false | null | undefined>
-): AnySelectorFunction {
-  const validSelectors = selectors.filter(Boolean) as Array<AnySelectorFunction | string>;
+  const fn = (selections?: Record<string, unknown>): string => {
+    devWarnComposeUnknownKeys(selections, allowedKeys);
 
-  return (...args: unknown[]): string => {
     const classNames: string[] = [];
 
     for (const selector of validSelectors) {
       if (typeof selector === 'string') {
         classNames.push(selector);
       } else {
-        const result = selector(...args);
+        const result = selector(selections);
         if (result) classNames.push(result);
       }
     }
 
     return classNames.join(' ');
   };
+
+  return fn as ComposeFn<S>;
 }
 
 // ---------------------------------------------------------------------------

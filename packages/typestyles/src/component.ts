@@ -22,6 +22,7 @@ import { registeredNamespaces, warnUnscopedCollision } from './registry';
 import { emittedComponentClassPrefix, type ClassNamingConfig } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
 import { createComponentConfigContextPair } from './component-config-context';
+import { attachComposeMeta } from './compose-meta';
 
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
@@ -446,10 +447,17 @@ function createDimensionedComponent<V extends VariantDefinitions>(
     return classes.join(' ');
   };
 
-  return makeCallableObject(
+  const result = makeCallableObject(
     (...args: unknown[]) => selectorFn(args[0] as Record<string, unknown> | undefined),
     classMap,
   ) as ComponentReturn<V>;
+
+  attachComposeMeta(result, {
+    kind: 'dimensioned',
+    dimensions: Object.keys(variants),
+  });
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -505,10 +513,14 @@ function createFlatComponent<K extends string>(
     return classes.join(' ');
   };
 
-  return makeCallableObject(
+  const result = makeCallableObject(
     (...args: unknown[]) => selectorFn(args[0] as Record<string, unknown> | undefined),
     classMap,
   ) as FlatComponentReturn<K>;
+
+  attachComposeMeta(result, { kind: 'flat', keys: variantKeys });
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------

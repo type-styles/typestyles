@@ -177,18 +177,28 @@ const container = styles.compose(layout, spacing, responsive);
 
 ## Type Safety
 
-The composed function maintains full type safety. The return from `styles.compose` works with the new `styles.component` returns that are both callable and destructurable.
+`styles.compose()` infers a merged variant selection type from all composed component functions. TypeScript autocomplete and excess-property checks apply to the composed function's argument.
 
 ```ts
-const a = styles.component('a', {
-  base: { color: 'red' },
+const size = styles.component('size', {
+  variants: {
+    size: { sm: { fontSize: '12px' }, lg: { fontSize: '18px' } },
+  },
 });
 
-const b = styles.component('b', {
-  base: { color: 'blue' },
+const intent = styles.component('intent', {
+  variants: {
+    intent: { primary: { color: 'blue' }, ghost: { color: 'gray' } },
+  },
 });
 
-const composed = styles.compose(a, b);
+const button = styles.compose(size, intent);
+
+// OK — both dimensions are known
+button({ size: 'lg', intent: 'ghost' });
+
+// TypeScript error — unknown variant key
+button({ typo: true });
 ```
 
-Note: TypeScript won't prevent you from passing variant names that don't exist in all composed functions. At runtime, each function will only generate classes for variants it knows about.
+In development, `styles.compose()` also logs a `console.error` when a runtime selection object includes keys that none of the composed functions accept. Individual component functions still warn when a key is valid for one composed function but not another.

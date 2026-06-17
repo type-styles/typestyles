@@ -538,6 +538,42 @@ export type ComponentVariants<T> = T extends (selections?: ComponentSelections<i
   ? { [K in keyof V]?: keyof V[K] }
   : never;
 
+// ---------------------------------------------------------------------------
+// styles.compose — merged variant inference
+// ---------------------------------------------------------------------------
+
+/** Input accepted by {@link compose}: component fn, class string, or falsy skip. */
+export type ComposeSelectorInput =
+  | string
+  | false
+  | null
+  | undefined
+  | ((selections?: Record<string, unknown>) => string);
+
+type ComposeSelectorSelections<T> = T extends (selections?: infer S) => string
+  ? S extends undefined
+    ? Record<string, never>
+    : NonNullable<S>
+  : Record<string, never>;
+
+/** Union of variant selection objects accepted by all composed component functions. */
+export type MergeComposeSelections<Selectors extends readonly unknown[]> =
+  Selectors extends readonly [infer Head, ...infer Tail]
+    ? ComposeSelectorSelections<Head> & MergeComposeSelections<Tail>
+    : Record<string, never>;
+
+type AnyComposeFn<Selectors extends readonly ComposeSelectorInput[]> = Selectors[number] extends (
+  ...args: unknown[]
+) => string
+  ? true
+  : false;
+
+/** Return type of {@link compose}: callable with merged variant selections when any input is a function. */
+export type ComposeFn<Selectors extends readonly ComposeSelectorInput[]> =
+  AnyComposeFn<Selectors> extends true
+    ? (selections?: MergeComposeSelections<Selectors>) => string
+    : () => string;
+
 /**
  * `src` value for {@link FontFaceProps}: a single CSS `src` fragment or multiple
  * fragments joined with commas (same as authoring `url(...), local(...)` by hand).

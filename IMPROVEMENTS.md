@@ -149,7 +149,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
 
 ## P3 — API & type safety
 
-- [ ] **P3.22 — `styles.compose` type safety**
+- [ ] **P3.22 — `styles.compose` type safety** (PR: )
   - Today `compose` returns `AnySelectorFunction` — args are `unknown[]`, no variant
     inference across composed callables. Callers get zero autocomplete or type errors.
   - Scope: infer a union of accepted variant objects from composed component fns;
