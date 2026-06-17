@@ -108,7 +108,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
   - [x] README clarifies runtime vs extraction; documents new bundler plugins
   - [x] Vue/Svelte/esbuild/Parcel examples with build verification tests
 
-- [x] **P2.13 — READMEs for every published package** (PR: )
+- [x] **P2.13 — READMEs for every published package** (PR: #98)
   - Added npm landing-page READMEs for `packages/vite`, `packages/astro`,
     `packages/migrate`, `packages/props`, `packages/open-props`, and
     `packages/build-runner`; root README links the full package index.
