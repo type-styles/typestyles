@@ -32,6 +32,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
         { slug: 'styles', title: 'Styles' },
         { slug: 'components', title: 'Components' },
         { slug: 'compose', title: 'Style Composition' },
+        { slug: 'dynamic-styles', title: 'Dynamic styling' },
         { slug: 'atomic-css', title: 'Atomic CSS Utilities' },
         { slug: 'tokens', title: 'Tokens' },
         { slug: 'open-props', title: 'Open Props' },

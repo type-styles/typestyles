@@ -580,7 +580,7 @@ import { useCardState } from './useCardState';
 1. **Define styles at module level** - Never create styles inside components
 2. **Reuse token references** - Define once, import many times
 3. **Minimize variants** - Don't create a variant for every possible state
-4. **Use inline styles for dynamic values** - Don't create styles for frequently changing values
+4. **Use [`createVar()` for dynamic values**](/docs/dynamic-styles) — Keep styles static; set per-instance values via CSS custom properties
 5. **Lazy load component styles** - Use dynamic imports for code splitting
 
 ## Common mistakes to avoid
@@ -605,22 +605,23 @@ function Button({ children }) {
 ### Dynamic style values
 
 ```tsx
+import { styles, createVar, assignVars } from 'typestyles';
+
 // Bad - creates styles for every possible value
 const button = styles.component('button', {
   base: { width: props.width }, // Don't do this
 });
 
-// Good - use inline styles for dynamic values
+// Good - wire dynamic values through CSS custom properties
+const widthVar = createVar('buttonWidth');
+
 const button = styles.component('button', {
-  base: { display: 'inline-block' },
+  base: { display: 'inline-block', width: widthVar },
 });
 
 function Button({ width, children }) {
   return (
-    <button
-      className={button()}
-      style={{ width }} // Dynamic value here
-    >
+    <button className={button()} style={assignVars({ [widthVar]: width })}>
       {children}
     </button>
   );
@@ -648,6 +649,6 @@ const textButton = styles.component('text-button', { ... });
 - Define styles at module level, never in components
 - Use semantic tokens for application code
 - Keep variants focused on style purpose, not appearance
-- Use inline styles for truly dynamic values
+- Use [`createVar()` + `assignVars()`](/docs/dynamic-styles) for per-instance dynamic values
 - Use `cx()` from typestyles for conditional class joining
 - Use the Vite plugin to catch duplicate namespaces
