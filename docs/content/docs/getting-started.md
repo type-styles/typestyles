@@ -37,7 +37,21 @@ Toggle **Ghost** in the demo and check the **DOM** and **Emitted CSS** panels (o
 
 **What just happened:** definitions register when the module loads; the first time a class is used, TypeStyles injects rules into a managed `<style>` tag. For SSR, streaming, or static CSS in production, see [SSR](/docs/ssr) and [Zero-runtime extraction](/docs/zero-runtime).
 
-For React-specific patterns (refs, merging `className`, server components), see [React integration](/docs/react-integration). Vue and Svelte work the same way — see `examples/vue-app` and `examples/svelte-app` in the repo.
+For React-specific patterns (refs, merging `className`, server components), see [React integration](/docs/react-integration). Vue and Svelte work the same way — see the runnable examples below.
+
+## Runnable examples
+
+Clone the [typestyles monorepo](https://github.com/type-styles/typestyles) and run from the repo root (`pnpm install` once):
+
+| Example                                   | Command               | README                                                                                                   |
+| ----------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------- |
+| Vite + React (recommended starting point) | `pnpm vite-app dev`   | [examples/vite-app](https://github.com/type-styles/typestyles/blob/main/examples/vite-app/README.md)     |
+| Next.js App Router + extraction verify    | `pnpm next-app dev`   | [examples/next-app](https://github.com/type-styles/typestyles/blob/main/examples/next-app/README.md)     |
+| Vue 3                                     | `pnpm vue-app dev`    | [examples/vue-app](https://github.com/type-styles/typestyles/blob/main/examples/vue-app/README.md)       |
+| Svelte 5                                  | `pnpm svelte-app dev` | [examples/svelte-app](https://github.com/type-styles/typestyles/blob/main/examples/svelte-app/README.md) |
+| Runtime only (no bundler plugin)          | `pnpm parcel-app dev` | [examples/parcel-app](https://github.com/type-styles/typestyles/blob/main/examples/parcel-app/README.md) |
+
+Full index: [examples/README.md](https://github.com/type-styles/typestyles/blob/main/examples/README.md) · maintainer map: [docs/README.md](https://github.com/type-styles/typestyles/blob/main/docs/README.md#doc-pages-and-runnable-examples)
 
 ## Next steps
 
@@ -50,5 +64,3 @@ For React-specific patterns (refs, merging `className`, server components), see 
 | [Migration](/docs/migration)                       | Mapping from Panda, CVA, StyleX, Emotion                                          |
 | [Design system with tokens](/docs/design-system)   | Primitives → semantics → components                                               |
 | [Class naming](/docs/class-naming)                 | Semantic vs hashed output                                                         |
-
-**Example projects** in this repo live under `examples/`; from the monorepo root you can run `pnpm vite-app`, `pnpm next-app`, `pnpm vue-app`, `pnpm svelte-app`, `pnpm design-system`, or `pnpm react-design-system`.

@@ -1,6 +1,26 @@
 # @examples/design-system
 
-Framework-agnostic design tokens and recipes used by the docs and example apps.
+Framework-agnostic design tokens and recipes used by the [docs site](../../docs/README.md), [`@examples/react-design-system`](../react-design-system), and example apps.
+
+This is a **library package** (not a standalone app). Import it from apps or the docs site; styles register as side effects when modules load.
+
+## Quick start
+
+```ts
+import { button, layout, text, designTokens, defaultTheme } from '@examples/design-system';
+
+// Recipes return callable + destructurable class helpers
+document.body.className = defaultTheme.className;
+element.className = button({ intent: 'primary' });
+```
+
+For syntax highlighting in docs or apps:
+
+```ts
+import '@examples/design-system/codeHighlight';
+```
+
+Pair with a **typestyles extraction entry** in consuming apps so token and recipe CSS lands in production output — see [`examples/vite-app`](../vite-app/README.md).
 
 ## Token layers
 
@@ -166,6 +186,12 @@ highlight.js emits `span` nodes with classes like `hljs-keyword`. This theme gro
 - **addition / deletion** — `.hljs-addition`, `.hljs-deletion`
 
 Use `hljs.highlight(code, { language })` (or `marked-highlight` with `langPrefix: 'hljs language-'`) so the output includes these classes; typography inherits from `.hljs` on the root `code` element.
+
+## Learn more
+
+- [`@examples/react-design-system`](../react-design-system/README.md) — React wrappers for these recipes
+- [Design system guide](https://typestyles.dev/docs/design-system) — patterns for building your own
+- [Documentation site](../../docs/README.md) — primary consumer of this package
 
 ## Prose / docs content primitives (`proseContent`)
 

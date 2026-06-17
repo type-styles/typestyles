@@ -108,10 +108,10 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
   - [x] README clarifies runtime vs extraction; documents new bundler plugins
   - [x] Vue/Svelte/esbuild/Parcel examples with build verification tests
 
-- [ ] **P2.13 — READMEs for every published package** (PR: )
-  - Missing: `packages/vite`, `packages/astro`, `packages/migrate`,
-    `packages/props`, `packages/open-props`, `packages/build-runner`. npm package
-    pages are landing pages.
+- [x] **P2.13 — READMEs for every published package** (PR: #98)
+  - Added npm landing-page READMEs for `packages/vite`, `packages/astro`,
+    `packages/migrate`, `packages/props`, `packages/open-props`, and
+    `packages/build-runner`; root README links the full package index.
 
 - [ ] **P2.14 — Migrate codemod: handle interpolations** (PR: )
   - The codemod skips any template literal with interpolations — i.e. most real

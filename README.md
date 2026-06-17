@@ -468,10 +468,44 @@ export default defineConfig({
 
 ## Examples
 
-- Vite build integration: `examples/vite-app`
-- Rollup build integration: `examples/rollup-app`
-- Rolldown build integration: `examples/rolldown-app`
-- Next.js integration: `examples/next-app`
+Runnable apps in [`examples/`](./examples/README.md) — each has its own README.
+
+| Example                                                 | Demonstrates                                                      |
+| ------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`vite-app`](./examples/vite-app)                       | React + `@typestyles/vite` — HMR, convention entry, design system |
+| [`next-app`](./examples/next-app)                       | Next.js App Router + `buildTypestylesForNext` + verification      |
+| [`vue-app`](./examples/vue-app)                         | Vue 3 + Vite extraction                                           |
+| [`svelte-app`](./examples/svelte-app)                   | Svelte 5 + Vite extraction                                        |
+| [`esbuild-app`](./examples/esbuild-app)                 | `@typestyles/esbuild` — vanilla JS                                |
+| [`rollup-app`](./examples/rollup-app)                   | `@typestyles/rollup` — vanilla JS                                 |
+| [`rolldown-app`](./examples/rolldown-app)               | Rolldown + Rollup-compatible plugin                               |
+| [`parcel-app`](./examples/parcel-app)                   | Runtime-only path (no bundler plugin)                             |
+| [`typewind`](./examples/typewind)                       | Tailwind-style utilities via `styles.class`                       |
+| [`design-system`](./examples/design-system)             | Framework-agnostic tokens and recipes                             |
+| [`react-design-system`](./examples/react-design-system) | React component library on typestyles                             |
+
+From the monorepo root: `pnpm vite-app dev`, `pnpm next-app dev`, `pnpm typewind dev`, etc.
+
+## Packages
+
+Documentation for each published npm package lives in its README — these are the landing pages on npmjs.com.
+
+| Package                                                 | Description                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
+| [`typestyles`](./packages/typestyles)                   | Core library — `styles`, `tokens`, `cx`, SSR helpers          |
+| [`@typestyles/vite`](./packages/vite)                   | Vite plugin — HMR, duplicate detection, production extraction |
+| [`@typestyles/astro`](./packages/astro)                 | Astro integration                                             |
+| [`@typestyles/next`](./packages/next)                   | Next.js App/Pages Router + Turbopack extraction               |
+| [`@typestyles/rollup`](./packages/rollup)               | Rollup and Rolldown plugin                                    |
+| [`@typestyles/esbuild`](./packages/esbuild)             | esbuild plugin                                                |
+| [`@typestyles/webpack`](./packages/webpack)             | webpack plugin                                                |
+| [`@typestyles/build-runner`](./packages/build-runner)   | Shared extraction engine and CI verification                  |
+| [`@typestyles/props`](./packages/props)                 | Type-safe atomic CSS utilities                                |
+| [`@typestyles/open-props`](./packages/open-props)       | Open Props tokens for typestyles                              |
+| [`@typestyles/migrate`](./packages/migrate)             | Codemods from styled-components / Emotion                     |
+| [`@typestyles/eslint-plugin`](./packages/eslint-plugin) | ESLint rules for style objects                                |
+
+Site docs: [typestyles.dev](https://typestyles.dev) · Docs site source: [`docs/README.md`](./docs/README.md)
 
 ## License
 
