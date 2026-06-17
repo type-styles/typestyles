@@ -113,7 +113,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     `packages/migrate`, `packages/props`, `packages/open-props`, and
     `packages/build-runner`; root README links the full package index.
 
-- [ ] **P2.14 — Migrate codemod: handle interpolations** (PR: )
+- [x] **P2.14 — Migrate codemod: handle interpolations** (PR: #99)
   - The codemod skips any template literal with interpolations — i.e. most real
     styled-components code. Convert prop-based interpolations to
     `createVar` + `assignVars` so migration is genuinely automated.
