@@ -1,13 +1,17 @@
+import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   DEFAULT_EXTRACT_MODULE_CANDIDATES,
+  buildManifestV2,
+  collectAndWriteRouteCss,
   discoverDefaultExtractModules,
   verifyTypestylesBuild,
   VerifyTypestylesBuildError,
   type TypestylesExtractManifestV1,
+  type TypestylesExtractManifestV2,
   type VerifyTypestylesBuildOptions,
   type VerifyTypestylesBuildResult,
 } from '@typestyles/build-runner';
@@ -20,10 +24,13 @@ export {
   discoverDefaultExtractModules,
   verifyTypestylesBuild,
   VerifyTypestylesBuildError,
+  getRouteCss,
   type TypestylesExtractManifestV1,
+  type TypestylesExtractManifestV2,
   type VerifyTypestylesBuildOptions,
   type VerifyTypestylesBuildResult,
-};
+  type GetRouteCssOptions,
+} from '@typestyles/build-runner';
 
 /** Shape of `require('webpack')` for `DefinePlugin` only (webpack is an optional peer). */
 type WebpackWithDefinePlugin = {
@@ -46,6 +53,15 @@ export interface BuildTypestylesForNextOptions {
   manifestOutFile?: string | false;
   /** Value stored in the manifest `css` field. Defaults to `cssOutFile`. */
   manifestCssPath?: string;
+  /**
+   * Emit per-route critical CSS for App Router pages and include mappings in the manifest (v2).
+   * Defaults to `true` when an `app/` directory exists under `root`.
+   */
+  routeCss?: boolean;
+  /** Output directory for per-route CSS relative to `root`. Default: `app/_typestyles/routes`. */
+  routeCssOutDir?: string;
+  /** App Router directory relative to `root`. Default: `app`. */
+  appDir?: string;
 }
 
 function resolveExtractModulesForNext(root: string, modules?: string[]): string[] {
@@ -67,6 +83,9 @@ function resolveExtractModulesForNext(root: string, modules?: string[]): string[
  *
  * Defaults mirror `@typestyles/vite`: discovers a convention entry when `modules` is omitted,
  * writes `app/typestyles.css` and `app/typestyles.manifest.json` unless overridden.
+ *
+ * When route CSS is enabled (default for App Router apps), the manifest is v2 and includes
+ * per-route CSS paths under `app/_typestyles/routes/` (override with `routeCssOutDir`).
  */
 export async function buildTypestylesForNext(
   options: BuildTypestylesForNextOptions,
@@ -77,9 +96,12 @@ export async function buildTypestylesForNext(
     cssOutFile = 'app/typestyles.css',
     manifestOutFile,
     manifestCssPath,
+    routeCssOutDir = 'app/_typestyles/routes',
+    appDir = 'app',
   } = options;
 
   const resolvedModules = resolveExtractModulesForNext(root, modules);
+  const enableRouteCss = options.routeCss ?? discoverNextAppRoutesEnabled(root, appDir);
 
   const loaders = resolvedModules.map((mod) => {
     const abs = resolve(root, mod);
@@ -95,14 +117,31 @@ export async function buildTypestylesForNext(
     manifestOutFile === false ? undefined : (manifestOutFile ?? 'app/typestyles.manifest.json');
 
   if (manifestRel) {
-    const manifest: TypestylesExtractManifestV1 = {
+    const cssPath = manifestCssPath ?? cssOutFile;
+    let manifest: TypestylesExtractManifestV1 | TypestylesExtractManifestV2 = {
       version: 1,
-      css: manifestCssPath ?? cssOutFile,
+      css: cssPath,
     };
+
+    if (enableRouteCss) {
+      const { routes } = await collectAndWriteRouteCss({
+        root,
+        sharedModules: resolvedModules,
+        appDir,
+        routeCssOutDir,
+        collectCss: collectStylesFromModules,
+      });
+      manifest = buildManifestV2(cssPath, routes);
+    }
+
     const manAbs = resolve(root, manifestRel);
     await mkdir(dirname(manAbs), { recursive: true });
     await writeFile(manAbs, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
   }
+}
+
+function discoverNextAppRoutesEnabled(root: string, appDir: string): boolean {
+  return existsSync(resolve(root, appDir));
 }
 
 export interface WithTypestylesExtractOptions {

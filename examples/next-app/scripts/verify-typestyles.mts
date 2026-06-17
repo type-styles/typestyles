@@ -10,6 +10,8 @@ try {
     root,
     cssFile: 'app/typestyles.css',
     manifestFile: 'app/typestyles.manifest.json',
+    manifestVersion: 2,
+    minRouteEntries: 1,
     minBytes: 500,
     // Semantic class names are prefixed with the sanitized scopeId
     // (`example-ds` / `example-app`), matching how tokens are scoped.

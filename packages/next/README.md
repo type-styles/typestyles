@@ -144,7 +144,7 @@ const css = await getTypestylesMetadata(<Home />);
 
 To ship a static stylesheet and avoid client-side `<style>` injection (uses `typestyles/build` under the hood):
 
-1. Run **`buildTypestylesForNext({ root })`** before `next build`. It discovers the same **convention entry** as `@typestyles/vite` (see `DEFAULT_EXTRACT_MODULE_CANDIDATES` from `@typestyles/build-runner`) and by default writes **`app/typestyles.css`** plus **`app/typestyles.manifest.json`** (override paths or pass explicit `modules` when needed).
+1. Run **`buildTypestylesForNext({ root })`** before `next build`. It discovers the same **convention entry** as `@typestyles/vite` (see `DEFAULT_EXTRACT_MODULE_CANDIDATES` from `@typestyles/build-runner`) and by default writes **`app/typestyles.css`** plus **`app/typestyles.manifest.json`** (override paths or pass explicit `modules` when needed). When `app/` exists, it also emits **per-route CSS** under `app/_typestyles/routes/` and a **manifest v2** `routes` map (`routeCss: false` to disable).
 2. Import that CSS from your root layout (e.g. `import './typestyles.css'`).
 3. Wrap config with **`withTypestyles`** from `@typestyles/next/build` — in **production**, if a convention entry exists, it applies **`withTypestylesExtract`**; in **development** it leaves your config unchanged so the runtime stays on.
 
@@ -166,6 +166,16 @@ export default withTypestyles({
 You still typically run extraction before production builds (CI or `prebuild`). For full manual control, **`withTypestylesExtract`** remains available.
 
 ## API Reference
+
+### getRouteCss
+
+Read pre-extracted CSS for an App Router route from the build manifest (v2). Falls back to the full-app stylesheet when no route entry exists.
+
+```tsx
+import { getRouteCss } from '@typestyles/next/server';
+
+const css = getRouteCss('/about', { root: process.cwd() });
+```
 
 ### getRegisteredCss
 

@@ -138,6 +138,11 @@ Throws `VerifyTypestylesBuildError` with a `code` on failure.
 | `manifestCssPath`       | Expected `css` field in manifest                |
 | `minBytes`              | Minimum file size (default: non-empty)          |
 | `requiredCssSubstrings` | Sanity-check strings that must appear in CSS    |
+| `minRouteEntries`       | For manifest v2: minimum route CSS entries      |
+
+### Per-route CSS (Next.js)
+
+`collectAndWriteRouteCss`, `discoverNextAppRoutes`, `traceTypestylesModules`, and `getRouteCss` support App Router critical CSS. `@typestyles/next/build` wires these into `buildTypestylesForNext` by default when `app/` exists.
 
 ### `discoverDefaultExtractModules(root)`
 

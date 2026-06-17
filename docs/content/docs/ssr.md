@@ -321,7 +321,41 @@ TypeStyles automatically deduplicates CSS during collection. If multiple compone
 
 ### Critical CSS
 
-All CSS is included by default. For large applications, you might want to implement critical CSS extraction (only including styles for above-the-fold content). This isn't built into TypeStyles—you'd need to implement it at the framework level.
+By default, `getRegisteredCss()` returns every rule registered in the process. For large apps, prefer **build-time per-route CSS** on Next.js: `buildTypestylesForNext` writes route-scoped stylesheets and a v2 manifest (see [zero-runtime — Next.js](/docs/zero-runtime#nextjs) and [per-route critical CSS](#per-route-critical-css-nextjs) below).
+
+### Per-route critical CSS (Next.js)
+
+`buildTypestylesForNext` traces each App Router `page` plus its layout chain, extracts CSS for modules that import `typestyles`, and writes self-contained files under `app/_typestyles/routes/` (default). The manifest maps route paths to those files:
+
+```json
+{
+  "version": 2,
+  "css": "app/typestyles.css",
+  "routes": {
+    "/": { "css": "app/_typestyles/routes/index.css" },
+    "/about": { "css": "app/_typestyles/routes/about.css" }
+  }
+}
+```
+
+At request time, read the pre-built CSS for the current route instead of the full global sheet:
+
+```tsx
+// app/about/layout.tsx (Server Component)
+import { getRouteCss } from '@typestyles/next/server';
+
+export default function AboutLayout({ children }: { children: React.ReactNode }) {
+  const css = getRouteCss('/about', { root: process.cwd() });
+  return (
+    <>
+      <style id="typestyles-about" dangerouslySetInnerHTML={{ __html: css }} />
+      {children}
+    </>
+  );
+}
+```
+
+Keep your convention entry minimal (tokens, reset, fonts). Route-specific `styles.*` modules imported only from that page's tree stay out of other routes' CSS files. Pass `routeCss: false` to `buildTypestylesForNext` when you only want the monolithic `typestyles.css`.
 
 ### Client-side hydration
 

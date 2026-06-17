@@ -18,6 +18,27 @@ export {
   type VerifyTypestylesBuildOptions,
   type VerifyTypestylesBuildResult,
 } from './verify';
+export {
+  isManifestV2,
+  normalizeRoutePath,
+  type TypestylesExtractManifest,
+  type TypestylesExtractManifestV2,
+  type TypestylesRouteCssEntry,
+} from './manifest';
+export { discoverNextAppRoutes, pageRelPathToRoutePath, type NextAppRoute } from './next-routes';
+export { createModuleLoader, traceTypestylesModules } from './trace-imports';
+export {
+  buildManifestV2,
+  collectAndWriteRouteCss,
+  type CollectRouteCssOptions,
+  type CollectRouteCssResult,
+} from './route-css';
+export {
+  getRouteCss,
+  readCssFile,
+  readTypestylesManifest,
+  type GetRouteCssOptions,
+} from './route-css-read';
 
 import { build as esbuildBuild } from 'esbuild';
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';

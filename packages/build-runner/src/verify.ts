@@ -1,11 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  isManifestV2,
+  type TypestylesExtractManifest,
+  type TypestylesExtractManifestV1,
+} from './manifest';
 
-/** Manifest shape written by {@link buildTypestylesForNext} and verified here. */
-export interface TypestylesExtractManifestV1 {
-  version: 1;
-  css: string;
-}
+export type { TypestylesExtractManifestV1 };
 
 export interface VerifyTypestylesBuildOptions {
   /** Project root used to resolve `cssFile` and `manifestFile`. */
@@ -25,6 +26,11 @@ export interface VerifyTypestylesBuildOptions {
   minBytes?: number;
   /** Substrings that must appear in the emitted CSS (app-specific sanity checks). */
   requiredCssSubstrings?: readonly string[];
+  /**
+   * When the manifest is v2, require at least this many route entries.
+   * Ignored for v1 manifests.
+   */
+  minRouteEntries?: number;
 }
 
 export interface VerifyTypestylesBuildResult {
@@ -48,7 +54,7 @@ function fail(message: string, code: string): never {
   throw new VerifyTypestylesBuildError(message, code);
 }
 
-function readManifest(path: string): TypestylesExtractManifestV1 {
+function readManifest(path: string): TypestylesExtractManifest {
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(path, 'utf8'));
@@ -65,7 +71,17 @@ function readManifest(path: string): TypestylesExtractManifestV1 {
     fail(`Manifest at ${path} is missing required fields.`, 'manifest-invalid-shape');
   }
 
-  return parsed as TypestylesExtractManifestV1;
+  const version = (parsed as { version?: unknown }).version;
+  if (version !== 1 && version !== 2) {
+    fail(`Unsupported manifest version ${String(version)}.`, 'manifest-version-unsupported');
+  }
+
+  const manifest = parsed as TypestylesExtractManifest;
+  if (isManifestV2(manifest) && typeof manifest.routes !== 'object') {
+    fail(`Manifest v2 at ${path} is missing routes.`, 'manifest-invalid-shape');
+  }
+
+  return manifest;
 }
 
 /**
@@ -86,6 +102,7 @@ export function verifyTypestylesBuild(
     manifestVersion = 1,
     minBytes,
     requiredCssSubstrings = [],
+    minRouteEntries,
   } = options;
 
   const cssPath = resolve(root, cssFile);
@@ -133,6 +150,26 @@ export function verifyTypestylesBuild(
       `Expected manifest.css ${JSON.stringify(expectedCssPath)}, got ${JSON.stringify(manifest.css)}.`,
       'manifest-css-mismatch',
     );
+  }
+
+  if (isManifestV2(manifest)) {
+    const routeCount = Object.keys(manifest.routes).length;
+    if (minRouteEntries !== undefined && routeCount < minRouteEntries) {
+      fail(
+        `Expected at least ${minRouteEntries} route CSS entries, got ${routeCount}.`,
+        'manifest-routes-too-few',
+      );
+    }
+
+    for (const [routePath, entry] of Object.entries(manifest.routes)) {
+      const routeCssPath = resolve(root, entry.css);
+      if (!existsSync(routeCssPath)) {
+        fail(`Missing route CSS for ${routePath} at ${routeCssPath}.`, 'route-css-missing');
+      }
+      if (Buffer.byteLength(readFileSync(routeCssPath, 'utf8'), 'utf8') < 1) {
+        fail(`Route CSS for ${routePath} is empty.`, 'route-css-empty');
+      }
+    }
   }
 
   return {
