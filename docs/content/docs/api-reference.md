@@ -128,9 +128,9 @@ const card = styles.component('card', {
 cx(card(), isElevated && card.elevated, externalClassName);
 ```
 
-### CSS variables (advanced)
+### CSS variables (dynamic styling)
 
-- `createVar(name, fallback?)`, `assignVars(vars)`: Typed custom property helpers for advanced patterns
+- [`createVar(name?, fallback?)`](/docs/dynamic-styles), [`assignVars(vars)`](/docs/dynamic-styles): Typed custom property helpers for per-instance dynamic values. Pass a debug name (e.g. `createVar('cardBg')`) for readable DevTools property names.
 
 ### Sheet and testing utilities
 

@@ -7,7 +7,7 @@ describe('createVar', () => {
     __resetVarCounter();
   });
 
-  it('returns a var() string matching var(--ts-N)', () => {
+  it('returns a var() string matching var(--ts-N) when unnamed', () => {
     const v = createVar();
     expect(v).toMatch(/^var\(--ts-\d+\)$/);
   });
@@ -18,11 +18,28 @@ describe('createVar', () => {
     expect(a).not.toBe(b);
   });
 
-  it('increments the counter sequentially', () => {
+  it('increments the counter sequentially for anonymous vars', () => {
     const a = createVar();
     const b = createVar();
     expect(a).toBe('var(--ts-1)');
     expect(b).toBe('var(--ts-2)');
+  });
+
+  it('uses a sanitized debug name for named vars', () => {
+    const v = createVar('cardBg');
+    expect(v).toBe('var(--ts-cardbg)');
+  });
+
+  it('suffixes duplicate debug names for uniqueness', () => {
+    const a = createVar('cardBg');
+    const b = createVar('cardBg');
+    expect(a).toBe('var(--ts-cardbg)');
+    expect(b).toBe('var(--ts-cardbg-2)');
+  });
+
+  it('includes a fallback when provided', () => {
+    const v = createVar('cardBg', '#ffffff');
+    expect(v).toBe('var(--ts-cardbg, #ffffff)');
   });
 
   it('returns a CSSVarRef type', () => {
@@ -37,17 +54,22 @@ describe('assignVars', () => {
   });
 
   it('maps a single var ref to its value', () => {
-    const myVar = createVar(); // 'var(--ts-1)'
-    expect(assignVars({ [myVar]: 'red' })).toEqual({ '--ts-1': 'red' });
+    const myVar = createVar('accent');
+    expect(assignVars({ [myVar]: 'red' })).toEqual({ '--ts-accent': 'red' });
   });
 
   it('maps multiple var refs in one call', () => {
-    const a = createVar(); // 'var(--ts-1)'
-    const b = createVar(); // 'var(--ts-2)'
+    const a = createVar('fg');
+    const b = createVar('bg');
     expect(assignVars({ [a]: 'red', [b]: 'blue' })).toEqual({
-      '--ts-1': 'red',
-      '--ts-2': 'blue',
+      '--ts-fg': 'red',
+      '--ts-bg': 'blue',
     });
+  });
+
+  it('extracts the property name from var refs with fallbacks', () => {
+    const v = createVar('cardBg', '#fff');
+    expect(assignVars({ [v]: '#ff0099' })).toEqual({ '--ts-cardbg': '#ff0099' });
   });
 
   it('skips null and undefined values', () => {

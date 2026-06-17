@@ -313,7 +313,7 @@ export type ComponentSelections<V extends VariantDimensions> = {
 /**
  * A CSS custom property reference as a `var(--…)` value (tokens, `createVar()`, component internal vars).
  */
-export type CSSVarRef = `var(--${string})`;
+export type CSSVarRef = `var(--${string})` | `var(--${string}, ${string})`;
 
 // ---------------------------------------------------------------------------
 // Dimensioned variant config (has `variants: { ... }`)

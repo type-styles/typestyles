@@ -115,27 +115,31 @@ Module-level definitions are evaluated once. Creating styles inside components c
 ### 2. Avoid dynamic style values
 
 ```ts
+import { styles, createVar, assignVars } from 'typestyles';
+
 // ❌ Bad - creates styles for every possible value
 const box = styles.component('box', {
   base: { width: props.width }, // Dynamic values in styles
 });
 
-// ✅ Good - use inline styles for dynamic values
+// ✅ Good — use CSS custom properties for dynamic values (see Dynamic styling guide)
+const widthVar = createVar('boxWidth');
+
 const box = styles.component('box', {
-  base: { display: 'block' },
+  base: { display: 'block', width: widthVar },
 });
 
 function Box({ width }) {
   return (
     <div
       className={box()}
-      style={{ width }} // Dynamic value here
+      style={assignVars({ [widthVar]: width })}
     />
   );
 }
 ```
 
-Dynamic values in style objects require JavaScript to run for every value change. Inline styles are handled natively by the browser.
+Dynamic values in style objects require JavaScript to run for every value change. Use [`createVar()` and `assignVars()`](/docs/dynamic-styles) to keep styles static and set values via CSS custom properties — or use raw inline styles for one-off properties.
 
 ### 3. Reuse token references
 
@@ -336,7 +340,7 @@ However, if you're dynamically creating thousands of styles:
 
 1. Always define styles at module level
 2. Don't create styles based on user input or dynamic data
-3. Use inline styles for truly dynamic values
+3. Use [`createVar()` + `assignVars()`](/docs/dynamic-styles) for dynamic values on shared styles, or inline styles for one-offs
 4. Limit the number of unique style variations
 
 ## Server-side rendering performance
@@ -476,7 +480,7 @@ TypeStyles performance characteristics:
 To maintain good performance:
 
 1. Define styles at module level
-2. Use inline styles for dynamic values
+2. Use [`createVar()` + `assignVars()`](/docs/dynamic-styles) for dynamic values on shared styles
 3. Compose variants instead of multiplying them
 4. Let code splitting handle lazy loading
 5. Profile if you have concerns
