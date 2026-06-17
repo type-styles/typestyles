@@ -8,7 +8,6 @@ import type {
   ComponentVarOptions,
   ComponentVarRefTree,
 } from './types';
-import { insertRule } from './sheet';
 import { createRegisteredPropertyRef, registerAtPropertyRule } from './registered-property';
 
 function isVarDescriptor(o: unknown): o is ComponentVarDescriptor {

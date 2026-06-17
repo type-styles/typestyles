@@ -171,6 +171,7 @@ export type RegisteredPropertyRef = {
   readonly name: string;
   readonly var: CSSVarRef;
   toString(): string;
+  valueOf(): string;
 };
 
 /** Options for `styles.property(id, options?)`. */
@@ -179,6 +180,14 @@ export type RegisteredPropertyOptions = {
   syntax?: string;
   inherits?: boolean;
 };
+
+type TokenRefLeaf<V> = V extends TokenDescriptor
+  ? RegisteredPropertyRef
+  : V extends string | number
+    ? string
+    : V extends TokenValues
+      ? TokenRef<V>
+      : string;
 
 /**
  * A typed token reference object. Property access returns var(--namespace-key) strings
@@ -190,7 +199,7 @@ export type TokenRef<T extends TokenValues> = T extends string | number
   : T extends TokenDescriptor
     ? RegisteredPropertyRef
     : {
-        readonly [K in keyof T]: TokenRef<T[K] & TokenValues>;
+        readonly [K in keyof T]: TokenRefLeaf<T[K]>;
       };
 
 declare const CreatedTokenBrand: unique symbol;
