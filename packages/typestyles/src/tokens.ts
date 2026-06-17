@@ -13,7 +13,16 @@ import { insertRule, insertRules } from './sheet';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
 import type { CascadeLayersInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
-import { attachTokenMeta, getTokenNamespace } from './token-meta';
+
+const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
+
+function attachTokenMeta(ref: object, namespace: string): void {
+  tokenMetaByRef.set(ref, { namespace });
+}
+
+function getTokenNamespace(ref: object): string | undefined {
+  return tokenMetaByRef.get(ref)?.namespace;
+}
 
 export type CreateTokensOptions = {
   /**
