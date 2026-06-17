@@ -1,5 +1,14 @@
 # @typestyles/open-props
 
+## 0.3.1
+
+### Patch Changes
+
+- [#87](https://github.com/type-styles/typestyles/pull/87) [`ffeb2ef`](https://github.com/type-styles/typestyles/commit/ffeb2ef6a8a4c4f523c115a47435e6ec1c2c8b0f) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Credibility sweep (P0.2): fix docs site GitHub org links, correct landing page samples, unify package licenses to Apache-2.0, remove broken `@typestyles/open-props/css` export and unused `open-props` dependency.
+
+- Updated dependencies [[`fd16bad`](https://github.com/type-styles/typestyles/commit/fd16bad633315ba34ba352e6c3b63c167af41196), [`aa88d25`](https://github.com/type-styles/typestyles/commit/aa88d251c352c617841f2aefed730c2b2871e50d), [`60a8383`](https://github.com/type-styles/typestyles/commit/60a8383ba5f35767c33c6c92dc9b763337d3325d), [`f979149`](https://github.com/type-styles/typestyles/commit/f979149bc2993438655e635f6e83028f1220e17f), [`b29a531`](https://github.com/type-styles/typestyles/commit/b29a531dac4c7657b122a3af55141fee070a8fc9)]:
+  - typestyles@0.6.0
+
 ## 0.3.0
 
 ### Minor Changes
