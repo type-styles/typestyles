@@ -46,6 +46,13 @@ function nodesToObject(
       continue;
     }
 
+    if (node.type === 'atrule') {
+      const nested = nodesToObject(node.nodes, warnings, varReplacements);
+      const atRuleKey = `@${node.name}${node.params ? ` ${node.params}` : ''}`;
+      properties.push(t.objectProperty(t.stringLiteral(atRuleKey), nested));
+      continue;
+    }
+
     warnings.push({
       message: `Unsupported CSS node "${node.type}" skipped.`,
     });

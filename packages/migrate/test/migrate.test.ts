@@ -63,6 +63,40 @@ function App() {
     expect(result.code).not.toContain('width={200}');
   });
 
+  it('migrates destructured prop interpolations', async () => {
+    const input = await readFile(fixture('destructured-input.tsx'), 'utf8');
+    const result = migrateSource('destructured-input.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('createVar');
+    expect(result.code).toContain('assignVars');
+    expect(result.code).not.toContain('<Button');
+  });
+
+  it('migrates boolean prop ternaries to styles.component variants', async () => {
+    const input = await readFile(fixture('variant-input.tsx'), 'utf8');
+    const result = migrateSource('variant-input.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('styles.component("button"');
+    expect(result.code).toContain('variants');
+    expect(result.code).toContain('defaultVariants');
+    expect(result.code).toContain('primary: true');
+    expect(result.code).not.toContain('<Button');
+  });
+
+  it('migrates static templates with @media rules', async () => {
+    const input = await readFile(fixture('media-input.tsx'), 'utf8');
+    const result = migrateSource('media-input.tsx', input);
+
+    expect(result.changed).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+    expect(result.code).toContain('"@media (max-width: 640px)"');
+    expect(result.code).not.toContain('<Card');
+  });
+
   it('skips unsupported interpolated templates with warning', async () => {
     const input = await readFile(fixture('unsupported-input.tsx'), 'utf8');
     const result = migrateSource('unsupported-input.tsx', input);

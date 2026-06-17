@@ -958,10 +958,12 @@ The `@typestyles/migrate` package includes an early CLI to help with static migr
 
 ### Scope in this first version
 
-- Converts static tagged templates (`styled.*`, `styled(...)`, and `css\`...\``) into `styles.class(...)`.
+- Converts static tagged templates (`styled.*`, `styled(...)`, and `css\`...\``) into `styles.class(...)`or`styles.component(...)` when boolean prop variants are detected.
 - Rewrites JSX usage for safely transformable styled components.
-- Skips unsupported template interpolations (theme access, conditionals, etc.) and emits warnings instead of doing unsafe rewrites.
+- Skips unsupported template interpolations (theme access, non-literal ternaries, etc.) and emits warnings instead of doing unsafe rewrites.
 - Converts prop-based interpolations such as `` `${props => props.color}` `` to `createVar` + `assignVars`.
+- Converts boolean prop ternaries such as `` `${props => props.primary ? '#0066ff' : '#6b7280'}` `` to `styles.component` variants.
+- Supports destructured prop params (`` `${({ color }) => color}` ``) and `@media` blocks in static templates.
 
 ### Usage
 
@@ -984,11 +986,11 @@ Useful options:
 
 ### Current limitations
 
-- Theme access, conditionals, and other non-trivial interpolations are not auto-migrated.
+- Theme access and other non-literal interpolations are not auto-migrated.
 - Exported styled components are skipped to avoid accidental API-shape changes.
 - Complex non-JSX references to styled component variables are skipped.
 
-Prop-based interpolations (for example `` `${(props) => props.color}` `` or `` `${props => props.width}px` ``) are converted to `createVar` + `assignVars` at JSX call sites.
+Prop-based interpolations (for example `` `${(props) => props.color}` `` or `` `${props => props.width}px` ``) are converted to `createVar` + `assignVars` at JSX call sites. Boolean prop ternaries become `styles.component` variants. Destructured prop params and `@media` blocks in static templates are supported.
 
 ## Troubleshooting migration issues
 

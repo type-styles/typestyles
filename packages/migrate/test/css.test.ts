@@ -104,11 +104,28 @@ describe('cssToObjectExpression', () => {
     expect(typeof result === 'object').toBe(true);
   });
 
-  it('adds a warning for unsupported CSS node types (e.g. at-rules)', () => {
+  it('converts @media rules to nested objects', () => {
     const warnings: MigrationWarning[] = [];
-    cssToObjectExpression('@media (max-width: 640px) { color: red; }', warnings);
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings[0]?.message).toContain('Unsupported CSS node');
+    const result = cssToObjectExpression(
+      'padding: 16px; @media (max-width: 640px) { padding: 8px; }',
+      warnings,
+    );
+    expect(result).not.toBeNull();
+    expect(warnings).toHaveLength(0);
+    expect(toPlainObject(result!)).toEqual({
+      padding: '16px',
+      '@media (max-width: 640px)': { padding: '8px' },
+    });
+  });
+
+  it('converts @supports rules to nested objects', () => {
+    const warnings: MigrationWarning[] = [];
+    const result = cssToObjectExpression('@supports (display: grid) { display: grid; }', warnings);
+    expect(result).not.toBeNull();
+    expect(warnings).toHaveLength(0);
+    expect(toPlainObject(result!)).toEqual({
+      '@supports (display: grid)': { display: 'grid' },
+    });
   });
 
   it('uses string literal key for properties that are not valid identifiers', () => {

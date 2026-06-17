@@ -114,13 +114,38 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     `packages/build-runner`; root README links the full package index.
 
 - [x] **P2.14 — Migrate codemod: handle interpolations** (PR: #99)
-  - The codemod skips any template literal with interpolations — i.e. most real
-    styled-components code. Convert prop-based interpolations to
-    `createVar` + `assignVars` so migration is genuinely automated.
+  - Convert prop-based interpolations (`props => props.color`, destructured
+    `({ color }) => color`, suffixes like `px`) to `createVar` + `assignVars`.
+  - Convert boolean prop ternaries (`props.primary ? A : B`) to `styles.component`
+    variants with JSX call-site rewrites.
+  - Parse `@media` (and other at-rules) in static templates into nested style objects.
 
 - [ ] **P2.15 — Per-route critical CSS** (PR: )
   - `getRegisteredCss()` returns everything ever registered. Use the extraction
     manifest in `@typestyles/next/build` to emit route-level CSS.
+
+- [ ] **P2.16 — Migrate codemod: Emotion css prop** (PR: )
+  - Hoist inline `css={css\`...\`}`JSX attributes to module-level`styles.class`/`styles.component`and rewrite to`className`.
+
+- [ ] **P2.17 — Migrate codemod: attrs and css composition** (PR: )
+  - Parse `styled.*.attrs(…)` chains and merge static attrs onto rewritten JSX.
+  - Inline referenced `css\`...\`` fragments when composing styled templates.
+
+- [ ] **P2.18 — Migrate codemod: export migration opt-in** (PR: )
+  - Add `--include-exports` to migrate exported styled components into named
+    function wrappers without silently changing public APIs by default.
+
+- [ ] **P2.19 — Migrate codemod: theme → tokens heuristic** (PR: )
+  - Optional `--theme-prefix` rewrite for `props.theme…` interpolations to
+    `tokens.use(…)` references with warnings for unmatched paths.
+
+- [ ] **P2.20 — Migrate CLI hardening** (PR: )
+  - `--strict` / non-zero exit on warnings; spread-prop detection (`{...props}`)
+    with actionable hints; optional partial migration for mixed templates.
+
+- [ ] **P2.21 — Migrate codemod: class → component second pass** (PR: )
+  - Optional `--to-component` pass that groups related `styles.class` calls in a
+    file into `styles.component` recipes with a `base` slot.
 
 ## P3 — Later (not scheduled)
 

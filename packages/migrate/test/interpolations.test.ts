@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parseBooleanTernaryInterpolation,
+  parseBooleanTemplateInterpolations,
   parsePropInterpolation,
   parseTemplateInterpolations,
   reconstructInterpolatedCss,
+  reconstructStaticCssWithoutVariants,
 } from '../src/interpolations';
 import { parse } from '@babel/parser';
 import * as t from '@babel/types';
@@ -39,6 +42,12 @@ describe('parsePropInterpolation', () => {
     });
   });
 
+  it('parses destructured prop params', () => {
+    expect(parsePropInterpolation(parseExpression('({ color }) => color'))).toEqual({
+      propName: 'color',
+    });
+  });
+
   it('rejects theme access', () => {
     expect(parsePropInterpolation(parseExpression('(props) => props.theme.color'))).toBeNull();
   });
@@ -64,6 +73,48 @@ describe('parseTemplateInterpolations', () => {
     expect(interpolations).not.toBeNull();
     expect(reconstructInterpolatedCss(template, interpolations!)).toBe(
       'color: __ts_migrate_var_0__; background: red;',
+    );
+  });
+});
+
+describe('parseBooleanTernaryInterpolation', () => {
+  it('parses boolean prop ternaries', () => {
+    expect(
+      parseBooleanTernaryInterpolation(
+        parseExpression("(props) => (props.primary ? '#0066ff' : '#6b7280')"),
+      ),
+    ).toEqual({
+      propName: 'primary',
+      trueValue: '#0066ff',
+      falseValue: '#6b7280',
+    });
+  });
+});
+
+describe('parseBooleanTemplateInterpolations', () => {
+  it('extracts css property and variant values', () => {
+    const template = parseTemplate(
+      '`padding: 8px; background-color: ${(props) => (props.primary ? "#0066ff" : "#6b7280")};`',
+    );
+    expect(parseBooleanTemplateInterpolations(template)).toEqual([
+      {
+        index: 0,
+        propName: 'primary',
+        trueValue: '#0066ff',
+        falseValue: '#6b7280',
+        cssProperty: 'backgroundColor',
+      },
+    ]);
+  });
+
+  it('reconstructs static css without variant declarations', () => {
+    const template = parseTemplate(
+      '`padding: 8px; background-color: ${(props) => (props.primary ? "#0066ff" : "#6b7280")}; color: white;`',
+    );
+    const interpolations = parseBooleanTemplateInterpolations(template);
+    expect(interpolations).not.toBeNull();
+    expect(reconstructStaticCssWithoutVariants(template, interpolations!)).toBe(
+      'padding: 8px; color: white;',
     );
   });
 });

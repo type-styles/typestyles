@@ -4,12 +4,16 @@ import traverse, { type NodePath } from '@babel/traverse';
 import * as t from '@babel/types';
 import { cssToObjectExpression } from './css';
 import {
+  parseBooleanTemplateInterpolations,
   parseTemplateInterpolations,
   placeholderToken,
   reconstructInterpolatedCss,
+  reconstructStaticCssWithoutVariants,
+  toComponentConstName,
   toVarDebugName,
 } from './interpolations';
 import type { FileMigrationResult, MigrationWarning } from './types';
+import { buildVariantComponentConfig } from './variants';
 
 type StyledTarget =
   | { kind: 'intrinsic'; jsxName: t.JSXIdentifier }
@@ -23,9 +27,11 @@ type PropVarBinding = {
 
 type StyledTransform = {
   originalName: string;
+  mode: 'class' | 'component';
   classConstName: string;
   target: StyledTarget;
   propVars: PropVarBinding[];
+  variantProps: string[];
 };
 
 function toKebabCase(input: string): string {
@@ -84,13 +90,13 @@ function addWarning(warnings: MigrationWarning[], message: string, nodeName?: st
 
 function createMergedClassExpression(
   existing: t.Expression,
-  classNameIdentifier: t.Identifier,
+  classNameExpression: t.Expression,
 ): t.Expression {
   return t.callExpression(
     t.memberExpression(
       t.callExpression(
         t.memberExpression(
-          t.arrayExpression([existing, classNameIdentifier]),
+          t.arrayExpression([existing, classNameExpression]),
           t.identifier('filter'),
         ),
         [t.identifier('Boolean')],
@@ -103,7 +109,7 @@ function createMergedClassExpression(
 
 function updateClassNameAttribute(
   openingElement: t.JSXOpeningElement,
-  classNameIdentifier: t.Identifier,
+  classNameExpression: t.Expression,
 ): void {
   const existingAttr = openingElement.attributes.find(
     (attribute): attribute is t.JSXAttribute =>
@@ -112,19 +118,19 @@ function updateClassNameAttribute(
 
   if (!existingAttr) {
     openingElement.attributes.push(
-      t.jsxAttribute(t.jsxIdentifier('className'), t.jsxExpressionContainer(classNameIdentifier)),
+      t.jsxAttribute(t.jsxIdentifier('className'), t.jsxExpressionContainer(classNameExpression)),
     );
     return;
   }
 
   if (!existingAttr.value) {
-    existingAttr.value = t.jsxExpressionContainer(classNameIdentifier);
+    existingAttr.value = t.jsxExpressionContainer(classNameExpression);
     return;
   }
 
   if (t.isStringLiteral(existingAttr.value)) {
     existingAttr.value = t.jsxExpressionContainer(
-      createMergedClassExpression(t.stringLiteral(existingAttr.value.value), classNameIdentifier),
+      createMergedClassExpression(t.stringLiteral(existingAttr.value.value), classNameExpression),
     );
     return;
   }
@@ -133,7 +139,7 @@ function updateClassNameAttribute(
     existingAttr.value = t.jsxExpressionContainer(
       createMergedClassExpression(
         existingAttr.value.expression as t.Expression,
-        classNameIdentifier,
+        classNameExpression,
       ),
     );
   }
@@ -310,6 +316,73 @@ function removeStyledProps(openingElement: t.JSXOpeningElement, propNames: Set<s
   });
 }
 
+function buildComponentClassNameExpression(
+  componentConstName: string,
+  variantProps: string[],
+  propValues: Map<string, t.Expression>,
+): t.CallExpression {
+  const properties = variantProps
+    .filter((propName) => propValues.has(propName))
+    .map((propName) => t.objectProperty(t.identifier(propName), propValues.get(propName)!));
+
+  if (properties.length === 0) {
+    return t.callExpression(t.identifier(componentConstName), []);
+  }
+
+  return t.callExpression(t.identifier(componentConstName), [t.objectExpression(properties)]);
+}
+
+function migrateBooleanVariantTemplate(
+  path: NodePath<t.VariableDeclarator>,
+  variableName: string,
+  template: t.TemplateLiteral,
+  styledTarget: StyledTarget,
+  warnings: MigrationWarning[],
+  styledTransforms: Map<string, StyledTransform>,
+): boolean {
+  const booleanInterpolations = parseBooleanTemplateInterpolations(template);
+  if (!booleanInterpolations) return false;
+
+  const staticCss = reconstructStaticCssWithoutVariants(template, booleanInterpolations);
+  const baseObject = cssToObjectExpression(staticCss, warnings);
+  if (!baseObject) {
+    addWarning(warnings, 'Skipped because CSS could not be parsed.', variableName);
+    return false;
+  }
+
+  const componentConstName = path.scope.generateUidIdentifier(
+    toComponentConstName(variableName),
+  ).name;
+  const componentConfig = buildVariantComponentConfig(baseObject, booleanInterpolations);
+  const variantProps = [
+    ...new Set(booleanInterpolations.map((interpolation) => interpolation.propName)),
+  ];
+
+  const declaration = path.parentPath;
+  if (!declaration.isVariableDeclaration()) return false;
+
+  declaration.node.declarations = [
+    t.variableDeclarator(
+      t.identifier(componentConstName),
+      t.callExpression(t.memberExpression(t.identifier('styles'), t.identifier('component')), [
+        t.stringLiteral(toKebabCase(variableName)),
+        componentConfig,
+      ]),
+    ),
+  ];
+
+  styledTransforms.set(variableName, {
+    originalName: variableName,
+    mode: 'component',
+    classConstName: componentConstName,
+    target: styledTarget,
+    propVars: [],
+    variantProps,
+  });
+
+  return true;
+}
+
 function migrateInterpolatedTemplate(
   path: NodePath<t.VariableDeclarator>,
   variableName: string,
@@ -377,9 +450,11 @@ function migrateInterpolatedTemplate(
 
   styledTransforms.set(variableName, {
     originalName: variableName,
+    mode: 'class',
     classConstName,
     target: styledTarget,
     propVars,
+    variantProps: [],
   });
 
   return true;
@@ -489,6 +564,20 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
         }
 
         if (
+          migrateBooleanVariantTemplate(
+            path,
+            variableName,
+            template,
+            styledTarget,
+            warnings,
+            styledTransforms,
+          )
+        ) {
+          changed = true;
+          return;
+        }
+
+        if (
           migrateInterpolatedTemplate(
             path,
             variableName,
@@ -539,9 +628,11 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
 
         styledTransforms.set(variableName, {
           originalName: variableName,
+          mode: 'class',
           classConstName,
           target: styledTarget,
           propVars: [],
+          variantProps: [],
         });
         changed = true;
         return;
@@ -570,7 +661,16 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
           path.node.closingElement.name = transform.target.jsxName;
         }
 
-        updateClassNameAttribute(path.node.openingElement, t.identifier(transform.classConstName));
+        const classNameExpression =
+          transform.mode === 'component'
+            ? buildComponentClassNameExpression(
+                transform.classConstName,
+                transform.variantProps,
+                collectPropValuesFromJsx(path.node.openingElement, new Set(transform.variantProps)),
+              )
+            : t.identifier(transform.classConstName);
+
+        updateClassNameAttribute(path.node.openingElement, classNameExpression);
 
         if (transform.propVars.length > 0) {
           const propNames = new Set(transform.propVars.map((propVar) => propVar.propName));
@@ -581,6 +681,10 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
             updateStyleAttribute(path.node.openingElement, assignVarsCall);
             removeStyledProps(path.node.openingElement, propNames);
           }
+        }
+
+        if (transform.variantProps.length > 0) {
+          removeStyledProps(path.node.openingElement, new Set(transform.variantProps));
         }
       },
     });

@@ -8,13 +8,16 @@ Full migration guide: [typestyles.dev/docs/migration](https://typestyles.dev/doc
 
 ## What it transforms
 
-| Source                      | Becomes                                             |
-| --------------------------- | --------------------------------------------------- |
-| `styled.div\`...\``         | `styles.class('div', { ... })` + `className` on JSX |
-| `styled(Button)\`...\``     | `styles.class('button', { ... })` + `className`     |
-| `` css`...` `` (Emotion)    | `styles.class(...)`                                 |
-| Static template literals    | CSS object properties (via PostCSS parser)          |
-| `` `${props => props.x}` `` | `createVar` + `assignVars` + `styles.class`         |
+| Source                              | Becomes                                             |
+| ----------------------------------- | --------------------------------------------------- |
+| `styled.div\`...\``                 | `styles.class('div', { ... })` + `className` on JSX |
+| `styled(Button)\`...\``             | `styles.class('button', { ... })` + `className`     |
+| `` css`...` `` (Emotion)            | `styles.class(...)`                                 |
+| Static template literals            | CSS object properties (via PostCSS parser)          |
+| `` `${props => props.x}` ``         | `createVar` + `assignVars` + `styles.class`         |
+| `` `${props => props.x ? A : B}` `` | `styles.component` variants + JSX rewrite           |
+| `` `${({ x }) => x}` ``             | `createVar` + `assignVars` (destructured params)    |
+| `@media` in templates               | Nested `'@media (…)'` objects in style definitions  |
 
 The codemod rewrites JSX usage for styled components it can safely transform and adds the required `import { styles } from 'typestyles'`.
 
@@ -22,11 +25,11 @@ The codemod rewrites JSX usage for styled components it can safely transform and
 
 Honest automation beats silent breakage:
 
-- **Unsupported interpolations** — theme access (`props.theme…`), conditionals, destructured params, and non-prop expressions
+- **Unsupported interpolations** — theme access (`props.theme…`), non-literal ternaries, and other non-prop expressions
 - **Exported styled components** — avoids changing your public API shape without review
 - **Non-JSX references** to styled component variables
 
-Prop-based patterns like `` `${props => props.color}` `` and `` `${(props) => props.width}px` `` are converted to [`createVar` + `assignVars`](https://typestyles.dev/docs/dynamic-styles). Suffix text after the interpolation (e.g. `px`) is applied at the call site.
+Prop-based patterns like `` `${props => props.color}` `` and `` `${(props) => props.width}px` `` are converted to [`createVar` + `assignVars`](https://typestyles.dev/docs/dynamic-styles). Boolean prop ternaries like `` `${props => props.primary ? '#0066ff' : '#6b7280'}` `` become `styles.component` variants. Suffix text after the interpolation (e.g. `px`) is applied at the call site.
 
 ## Installation
 
