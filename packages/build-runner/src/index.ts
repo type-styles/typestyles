@@ -1,5 +1,17 @@
 export { DEFAULT_EXTRACT_MODULE_CANDIDATES, discoverDefaultExtractModules } from './discover';
 export {
+  extractNamespaces,
+  reportDuplicateNamespaces,
+  TYPESTYLES_IMPORT_RE,
+  type DuplicateNamespaceReporter,
+} from './namespaces';
+export {
+  resolveExtractMode,
+  resolveExtractModules,
+  type TypestylesExtractOptions,
+  type TypestylesIntegrationMode,
+} from './resolve-extract';
+export {
   verifyTypestylesBuild,
   VerifyTypestylesBuildError,
   type TypestylesExtractManifestV1,

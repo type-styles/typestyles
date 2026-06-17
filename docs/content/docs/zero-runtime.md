@@ -117,22 +117,77 @@ Install the Rollup plugin:
 npm install --save-dev @typestyles/rollup
 ```
 
+Add a [convention entry file](#vite) (for example `src/typestyles-entry.ts`) or pass explicit `extract.modules`. When a convention entry resolves, `mode` defaults to `"build"`.
+
 ```js
 // rollup.config.js
-import { typestylesRollup } from '@typestyles/rollup';
+import typestylesRollupPlugin from '@typestyles/rollup';
 
 export default {
   input: 'src/main.ts',
   plugins: [
-    typestylesRollup({
-      mode: 'build',
-      extract: {
-        modules: ['src/styles/index.ts'],
-      },
-    }),
+    typestylesRollupPlugin(), // discovers src/typestyles-entry.ts (etc.)
   ],
 };
 ```
+
+Explicit extraction:
+
+```js
+typestylesRollupPlugin({
+  mode: 'build',
+  extract: {
+    modules: ['src/styles/index.ts'],
+  },
+});
+```
+
+---
+
+## esbuild
+
+Install the esbuild plugin:
+
+```bash
+npm install --save-dev @typestyles/esbuild esbuild
+```
+
+```js
+// build.mjs
+import { build } from 'esbuild';
+import typestylesEsbuildPlugin from '@typestyles/esbuild';
+
+await build({
+  entryPoints: ['src/main.ts'],
+  bundle: true,
+  outfile: 'dist/index.js',
+  plugins: [typestylesEsbuildPlugin()],
+});
+```
+
+Convention entry discovery matches Vite and Rollup. The plugin writes `typestyles.css` to esbuild’s `outdir` (default: `dist/typestyles.css`).
+
+---
+
+## webpack
+
+Install the webpack plugin:
+
+```bash
+npm install --save-dev @typestyles/webpack webpack
+```
+
+```js
+// webpack.config.mjs
+import TypestylesWebpackPlugin from '@typestyles/webpack';
+
+export default {
+  entry: './src/index.ts',
+  plugins: [new TypestylesWebpackPlugin()],
+};
+```
+
+When a convention entry resolves, the plugin emits `typestyles.css` as a build asset and defines `__TYPESTYLES_RUNTIME_DISABLED__` for client bundles.
 
 ---
 

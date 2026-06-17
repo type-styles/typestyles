@@ -4,7 +4,7 @@ Rollup and Rolldown plugin for `typestyles`.
 
 Supports:
 
-- Runtime mode (default): normal typestyles runtime behavior.
+- Runtime mode (default when no extraction modules resolve): normal typestyles runtime behavior.
 - Build mode: emit static CSS and disable runtime style insertion in bundle.
 - Hybrid mode: emit static CSS for production while keeping runtime-friendly behavior in development.
 
@@ -16,6 +16,8 @@ pnpm add -D @typestyles/rollup rollup
 ```
 
 ## Rollup usage
+
+Add a convention entry file that imports every registration side effect (for example `src/typestyles-entry.ts`), **or** pass `extract.modules` explicitly. When at least one module resolves, **`mode` defaults to `'build'`**.
 
 ```js
 // rollup.config.mjs
@@ -30,13 +32,7 @@ export default {
   },
   plugins: [
     nodeResolve(),
-    typestylesRollupPlugin({
-      mode: 'build',
-      extract: {
-        modules: ['src/styles.ts', 'src/tokens.ts', 'src/animations.ts'],
-        fileName: 'typestyles.css',
-      },
-    }),
+    typestylesRollupPlugin(), // discovers src/typestyles-entry.ts (etc.)
   ],
 };
 ```
@@ -61,25 +57,18 @@ export default {
     dir: 'dist',
     format: 'esm',
   },
-  plugins: [
-    typestylesRollupPlugin({
-      mode: 'build',
-      extract: {
-        modules: ['src/styles.ts', 'src/tokens.ts'],
-      },
-    }),
-  ],
+  plugins: [typestylesRollupPlugin()],
 };
 ```
 
 ## Options
 
 - `mode?: 'runtime' | 'build' | 'hybrid'`
-  - Default: `'runtime'`
-- `extract?: { modules: string[]; fileName?: string }`
-  - Required for `build` and `hybrid` if you want CSS extraction
+  - Default: `'build'` when a convention entry or `extract.modules` resolves; otherwise `'runtime'`
+- `extract?: { modules?: string[]; fileName?: string }`
+  - Omitted: discover a convention entry under `root` (see `DEFAULT_EXTRACT_MODULE_CANDIDATES`)
 - `warnDuplicates?: boolean`
   - Default: `true`
 - `root?: string`
-  - Project root for resolving `extract.modules`
+  - Project root for convention discovery and module resolution
   - Default: `process.cwd()`

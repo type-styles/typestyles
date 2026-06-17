@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import globals from 'globals';
 import { configs as typestylesEslintConfigs } from '@typestyles/eslint-plugin';
 
 export const typestylesConfig = tseslint.config(
@@ -34,3 +35,23 @@ export const typestylesAppConfig = tseslint.config(
   ...typestylesConfig,
   typestylesEslintConfigs.recommended,
 );
+
+/** Plain browser JS in examples (e.g. `src/main.js`). */
+export const exampleBrowserJsConfig = {
+  files: ['src/**/*.js'],
+  languageOptions: {
+    globals: {
+      ...globals.browser,
+    },
+  },
+};
+
+/** Node build/verify scripts in examples. */
+export const exampleNodeScriptsConfig = {
+  files: ['scripts/**/*.{js,mjs,cjs}', 'build.mjs'],
+  languageOptions: {
+    globals: {
+      ...globals.node,
+    },
+  },
+};

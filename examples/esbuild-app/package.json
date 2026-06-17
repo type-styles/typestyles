@@ -1,0 +1,19 @@
+{
+  "name": "typestyles-esbuild-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node scripts/verify-build.mjs",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "typestyles": "workspace:*"
+  },
+  "devDependencies": {
+    "@typestyles/esbuild": "workspace:*",
+    "esbuild": "^0.27.3",
+    "eslint": "^9.39.2"
+  }
+}

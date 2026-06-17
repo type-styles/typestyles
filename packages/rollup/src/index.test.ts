@@ -1,3 +1,6 @@
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import typestylesRollupPlugin, { extractNamespaces } from './index';
 
@@ -32,6 +35,40 @@ describe('extractNamespaces', () => {
 });
 
 describe('typestylesRollupPlugin', () => {
+  it('discovers a convention entry and emits CSS in build mode', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'typestyles-rollup-disco-'));
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(
+      join(dir, 'src/typestyles-entry.ts'),
+      `import { styles } from 'typestyles';
+styles.component('rollup-convention', { base: { color: 'red' } });`,
+    );
+
+    const plugin = typestylesRollupPlugin({ root: dir });
+    const buildStart = rollupHookFn(plugin.buildStart);
+    const generateBundle = rollupHookFn(plugin.generateBundle);
+    if (buildStart == null || generateBundle == null) {
+      throw new Error('expected buildStart and generateBundle hooks');
+    }
+
+    const emitted: Array<{ fileName: string; source: string }> = [];
+    const ctx = {
+      emitFile(file: { type: 'asset'; fileName: string; source: string }) {
+        emitted.push({ fileName: file.fileName, source: file.source });
+      },
+      error(message: string) {
+        throw new Error(message);
+      },
+    };
+
+    await buildStart.call(ctx as never);
+    await generateBundle.call(ctx as never);
+
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]?.fileName).toBe('typestyles.css');
+    expect(emitted[0]?.source).toContain('rollup-convention');
+  });
+
   it('errors when the same style namespace is used in another module', async () => {
     const plugin = typestylesRollupPlugin();
     const transform = rollupHookFn(plugin.transform);

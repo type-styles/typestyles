@@ -1,12 +1,22 @@
 import { resolve as resolvePath } from 'node:path';
 import type { Plugin, ResolvedConfig, UserConfig } from 'vite';
-import { discoverDefaultExtractModules, runTypestylesBuild } from '@typestyles/build-runner';
+import {
+  extractNamespaces,
+  reportDuplicateNamespaces,
+  resolveExtractMode,
+  resolveExtractModules,
+  runTypestylesBuild,
+  type TypestylesExtractOptions,
+  type TypestylesIntegrationMode,
+} from '@typestyles/build-runner';
 
 /** Re-export shared convention discovery (same paths as `@typestyles/next/build`). */
 export {
   DEFAULT_EXTRACT_MODULE_CANDIDATES,
   discoverDefaultExtractModules,
 } from '@typestyles/build-runner';
+
+export type { TypestylesExtractOptions };
 
 /**
  * Regex patterns to extract namespace strings from typestyles API calls.
@@ -20,29 +30,6 @@ export {
  *   global.style('body', ...)         → prefix "body"
  *   global.fontFace('Inter', ...)     → prefix "font-face:Inter"
  */
-const STYLES_COMPONENT_RE = /styles\.component\(\s*['"]([^'"]+)['"]/g;
-const STYLES_CLASS_RE = /styles\.class\(\s*['"]([^'"]+)['"]/g;
-const TOKENS_CREATE_RE = /tokens\.create\(\s*['"]([^'"]+)['"]/g;
-const CREATE_THEME_RE = /(?:tokens\.)?createTheme\(\s*['"]([^'"]+)['"]/g;
-const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
-const GLOBAL_STYLE_RE = /global\.style\(\s*['"]([^'"]+)['"]/g;
-const GLOBAL_FONT_FACE_RE = /global\.fontFace\(\s*['"]([^'"]+)['"]/g;
-
-export interface TypestylesExtractOptions {
-  /**
-   * Modules that should be imported during build to register styles.
-   * Paths are resolved relative to Vite's project root.
-   *
-   * When omitted, the plugin looks for the first existing file among
-   * {@link DEFAULT_EXTRACT_MODULE_CANDIDATES} under the project root (same resolution as when
-   * `extract` itself is omitted).
-   */
-  modules?: string[];
-  /**
-   * Output CSS filename (in the build assets). Defaults to "typestyles.css".
-   */
-  fileName?: string;
-}
 
 export interface TypestylesPluginOptions {
   /**
@@ -63,7 +50,7 @@ export interface TypestylesPluginOptions {
    * returning HTML for that URL), and production emits the CSS file. If no modules are resolved,
    * defaults to `"runtime"`.
    */
-  mode?: 'runtime' | 'build' | 'hybrid';
+  mode?: TypestylesIntegrationMode;
   /**
    * Options for build-time CSS extraction when mode is "build" or "hybrid".
    *
@@ -73,57 +60,14 @@ export interface TypestylesPluginOptions {
   extract?: TypestylesExtractOptions;
 }
 
-function resolveExtractModules(
+function resolveExtractModulesForVite(
   root: string,
   extract: TypestylesExtractOptions | undefined,
 ): string[] {
-  if (extract?.modules !== undefined) {
-    return extract.modules;
-  }
-  return discoverDefaultExtractModules(root);
+  return resolveExtractModules(root, extract);
 }
 
-/**
- * Extract namespace information from source code.
- * Returns { keys, prefixes } for invalidation.
- */
-export function extractNamespaces(code: string): {
-  keys: string[];
-  prefixes: string[];
-} {
-  const keys: string[] = [];
-  const prefixes: string[] = [];
-
-  for (const match of code.matchAll(STYLES_COMPONENT_RE)) {
-    prefixes.push(`.${match[1]}-`);
-  }
-
-  for (const match of code.matchAll(STYLES_CLASS_RE)) {
-    prefixes.push(`.${match[1]}-`);
-  }
-
-  for (const match of code.matchAll(TOKENS_CREATE_RE)) {
-    keys.push(`tokens:${match[1]}`);
-  }
-
-  for (const match of code.matchAll(CREATE_THEME_RE)) {
-    keys.push(`theme:${match[1]}`);
-  }
-
-  for (const match of code.matchAll(KEYFRAMES_CREATE_RE)) {
-    keys.push(`keyframes:${match[1]}`);
-  }
-
-  for (const match of code.matchAll(GLOBAL_STYLE_RE)) {
-    prefixes.push(match[1]);
-  }
-
-  for (const match of code.matchAll(GLOBAL_FONT_FACE_RE)) {
-    prefixes.push(`font-face:${match[1]}`);
-  }
-
-  return { keys, prefixes };
-}
+export { extractNamespaces };
 
 /**
  * Vite plugin for typestyles HMR support.
@@ -138,7 +82,7 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
   /** Effective module list after optional convention discovery; set in `config`. */
   let resolvedExtractModules: string[] = [];
-  let resolvedMode: 'runtime' | 'build' | 'hybrid' = 'runtime';
+  let resolvedMode: TypestylesIntegrationMode = 'runtime';
 
   // Track namespaces per module for duplicate detection
   const moduleNamespaces = new Map<string, { keys: string[]; prefixes: string[] }>();
@@ -159,8 +103,8 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
       isBuildCommand = env.command === 'build';
 
       const root = resolvePath(config.root ?? process.cwd());
-      resolvedExtractModules = resolveExtractModules(root, extract);
-      resolvedMode = options.mode ?? (resolvedExtractModules.length > 0 ? 'build' : 'runtime');
+      resolvedExtractModules = resolveExtractModulesForVite(root, extract);
+      resolvedMode = resolveExtractMode(options.mode, resolvedExtractModules);
 
       if (env.command === 'build' && (resolvedMode === 'build' || resolvedMode === 'hybrid')) {
         config.define = {
@@ -262,19 +206,7 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
       // Duplicate namespace detection (build error — not a warning)
       if (warnDuplicates) {
-        for (const [otherId, other] of moduleNamespaces) {
-          if (otherId === id) continue;
-          for (const prefix of prefixes) {
-            if (other.prefixes.includes(prefix)) {
-              const ns = prefix.slice(1, -1); // strip leading "." and trailing "-"
-              this.error(
-                `[typestyles] Style namespace "${ns}" is also used in ${otherId}. ` +
-                  `Duplicate namespaces cause class name collisions. ` +
-                  `Use a distinct name or isolate with createStyles({ scopeId: fileScopeId(import.meta) }).`,
-              );
-            }
-          }
-        }
+        reportDuplicateNamespaces(moduleNamespaces, id, prefixes, this);
       }
 
       moduleNamespaces.set(id, { keys, prefixes });
