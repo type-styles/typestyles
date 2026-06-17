@@ -70,7 +70,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     getting-started, components, and theming pages.
   - Full editable REPL can follow later (P3).
 
-- [ ] **P1.7 — Productize the extraction verifier** (PR: )
+- [x] **P1.7 — Productize the extraction verifier** (PR: #92)
   - Zero-runtime extraction is execute-and-collect; styles unreachable from the
     convention entry are silently dropped. Promote the pattern from
     `examples/next-app/scripts/verify-typestyles.mts` into

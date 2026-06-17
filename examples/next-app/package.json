@@ -22,6 +22,7 @@
     "typestyles": "workspace:*"
   },
   "devDependencies": {
+    "@typestyles/build-runner": "workspace:*",
     "@types/node": "^20.0.0",
     "eslint": "^9.39.2",
     "tsx": "^4.21.0",
