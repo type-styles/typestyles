@@ -30,7 +30,9 @@ describe('withTypestylesExtract', () => {
     });
     const merged = withTypestylesExtract({ webpack: userWebpack });
     const config = { plugins: [] as unknown[] };
-    const result = merged.webpack!(
+    const webpack = merged.webpack;
+    expect(webpack).toBeTypeOf('function');
+    const result = webpack(
       config as Configuration,
       {
         isServer: false,
@@ -82,7 +84,9 @@ describe('withTypestylesExtract', () => {
     const webpackMod = await import('webpack');
     const merged = withTypestylesExtract({});
     const config = { plugins: [] as unknown[] };
-    const result = merged.webpack!(
+    const webpack = merged.webpack;
+    expect(webpack).toBeTypeOf('function');
+    const result = webpack(
       config as Configuration,
       {
         isServer: true,

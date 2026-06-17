@@ -4,16 +4,11 @@ import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
-  DEFAULT_EXTRACT_MODULE_CANDIDATES,
   buildManifestV2,
   collectAndWriteRouteCss,
   discoverDefaultExtractModules,
-  verifyTypestylesBuild,
-  VerifyTypestylesBuildError,
   type TypestylesExtractManifestV1,
   type TypestylesExtractManifestV2,
-  type VerifyTypestylesBuildOptions,
-  type VerifyTypestylesBuildResult,
 } from '@typestyles/build-runner';
 import { collectStylesFromModules } from 'typestyles/build';
 import type { NextConfig } from 'next';
