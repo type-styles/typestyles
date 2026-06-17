@@ -14,5 +14,9 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tsConfigPaths({ projects: ['./tsconfig.json'] })],
+    ssr: {
+      // LiveDemo CSS extraction runs esbuild in Node; must not be bundled into Astro SSR.
+      external: ['@typestyles/build-runner', 'esbuild'],
+    },
   },
 });

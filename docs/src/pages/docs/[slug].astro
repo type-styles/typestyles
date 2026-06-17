@@ -13,7 +13,9 @@ import PageFooter from '../../components/PageFooter.astro';
 import Pagination from '../../components/Pagination.astro';
 import { doc, docProseRoot } from '../../styles';
 import { fileTree as fileTreeStyles, linkButton } from '@examples/design-system';
+import LiveDemo from '../../components/LiveDemo.astro';
 import { extractDocHeadings, getAllDocs, getDocBySlug, getDocNeighbors } from '../../lib/docs';
+import { splitDocContentParts } from '../../lib/expandLiveDemos';
 import { findDoc } from '../../navigation';
 import { editUrlForDocSlug } from '../../lib/site';
 
@@ -43,6 +45,7 @@ const editHref = editUrlForDocSlug(slug);
 const navEntry = findDoc(slug);
 /** Surface the parent nav category as a kicker above H1 (falls back to "Documentation"). */
 const kicker = navEntry?.category?.title ?? 'Documentation';
+const contentParts = splitDocContentParts(entry.html);
 ---
 
 <DocsLayout
@@ -58,7 +61,15 @@ const kicker = navEntry?.category?.title ?? 'Documentation';
     </p>
     <h1 class={doc.title}>{entry.title}</h1>
     {entry.description && <p class={doc.description}>{entry.description}</p>}
-    <div class:list={[docProseRoot, doc.content]} set:html={entry.html} />
+    {
+      contentParts.map((part) =>
+        part.type === 'html' ? (
+          <div class:list={[docProseRoot, doc.content]} set:html={part.html} />
+        ) : (
+          <LiveDemo id={part.id} />
+        ),
+      )
+    }
 
     {
       slug === 'component-library' ? (

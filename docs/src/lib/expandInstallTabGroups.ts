@@ -1,3 +1,4 @@
+import { expandLiveDemos } from './expandLiveDemos';
 import { highlightDocCode } from './highlightDocCode';
 import { markdownCodeBlockHtml } from './markdownCodeBlockHtml';
 
@@ -65,5 +66,5 @@ export function expandInstallTabGroups(markdown: string): string {
 }
 
 export function prepareDocMarkdown(markdown: string): string {
-  return expandInstallTabGroups(markdown);
+  return expandLiveDemos(expandInstallTabGroups(markdown));
 }

@@ -21,6 +21,10 @@ For **dark only when the OS prefers dark**, use `tokens.createDarkMode(name, ove
 
 See [Tokens](/docs/tokens) for the core API. The `THEME.md` file at the repository root documents conditions, presets, and cascade ordering in full.
 
+Try a minimal light/dark surface in the live example below — toggle **Dark** to see the theme class, token overrides, and emitted CSS change together.
+
+<!-- doc-live-demo id="theming-light-dark" -->
+
 ## Basic light/dark mode
 
 ### Creating a theme

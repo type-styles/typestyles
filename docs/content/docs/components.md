@@ -16,44 +16,9 @@ Use the dimensioned config when you want a typed interface with:
 
 ## Basic component
 
-```ts
-import { styles } from 'typestyles';
+The live example defines a dimensioned `button` with `intent` and `size` variants, then shows how to call it. Class strings follow the global [class naming](/docs/class-naming) configuration (`semantic` by default).
 
-export const button = styles.component('button', {
-  base: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '1px solid transparent',
-    borderRadius: '8px',
-    fontWeight: 500,
-  },
-  variants: {
-    intent: {
-      primary: { backgroundColor: '#2563eb', color: 'white' },
-      ghost: { backgroundColor: 'transparent', color: '#1f2937' },
-    },
-    size: {
-      sm: { padding: '6px 10px', fontSize: '14px' },
-      lg: { padding: '10px 16px', fontSize: '16px' },
-    },
-  },
-  defaultVariants: {
-    intent: 'primary',
-    size: 'sm',
-  },
-});
-
-// Call as a function -- base styles are always auto-applied:
-button(); // "button-base button-intent-primary button-size-sm"
-button({ size: 'lg' }); // "button-base button-intent-primary button-size-lg"
-button({ intent: 'ghost', size: 'lg' }); // "button-base button-intent-ghost button-size-lg"
-
-// Or destructure for direct class access:
-const { base } = button;
-```
-
-Class strings follow the global [class naming](/docs/class-naming) configuration (`semantic` by default).
+<!-- doc-live-demo id="components-variants" -->
 
 ## Compound variants
 
