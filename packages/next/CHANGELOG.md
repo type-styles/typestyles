@@ -1,5 +1,32 @@
 # @typestyles/next
 
+## 0.4.0
+
+### Minor Changes
+
+- [#75](https://github.com/type-styles/typestyles/pull/75) [`8bf64b0`](https://github.com/type-styles/typestyles/commit/8bf64b0f3f7da26a4dd91ce4ef5fcca5fea0cb4b) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add shared convention entry discovery: `discoverDefaultExtractModules` and `DEFAULT_EXTRACT_MODULE_CANDIDATES` (including `styles/typestyles-entry.ts` and `styles/typestyles.ts` after the `src/…` paths).
+
+  **@typestyles/vite** re-exports these from `@typestyles/build-runner` and resolves optional `extract.modules` using the same list.
+
+  **@typestyles/next** depends on `@typestyles/build-runner`, aligns `buildTypestylesForNext` with that discovery, defaults `cssOutFile` to `app/typestyles.css` and manifest output unless overridden, adds `withTypestyles` for production config when a convention file exists, and re-exports the discovery helpers.
+
+  `withTypestyles` now passes `root` through to extraction internals so webpack resolution uses the same project root as convention discovery.
+
+  **Breaking (Next):** `BuildTypestylesForNextOptions` no longer requires `modules` or `cssOutFile`; pass them explicitly when you need non-default behavior.
+
+### Patch Changes
+
+- [#86](https://github.com/type-styles/typestyles/pull/86) [`fd16bad`](https://github.com/type-styles/typestyles/commit/fd16bad633315ba34ba352e6c3b63c167af41196) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix silent-wrong-output correctness issues (P0.1): refresh the unitless CSS property set, prefix `scopeId` onto semantic class names, add dev-mode class-name collision warnings, and wire `useTypestyles` to `subscribeRegisteredCss` via `useSyncExternalStore`.
+
+- [#87](https://github.com/type-styles/typestyles/pull/87) [`ffeb2ef`](https://github.com/type-styles/typestyles/commit/ffeb2ef6a8a4c4f523c115a47435e6ec1c2c8b0f) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Credibility sweep (P0.2): fix docs site GitHub org links, correct landing page samples, unify package licenses to Apache-2.0, remove broken `@typestyles/open-props/css` export and unused `open-props` dependency.
+
+- [#75](https://github.com/type-styles/typestyles/pull/75) [`8bf64b0`](https://github.com/type-styles/typestyles/commit/8bf64b0f3f7da26a4dd91ce4ef5fcca5fea0cb4b) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Ensure `withTypestyles({ root })` uses the same `root` for downstream webpack module resolution as it does for convention discovery.
+
+- [#92](https://github.com/type-styles/typestyles/pull/92) [`d8149d6`](https://github.com/type-styles/typestyles/commit/d8149d6ebee682eed0aff6917c0cf8be8b027d89) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `verifyTypestylesBuild()` to `@typestyles/build-runner` for CI checks that extracted CSS and optional manifest exist and contain expected output. Re-export from `@typestyles/next/build` and document on the zero-runtime page.
+
+- Updated dependencies [[`8bf64b0`](https://github.com/type-styles/typestyles/commit/8bf64b0f3f7da26a4dd91ce4ef5fcca5fea0cb4b), [`d8149d6`](https://github.com/type-styles/typestyles/commit/d8149d6ebee682eed0aff6917c0cf8be8b027d89)]:
+  - @typestyles/build-runner@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

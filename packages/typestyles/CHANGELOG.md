@@ -1,5 +1,23 @@
 # typestyles
 
+## 0.6.0
+
+### Minor Changes
+
+- [#78](https://github.com/type-styles/typestyles/pull/78) [`aa88d25`](https://github.com/type-styles/typestyles/commit/aa88d251c352c617841f2aefed730c2b2871e50d) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add **`createStyles({ utils })`** (and **`createTypeStyles({ utils })`**) so shorthand style expanders attach to one styles instance without a separate `withUtils` object. **`styles.withUtils`** remains on the default export; there is no global **`registerUtils`**.
+
+- [#93](https://github.com/type-styles/typestyles/pull/93) [`60a8383`](https://github.com/type-styles/typestyles/commit/60a8383ba5f35767c33c6c92dc9b763337d3325d) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add debug names and optional fallbacks to `createVar()`. Document the dynamic styling story on a dedicated page and cross-link from performance and best-practices guides.
+
+- [#90](https://github.com/type-styles/typestyles/pull/90) [`f979149`](https://github.com/type-styles/typestyles/commit/f979149bc2993438655e635f6e83028f1220e17f) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Move `color` helpers to the `typestyles/color` subpath entry to shrink the main runtime bundle (~14.9 KB gzip). CI enforces a gzip budget on `dist/index.js`.
+
+  **Breaking:** `import { color } from 'typestyles'` is removed — use `import { color } from 'typestyles/color'` (or named imports from that subpath).
+
+- [#89](https://github.com/type-styles/typestyles/pull/89) [`b29a531`](https://github.com/type-styles/typestyles/commit/b29a531dac4c7657b122a3af55141fee070a8fc9) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Request-safe SSR collection (P0.4): isolate `collectStyles` / `collectStylesFromModules` sheet state with Node `AsyncLocalStorage`, and add async render support to `collectStyles`.
+
+### Patch Changes
+
+- [#86](https://github.com/type-styles/typestyles/pull/86) [`fd16bad`](https://github.com/type-styles/typestyles/commit/fd16bad633315ba34ba352e6c3b63c167af41196) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix silent-wrong-output correctness issues (P0.1): refresh the unitless CSS property set, prefix `scopeId` onto semantic class names, add dev-mode class-name collision warnings, and wire `useTypestyles` to `subscribeRegisteredCss` via `useSyncExternalStore`.
+
 ## 0.5.0
 
 ### Minor Changes

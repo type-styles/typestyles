@@ -1,5 +1,12 @@
 # @typestyles/props
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [[`fd16bad`](https://github.com/type-styles/typestyles/commit/fd16bad633315ba34ba352e6c3b63c167af41196), [`aa88d25`](https://github.com/type-styles/typestyles/commit/aa88d251c352c617841f2aefed730c2b2871e50d), [`60a8383`](https://github.com/type-styles/typestyles/commit/60a8383ba5f35767c33c6c92dc9b763337d3325d), [`f979149`](https://github.com/type-styles/typestyles/commit/f979149bc2993438655e635f6e83028f1220e17f), [`b29a531`](https://github.com/type-styles/typestyles/commit/b29a531dac4c7657b122a3af55141fee070a8fc9)]:
+  - typestyles@0.6.0
+
 ## 0.4.0
 
 ### Minor Changes
