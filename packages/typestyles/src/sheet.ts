@@ -5,7 +5,10 @@ import {
 } from './registry';
 import { getSheetState, getGlobalSheetState, resetSheetState } from './sheet-context';
 
-const STYLE_ELEMENT_ID = 'typestyles';
+/** Stable id for the managed `<style>` element (SSR, hydration, and client runtime). */
+export const TYPESTYLES_STYLE_ID = 'typestyles';
+
+const STYLE_ELEMENT_ID = TYPESTYLES_STYLE_ID;
 
 function duplicateRuleKeyConflictWarningsEnabled(): boolean {
   if (typeof process === 'undefined') return true;

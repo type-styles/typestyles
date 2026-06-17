@@ -86,6 +86,9 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
 - [ ] **P1.9 — Streaming SSR story** (PR: )
   - Document streaming SSR (`renderToPipeableStream`) and RSC patterns against the
     request-scoped collection from P0.4; add helpers where they remove boilerplate.
+  - Shipped: expanded [SSR guide](/docs/ssr) (request-safe collection, RSC decision
+    table, streaming helpers); `typestylesStyleHtml`, `injectStylesIntoHtml`,
+    `streamingDocumentShell`, `TYPESTYLES_STYLE_ID` on `typestyles/server`.
 
 ## P2 — Ecosystem & DX
 
