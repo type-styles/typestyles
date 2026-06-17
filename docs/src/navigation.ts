@@ -20,6 +20,8 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       slug: 'getting-started',
       items: [
         { slug: 'getting-started', title: 'Getting Started' },
+        { slug: 'zero-runtime', title: 'Zero-runtime extraction' },
+        { slug: 'vite-plugin', title: 'Vite Plugin' },
         { slug: 'framework-comparison', title: 'Framework comparison' },
         { slug: 'api-reference', title: 'API Reference' },
         { href: '/docs/changelog', title: 'Changelog' },
@@ -46,8 +48,6 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       slug: 'advanced-features',
       items: [
         { slug: 'ssr', title: 'Server-Side Rendering' },
-        { slug: 'zero-runtime', title: 'Zero-runtime extraction' },
-        { slug: 'vite-plugin', title: 'Vite Plugin' },
         { slug: 'class-naming', title: 'Class naming' },
         { slug: 'cascade-layers', title: 'Cascade layers (@layer)' },
         { slug: 'custom-at-rules', title: 'Custom Selectors & At-Rules' },

@@ -583,6 +583,60 @@ import { useCardState } from './useCardState';
 4. **Use [`createVar()` for dynamic values**](/docs/dynamic-styles) — Keep styles static; set per-instance values via CSS custom properties
 5. **Lazy load component styles** - Use dynamic imports for code splitting
 
+## Scope isolation
+
+### Why scopeId matters
+
+In semantic mode (the default), `styles.component('button', …)` produces class names like `button-base`. If two packages — or two files in the same app — both register a `'button'` namespace without a `scopeId`, their CSS rules silently overwrite each other. TypeStyles warns about this in development, but the fix is simple: always set a `scopeId`.
+
+### For applications
+
+Use `createTypeStyles` with a `scopeId` at the root of your styles:
+
+```ts
+// src/styles.ts
+import { createTypeStyles } from 'typestyles';
+
+export const { styles, tokens } = createTypeStyles({
+  scopeId: 'my-app',
+});
+```
+
+Class names become `my-app-button-base` — unique across your dependency tree.
+
+### For published packages
+
+Published packages **must** use a `scopeId` to avoid colliding with consumer code or other packages. Use the package name:
+
+```ts
+import { createTypeStyles } from 'typestyles';
+
+export const { styles, tokens } = createTypeStyles({
+  scopeId: '@acme/ui',
+});
+```
+
+For extra safety in library code, consider `hashed` or `compact` mode — class names are derived from a hash that includes the `scopeId`, making collisions structurally impossible:
+
+```ts
+export const { styles, tokens } = createTypeStyles({
+  scopeId: '@acme/ui',
+  mode: 'hashed',
+});
+```
+
+### Per-file isolation (CSS Modules style)
+
+For maximum isolation without choosing a global scope, use `fileScopeId`:
+
+```ts
+import { createStyles, fileScopeId } from 'typestyles';
+
+const styles = createStyles({ scopeId: fileScopeId(import.meta) });
+```
+
+Each file gets a unique hash-based scope, similar to CSS Modules.
+
 ## Common mistakes to avoid
 
 ### Creating styles inside components
@@ -637,13 +691,18 @@ const button = styles.component('button', { ... });
 // File B
 const button = styles.component('button', { ... }); // Collision!
 
-// Good - use descriptive names
+// Fix 1 - use descriptive names
 const iconButton = styles.component('icon-button', { ... });
 const textButton = styles.component('text-button', { ... });
+
+// Fix 2 (recommended) - use scopeId to isolate
+const { styles } = createTypeStyles({ scopeId: 'my-app' });
+const button = styles.component('button', { ... }); // "my-app-button-base"
 ```
 
 ## Summary
 
+- Always set a `scopeId` via `createTypeStyles` or `createStyles` — especially in published packages
 - Use descriptive, consistent naming for namespaces and variants
 - Organize tokens by category in dedicated files
 - Define styles at module level, never in components
@@ -651,4 +710,4 @@ const textButton = styles.component('text-button', { ... });
 - Keep variants focused on style purpose, not appearance
 - Use [`createVar()` + `assignVars()`](/docs/dynamic-styles) for per-instance dynamic values
 - Use `cx()` from typestyles for conditional class joining
-- Use the Vite plugin to catch duplicate namespaces
+- Use a bundler plugin for [zero-runtime production builds](/docs/zero-runtime)

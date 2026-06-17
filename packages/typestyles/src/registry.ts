@@ -41,6 +41,31 @@ export function trackEmittedClassName(className: string, ownerKey: string): void
 /** Clear collision tracking. Used by `reset()` in tests. */
 export function resetEmittedClassNameTracking(): void {
   emittedClassNameOwners.clear();
+  warnedUnscopedNamespaces.clear();
+}
+
+/**
+ * Namespaces that have already emitted an unscoped-collision warning.
+ * Prevents duplicate warnings for the same namespace during a session.
+ */
+const warnedUnscopedNamespaces = new Set<string>();
+
+/**
+ * Dev-mode warning when the same namespace is registered more than once
+ * without a `scopeId`. Two unscoped registrations of the same namespace
+ * produce identical class names whose CSS rules silently overwrite each
+ * other. Emits once per namespace.
+ */
+export function warnUnscopedCollision(namespace: string, apiName: string): void {
+  if (!isDev()) return;
+  if (warnedUnscopedNamespaces.has(namespace)) return;
+  warnedUnscopedNamespaces.add(namespace);
+  console.warn(
+    `[typestyles] ${apiName}('${namespace}', …) was registered more than once without a ` +
+      `scopeId. Their CSS rules will overwrite each other. Isolate each definition with ` +
+      `createStyles({ scopeId: '…' }) or createTypeStyles({ scopeId: '…' }). ` +
+      `If this is caused by HMR re-execution, this warning is safe to ignore.`,
+  );
 }
 
 const COLON = ':';

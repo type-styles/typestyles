@@ -203,3 +203,49 @@ describe('class name collision detection (dev)', () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('unscoped collision warning (dev)', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('warns when the same component namespace is registered twice without scopeId', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const a = createStyles();
+    const b = createStyles();
+    a.component('card', { base: { color: 'red' } });
+    b.component('card', { base: { color: 'blue' } });
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("styles.component('card'"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('without a scopeId'));
+  });
+
+  it('does not warn when scoped components re-register (HMR)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const styles = createStyles({ scopeId: 'app' });
+    styles.component('button', { base: { color: 'red' } });
+    styles.component('button', { base: { color: 'blue' } });
+    const unscopedCalls = warnSpy.mock.calls.filter(
+      (args) => typeof args[0] === 'string' && args[0].includes('without a scopeId'),
+    );
+    expect(unscopedCalls).toHaveLength(0);
+  });
+
+  it('warns only once per namespace', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const a = createStyles();
+    const b = createStyles();
+    const c = createStyles();
+    a.component('tag', { base: { color: 'red' } });
+    b.component('tag', { base: { color: 'blue' } });
+    c.component('tag', { base: { color: 'green' } });
+    const unscopedCalls = warnSpy.mock.calls.filter(
+      (args) => typeof args[0] === 'string' && args[0].includes("styles.component('tag'"),
+    );
+    expect(unscopedCalls).toHaveLength(1);
+  });
+});

@@ -86,13 +86,28 @@ my-ui-library/
 
 Note: `typestyles` should be a peer dependency so consuming apps can control the version.
 
+## Scope isolation
+
+Published packages **must** use a `scopeId` to prevent class name collisions with consumer code or other libraries. Without one, `styles.component('button', …)` produces `button-base` in both your library and the consuming app — their CSS rules silently overwrite each other.
+
+```ts
+// src/styles.ts
+import { createTypeStyles } from 'typestyles';
+
+export const { styles, tokens } = createTypeStyles({
+  scopeId: '@myorg/ui-library',
+});
+```
+
+Now all class names are prefixed (`myorg-ui-library-button-base`) and all token custom properties are namespaced (`--myorg-ui-library-color-primary`). See [Best Practices — Scope isolation](/docs/best-practices#scope-isolation) for more options.
+
 ## Token system
 
 ### Colors
 
 ```ts
 // src/tokens/colors.ts
-import { tokens } from 'typestyles';
+import { tokens } from './styles'; // use the scoped instance
 
 export const colors = tokens.create('color', {
   // Brand
