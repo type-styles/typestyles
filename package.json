@@ -20,6 +20,7 @@
     "next": "pnpm --filter @typestyles/next",
     "migrate": "pnpm --filter @typestyles/migrate",
     "eslint-plugin": "pnpm --filter @typestyles/eslint-plugin",
+    "vscode": "pnpm --filter @typestyles/vscode",
     "vite-app": "pnpm --filter typestyles-vite-example",
     "rollup-app": "pnpm --filter typestyles-rollup-example",
     "rolldown-app": "pnpm --filter typestyles-rolldown-example",
