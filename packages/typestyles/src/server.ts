@@ -1,8 +1,45 @@
 import './sheet-node';
-import { startCollection, flushSync, getRegisteredCss, subscribeRegisteredCss } from './sheet';
+import {
+  startCollection,
+  flushSync,
+  getRegisteredCss,
+  subscribeRegisteredCss,
+  TYPESTYLES_STYLE_ID,
+} from './sheet';
 import { runWithIsolatedSheet } from './sheet-context';
 
-export { getRegisteredCss, subscribeRegisteredCss };
+export { getRegisteredCss, subscribeRegisteredCss, TYPESTYLES_STYLE_ID };
+
+/**
+ * Render a `<style id="typestyles">` tag for embedding in HTML.
+ * Returns an empty string when `css` is empty.
+ */
+export function typestylesStyleHtml(css: string): string {
+  if (!css) return '';
+  return `<style id="${TYPESTYLES_STYLE_ID}">${css}</style>`;
+}
+
+/**
+ * Insert collected CSS before `</head>` in a full or partial HTML document.
+ * When no `</head>` is present, prepends the style tag to the string.
+ */
+export function injectStylesIntoHtml(html: string, css: string): string {
+  const tag = typestylesStyleHtml(css);
+  if (!tag) return html;
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${tag}</head>`);
+  }
+  return `${tag}${html}`;
+}
+
+/**
+ * Open an HTML document shell for `renderToPipeableStream`: doctype, `<head>` with
+ * charset meta and collected CSS, and `<body>`. Pair with `collectStyles()` for the
+ * CSS pass, then close `</body></html>` when the stream finishes.
+ */
+export function streamingDocumentShell(css: string): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/>${typestylesStyleHtml(css)}</head><body>`;
+}
 
 export type CollectStylesResult<T> = { html: T; css: string };
 

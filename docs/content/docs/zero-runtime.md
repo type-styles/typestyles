@@ -208,17 +208,18 @@ Wire it into `package.json` before `next build` (see `@examples/next`):
 
 For Vite/Rollup, pass the emitted asset path (e.g. `dist/typestyles.css`) and omit `manifestFile` unless you write one yourself.
 
-Add the `TypestylesProvider` to your root layout to handle streaming SSR (React 18 App Router):
+Add `TypestylesStylesheet` to your root layout to handle streaming SSR (React 18 App Router):
 
 ```tsx
 // app/layout.tsx
-import { TypestylesProvider } from '@typestyles/next';
+import { TypestylesStylesheet } from '@typestyles/next/client';
 
 export default function RootLayout({ children }) {
   return (
     <html>
       <body>
-        <TypestylesProvider>{children}</TypestylesProvider>
+        <TypestylesStylesheet />
+        {children}
       </body>
     </html>
   );
@@ -278,4 +279,4 @@ const isStaticCSS =
 
 - **Dynamic styles** — styles that are created based on runtime data (e.g. user-provided values) cannot be extracted at build time. Use the `hybrid` mode or keep those styles in runtime mode.
 - **Lazy routes** — styles imported via dynamic `import()` in route code-splitting may not be captured unless those modules are also listed in `extract.modules`.
-- **Server Components (Next.js)** — the `TypestylesProvider` handles streaming SSR for React Server Components. Ensure it is present in your root layout.
+- **Server Components (Next.js)** — `TypestylesStylesheet` handles streaming SSR for React Server Components. Ensure it is present in your root layout, or use build-time extraction. See [SSR — RSC patterns](/docs/ssr#react-server-components-nextjs-app-router).

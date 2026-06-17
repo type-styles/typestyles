@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { collectStyles } from './server';
+import {
+  collectStyles,
+  injectStylesIntoHtml,
+  streamingDocumentShell,
+  typestylesStyleHtml,
+  TYPESTYLES_STYLE_ID,
+} from './server';
 import { defaultClassNamingConfig } from './class-naming';
 import { createComponent } from './component';
 import { createTokens } from './tokens';
@@ -81,5 +87,40 @@ describe('collectStyles', () => {
     expect(b.html).toBe('b');
     expect(b.css).toContain('.iso-b');
     expect(b.css).not.toContain('.iso-a');
+  });
+});
+
+describe('SSR helpers', () => {
+  it('exports the stable style element id', () => {
+    expect(TYPESTYLES_STYLE_ID).toBe('typestyles');
+  });
+
+  it('typestylesStyleHtml returns empty for empty css', () => {
+    expect(typestylesStyleHtml('')).toBe('');
+  });
+
+  it('typestylesStyleHtml wraps css in a style tag', () => {
+    expect(typestylesStyleHtml('.a{color:red}')).toBe(
+      '<style id="typestyles">.a{color:red}</style>',
+    );
+  });
+
+  it('injectStylesIntoHtml inserts before </head>', () => {
+    const html = '<html><head><title>x</title></head><body></body></html>';
+    expect(injectStylesIntoHtml(html, '.a{color:red}')).toBe(
+      '<html><head><title>x</title><style id="typestyles">.a{color:red}</style></head><body></body></html>',
+    );
+  });
+
+  it('injectStylesIntoHtml prepends when no head', () => {
+    expect(injectStylesIntoHtml('<div>hi</div>', '.a{color:red}')).toBe(
+      '<style id="typestyles">.a{color:red}</style><div>hi</div>',
+    );
+  });
+
+  it('streamingDocumentShell opens a document with css in head', () => {
+    expect(streamingDocumentShell('.a{color:red}')).toBe(
+      '<!DOCTYPE html><html><head><meta charset="utf-8"/><style id="typestyles">.a{color:red}</style></head><body>',
+    );
   });
 });

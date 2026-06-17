@@ -362,7 +362,7 @@ The `collectStyles` call:
 **Performance tips:**
 
 - Cache SSR output when possible
-- Use streaming SSR with care (requires two renders for style collection)
+- Use streaming SSR with care — see [Streaming SSR](/docs/ssr#streaming-ssr-express--node) (two renders for custom Node servers; Next.js App Router should use `TypestylesStylesheet` or build-time extraction instead)
 - The collected CSS string is often modest, but measure it for your app
 
 ### CSS size

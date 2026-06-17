@@ -139,6 +139,14 @@ cx(card(), isElevated && card.elevated, externalClassName);
 - `reset()`, `flushSync()`, `ensureDocumentStylesAttached()`: Primarily for tests and advanced setup; see [Testing](/docs/testing)
 - `insertRules(rules)`: Low-level rule insertion (mainly for library authors)
 
+### SSR helpers (`typestyles/server`)
+
+- `collectStyles(renderFn)`: Wrap a sync or async render; returns `{ html, css }`. Request-isolated on Node via `AsyncLocalStorage`. See [SSR](/docs/ssr).
+- `TYPESTYLES_STYLE_ID`: Stable `"typestyles"` id for the managed `<style>` element (must match client hydration)
+- `typestylesStyleHtml(css)`: Render `<style id="typestyles">…</style>` (empty string when `css` is empty)
+- `injectStylesIntoHtml(html, css)`: Insert collected CSS before `</head>`
+- `streamingDocumentShell(css)`: Open doctype + `<head>` + `<body>` for `renderToPipeableStream` (pair with `collectStyles` for the CSS pass)
+
 ### Class naming helpers
 
 - `mergeClassNaming(partial?)`: Build a full `ClassNamingConfig` from partial options

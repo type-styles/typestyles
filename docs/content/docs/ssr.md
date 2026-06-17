@@ -5,6 +5,18 @@ description: Render typestyles on the server for better performance and SEO
 
 TypeStyles supports SSR out of the box. Instead of injecting styles into the DOM during rendering, you can collect all the CSS on the server and include it in the HTML response.
 
+## Request-safe collection
+
+Every `collectStyles()` call runs inside an **isolated sheet store**. On Node, that isolation uses `AsyncLocalStorage`, so concurrent SSR requests (multiple Express handlers, parallel Remix bots, overlapping `renderToString` passes) each get their own CSS buffer. CSS from request A never leaks into request B.
+
+This matters for:
+
+- **Concurrent HTTP handlers** — two users hitting your server at the same time
+- **The two-pass streaming pattern** — a sync `renderToString` pass for CSS, then `renderToPipeableStream` for the response (see below)
+- **Async renders** — `collectStyles(async () => …)` is supported; isolation holds for the full await
+
+`collectStylesFromModules()` (build extraction) uses the same isolation. In the browser bundle, isolation is a no-op because there is only one document.
+
 ## Basic setup
 
 Import `collectStyles` from `typestyles/server`:
@@ -70,6 +82,81 @@ On the client:
 2. **Reuse**: If found, it reuses that element and avoids re-injecting the CSS
 3. **Seamless transition**: No flicker or style recalculation during hydration
 
+## React Server Components (Next.js App Router)
+
+Next.js streams HTML by default. TypeStyles supports three patterns — pick based on whether you extract CSS at build time or collect at request time.
+
+| Pattern                                              | When to use                                                                                                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Build-time extraction**                            | Production apps — static `typestyles.css`, no runtime sheet. See [Zero-runtime extraction](/docs/zero-runtime).                                                    |
+| **`getRegisteredCss()` in root layout**              | Runtime mode; styles are imported on the server before layout runs. Simplest request-time setup.                                                                   |
+| **`TypestylesStylesheet` + `useServerInsertedHTML`** | Runtime mode; styles register during the **same streamed render** as `{children}`. Use when lazy boundaries or client-only imports would make Option B miss rules. |
+
+### Build-time extraction (recommended for production)
+
+Import the extracted stylesheet in your root layout. No `collectStyles()` per request — CSS is static:
+
+```tsx
+// app/layout.tsx
+import './typestyles.css';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Configure extraction with `@typestyles/next/build` — see [Zero-runtime extraction](/docs/zero-runtime).
+
+### Runtime: server layout + `getRegisteredCss`
+
+When style modules load synchronously on the server, the registered sheet already contains everything the layout needs:
+
+```tsx
+// app/layout.tsx
+import { getRegisteredCss } from '@typestyles/next';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const css = getRegisteredCss();
+
+  return (
+    <html lang="en">
+      <head>
+        {css ? <style id="typestyles" dangerouslySetInnerHTML={{ __html: css }} /> : null}
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+This works in **Server Components** — no `'use client'` required. Request isolation from `AsyncLocalStorage` applies when you also call `collectStyles()` elsewhere in the same request (for example a streaming pre-pass).
+
+### Runtime: streaming collection with `TypestylesStylesheet`
+
+For styles that register during the streamed React tree (client boundaries, lazy imports, or `useServerInsertedHTML` timing), use the client component wrapper:
+
+```tsx
+// app/layout.tsx
+import { TypestylesStylesheet } from '@typestyles/next/client';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <TypestylesStylesheet />
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+`TypestylesStylesheet` calls React's `useServerInsertedHTML` so CSS collected during the real SSR pass is injected into the streamed document — no separate `renderToString` pass and no CSS leakage between concurrent requests.
+
 ## Next.js
 
 Install the official integration so App Router, `useServerInsertedHTML`, and server helpers stay aligned:
@@ -80,9 +167,9 @@ pnpm add @typestyles/next typestyles
 
 See the [`@typestyles/next` package README](https://github.com/type-styles/typestyles/tree/main/packages/next) for build-time extraction (`withTypestylesExtract`) and Turbopack notes.
 
-### App Router (recommended)
+### App Router (runtime) — quick reference
 
-**Option A — server layout + `getRegisteredCss`:** simplest when your typestyles modules are loaded on the server before layout runs. Outputs the full registered stylesheet (everything in `allRules` after imports and any sync registration).
+The [RSC section above](#react-server-components-nextjs-app-router) has full examples and a decision table. The options below are the same patterns in brief:
 
 ```tsx
 // app/layout.tsx
@@ -120,7 +207,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-**Subtree-only CSS (advanced):** `collectStylesFromComponent` / `getTypestylesMetadata` from `@typestyles/next/server` run `renderToString` on a specific element and return CSS registered during that pass. Use when you intentionally scope extraction to a component tree; you still need to place the returned string in `<head>` yourself (Next `metadata` cannot carry arbitrary `<style>` bodies).
+**Subtree-only CSS (advanced):** `collectStylesFromComponent` / `getTypestylesMetadata` from `@typestyles/next/server` run `renderToString` on a specific element and return the CSS registered during that pass. Each call is request-isolated via `collectStyles()`.
 
 ### Pages Router
 
@@ -151,7 +238,7 @@ Custom `pages/_document.tsx` with `collectStyles(() => ctx.renderPage())` is fra
 import type { EntryContext } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import { renderToString } from 'react-dom/server';
-import { collectStyles } from 'typestyles/server';
+import { collectStyles, injectStylesIntoHtml } from 'typestyles/server';
 
 export default function handleRequest(
   request: Request,
@@ -171,7 +258,7 @@ export default function handleRequest(
     );
   }
 
-  let documentHtml = html.replace('</head>', `<style id="typestyles">${css}</style></head>`);
+  let documentHtml = injectStylesIntoHtml(html, css);
   if (!documentHtml.trimStart().toLowerCase().startsWith('<!doctype')) {
     documentHtml = `<!DOCTYPE html>${documentHtml}`;
   }
@@ -184,14 +271,24 @@ export default function handleRequest(
 
 ## Streaming SSR (Express / Node)
 
-You need CSS before the streamed shell is sent. That usually means **one synchronous `renderToString` pass** inside `collectStyles`, then a **second** pass with `renderToPipeableStream` for the same UI (two renders, same trade-off as above).
+React's `renderToPipeableStream` does not give you a complete HTML string up front, so TypeStyles cannot collect CSS from the stream itself. The supported pattern is **two renders**:
 
-Open your HTML shell (including `<style id="typestyles">…</style>`) **before** `pipe(res)`, then finish the document when React says the stream is done. Exact callbacks depend on whether you use Suspense—see [React `renderToPipeableStream`](https://react.dev/reference/react-dom/server/renderToPipeableStream).
+1. **CSS pass** — `collectStyles(() => renderToString(<App />))` inside the same request (isolated via `AsyncLocalStorage`)
+2. **Stream pass** — `renderToPipeableStream(<App />)` for the response body
+
+Open your HTML shell (including the style tag) **before** `pipe(res)`, then finish the document when React signals the stream is done. Exact callbacks depend on Suspense boundaries — see [React `renderToPipeableStream`](https://react.dev/reference/react-dom/server/renderToPipeableStream).
+
+Helpers from `typestyles/server` reduce boilerplate:
+
+- `typestylesStyleHtml(css)` — `<style id="typestyles">…</style>`
+- `streamingDocumentShell(css)` — doctype + `<head>` with charset and styles + `<body>`
+- `injectStylesIntoHtml(html, css)` — insert before `</head>` (Remix-style full documents)
+- `TYPESTYLES_STYLE_ID` — the stable `"typestyles"` id (must match client hydration)
 
 ```tsx
 import { renderToString, renderToPipeableStream } from 'react-dom/server';
 import type { Response } from 'express';
-import { collectStyles } from 'typestyles/server';
+import { collectStyles, streamingDocumentShell } from 'typestyles/server';
 
 app.get('/', (req, res: Response) => {
   const { css } = collectStyles(() => renderToString(<App />));
@@ -200,9 +297,7 @@ app.get('/', (req, res: Response) => {
     onShellReady() {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.write(
-        `<!DOCTYPE html><html><head><meta charset="utf-8"/><style id="typestyles">${css}</style></head><body>`,
-      );
+      res.write(streamingDocumentShell(css));
       pipe(res);
     },
     onShellError(error) {
@@ -216,6 +311,8 @@ app.get('/', (req, res: Response) => {
 
 If your shell opens wrappers around `<App />`, add the matching closing tags in the appropriate callback (`onAllReady` when streaming deferred content, or follow the full pattern in the React docs) so you never write to `res` after it has ended.
 
+**Next.js App Router** already streams — prefer `TypestylesStylesheet` or build-time extraction instead of manual two-pass rendering.
+
 ## Important considerations
 
 ### Style deduplication
@@ -228,7 +325,7 @@ All CSS is included by default. For large applications, you might want to implem
 
 ### Client-side hydration
 
-Always use the same `id="typestyles"` on both server and client:
+Always use the same `id="typestyles"` on both server and client. Import `TYPESTYLES_STYLE_ID` from `typestyles/server` or use `typestylesStyleHtml()` so the id stays consistent:
 
 ```html
 <!-- Server -->
