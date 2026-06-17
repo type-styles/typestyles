@@ -168,6 +168,46 @@ Import the emitted CSS from your App Router layout (`import './typestyles.css'`)
 
 For full manual control, **`withTypestylesExtract`** is still available (always merges production defines). **`discoverDefaultExtractModules`** and **`DEFAULT_EXTRACT_MODULE_CANDIDATES`** are re-exported from `@typestyles/next/build` (same as `@typestyles/build-runner` / `@typestyles/vite`).
 
+### Verify extraction in CI
+
+Zero-runtime extraction is execute-and-collect: styles that never run during the build step are **silently omitted** from the CSS file. There is no compile error when a component file is missing from your convention entry.
+
+Use **`verifyTypestylesBuild()`** from `@typestyles/build-runner` (also re-exported from `@typestyles/next/build`) after your build step to fail fast when output is missing or incomplete:
+
+```ts
+// scripts/typestyles-verify.mts
+import { verifyTypestylesBuild } from '@typestyles/build-runner';
+
+verifyTypestylesBuild({
+  root: process.cwd(),
+  cssFile: 'app/typestyles.css',
+  manifestFile: 'app/typestyles.manifest.json',
+  minBytes: 500,
+  // App-specific: class names / token vars you expect from the entry graph
+  requiredCssSubstrings: ['.my-scope-button-base {', ':root { --my-scope-color-primary:'],
+});
+```
+
+Checks performed:
+
+- CSS file exists and meets `minBytes` (defaults to non-empty when omitted)
+- Optional `requiredCssSubstrings` — catch missing imports from the entry barrel
+- Optional manifest exists with `version: 1` and `css` pointing at your stylesheet path
+
+Wire it into `package.json` before `next build` (see `@examples/next`):
+
+```json
+{
+  "scripts": {
+    "typestyles:build": "tsx ./scripts/typestyles-build.mts",
+    "typestyles:verify": "tsx ./scripts/typestyles-verify.mts",
+    "build": "pnpm typestyles:build && pnpm typestyles:verify && next build"
+  }
+}
+```
+
+For Vite/Rollup, pass the emitted asset path (e.g. `dist/typestyles.css`) and omit `manifestFile` unless you write one yourself.
+
 Add the `TypestylesProvider` to your root layout to handle streaming SSR (React 18 App Router):
 
 ```tsx

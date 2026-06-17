@@ -1,4 +1,11 @@
 export { DEFAULT_EXTRACT_MODULE_CANDIDATES, discoverDefaultExtractModules } from './discover';
+export {
+  verifyTypestylesBuild,
+  VerifyTypestylesBuildError,
+  type TypestylesExtractManifestV1,
+  type VerifyTypestylesBuildOptions,
+  type VerifyTypestylesBuildResult,
+} from './verify';
 
 import { build as esbuildBuild } from 'esbuild';
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';

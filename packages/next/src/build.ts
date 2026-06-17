@@ -5,18 +5,25 @@ import { pathToFileURL } from 'node:url';
 import {
   DEFAULT_EXTRACT_MODULE_CANDIDATES,
   discoverDefaultExtractModules,
+  verifyTypestylesBuild,
+  VerifyTypestylesBuildError,
+  type TypestylesExtractManifestV1,
+  type VerifyTypestylesBuildOptions,
+  type VerifyTypestylesBuildResult,
 } from '@typestyles/build-runner';
 import { collectStylesFromModules } from 'typestyles/build';
 import type { NextConfig } from 'next';
 
 /** Re-export shared convention paths (aligned with `@typestyles/vite`). */
-export { DEFAULT_EXTRACT_MODULE_CANDIDATES, discoverDefaultExtractModules };
-
-/** Manifest shape written next to extracted CSS (optional). */
-export interface TypestylesExtractManifestV1 {
-  version: 1;
-  css: string;
-}
+export {
+  DEFAULT_EXTRACT_MODULE_CANDIDATES,
+  discoverDefaultExtractModules,
+  verifyTypestylesBuild,
+  VerifyTypestylesBuildError,
+  type TypestylesExtractManifestV1,
+  type VerifyTypestylesBuildOptions,
+  type VerifyTypestylesBuildResult,
+};
 
 /** Shape of `require('webpack')` for `DefinePlugin` only (webpack is an optional peer). */
 type WebpackWithDefinePlugin = {
