@@ -1,8 +1,10 @@
 # @examples/typewind (Typewind)
 
-**Typewind** is a small example that recreates a **Tailwind-style utility workflow** using [typestyles](https://github.com/type-styles/typestyles) only—no Tailwind CSS, PostCSS plugin, or JIT compiler.
+**Typewind** recreates a **Tailwind-style utility workflow** using [typestyles](https://github.com/type-styles/typestyles) only — no Tailwind CSS, PostCSS plugin, or JIT compiler.
 
 Utilities are plain `styles.class('utility-name', { … })` calls. Class names match familiar Tailwind strings (`flex`, `gap-4`, `text-slate-600`, …). Spacing and palette values live in `tokens.create` so you can override them with `tokens.createTheme` (see the light/dark toggle in the demo).
+
+> **Alternative:** for typed prop APIs instead of individual utility classes, see [`@typestyles/props`](../../packages/props/README.md) and the [atomic CSS guide](https://typestyles.dev/docs/atomic-css). Typewind shows the manual `styles.class` approach; props generates classes from `defineProperties` + `createProps`.
 
 ## Run
 
@@ -18,7 +20,7 @@ Or from this package:
 pnpm dev
 ```
 
-Production build:
+Production build + preview:
 
 ```bash
 pnpm build
@@ -53,3 +55,8 @@ className={cn(u.flex, u.p4, u.textSm)}
 - For large scales (every `p-*` step), generate objects in a loop and call `styles.class` in a loop instead of hand-writing each export.
 
 This is a **pedagogical subset**, not a full Tailwind parity layer.
+
+## Learn more
+
+- [Vite example](../vite-app/README.md) — same extraction setup with React + design system
+- [Examples index](../README.md)

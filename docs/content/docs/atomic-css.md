@@ -7,6 +7,8 @@ The `@typestyles/props` package provides a type-safe way to generate atomic CSS 
 
 Runtime APIs such as `styles.class`, `styles.component`, and `styles.hashClass` use a separate naming system; to change those class strings (semantic vs hashed), see [Class naming](/docs/class-naming).
 
+**Compare approaches:** this package (`defineProperties` + `createProps`) powers layout utilities on the docs site ([`docs/src/atoms.ts`](https://github.com/type-styles/typestyles/blob/main/docs/src/atoms.ts)). For hand-written `styles.class` utilities (Tailwind-style), see [examples/typewind](https://github.com/type-styles/typestyles/blob/main/examples/typewind/README.md).
+
 ## Installation
 
 ```bash

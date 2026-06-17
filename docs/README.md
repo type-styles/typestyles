@@ -1,97 +1,230 @@
-# TypeStyles Documentation
+# TypeStyles documentation site
 
-This directory contains the documentation website and content for TypeStyles.
+Astro site for [typestyles.dev](https://typestyles.dev) — markdown guides, live style demos, design-system kitchen sink, and package changelogs.
 
-## Structure
+The site **dogfoods typestyles**: styles live in TypeScript, production builds extract static CSS via `@typestyles/astro`, and interactive pages use `@typestyles/props` plus `@examples/design-system`.
 
-```
-docs/
-├── content/
-│   └── docs/           # All documentation markdown files
-├── src/
-│   ├── pages/          # Astro routes
-│   ├── layouts/        # Shared Astro layouts
-│   ├── lib/            # Markdown/document helpers
-│   ├── navigation.ts   # Navigation configuration
-│   ├── styles.ts       # Documentation site styles
-│   └── tokens.ts       # Documentation site tokens
-├── astro.config.mjs    # Astro configuration
-├── package.json
-└── README.md           # This file
-```
+## Run
 
-## Documentation Files
-
-All documentation content lives in `content/docs/`:
-
-- **Getting Started**: Installation and basic usage
-- **Core Concepts**: API documentation for styles, tokens, keyframes, color
-- **Advanced Features**: SSR, Vite plugin, custom selectors, theming
-- **Guides**: Migration, best practices, testing, performance, troubleshooting
-- **Examples**: React integration, component libraries, design systems, animations
-
-## Running the Documentation Site
+From the **monorepo root** (recommended — workspace packages must be built first):
 
 ```bash
-# From the docs directory
-cd docs
-
-# Install dependencies
 pnpm install
-
-# Start Astro development server
-pnpm dev
-
-# Build for production
-pnpm build
-
-# Preview production build
-pnpm preview
+pnpm --filter docs dev
 ```
 
-## Adding New Documentation
+Or from this directory:
 
-1. Create a new `.md` file in `content/docs/`
-2. Add frontmatter:
+```bash
+cd docs
+pnpm install   # only if not using the workspace root install
+pnpm dev
+```
+
+Open the URL Astro prints (typically [http://localhost:4321](http://localhost:4321)).
+
+Other scripts:
+
+```bash
+pnpm build    # static output in dist/
+pnpm preview  # serve production build locally
+pnpm lint
+```
+
+## Repository layout
+
+```text
+docs/
+├── content/docs/          # Guide markdown (routes at /docs/<slug>)
+├── src/
+│   ├── pages/             # Astro routes (home, docs shell, changelog, kitchen sink)
+│   ├── layouts/           # DocsLayout, etc.
+│   ├── components/        # Site chrome, LiveDemo, CodeBlock, search, …
+│   ├── demos/             # Live demo modules + registry
+│   ├── styles/            # Site typestyles (nav, doc page, live demo chrome)
+│   ├── lib/               # Markdown pipeline, search index, demo CSS helpers
+│   ├── atoms.ts           # @typestyles/props utilities for layout
+│   ├── tokens.ts          # Docs theme tokens (uses @examples/design-system)
+│   ├── typestyles-entry.ts  # Extraction entry — import all registrations here
+│   └── navigation.ts      # Sidebar structure
+├── astro.config.mjs       # @typestyles/astro + vite-tsconfig-paths
+└── package.json
+```
+
+### Typestyles on this site
+
+| Piece                     | Role                                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `src/typestyles-entry.ts` | Side-effect imports for **`mode: 'build'`** extraction                                    |
+| `astro.config.mjs`        | `@typestyles/astro({ mode: 'build', extract: { modules: ['src/typestyles-entry.ts'] } })` |
+| `src/styles/`             | Site chrome registered via typestyles                                                     |
+| `src/demos/*.ts`          | Isolated demo styles extracted per-demo for `LiveDemo` previews                           |
+| `@examples/design-system` | Shared tokens, recipes, themes, syntax highlighting                                       |
+
+Production CSS is emitted as `typestyles.css` and linked from `Head.astro`. Demo previews can inject scoped CSS from individual demo modules (`previewCss` in the registry).
+
+## Adding a documentation page
+
+1. Create `content/docs/your-page.md` with frontmatter:
+
    ```yaml
    ---
    title: Your Title
-   description: Brief description
+   description: Brief description for SEO and cards
    ---
    ```
-3. Add the file to the navigation in `src/navigation.ts`
-4. Run the dev server to preview
 
-## Generating API Reference
+2. Register the slug in `src/navigation.ts` under the right category.
 
-To regenerate the API reference from source code:
+3. Run `pnpm dev` and open `/docs/your-page`.
+
+Guides use a unified markdown pipeline (`src/lib/docs.ts`) with GFM, syntax highlighting, and optional live demo expansion.
+
+## Adding a live demo
+
+Live demos show **authored code + emitted CSS + rendered preview** on doc pages.
+
+1. Add a demo module under `src/demos/` (e.g. `my-demo.ts`) exporting `demoSourceCode`, `demoVariants`, etc. For build-time CSS, add a sibling `*.impl.ts` or use the module path directly.
+
+2. Register in `src/demos/registry.ts`:
+
+   ```ts
+   'my-demo': {
+     title: '…',
+     headerLabel: 'path/to/file.ts',
+     codeLang: 'typescript',
+     modulePath: 'src/demos/my-demo.impl.ts',
+     previewCss: true,        // optional isolated preview stylesheet
+     preview: 'button',       // or 'themed-card'
+     load: () => import('./my-demo'),
+   },
+   ```
+
+3. Reference in markdown via the live-demo directive (see existing pages like `getting-started.md`).
+
+4. If the demo registers new global styles, import its module from `src/typestyles-entry.ts` so production extraction includes them.
+
+## Navigation categories
+
+Defined in `src/navigation.ts`:
+
+- **Getting Started** — install, framework comparison, API reference, changelog index
+- **Core Concepts** — styles, components, tokens, atomic CSS, Open Props, fonts, …
+- **Advanced Features** — SSR, zero-runtime, Vite plugin, class naming, cascade layers, theming
+- **Guides** — migration, best practices, testing, performance, troubleshooting
+- **Examples** — React, component library, design system, animations
+
+## Changelog pages
+
+Package and example changelogs render from workspace `CHANGELOG.md` files:
+
+- Index: `/docs/changelog`
+- Per package: `/docs/changelog/packages/<name>`
+
+Sources are collected in `src/lib/changelogs.ts`.
+
+## Regenerating API reference
 
 ```bash
 node ../scripts/generate-api-reference.js
 ```
 
-This reads JSDoc comments from the source and updates `content/docs/api-reference.md`.
+Updates `content/docs/api-reference.md` from JSDoc in `packages/typestyles`.
 
-## Navigation
+## Related packages in this app
 
-The navigation structure is defined in `src/navigation.ts`. Documentation is organized into categories:
+| Dependency                 | Use                                               |
+| -------------------------- | ------------------------------------------------- |
+| `@typestyles/astro`        | Integration wrapper around `@typestyles/vite`     |
+| `@typestyles/props`        | Docs layout utilities (`src/atoms.ts`)            |
+| `@typestyles/build-runner` | Demo CSS extraction in Node (`collectDemoCss.ts`) |
+| `@examples/design-system`  | Tokens, recipes, themes, code highlighting        |
+| `typestyles`               | Core styling API                                  |
 
-- Getting Started
-- Core Concepts
-- Advanced Features
-- Guides
-- Examples
+## Examples elsewhere in the monorepo
 
-## Deployment
+Runnable apps that mirror docs topics: [`../examples/`](../examples/README.md) (Vite, Next.js, Vue, Svelte, bundler extraction, Typewind, design systems).
 
-The documentation site is built as a static site and can be deployed to any static hosting service.
+See also [`../examples/README.md` — Contributing to examples](../examples/README.md#contributing-to-examples) when adding or changing sample apps.
+
+## Doc pages and runnable examples
+
+When editing a guide, use these repos as the source of truth. Paths are relative to the monorepo root.
+
+### Getting Started
+
+| Doc page             | Route                        | Example / source                                                                                                                 |
+| -------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Getting Started      | `/docs/getting-started`      | [`examples/vite-app`](../examples/vite-app/README.md) · [`examples/parcel-app`](../examples/parcel-app/README.md) (runtime-only) |
+| Framework comparison | `/docs/framework-comparison` | [Examples index](../examples/README.md#runtime-vs-extraction)                                                                    |
+| API Reference        | `/docs/api-reference`        | [`packages/typestyles`](../packages/typestyles/README.md) · regenerate via `scripts/generate-api-reference.js`                   |
+
+### Core Concepts
+
+| Doc page             | Route                  | Example / source                                                                                                            |
+| -------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Styles               | `/docs/styles`         | [`examples/typewind`](../examples/typewind/README.md) (`styles.class`)                                                      |
+| Components           | `/docs/components`     | [`examples/react-design-system`](../examples/react-design-system/README.md)                                                 |
+| Style Composition    | `/docs/compose`        | [`examples/vite-app`](../examples/vite-app/README.md) · docs [`src/atoms.ts`](./src/atoms.ts)                               |
+| Dynamic styling      | `/docs/dynamic-styles` | Live demos in [`src/demos/`](./src/demos/)                                                                                  |
+| Atomic CSS Utilities | `/docs/atomic-css`     | Docs [`src/atoms.ts`](./src/atoms.ts) (`@typestyles/props`) · compare [`examples/typewind`](../examples/typewind/README.md) |
+| Tokens               | `/docs/tokens`         | [`examples/design-system`](../examples/design-system/README.md)                                                             |
+| Open Props           | `/docs/open-props`     | [`packages/open-props`](../packages/open-props/README.md)                                                                   |
+| Fonts                | `/docs/fonts`          | [`examples/next-app`](../examples/next-app/README.md) · [`examples/vite-app`](../examples/vite-app/README.md)               |
+| Keyframes            | `/docs/keyframes`      | [`examples/design-system`](../examples/design-system/README.md) (`designMotion`)                                            |
+| Color Helpers        | `/docs/color`          | [`packages/typestyles`](../packages/typestyles/README.md) (`typestyles/color`)                                              |
+
+### Advanced Features
+
+| Doc page                    | Route                    | Example / source                                                                                                                                                                                                                        |
+| --------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server-Side Rendering       | `/docs/ssr`              | [`examples/next-app`](../examples/next-app/README.md)                                                                                                                                                                                   |
+| Zero-runtime extraction     | `/docs/zero-runtime`     | [`examples/vite-app`](../examples/vite-app/README.md) · [`examples/next-app`](../examples/next-app/README.md) · [`examples/esbuild-app`](../examples/esbuild-app/README.md) · [`examples/rollup-app`](../examples/rollup-app/README.md) |
+| Vite Plugin                 | `/docs/vite-plugin`      | [`examples/vite-app`](../examples/vite-app/README.md) · [`examples/vue-app`](../examples/vue-app/README.md) · [`examples/svelte-app`](../examples/svelte-app/README.md) · [`examples/typewind`](../examples/typewind/README.md)         |
+| Class naming                | `/docs/class-naming`     | [`examples/react-design-system`](../examples/react-design-system/README.md) vs [`examples/typewind`](../examples/typewind/README.md)                                                                                                    |
+| Cascade layers              | `/docs/cascade-layers`   | [`examples/design-system`](../examples/design-system/README.md) · [`examples/vite-app/src/site-styles.ts`](../examples/vite-app/src/site-styles.ts)                                                                                     |
+| Custom selectors & at-rules | `/docs/custom-at-rules`  | [`examples/design-system`](../examples/design-system/README.md)                                                                                                                                                                         |
+| Theming patterns            | `/docs/theming-patterns` | [`examples/design-system`](../examples/design-system/README.md) · [`examples/vite-app`](../examples/vite-app/README.md) (Sunset override) · docs [`src/tokens.ts`](./src/tokens.ts)                                                     |
+
+### Guides
+
+| Doc page        | Route                   | Example / source                                                                                                                                   |
+| --------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Migration       | `/docs/migration`       | [`packages/migrate`](../packages/migrate/README.md)                                                                                                |
+| Best practices  | `/docs/best-practices`  | [`examples/vite-app`](../examples/vite-app/README.md) · [`examples/next-app`](../examples/next-app/README.md)                                      |
+| Testing         | `/docs/testing`         | Example `scripts/verify-build.mjs` files · [`examples/next-app/scripts/verify-typestyles.mts`](../examples/next-app/scripts/verify-typestyles.mts) |
+| Performance     | `/docs/performance`     | [`examples/parcel-app`](../examples/parcel-app/README.md) (runtime) vs [`examples/vite-app`](../examples/vite-app/README.md) (extraction)          |
+| TypeScript tips | `/docs/typescript-tips` | All TypeScript examples under [`examples/`](../examples/README.md)                                                                                 |
+| Troubleshooting | `/docs/troubleshooting` | Framework-specific example READMEs linked above                                                                                                    |
+
+### Examples (doc category)
+
+| Doc page           | Route                      | Example / source                                                                                                  |
+| ------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| React Integration  | `/docs/react-integration`  | [`examples/vite-app`](../examples/vite-app/README.md) · [`examples/next-app`](../examples/next-app/README.md)     |
+| Component Library  | `/docs/component-library`  | [`examples/react-design-system`](../examples/react-design-system/README.md)                                       |
+| Design System      | `/docs/design-system`      | [`examples/design-system`](../examples/design-system/README.md) · kitchen sink `/docs/design-system/kitchen-sink` |
+| Animation Patterns | `/docs/animation-patterns` | [`examples/design-system`](../examples/design-system/README.md) (`designMotion`, keyframes)                       |
+
+### Docs-only surfaces
+
+| Surface            | Route              | Source                                                                              |
+| ------------------ | ------------------ | ----------------------------------------------------------------------------------- |
+| Documentation site | `/`                | This package — [`docs/README.md`](./README.md)                                      |
+| Live demos         | embedded in guides | [`src/demos/registry.ts`](./src/demos/registry.ts)                                  |
+| Changelog          | `/docs/changelog`  | Package `CHANGELOG.md` files via [`src/lib/changelogs.ts`](./src/lib/changelogs.ts) |
+
+When you add a doc page that describes runnable code, add a row here and link the guide markdown to the example README (see **Contributing** below).
 
 ## Contributing
 
-When contributing to documentation:
+1. Match existing markdown tone and frontmatter.
+2. Prefer live demos over static screenshots for typestyles behavior.
+3. Run `pnpm lint` in `docs/` before opening a PR.
+4. Verify code samples against a running example app when possible — use the [doc ↔ example map](#doc-pages-and-runnable-examples) above.
+5. When a guide describes integration steps, add a **Runnable example** link in the markdown to the matching [`examples/*/README.md`](../examples/README.md) (see `getting-started.md` and `zero-runtime.md` for patterns).
+6. New example apps: follow [`examples/README.md` — Contributing to examples](../examples/README.md#contributing-to-examples) and add a row to the map in this file.
 
-1. Follow the existing structure and formatting
-2. Include code examples where helpful
-3. Test all code examples to ensure they work
-4. Keep language clear and concise
-5. Use proper frontmatter for all markdown files
+## Deployment
+
+Static output from `pnpm build` — deploy `docs/dist/` to any static host (CDN, Netlify, GitHub Pages, etc.).
