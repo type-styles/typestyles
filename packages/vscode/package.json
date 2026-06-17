@@ -1,5 +1,5 @@
 {
-  "name": "@typestyles/vscode",
+  "name": "typestyles-vscode",
   "displayName": "TypeStyles",
   "description": "Hover CSS previews, token swatches, and go-to-definition for TypeStyles",
   "version": "0.1.0",
@@ -76,7 +76,6 @@
   "files": [
     "dist",
     "icon.png",
-    "README.md",
-    "LICENSE"
+    "README.md"
   ]
 }

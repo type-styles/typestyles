@@ -1,4 +1,4 @@
-# @typestyles/vscode
+# typestyles-vscode
 
 VS Code extension for [TypeStyles](https://github.com/type-styles/typestyles) — hover CSS previews, token swatches, and go-to-definition for style authoring.
 
@@ -34,10 +34,10 @@ Hover a style object property key (e.g. `padding`, `display`) for a short descri
 
 ```bash
 pnpm install
-pnpm --filter @typestyles/vscode build
+pnpm --filter typestyles-vscode build
 ```
 
-Then in VS Code: **Extensions** → **…** → **Install from VSIX…** after `pnpm --filter @typestyles/vscode package`, or launch the **Run Extension** debug configuration with `packages/vscode` as the extension root.
+Then in VS Code: **Extensions** → **…** → **Install from VSIX…** after `pnpm --filter typestyles-vscode package`, or launch the **Run Extension** debug configuration with `packages/vscode` as the extension root.
 
 ### Marketplace
 
@@ -59,9 +59,9 @@ Not yet published — install from source or the release VSIX attached to the PR
 ## Development
 
 ```bash
-pnpm --filter @typestyles/vscode test
-pnpm --filter @typestyles/vscode lint
-pnpm --filter @typestyles/vscode typecheck
+pnpm --filter typestyles-vscode test
+pnpm --filter typestyles-vscode lint
+pnpm --filter typestyles-vscode typecheck
 ```
 
 ## License
