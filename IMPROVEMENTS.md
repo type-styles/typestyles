@@ -230,7 +230,7 @@ would notice in the first 30 minutes.
   - Effort: High (harness authoring, multi-framework setup, ongoing
     maintenance).
 
-- [x] **P3.5.4 — VS Code extension MVP** (PR: )
+- [x] **P3.5.4 — VS Code extension MVP** (PR: #106)
   - Vanilla Extract and StyleX both have VS Code extensions. TypeStyles has
     none. Missing editor tooling is a visible gap in the first-use experience.
   - Scope: ship `@typestyles/vscode` with: (1) hover preview showing the
