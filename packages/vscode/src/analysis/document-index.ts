@@ -288,13 +288,34 @@ export function findTokenLeafAtPosition(index: DocumentIndex, position: number):
   return null;
 }
 
-export function findStyleRegistrationAtPosition(
+export function findPropertyAccessAt(node: ts.Node): ts.PropertyAccessExpression | null {
+  let current: ts.Node | undefined = node;
+  while (current) {
+    if (ts.isPropertyAccessExpression(current)) return current;
+    current = current.parent;
+  }
+  return null;
+}
+
+export function findEnclosingStyleRegistration(
   index: DocumentIndex,
-  position: number,
+  offset: number,
 ): StyleRegistration | null {
   for (const reg of index.registrations) {
-    if (position >= reg.location.start && position <= reg.location.end) {
+    if (offset >= reg.location.start && offset <= reg.location.end) {
       return reg;
+    }
+  }
+  return null;
+}
+
+export function findTokenLeafByPath(index: DocumentIndex, path: string): TokenLeaf | null {
+  for (const ns of index.tokenNamespaces) {
+    for (const leaf of ns.leaves) {
+      const full = ns.bindingName
+        ? `${ns.bindingName}.${leaf.path.slice(1).join('.')}`
+        : leaf.path.join('.');
+      if (full === path || leaf.path.join('.') === path) return leaf;
     }
   }
   return null;

@@ -4,7 +4,7 @@ await esbuild.build({
   entryPoints: ['src/extension.ts'],
   bundle: true,
   outfile: 'dist/extension.js',
-  external: ['vscode', 'typescript'],
+  external: ['vscode'],
   format: 'cjs',
   platform: 'node',
   sourcemap: true,

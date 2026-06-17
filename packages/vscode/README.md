@@ -37,7 +37,9 @@ pnpm install
 pnpm --filter typestyles-vscode build
 ```
 
-Then in VS Code: **Extensions** → **…** → **Install from VSIX…** after `pnpm --filter typestyles-vscode package`, or launch the **Run Extension** debug configuration with `packages/vscode` as the extension root.
+Then in VS Code: **Extensions** → **…** → **Install from VSIX…** after `pnpm --filter typestyles-vscode package`, then **Developer: Reload Window**. The VSIX bundles the TypeScript parser (no separate runtime deps).
+
+If hovers still show only TypeScript types, confirm **TypeStyles** appears under installed extensions and reload the window after installing.
 
 ### Marketplace
 

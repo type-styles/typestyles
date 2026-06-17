@@ -2,7 +2,7 @@
   "name": "typestyles-vscode",
   "displayName": "TypeStyles",
   "description": "Hover CSS previews, token swatches, and go-to-definition for TypeStyles",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "typestyles",
   "license": "Apache-2.0",
   "type": "commonjs",
@@ -62,15 +62,14 @@
     "url": "https://github.com/type-styles/typestyles",
     "directory": "packages/vscode"
   },
-  "dependencies": {
-    "typescript": "^5.4.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.2.0",
     "esbuild": "^0.25.0",
     "eslint": "^9.39.2",
+    "typescript": "^5.4.0",
     "vitest": "^3.0.0"
   },
   "files": [
