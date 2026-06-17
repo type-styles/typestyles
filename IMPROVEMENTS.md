@@ -77,7 +77,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     `@typestyles/build-runner` as a supported `verifyTypestylesBuild()` API +
     document it on the zero-runtime page.
 
-- [x] **P1.8 — First-class dynamic styling story** (PR: )
+- [x] **P1.8 — First-class dynamic styling story** (PR: #93)
   - `createVar`/`assignVars` exists but is undocumented and anonymous (`--ts-N`).
     Add debug names (`createVar('cardBg')`), write a dedicated docs page, and
     cross-link from best-practices/performance pages (which currently just say
