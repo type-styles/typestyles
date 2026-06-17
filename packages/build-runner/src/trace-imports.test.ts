@@ -65,4 +65,25 @@ describe('traceTypestylesModules', () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it('externalizes layout CSS imports with site-root asset URLs', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'typestyles-trace-css-'));
+    mkdirSync(join(root, 'app'), { recursive: true });
+    writeFileSync(
+      join(root, 'app/typestyles.css'),
+      `@font-face { src: url('/fonts/space-grotesk-latin.woff2') format('woff2'); }\n`,
+    );
+    writeFileSync(
+      join(root, 'app/layout.tsx'),
+      `import './typestyles.css';\nexport default function Layout() { return null; }\n`,
+    );
+    writeFileSync(join(root, 'app/page.tsx'), `export default function Page() { return null; }\n`);
+
+    try {
+      const modules = await traceTypestylesModules(root, ['app/layout.tsx', 'app/page.tsx']);
+      expect(modules).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

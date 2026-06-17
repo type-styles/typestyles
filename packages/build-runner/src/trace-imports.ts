@@ -24,6 +24,15 @@ function isExternalBareImport(specifier: string): boolean {
   );
 }
 
+function isExternalAssetPath(path: string, importer: string, namespace: string): boolean {
+  if (path.endsWith('.css')) return true;
+  const fromCss = namespace === 'css' || importer.endsWith('.css');
+  if (fromCss && path.startsWith('/') && !path.startsWith('//')) {
+    return true;
+  }
+  return false;
+}
+
 function fileImportsTypestyles(absPath: string): boolean {
   if (!existsSync(absPath)) return false;
   try {
@@ -66,7 +75,10 @@ export async function traceTypestylesModules(
         name: 'typestyles-trace-imports',
         setup(build) {
           build.onResolve({ filter: /.*/ }, (args) => {
-            if (args.path.startsWith('.') || args.path.startsWith('/')) {
+            if (isExternalAssetPath(args.path, args.importer, args.namespace)) {
+              return { path: args.path, external: true };
+            }
+            if (args.path.startsWith('.')) {
               return null;
             }
             if (isExternalBareImport(args.path)) {
