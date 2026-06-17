@@ -7,7 +7,7 @@ export const registeredNamespaces = new Set<string>();
  * Development-only map of emitted class name → owner key. Two different owners
  * producing the same class string means rules will overwrite each other —
  * either a cross-scope semantic collision or a hash collision in
- * `hashed`/`atomic` mode.
+ * `hashed`/`compact` mode.
  */
 const emittedClassNameOwners = new Map<string, string>();
 

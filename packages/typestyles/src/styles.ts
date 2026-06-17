@@ -21,7 +21,6 @@ import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
 import { registeredNamespaces, trackEmittedClassName } from './registry';
 import {
-  buildSingleClassName,
   defaultClassNamingConfig,
   hashString,
   mergeClassNaming,
@@ -29,6 +28,7 @@ import {
   stableSerialize,
   type ClassNamingConfig,
 } from './class-naming';
+import { decomposeAtomicStyle, classNamesAndRulesForProperties } from './atomic-decompose';
 import { createComponent } from './component';
 import {
   container as containerQuery,
@@ -79,9 +79,13 @@ export function createClass(
   }
   registeredNamespaces.add(regKey);
 
-  const className = buildSingleClassName(classNaming, name, properties);
-  const selector = `.${className}`;
-  const rules = serializeStyle(selector, properties);
+  const { classNames, rules } = classNamesAndRulesForProperties(
+    classNaming,
+    properties,
+    name,
+    '',
+    'class',
+  );
   if (classNaming.cascadeLayers) {
     if (layer == null || layer === '') {
       throw new Error(
@@ -95,7 +99,7 @@ export function createClass(
     insertRules(rules);
   }
 
-  return className;
+  return classNames;
 }
 
 /**
@@ -124,6 +128,23 @@ export function createHashClass(
   layer?: string,
 ): string {
   const cfg = classNaming;
+  if (cfg.mode === 'atomic') {
+    const { classNames, rules } = decomposeAtomicStyle(cfg, properties);
+    if (classNaming.cascadeLayers) {
+      if (layer == null || layer === '') {
+        throw new Error(
+          '[typestyles] `layer` is required in the options argument when using `createStyles({ layers })` — ' +
+            'e.g. styles.hashClass({ … }, { layer: `utilities` }).',
+        );
+      }
+      assertOwnLayer(classNaming.cascadeLayers, layer, 'styles.hashClass(…)');
+      insertRules(applyLayerToRules(rules, layer, classNaming.cascadeLayers));
+    } else {
+      insertRules(rules);
+    }
+    return classNames;
+  }
+
   const serialized =
     cfg.scopeId !== ''
       ? stableSerialize({ scope: cfg.scopeId, properties })

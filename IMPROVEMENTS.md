@@ -83,7 +83,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     cross-link from best-practices/performance pages (which currently just say
     "use inline styles").
 
-- [ ] **P1.9 — Streaming SSR story** (PR: #94)
+- [x] **P1.9 — Streaming SSR story** (PR: #94)
   - Document streaming SSR (`renderToPipeableStream`) and RSC patterns against the
     request-scoped collection from P0.4; add helpers where they remove boilerplate.
   - Shipped: expanded [SSR guide](/docs/ssr) (request-safe collection, RSC decision
@@ -93,10 +93,9 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
 ## P2 — Ecosystem & DX
 
 - [ ] **P2.10 — True atomic output** (PR: )
-  - Current "atomic" naming mode is whole-object hashing, not atomic CSS. Without
-    per-declaration dedup, CSS grows linearly with the codebase while
-    StyleX/Tailwind plateau. Ship per-property atomic decomposition; rename the
-    current mode honestly.
+  - [x] Rename hash-only `atomic` mode to `compact` (honest naming for whole-object hashes).
+  - [x] Ship `atomic` mode with per-declaration decomposition and dedup across components.
+  - [x] Docs + changeset; open PR.
 
 - [ ] **P2.11 — ESLint plugin MVP** (PR: )
   - `@typestyles/eslint-plugin` with first rules: shorthand/longhand conflict

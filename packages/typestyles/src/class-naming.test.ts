@@ -54,13 +54,25 @@ describe('class naming modes', () => {
     expect(x).not.toBe(y);
   });
 
-  it('atomic mode omits the namespace slug in class strings', () => {
-    const styles = createStyles({ mode: 'atomic', prefix: 'x' });
+  it('compact mode omits the namespace slug in class strings', () => {
+    const styles = createStyles({ mode: 'compact', prefix: 'x' });
     const button = styles.component('btn', {
       base: { color: 'red' },
     });
     expect(button.base).toMatch(/^x-[a-z0-9]+$/);
     expect(button.base).not.toContain('btn');
+  });
+
+  it('atomic mode emits one class per declaration', () => {
+    const styles = createStyles({ mode: 'atomic', prefix: 'x' });
+    const button = styles.component('btn', {
+      base: { color: 'red', padding: '8px' },
+    });
+    const parts = button.base.split(' ');
+    expect(parts).toHaveLength(2);
+    for (const p of parts) {
+      expect(p).toMatch(/^x-[a-z0-9]+$/);
+    }
   });
 
   it('styles.class respects naming mode', () => {

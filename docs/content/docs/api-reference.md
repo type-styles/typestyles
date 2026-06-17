@@ -31,7 +31,7 @@ per package or micro-frontend for isolation.
 
 ### `createStyles(options?)`
 
-Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'atomic'`), `prefix`, `scopeId`. Optionally pass **`utils`** — a map of shorthand expanders — to get a utility-aware API in one step (same typing as `styles.withUtils(…)`; see [Styles](/docs/styles#utility-shortcuts)). Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)).
+Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'compact' | 'atomic'`), `prefix`, `scopeId`. Optionally pass **`utils`** — a map of shorthand expanders — to get a utility-aware API in one step (same typing as `styles.withUtils(…)`; see [Styles](/docs/styles#utility-shortcuts)). Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)).
 
 The default `import { styles } from 'typestyles'` is `createStyles()` with default options.
 
