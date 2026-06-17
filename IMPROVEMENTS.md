@@ -83,7 +83,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     cross-link from best-practices/performance pages (which currently just say
     "use inline styles").
 
-- [ ] **P1.9 — Streaming SSR story** (PR: )
+- [ ] **P1.9 — Streaming SSR story** (PR: #94)
   - Document streaming SSR (`renderToPipeableStream`) and RSC patterns against the
     request-scoped collection from P0.4; add helpers where they remove boilerplate.
   - Shipped: expanded [SSR guide](/docs/ssr) (request-safe collection, RSC decision
