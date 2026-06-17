@@ -130,7 +130,7 @@ Auto-generated documentation for all typestyles APIs.
   }
 
   apiDoc += `### \`createStyles(options?)\`\n\n`;
-  apiDoc += `Returns a new style API (same shape as \`styles\`) with its own class naming config. Pass \`Partial<ClassNamingConfig>\`: \`mode\` (\`'semantic' | 'hashed' | 'atomic'\`), \`prefix\`, \`scopeId\`. Optionally pass \`utils\` for shorthand expanders (same as \`styles.withUtils\`). Use one instance per package or micro-frontend.\n\n`;
+  apiDoc += `Returns a new style API (same shape as \`styles\`) with its own class naming config. Pass \`Partial<ClassNamingConfig>\`: \`mode\` (\`'semantic' | 'hashed' | 'compact' | 'atomic'\`), \`prefix\`, \`scopeId\`. Optionally pass \`utils\` for shorthand expanders (same as \`styles.withUtils\`). Use one instance per package or micro-frontend.\n\n`;
   apiDoc += `The default \`import { styles } from 'typestyles'\` is \`createStyles()\` with default options.\n\n`;
 
   // Document tokens

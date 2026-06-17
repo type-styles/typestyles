@@ -15,7 +15,7 @@ export function toKebabCase(prop: string): string {
 /**
  * Serialize a single CSS value. Numbers are treated as px for most properties.
  */
-function serializeValue(prop: string, value: string | number): string {
+export function serializeCSSValue(prop: string, value: string | number): string {
   if (typeof value === 'number') {
     if (value === 0) return '0';
     // Unitless properties that shouldn't get 'px'
@@ -23,6 +23,11 @@ function serializeValue(prop: string, value: string | number): string {
     return value + 'px';
   }
   return value;
+}
+
+/** One `prop: value` declaration string (no trailing semicolon). */
+export function formatDeclaration(prop: string, value: string | number): string {
+  return `${toKebabCase(prop)}: ${serializeCSSValue(prop, value)}`;
 }
 
 const unitlessProperties = new Set([
@@ -126,8 +131,7 @@ export function serializeStyle(selector: string, properties: CSSProperties): CSS
       }
     } else {
       // Regular CSS property
-      const kebabProp = toKebabCase(prop);
-      declarations.push(`${kebabProp}: ${serializeValue(prop, value as string | number)}`);
+      declarations.push(formatDeclaration(prop, value as string | number));
     }
   }
 
@@ -142,7 +146,7 @@ export function serializeStyle(selector: string, properties: CSSProperties): CSS
   return rules;
 }
 
-function resolveNestedSelector(parentSelector: string, key: string): string | null {
+export function resolveNestedSelector(parentSelector: string, key: string): string | null {
   // Parent placeholder anywhere in the key (e.g. `html[data-mode="dark"] &`, `.wrap &`).
   if (key.includes('&')) {
     return key.replace(/&/g, parentSelector);

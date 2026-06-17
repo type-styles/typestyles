@@ -9,18 +9,19 @@ import { trackEmittedClassName } from './registry';
  * - `semantic` — readable names like `button-base`, `button-intent-primary` (default).
  *   With `scopeId` set, names are prefixed with the sanitized scope: `my-ui-button-base`.
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
- * - `atomic` — hash-only names (shortest); same collision properties as `hashed` when `scopeId` differs.
+ * - `compact` — hash-only names (shortest) for whole style objects; same collision properties as `hashed` when `scopeId` differs.
+ * - `atomic` — one class per CSS declaration; identical declarations dedupe across the codebase.
  */
-export type ClassNamingMode = 'semantic' | 'hashed' | 'atomic';
+export type ClassNamingMode = 'semantic' | 'hashed' | 'compact' | 'atomic';
 
 export type ClassNamingConfig = {
   mode: ClassNamingMode;
-  /** Prefix for hashed / atomic output and for `hashClass`. Default `ts`. */
+  /** Prefix for hashed / compact / atomic output and for `hashClass`. Default `ts`. */
   prefix: string;
   /**
    * Package, app, or per-file id: same logical `styles.component` / `styles.class` name under different
    * scopes produces different classes — in `semantic` mode the sanitized scope is prefixed onto the
-   * class name (`my-ui-button-base`); in `hashed`/`atomic` mode it is mixed into the hash. This matches
+   * class name (`my-ui-button-base`); in `hashed`/`compact`/`atomic` mode it is mixed into the hash. This matches
    * how `tokens.create` scopes custom property names. In development, re-registering the same
    * scope + component name (e.g. HMR) clears prior rules instead of throwing. Use
    * `fileScopeId(import.meta)` for file-local isolation (CSS Modules–style).
@@ -117,8 +118,8 @@ function ownerKey(cfg: ClassNamingConfig, namespace: string): string {
 
 /**
  * The emitted class-name prefix shared by every class a `styles.component(namespace, …)`
- * call produces under this naming config (no leading dot). `null` in `atomic` mode —
- * hash-only names share no per-namespace prefix.
+ * call produces under this naming config (no leading dot). `null` in `compact`/`atomic` mode —
+ * hash-only names have no per-namespace prefix; atomic mode also omits a shared variant prefix.
  */
 export function emittedComponentClassPrefix(
   cfg: ClassNamingConfig,
@@ -149,7 +150,7 @@ export function buildSingleClassName(
   });
   const h = hashString(payload);
   const className =
-    cfg.mode === 'atomic'
+    cfg.mode === 'compact'
       ? `${cfg.prefix}-${h}`
       : `${cfg.prefix}-${sanitizeClassSegment(name)}-${h}`;
   trackEmittedClassName(className, ownerKey(cfg, name));
@@ -180,7 +181,7 @@ export function buildComponentClassName(
   });
   const h = hashString(payload);
   const className =
-    cfg.mode === 'atomic'
+    cfg.mode === 'compact'
       ? `${cfg.prefix}-${h}`
       : `${cfg.prefix}-${sanitizeClassSegment(namespace)}-${h}`;
   trackEmittedClassName(className, ownerKey(cfg, namespace));

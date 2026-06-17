@@ -435,7 +435,7 @@ High-level tradeoffs (details and nuance: [docs — framework comparison](./docs
 | Zero-runtime path          | Yes (opt-in build plugins)   | Compiler default   | Varies                      | Build output | Always           | Always      | Build output    |
 | SSR support                | Yes                          | Yes                | Yes                         | Yes          | Yes              | Yes         | Yes             |
 | Runtime overhead           | Minimal (off when extracted) | None               | Moderate                    | Low–none     | None             | None        | None            |
-| Main entry size (gzip)     | ~14.9 KB                     | N/A (compile-time) | ~12 KB+ (varies)            | Build output | N/A              | N/A         | N/A             |
+| Main entry size (gzip)     | ~15.3 KB                     | N/A (compile-time) | ~12 KB+ (varies)            | Build output | N/A              | N/A         | N/A             |
 
 Color helpers (`rgb`, `oklch`, `mix`, …) live on `typestyles/color` so the common import path stays smaller. CI enforces a gzip budget on `dist/index.js`.
 

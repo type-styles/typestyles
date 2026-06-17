@@ -16,15 +16,11 @@ import type {
   MultiSlotConfigInput,
   MultiSlotReturn,
 } from './types';
-import { serializeStyle } from './css';
 import { insertRules, invalidateComponentNamespaceForDev } from './sheet';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { registeredNamespaces } from './registry';
-import {
-  buildComponentClassName,
-  emittedComponentClassPrefix,
-  type ClassNamingConfig,
-} from './class-naming';
+import { emittedComponentClassPrefix, type ClassNamingConfig } from './class-naming';
+import { classNamesAndRulesForProperties } from './atomic-decompose';
 import { createComponentConfigContextPair } from './component-config-context';
 
 // ---------------------------------------------------------------------------
@@ -335,9 +331,16 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   // 1. Base
   let baseClassName: string | undefined;
   if (base) {
-    baseClassName = buildComponentClassName(classNaming, namespace, 'base', base);
+    const emitted = classNamesAndRulesForProperties(
+      classNaming,
+      base,
+      namespace,
+      'base',
+      'component',
+    );
+    baseClassName = emitted.classNames;
     classMap['base'] = baseClassName;
-    rules.push(...serializeStyle(`.${baseClassName}`, base));
+    rules.push(...emitted.rules);
   }
 
   // 2. Variant options
@@ -345,10 +348,16 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   for (const [dimension, options] of Object.entries(variants)) {
     for (const [option, properties] of Object.entries(options as Record<string, CSSProperties>)) {
       const segment = `${dimension}-${option}`;
-      const className = buildComponentClassName(classNaming, namespace, segment, properties);
-      variantClassByKey[segment] = className;
-      classMap[segment] = className;
-      rules.push(...serializeStyle(`.${className}`, properties));
+      const emitted = classNamesAndRulesForProperties(
+        classNaming,
+        properties,
+        namespace,
+        segment,
+        'component',
+      );
+      variantClassByKey[segment] = emitted.classNames;
+      classMap[segment] = emitted.classNames;
+      rules.push(...emitted.rules);
     }
   }
 
@@ -356,14 +365,15 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   const compoundClassByIndex: string[] = [];
   (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
     (cv, index) => {
-      const className = buildComponentClassName(
+      const emitted = classNamesAndRulesForProperties(
         classNaming,
+        cv.style,
         namespace,
         `compound-${index}`,
-        cv.style,
+        'component',
       );
-      compoundClassByIndex[index] = className;
-      rules.push(...serializeStyle(`.${className}`, cv.style));
+      compoundClassByIndex[index] = emitted.classNames;
+      rules.push(...emitted.rules);
     },
   );
 
@@ -457,9 +467,15 @@ function createFlatComponent<K extends string>(
     if (RESERVED_KEYS.has(key) && key !== 'base') continue;
     const props = properties as CSSProperties;
     const segment = key;
-    const className = buildComponentClassName(classNaming, namespace, segment, props);
-    classMap[segment] = className;
-    rules.push(...serializeStyle(`.${className}`, props));
+    const emitted = classNamesAndRulesForProperties(
+      classNaming,
+      props,
+      namespace,
+      segment,
+      'component',
+    );
+    classMap[segment] = emitted.classNames;
+    rules.push(...emitted.rules);
     if (key !== 'base') {
       variantKeys.push(key);
     }
@@ -510,9 +526,15 @@ function createMultiSlotComponent<Slots extends readonly string[]>(
   for (const slot of slots) {
     const properties = (config as Record<string, CSSProperties | undefined>)[slot];
     if (properties) {
-      const className = buildComponentClassName(classNaming, namespace, slot, properties);
-      slotClassMap[slot] = className;
-      rules.push(...serializeStyle(`.${className}`, properties));
+      const emitted = classNamesAndRulesForProperties(
+        classNaming,
+        properties,
+        namespace,
+        slot,
+        'component',
+      );
+      slotClassMap[slot] = emitted.classNames;
+      rules.push(...emitted.rules);
     } else {
       slotClassMap[slot] = '';
     }
@@ -577,9 +599,15 @@ function createSlotComponent<
 
   const baseClassBySlot: Record<string, string> = {};
   for (const [slot, properties] of Object.entries(base as Record<string, CSSProperties>)) {
-    const className = buildComponentClassName(classNaming, namespace, slot, properties);
-    baseClassBySlot[slot] = className;
-    rules.push(...serializeStyle(`.${className}`, properties));
+    const emitted = classNamesAndRulesForProperties(
+      classNaming,
+      properties,
+      namespace,
+      slot,
+      'component',
+    );
+    baseClassBySlot[slot] = emitted.classNames;
+    rules.push(...emitted.rules);
   }
 
   const variantClassByKey: Record<string, string> = {};
@@ -589,9 +617,15 @@ function createSlotComponent<
     )) {
       for (const [slot, properties] of Object.entries(slotStyles)) {
         const segment = `${slot}-${dimension}-${option}`;
-        const className = buildComponentClassName(classNaming, namespace, segment, properties);
-        variantClassByKey[segment] = className;
-        rules.push(...serializeStyle(`.${className}`, properties));
+        const emitted = classNamesAndRulesForProperties(
+          classNaming,
+          properties,
+          namespace,
+          segment,
+          'component',
+        );
+        variantClassByKey[segment] = emitted.classNames;
+        rules.push(...emitted.rules);
       }
     }
   }
@@ -605,9 +639,15 @@ function createSlotComponent<
   ).forEach((cv, index) => {
     for (const [slot, properties] of Object.entries(cv.style)) {
       const segment = `${slot}-compound-${index}`;
-      const className = buildComponentClassName(classNaming, namespace, segment, properties);
-      slotCompoundClassByKey[`${slot}::${index}`] = className;
-      rules.push(...serializeStyle(`.${className}`, properties));
+      const emitted = classNamesAndRulesForProperties(
+        classNaming,
+        properties,
+        namespace,
+        segment,
+        'component',
+      );
+      slotCompoundClassByKey[`${slot}::${index}`] = emitted.classNames;
+      rules.push(...emitted.rules);
     }
   });
 

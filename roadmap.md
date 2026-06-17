@@ -78,10 +78,12 @@ Goal: support the full range of real-world CSS authoring (semantic classes, util
    - Add slot/multipart recipe support (e.g. `root`, `trigger`, `content`).
    - Document styling with `data-part` and `data-state` for headless UI patterns.
 
-4. **Class naming modes (M4)** — _in progress_
-   - Shipped: `configureClassNaming({ mode: 'semantic' | 'hashed' | 'atomic', prefix?, scopeId? })` for `styles.create` / `styles.class` / `styles.component` (and slot recipes); optional `scopeId` for monorepos; `styles.hashClass` uses configured `prefix` and optional `scopeId` in the hash input.
+4. **Class naming modes (M4)** — _shipped_
+   - Shipped: `configureClassNaming({ mode: 'semantic' | 'hashed' | 'compact' | 'atomic', prefix?, scopeId? })` for `styles.create` / `styles.class` / `styles.component` (and slot recipes); optional `scopeId` for monorepos; `styles.hashClass` uses configured `prefix` and optional `scopeId` in the hash input.
+   - `compact` — hash-only whole-object classes (formerly misnamed `atomic`).
+   - `atomic` — per-declaration classes with cross-component dedup (P2.10).
    - Docs: `docs/content/docs/class-naming.md` (and sidebar “Class naming”); cross-links from Styles, Recipes, API Reference, Testing.
-   - Still open: build/plugin integration if class names must be known at compile time, true per-property atomic splitting (see §6).
+   - Still open: build/plugin integration if class names must be known at compile time.
 
 5. **Linting and migration tooling (M5)**
    - Add optional lint rules for naming conventions and selector/state pitfalls.
@@ -108,13 +110,13 @@ Goal: support the full range of real-world CSS authoring (semantic classes, util
 - Add `styles.hashClass(style, label?)` as an opt-in API for deterministic hashed class names.
 - Goal: unlock StyleX/emotion-like ergonomics without changing `styles.create` semantics.
 - Initial scope (prototype):
-  - Hash full style objects into one class (not atomic splitting yet).
+  - Hash full style objects into one class (not atomic splitting yet) — use `compact` mode.
   - Keep compatibility with runtime and build extraction paths.
   - Optional label for debuggability in class output.
-- Follow-up work:
-  - Add collision tests + explicit development warnings.
-  - Add HMR invalidation support in bundler plugins for hash-based keys.
-  - Explore atomic decomposition as a second phase (`styles.atomic` candidate).
+- Shipped follow-up:
+  - `atomic` mode — per-declaration decomposition with dedup (P2.10).
+  - Collision tests + explicit development warnings.
+  - HMR invalidation support in bundler plugins for hash-based keys.
 
 ### 7. Framework-Specific Packages
 

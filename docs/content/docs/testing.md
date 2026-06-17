@@ -157,7 +157,7 @@ it('matches snapshot', () => {
 
 ### Class naming mode
 
-If you use [hashed or atomic class naming](/docs/class-naming) in tests, prefer a dedicated **`createStyles({ mode, prefix, scopeId })`** instance in that file so naming options never leak. The default **`import { styles } from 'typestyles'`** is a single shared instance. Always call **`reset()`** (from `typestyles`) in `beforeEach` when tests inject CSS. Assertions that depend on exact class strings may need snapshots or prefix-based checks when `mode` is not `semantic`.
+If you use [hashed, compact, or atomic class naming](/docs/class-naming) in tests, prefer a dedicated **`createStyles({ mode, prefix, scopeId })`** instance in that file so naming options never leak. The default **`import { styles } from 'typestyles'`** is a single shared instance. Always call **`reset()`** (from `typestyles`) in `beforeEach` when tests inject CSS. Assertions that depend on exact class strings may need snapshots or prefix-based checks when `mode` is not `semantic`.
 
 ## CSS testing strategies
 
