@@ -156,7 +156,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     emit TS errors for unknown keys; dev-mode `console.error` for dynamic mismatches.
   - Effort: Medium (generic gymnastics on the overload; runtime change is small).
 
-- [ ] **P3.23 — `tokens.use` type inference**
+- [ ] **P3.23 — `tokens.use` type inference** (PR: )
   - `tokens.use<T>('ns')` defaults to `TokenValues` (untyped). Cross-package consumers
     must manually sync a type annotation that rots as tokens change upstream.
   - Scope: export a `TokenRef<typeof created>` from `tokens.create`; make `tokens.use`
