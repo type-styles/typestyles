@@ -14,6 +14,8 @@ import type {
   SlotComponentFunction,
   MultiSlotConfigInput,
   MultiSlotReturn,
+  RegisteredPropertyOptions,
+  RegisteredPropertyRef,
 } from './types';
 import { serializeStyle } from './css';
 import { insertRules } from './sheet';
@@ -30,6 +32,7 @@ import {
 } from './class-naming';
 import { decomposeAtomicStyle, classNamesAndRulesForProperties } from './atomic-decompose';
 import { createComponent } from './component';
+import { createStylesPropertyFn } from './registered-property';
 import {
   container as containerQuery,
   createContainerRef,
@@ -255,6 +258,11 @@ export type StylesApi = {
    * Nested `&:where(…)` keys — zero-specificity defaults (same as the `where` export).
    */
   readonly where: typeof whereNested;
+  /**
+   * Register a standalone CSS custom property (optionally with `@property` when `syntax` is set).
+   * Returns `{ name, var, toString }` for use in style values and variant overrides.
+   */
+  property: (id: string, options?: RegisteredPropertyOptions) => RegisteredPropertyRef;
   class: (name: string, properties: CSSProperties) => string;
   hashClass: (properties: CSSProperties, label?: string) => string;
   component: {
@@ -463,6 +471,8 @@ function buildStylesRuntimeApi(
       prefix: classNaming.prefix,
     });
 
+  const property = createStylesPropertyFn(classNaming);
+
   if (layered) {
     return {
       classNaming,
@@ -472,6 +482,7 @@ function buildStylesRuntimeApi(
       has: hasNested,
       is: isNested,
       where: whereNested,
+      property,
       class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
         const layer = options.layer;
         return createClass(classNaming, name, properties, layer);
@@ -495,6 +506,7 @@ function buildStylesRuntimeApi(
     has: hasNested,
     is: isNested,
     where: whereNested,
+    property,
     class: (name: string, properties: CSSProperties) => createClass(classNaming, name, properties),
     hashClass: (properties: CSSProperties, label?: string) =>
       createHashClass(classNaming, properties, label),

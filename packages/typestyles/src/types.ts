@@ -83,12 +83,23 @@ export type StyleDefinitionsWithUtils<U extends StyleUtils> = Record<
 export type StyleDefinitions = Record<string, CSSProperties>;
 
 /**
- * A token value can be a string/number or a nested object of token values.
+ * Opt-in leaf shape for `tokens.create` — registers `@property` when `syntax` is set
+ * and returns a `{ name, var, toString }` ref instead of a plain `var(...)` string.
+ */
+export type TokenDescriptor = {
+  value: string | number;
+  syntax?: string;
+  inherits?: boolean;
+};
+
+/**
+ * A token value can be a string/number, a typed descriptor leaf, or a nested object.
  * Supports arbitrarily deep nesting for hierarchical token structures.
  */
 export type TokenValues =
   | string
   | number
+  | TokenDescriptor
   | {
       [key: string]: TokenValues;
     };
@@ -106,6 +117,17 @@ export type FlatTokenEntry = [key: string, value: string];
  * flattenTokens({ text: { primary: '#000' } })
  * // => [['text-primary', '#000']]
  */
+export function isTokenDescriptor(value: unknown): value is TokenDescriptor {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'value' in value &&
+    (typeof (value as TokenDescriptor).value === 'string' ||
+      typeof (value as TokenDescriptor).value === 'number') &&
+    !Array.isArray(value)
+  );
+}
+
 export function flattenTokenEntries(obj: TokenValues, prefix = ''): FlatTokenEntry[] {
   const entries: FlatTokenEntry[] = [];
 
@@ -120,11 +142,20 @@ export function flattenTokenEntries(obj: TokenValues, prefix = ''): FlatTokenEnt
     return entries;
   }
 
+  if (isTokenDescriptor(obj)) {
+    if (prefix) {
+      entries.push([prefix, String(obj.value)]);
+    }
+    return entries;
+  }
+
   for (const [key, value] of Object.entries(obj)) {
     const newKey = prefix ? `${prefix}-${key}` : key;
 
     if (typeof value === 'string' || typeof value === 'number') {
       entries.push([newKey, String(value)]);
+    } else if (isTokenDescriptor(value)) {
+      entries.push([newKey, String(value.value)]);
     } else if (value !== null && typeof value === 'object') {
       entries.push(...flattenTokenEntries(value as TokenValues, newKey));
     }
@@ -134,14 +165,42 @@ export function flattenTokenEntries(obj: TokenValues, prefix = ''): FlatTokenEnt
 }
 
 /**
- * A typed token reference object. Property access returns var(--namespace-key).
+ * Reference to a registered CSS custom property with `.name`, `.var`, and string coercion.
+ */
+export type RegisteredPropertyRef = {
+  readonly name: string;
+  readonly var: CSSVarRef;
+  toString(): string;
+  valueOf(): string;
+};
+
+/** Options for `styles.property(id, options?)`. */
+export type RegisteredPropertyOptions = {
+  value?: string | number;
+  syntax?: string;
+  inherits?: boolean;
+};
+
+type TokenRefLeaf<V> = V extends TokenDescriptor
+  ? RegisteredPropertyRef
+  : V extends string | number
+    ? string
+    : V extends TokenValues
+      ? TokenRef<V>
+      : string;
+
+/**
+ * A typed token reference object. Property access returns var(--namespace-key) strings
+ * or {@link RegisteredPropertyRef} for descriptor leaves.
  * Supports nested access: token.text.primary => var(--namespace-text-primary)
  */
 export type TokenRef<T extends TokenValues> = T extends string | number
   ? string
-  : {
-      readonly [K in keyof T]: T[K] extends TokenValues ? TokenRef<T[K]> : string;
-    };
+  : T extends TokenDescriptor
+    ? RegisteredPropertyRef
+    : {
+        readonly [K in keyof T]: TokenRefLeaf<T[K]>;
+      };
 
 declare const CreatedTokenBrand: unique symbol;
 
@@ -382,10 +441,7 @@ export type ComponentVarOptions = {
 /**
  * Reference to a component-scoped custom property: `.name` for declaration keys and transitions, `.var` for values.
  */
-export type ComponentInternalVarRef = {
-  readonly name: string;
-  readonly var: CSSVarRef;
-};
+export type ComponentInternalVarRef = RegisteredPropertyRef;
 
 /**
  * Context passed to `styles.component(namespace, (ctx) => { ... })` to declare internal custom properties.
