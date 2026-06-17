@@ -102,7 +102,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
         detection (we do nothing today; StyleX errors), invalid unitless values,
         duplicate namespace literals.
 
-- [x] **P2.12 — Integration parity + honest claims** (PR: )
+- [x] **P2.12 — Integration parity + honest claims** (PR: #97)
   - [x] Rollup plugin: convention-entry discovery aligned with Vite/Next defaults
   - [x] Ship `@typestyles/esbuild` and `@typestyles/webpack` for zero-runtime extraction
   - [x] README clarifies runtime vs extraction; documents new bundler plugins
