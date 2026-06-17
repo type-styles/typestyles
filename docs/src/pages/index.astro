@@ -7,7 +7,11 @@ import { getAllDocs } from '../lib/docs';
 const docs = await getAllDocs();
 const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.slug, title: doc.title }]));
 
-const heroSample = `import { styles, tokens } from 'typestyles';
+const heroSample = `import { createTypeStyles } from 'typestyles';
+
+const { styles, tokens } = createTypeStyles({
+  scopeId: 'app',
+});
 
 const color = tokens.create('color', { accent: '#2563eb' });
 
@@ -166,11 +170,12 @@ const frameworks = ['Vite', 'Next.js', 'Astro', 'Rollup'];
           </p>
         </article>
         <article class={home.benefitCard}>
-          <p class={home.benefitNumber}>03 — Runtime</p>
-          <h3 class={home.benefitTitle}>Lean output, predictable shape</h3>
+          <p class={home.benefitNumber}>03 — Zero runtime</p>
+          <h3 class={home.benefitTitle}>Static CSS in production</h3>
           <p class={home.benefitText}>
-            No heavyweight styled-runtime in the browser: styles register up front, CSS injects when
-            needed, and the runtime story stays small compared to classic CSS-in-JS.
+            Bundler plugins for Vite, Next.js, Rollup, esbuild, and webpack extract styles at build
+            time into a plain <code>.css</code> file. No runtime injection, no <code>&lt;style&gt;</code>
+            tags — just cached CSS. Use the runtime in dev for instant HMR.
           </p>
         </article>
       </div>

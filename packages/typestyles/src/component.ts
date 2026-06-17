@@ -18,7 +18,7 @@ import type {
 } from './types';
 import { insertRules, invalidateComponentNamespaceForDev } from './sheet';
 import { applyLayerToRules, assertOwnLayer } from './layers';
-import { registeredNamespaces } from './registry';
+import { registeredNamespaces, warnUnscopedCollision } from './registry';
 import { emittedComponentClassPrefix, type ClassNamingConfig } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
 import { createComponentConfigContextPair } from './component-config-context';
@@ -296,6 +296,9 @@ function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: stri
 function claimComponentNamespace(classNaming: ClassNamingConfig, namespace: string): void {
   const key = registryKeyForComponent(classNaming, namespace);
   if (process.env.NODE_ENV !== 'production' && registeredNamespaces.has(key)) {
+    if (!classNaming.scopeId) {
+      warnUnscopedCollision(namespace, 'styles.component');
+    }
     invalidateComponentNamespaceForDev(
       namespace,
       emittedComponentClassPrefix(classNaming, namespace) ?? undefined,

@@ -179,9 +179,119 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     that returns a React component with typed variant props.
   - Effort: High (JSX transform, Babel/SWC plugin for zero-runtime css prop).
 
+## P3.5 — Competitive positioning
+
+Tasks that address specific gaps surfaced in comparison against StyleX, Vanilla
+Extract, Emotion, Panda CSS, and CSS Modules. These are the things an evaluator
+would notice in the first 30 minutes.
+
+- [x] **P3.5.1 — Zero-runtime-first docs and defaults** (PR: )
+  - The industry baseline in 2026 is zero-runtime. StyleX and Vanilla Extract
+    make it structurally impossible to ship runtime injection. TypeStyles leads
+    with the runtime path — getting-started, examples, and the landing page all
+    show runtime usage. An evaluator's first impression is "another runtime
+    CSS-in-JS library."
+  - Scope: restructure the getting-started guide to lead with build extraction
+    (Vite plugin example first, runtime as "quick prototyping" secondary). Update
+    the landing page hero to show the extraction flow. Make the `examples/`
+    directory default to extraction-enabled configs. Add a "Why zero-runtime
+    matters" callout early in the docs funnel.
+  - Non-goal: remove runtime support. The dual mode is a strength — it just
+    shouldn't be the first thing people see.
+  - Effort: Low-Medium (docs restructure, example config changes, no runtime
+    code changes).
+
+- [x] **P3.5.2 — scopeId collision guardrails** (PR: )
+  - Semantic class names (`button-base`) collide across packages when `scopeId`
+    is omitted. P0.1 fixed scopeId propagation, but nothing warns when it's
+    missing. StyleX and CSS Modules make collisions structurally impossible.
+  - Scope: add a dev-mode warning when two `styles.component()` or
+    `styles.class()` calls register the same namespace without a `scopeId`.
+    Emit once per duplicate pair (not per render). In `createTypeStyles()` and
+    `createStyles()`, require `scopeId` when the code is inside `node_modules/`
+    (detectable at registration time via stack trace or build plugin metadata).
+    Document the collision model and when `scopeId` is required on the
+    best-practices page.
+  - Effort: Low (registry already tracks namespaces; add a `Set` check + dev
+    warning).
+
+- [ ] **P3.5.3 — Comparative benchmark suite** (PR: )
+  - TypeStyles has no published performance data. The README comparison table
+    makes claims (bundle size, features) without evidence. An evaluator who
+    cares about performance will go to StyleX's benchmarks and find nothing
+    comparable here.
+  - Scope: build a benchmark harness that measures: (1) initial CSS generation
+    time for N components, (2) extracted CSS file size for a reference app
+    (atomic vs semantic vs hashed), (3) runtime injection latency (time from
+    module load to styles in CSSOM), (4) SSR collection overhead per request.
+    Run the same reference app through StyleX, Vanilla Extract, and Emotion for
+    apples-to-apples comparison. Publish results in the docs and keep the
+    harness in CI so numbers stay current.
+  - Effort: High (harness authoring, multi-framework setup, ongoing
+    maintenance).
+
+- [ ] **P3.5.4 — VS Code extension MVP** (PR: )
+  - Vanilla Extract and StyleX both have VS Code extensions. TypeStyles has
+    none. Missing editor tooling is a visible gap in the first-use experience.
+  - Scope: ship `@typestyles/vscode` with: (1) hover preview showing the
+    emitted CSS for a `styles.component()` or `styles.class()` call, (2) token
+    value previews with color swatches for `tokens.create()` color values,
+    (3) go-to-definition from class name usage to the component/class
+    definition. Stretch: inline CSS property documentation on hover.
+  - Effort: High (Language Server Protocol setup, AST analysis, extension
+    packaging). Promoted from P4 — this is table stakes for adoption, not a
+    nice-to-have.
+
+- [ ] **P3.5.5 — Honest comparison page with methodology** (PR: )
+  - The current framework comparison table is self-authored with no
+    methodology. Evaluators discount self-reported comparisons. StyleX publishes
+    benchmark methodology; Panda CSS links to third-party comparisons.
+  - Scope: replace the current comparison table with a page that (1) links to
+    the benchmark harness from P3.5.3, (2) states methodology for each claim
+    (how bundle size is measured, what "zero-runtime" means in each framework's
+    context), (3) honestly documents where TypeStyles is weaker (maturity,
+    community size, atomic mode battle-testing). A comparison that acknowledges
+    weaknesses is more credible than one that doesn't.
+  - Effort: Low-Medium (writing, depends on P3.5.3 for benchmark data).
+
+- [ ] **P3.5.6 — Contributor onboarding** (PR: )
+  - Sole-maintainer risk is the #1 concern for adopters. Even if contributor
+    count doesn't change overnight, visible onboarding infrastructure signals
+    that the project is designed for community ownership.
+  - Scope: add `CONTRIBUTING.md` with architecture tour (link to
+    `ARCHITECTURE.md`), local dev setup, PR conventions, and test expectations.
+    Label 10+ issues as `good first issue` across the package spectrum (core,
+    docs, eslint-plugin, bundler plugins). Add a "Contributing" section to the
+    docs site. Set up issue templates for bug reports and feature requests.
+  - Effort: Low (writing + issue triage, no code changes).
+
+- [ ] **P3.5.7 — Package naming mode defaults for libraries** (PR: )
+  - Semantic naming is great for app code but dangerous for published packages.
+    Two npm packages using `styles.component('button', ...)` without `scopeId`
+    collide silently. The docs don't guide library authors toward safe defaults.
+  - Scope: add a "Publishing a package with TypeStyles" guide that recommends
+    `createTypeStyles({ scopeId: pkg.name, mode: 'hashed' })` for library
+    code. Add an ESLint rule (`@typestyles/no-default-scope-in-package`) that
+    warns when `styles.component()` / `styles.class()` is used without a scoped
+    factory inside a directory with a `package.json`. Consider making `hashed`
+    the default mode when `scopeId` is set.
+  - Effort: Low-Medium (docs + one ESLint rule).
+
+- [ ] **P3.5.8 — Atomic mode hardening** (PR: )
+  - Atomic mode was added in P2.10 but is young compared to StyleX's years of
+    production use. Teams evaluating TypeStyles specifically for atomic output
+    need confidence it handles edge cases.
+  - Scope: add stress tests for atomic dedup covering: (1) identical
+    declarations across 100+ components, (2) shorthand/longhand conflicts in
+    atomic decomposition (`padding` vs `paddingTop`), (3) at-rule scoped
+    atomics (`@media` wrapped declarations), (4) deterministic ordering under
+    parallel build extraction, (5) interaction with cascade layers. Add a
+    "Known limitations" section to the atomic mode docs that honestly documents
+    what hasn't been tested at scale.
+  - Effort: Medium (test authoring + edge case investigation).
+
 ## P4 — Future (unscheduled)
 
-- VS Code extension: hover preview of emitted CSS, token autocomplete with swatches
 - Editable playground/REPL
 - Recipes/cookbook section (resurrect the `recipes.astro` redirect)
 - W3C Design Tokens import + Figma sync

@@ -3,29 +3,55 @@ title: Getting Started
 description: Install TypeStyles and ship your first typed component styles in a few minutes
 ---
 
-TypeStyles is **CSS in TypeScript**: style objects (selectors, media queries, pseudos), **typed variants**, **tokens as CSS variables**, and ordinary `className` strings in React, Vue, Svelte, or HTML. No compiler is required for the default runtime path.
+TypeStyles is **CSS in TypeScript**: style objects (selectors, media queries, pseudos), **typed variants**, **tokens as CSS variables**, and ordinary `className` strings in React, Vue, Svelte, or HTML.
 
-You need **TypeScript** and a bundler or runtime that resolves `node_modules` (Vite, webpack, Next.js, and others work; no TypeStyles-specific loader for the default path).
+In production, TypeStyles extracts styles at build time into a **static CSS file** with zero runtime overhead — the same approach as StyleX and Vanilla Extract. During development, the runtime injects styles for instant feedback with HMR.
 
 ## Installation
 
 <!-- doc-install-tabs -->
 
 ```bash
-pnpm add typestyles
+pnpm add typestyles @typestyles/vite
 ```
 
 ```bash
-npm install typestyles
+npm install typestyles @typestyles/vite
 ```
 
 ```bash
-yarn add typestyles
+yarn add typestyles @typestyles/vite
 ```
 
 <!-- /doc-install-tabs -->
 
-**Optional — Vite:** for dev HMR and build-time CSS extraction, add [`@typestyles/vite`](/docs/vite-plugin). Other bundlers: [Zero-runtime extraction](/docs/zero-runtime).
+The bundler plugin gives you **zero-runtime production builds** and **HMR in dev**. Plugins are also available for [Next.js](/docs/zero-runtime#nextjs), [Rollup](/docs/zero-runtime#rollup--rolldown), [esbuild](/docs/zero-runtime#esbuild), and [webpack](/docs/zero-runtime#webpack).
+
+> **Prototyping without a plugin?** TypeStyles also works as a pure runtime library — just `npm install typestyles` and skip the plugin. You can add build extraction later without changing any application code. See [Zero-runtime extraction](/docs/zero-runtime#switching-between-modes) for the migration path.
+
+## Set up the Vite plugin
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import typestyles from '@typestyles/vite';
+
+export default defineConfig({
+  plugins: [react(), typestyles()],
+});
+```
+
+Create a **convention entry** that imports all your style registrations. The plugin discovers it automatically and extracts CSS on `vite build`:
+
+```ts
+// src/typestyles-entry.ts
+import './tokens';
+import './components/Button.styles';
+import './components/Card.styles';
+```
+
+That's it. In dev you get runtime injection + HMR. In production, `typestyles.css` is emitted as a static asset with no runtime JS.
 
 ## Your first styles
 
@@ -35,7 +61,7 @@ Use [`createTypeStyles`](/docs/api-reference#createtypestyles-options) once so `
 
 Toggle **Ghost** in the demo and check the **DOM** and **Emitted CSS** panels (or DevTools on the preview button). Scoped class names are prefixed with your `scopeId`, and token-backed values resolve to custom properties such as `--app-color-primary`.
 
-**What just happened:** definitions register when the module loads; the first time a class is used, TypeStyles injects rules into a managed `<style>` tag. For SSR, streaming, or static CSS in production, see [SSR](/docs/ssr) and [Zero-runtime extraction](/docs/zero-runtime).
+**What just happened:** definitions register when the module loads. In dev, the runtime injects CSS rules into a managed `<style>` tag. In production with a bundler plugin, these same rules are extracted into a static `.css` file — no client-side injection at all. See [Zero-runtime extraction](/docs/zero-runtime) for the full story.
 
 For React-specific patterns (refs, merging `className`, server components), see [React integration](/docs/react-integration). Vue and Svelte work the same way — see the runnable examples below.
 
@@ -43,13 +69,13 @@ For React-specific patterns (refs, merging `className`, server components), see 
 
 Clone the [typestyles monorepo](https://github.com/type-styles/typestyles) and run from the repo root (`pnpm install` once):
 
-| Example                                   | Command               | README                                                                                                   |
-| ----------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------- |
-| Vite + React (recommended starting point) | `pnpm vite-app dev`   | [examples/vite-app](https://github.com/type-styles/typestyles/blob/main/examples/vite-app/README.md)     |
-| Next.js App Router + extraction verify    | `pnpm next-app dev`   | [examples/next-app](https://github.com/type-styles/typestyles/blob/main/examples/next-app/README.md)     |
-| Vue 3                                     | `pnpm vue-app dev`    | [examples/vue-app](https://github.com/type-styles/typestyles/blob/main/examples/vue-app/README.md)       |
-| Svelte 5                                  | `pnpm svelte-app dev` | [examples/svelte-app](https://github.com/type-styles/typestyles/blob/main/examples/svelte-app/README.md) |
-| Runtime only (no bundler plugin)          | `pnpm parcel-app dev` | [examples/parcel-app](https://github.com/type-styles/typestyles/blob/main/examples/parcel-app/README.md) |
+| Example                                                | Command               | README                                                                                                   |
+| ------------------------------------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------- |
+| Vite + React (recommended, zero-runtime in production) | `pnpm vite-app dev`   | [examples/vite-app](https://github.com/type-styles/typestyles/blob/main/examples/vite-app/README.md)     |
+| Next.js App Router + extraction verify                 | `pnpm next-app dev`   | [examples/next-app](https://github.com/type-styles/typestyles/blob/main/examples/next-app/README.md)     |
+| Vue 3                                                  | `pnpm vue-app dev`    | [examples/vue-app](https://github.com/type-styles/typestyles/blob/main/examples/vue-app/README.md)       |
+| Svelte 5                                               | `pnpm svelte-app dev` | [examples/svelte-app](https://github.com/type-styles/typestyles/blob/main/examples/svelte-app/README.md) |
+| Runtime only (no bundler plugin)                       | `pnpm parcel-app dev` | [examples/parcel-app](https://github.com/type-styles/typestyles/blob/main/examples/parcel-app/README.md) |
 
 Full index: [examples/README.md](https://github.com/type-styles/typestyles/blob/main/examples/README.md) · maintainer map: [docs/README.md](https://github.com/type-styles/typestyles/blob/main/docs/README.md#doc-pages-and-runnable-examples)
 
@@ -57,6 +83,7 @@ Full index: [examples/README.md](https://github.com/type-styles/typestyles/blob/
 
 | Topic                                              | What you will learn                                                               |
 | -------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [Zero-runtime extraction](/docs/zero-runtime)      | Production static CSS with Vite, Next.js, Rollup, esbuild, webpack                |
 | [Styles](/docs/styles)                             | Flat vs dimensioned `styles.component`, `styles.class`, composition, mental model |
 | [Components](/docs/components)                     | Variants, compounds, multipart `slots`                                            |
 | [Tokens](/docs/tokens)                             | Namespaces, themes, `tokens.use`                                                  |
