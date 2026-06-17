@@ -6,8 +6,11 @@ function camelCaseProperty(property: string): string {
   return property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 }
 
-function toValueNode(value: string): t.Expression {
+function toValueNode(value: string, varReplacements?: Map<string, t.Identifier>): t.Expression {
   const trimmed = value.trim();
+  if (varReplacements?.has(trimmed)) {
+    return varReplacements.get(trimmed)!;
+  }
   if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
     return t.numericLiteral(Number(trimmed));
   }
@@ -24,18 +27,21 @@ function toKeyNode(key: string): t.Expression {
 function nodesToObject(
   nodes: ChildNode[] | undefined,
   warnings: MigrationWarning[],
+  varReplacements?: Map<string, t.Identifier>,
 ): t.ObjectExpression {
   const properties: t.ObjectProperty[] = [];
 
   for (const node of nodes ?? []) {
     if (node.type === 'decl') {
       const normalized = node.prop.startsWith('--') ? node.prop : camelCaseProperty(node.prop);
-      properties.push(t.objectProperty(toKeyNode(normalized), toValueNode(node.value)));
+      properties.push(
+        t.objectProperty(toKeyNode(normalized), toValueNode(node.value, varReplacements)),
+      );
       continue;
     }
 
     if (node.type === 'rule') {
-      const nested = nodesToObject(node.nodes, warnings);
+      const nested = nodesToObject(node.nodes, warnings, varReplacements);
       properties.push(t.objectProperty(t.stringLiteral(node.selector.trim()), nested));
       continue;
     }
@@ -51,10 +57,11 @@ function nodesToObject(
 export function cssToObjectExpression(
   cssText: string,
   warnings: MigrationWarning[],
+  varReplacements?: Map<string, t.Identifier>,
 ): t.ObjectExpression | null {
   try {
     const root = postcss.parse(cssText);
-    return nodesToObject((root as unknown as Container).nodes, warnings);
+    return nodesToObject((root as unknown as Container).nodes, warnings, varReplacements);
   } catch (error) {
     warnings.push({
       message: `Could not parse CSS template literal: ${(error as Error).message}`,

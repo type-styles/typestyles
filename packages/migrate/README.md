@@ -8,12 +8,13 @@ Full migration guide: [typestyles.dev/docs/migration](https://typestyles.dev/doc
 
 ## What it transforms
 
-| Source                   | Becomes                                             |
-| ------------------------ | --------------------------------------------------- |
-| `styled.div\`...\``      | `styles.class('div', { ... })` + `className` on JSX |
-| `styled(Button)\`...\``  | `styles.class('button', { ... })` + `className`     |
-| `` css`...` `` (Emotion) | `styles.class(...)`                                 |
-| Static template literals | CSS object properties (via PostCSS parser)          |
+| Source                      | Becomes                                             |
+| --------------------------- | --------------------------------------------------- |
+| `styled.div\`...\``         | `styles.class('div', { ... })` + `className` on JSX |
+| `styled(Button)\`...\``     | `styles.class('button', { ... })` + `className`     |
+| `` css`...` `` (Emotion)    | `styles.class(...)`                                 |
+| Static template literals    | CSS object properties (via PostCSS parser)          |
+| `` `${props => props.x}` `` | `createVar` + `assignVars` + `styles.class`         |
 
 The codemod rewrites JSX usage for styled components it can safely transform and adds the required `import { styles } from 'typestyles'`.
 
@@ -21,11 +22,11 @@ The codemod rewrites JSX usage for styled components it can safely transform and
 
 Honest automation beats silent breakage:
 
-- **Template interpolations** — `` `${props => ...}` ``, theme access, and any dynamic expression inside backticks
+- **Unsupported interpolations** — theme access (`props.theme…`), conditionals, destructured params, and non-prop expressions
 - **Exported styled components** — avoids changing your public API shape without review
 - **Non-JSX references** to styled component variables
 
-Dynamic styles should become [`createVar` + `assignVars`](https://typestyles.dev/docs/css-variables) or inline styles. Interpolation support is planned ([P2.14](https://github.com/type-styles/typestyles/blob/main/IMPROVEMENTS.md)).
+Prop-based patterns like `` `${props => props.color}` `` and `` `${(props) => props.width}px` `` are converted to [`createVar` + `assignVars`](https://typestyles.dev/docs/dynamic-styles). Suffix text after the interpolation (e.g. `px`) is applied at the call site.
 
 ## Installation
 

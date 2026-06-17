@@ -1,9 +1,9 @@
 import styled from 'styled-components';
 
 const Button = styled.button`
-  color: ${(props) => props.color};
+  background: ${(props) => (props.primary ? '#0066ff' : '#6b7280')};
 `;
 
 export function App() {
-  return <Button />;
+  return <Button primary />;
 }

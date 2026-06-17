@@ -960,7 +960,8 @@ The `@typestyles/migrate` package includes an early CLI to help with static migr
 
 - Converts static tagged templates (`styled.*`, `styled(...)`, and `css\`...\``) into `styles.class(...)`.
 - Rewrites JSX usage for safely transformable styled components.
-- Skips dynamic template interpolations and emits warnings instead of doing unsafe rewrites.
+- Skips unsupported template interpolations (theme access, conditionals, etc.) and emits warnings instead of doing unsafe rewrites.
+- Converts prop-based interpolations such as `` `${props => props.color}` `` to `createVar` + `assignVars`.
 
 ### Usage
 
@@ -983,9 +984,11 @@ Useful options:
 
 ### Current limitations
 
-- Dynamic interpolations (for example `${(props) => ...}`) are intentionally not auto-migrated.
+- Theme access, conditionals, and other non-trivial interpolations are not auto-migrated.
 - Exported styled components are skipped to avoid accidental API-shape changes.
 - Complex non-JSX references to styled component variables are skipped.
+
+Prop-based interpolations (for example `` `${(props) => props.color}` `` or `` `${props => props.width}px` ``) are converted to `createVar` + `assignVars` at JSX call sites.
 
 ## Troubleshooting migration issues
 
