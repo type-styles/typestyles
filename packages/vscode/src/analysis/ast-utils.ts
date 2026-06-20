@@ -1,5 +1,6 @@
 import ts from 'typescript';
 import type { ClassNamingConfig } from './class-naming';
+import type { ThemeDefinition } from './theme-index';
 
 export type NamespaceKind =
   | 'styles.class'
@@ -52,6 +53,7 @@ export interface DocumentIndex {
   naming: ClassNamingConfig;
   registrations: StyleRegistration[];
   tokenNamespaces: TokenNamespace[];
+  themes: ThemeDefinition[];
   componentBindings: ComponentBinding[];
   classNameToRegistration: Map<string, StyleRegistration>;
 }
@@ -171,6 +173,20 @@ export function getNamespaceCall(node: ts.CallExpression, filePath: string): Nam
     }
   }
 
+  return null;
+}
+
+export function getObjectPropertyExpression(
+  prop: ts.ObjectLiteralElementLike,
+): { key: string; expression: ts.Expression } | null {
+  if (ts.isPropertyAssignment(prop)) {
+    const key = getStaticPropertyKey(prop);
+    if (!key) return null;
+    return { key, expression: prop.initializer };
+  }
+  if (ts.isShorthandPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+    return { key: prop.name.text, expression: prop.name };
+  }
   return null;
 }
 

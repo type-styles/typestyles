@@ -17,9 +17,10 @@ import {
   findEnclosingStyleRegistration,
   findPropertyAccessAt,
   findTokenLeafAtPosition,
-  findTokenLeafByPath,
+  buildTokenPreviewForLeaf,
+  buildTokenPreviewForReference,
 } from '../analysis/document-index';
-import { formatTokenLeafMarkdown } from '../analysis/token-preview';
+import { formatTokenPreviewMarkdown } from '../analysis/token-preview';
 
 export function registerHoverProvider(context: vscode.ExtensionContext): void {
   const selector: vscode.DocumentSelector = [
@@ -60,15 +61,16 @@ function provideTypestylesHover(
 
   const tokenLeaf = findTokenLeafAtPosition(index, offset);
   if (tokenLeaf) {
-    return markdownHover(formatTokenLeafMarkdown(tokenLeaf));
+    const preview = buildTokenPreviewForLeaf(index, tokenLeaf);
+    if (preview) return markdownHover(formatTokenPreviewMarkdown(preview));
   }
 
   const propertyAccess = findPropertyAccessAt(node);
   if (propertyAccess) {
     const path = propertyAccessPath(propertyAccess);
     if (path) {
-      const referenced = findTokenLeafByPath(index, path);
-      if (referenced) return markdownHover(formatTokenLeafMarkdown(referenced));
+      const preview = buildTokenPreviewForReference(index, path);
+      if (preview) return markdownHover(formatTokenPreviewMarkdown(preview));
     }
   }
 

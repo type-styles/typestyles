@@ -19,6 +19,7 @@ import {
   type TokenNamespace,
 } from './ast-utils';
 import type { StyleRecord } from './css-serialize';
+import { collectThemeDefinitions, resolveTokenPreview, type TokenPreview } from './theme-index';
 
 function inferNamingConfig(
   sourceFile: ts.SourceFile,
@@ -255,6 +256,7 @@ export function buildDocumentIndex(
   const naming = inferNamingConfig(sourceFile, options?.previewMode);
   const tokenValues = new Map<string, string>();
   const tokenNamespaces = collectTokenNamespaces(sourceFile, filePath, tokenValues);
+  const themes = collectThemeDefinitions(sourceFile, tokenValues);
   const registrations = collectStyleRegistrations(sourceFile, filePath);
   const componentBindings = collectComponentBindings(registrations);
   const classNameToRegistration = indexClassNames(registrations, naming, tokenValues);
@@ -264,6 +266,7 @@ export function buildDocumentIndex(
     naming,
     registrations,
     tokenNamespaces,
+    themes,
     componentBindings,
     classNameToRegistration,
   };
@@ -319,6 +322,36 @@ export function findTokenLeafByPath(index: DocumentIndex, path: string): TokenLe
     }
   }
   return null;
+}
+
+export function buildTokenPreview(
+  index: DocumentIndex,
+  path: readonly string[],
+  bindingName?: string,
+): TokenPreview | null {
+  return resolveTokenPreview(index.tokenNamespaces, index.themes, path, bindingName);
+}
+
+export function buildTokenPreviewForLeaf(
+  index: DocumentIndex,
+  leaf: TokenLeaf,
+): TokenPreview | null {
+  return resolveTokenPreview(index.tokenNamespaces, index.themes, leaf.path);
+}
+
+export function buildTokenPreviewForReference(
+  index: DocumentIndex,
+  path: string,
+): TokenPreview | null {
+  const parts = path.split('.');
+  if (parts.length >= 2) {
+    const [root, ...rest] = parts;
+    const bound = index.tokenNamespaces.find((ns) => ns.bindingName === root);
+    if (bound) {
+      return resolveTokenPreview(index.tokenNamespaces, index.themes, [bound.namespace, ...rest]);
+    }
+  }
+  return resolveTokenPreview(index.tokenNamespaces, index.themes, parts);
 }
 
 export function findComponentBindingAtCall(

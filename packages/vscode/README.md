@@ -17,7 +17,13 @@ Dynamic component configs (`styles.component('button', (c) => …)`) show an exp
 
 ### Token value previews
 
-Hover a color value inside `tokens.create()` or a token reference like `color.primary` to see the resolved value and an inline color swatch.
+Hover a color value inside `tokens.create()` or a token reference like `color.primary` to see:
+
+- Inline **color swatches** (SVG chips in the hover)
+- The resolved value and CSS variable name (`--color-primary`)
+- **All known values** when theme overrides exist in the same file — e.g. default `:root` plus dark/light layers from `tokens.createTheme()` / `tokens.colorMode.*`
+
+Try `docs/src/demos/theming-light-dark.ts`: hover `themeColor.primary` to see both the default and `.theme-dark` override.
 
 ### Go to definition
 
@@ -55,6 +61,7 @@ Not yet published — install from source or the release VSIX attached to the PR
 ## Limitations (MVP)
 
 - Analysis is per-file; cross-file go-to-definition for re-exported components is not supported yet
+- Theme mode previews require `tokens.createTheme()` (or `colorMode` presets) in the **same file** as the token definition
 - Previews require static style object literals (no runtime interpolations)
 - `atomic` / `compact` hashed previews use the configured preview mode, not live registry state
 
