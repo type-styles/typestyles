@@ -75,6 +75,7 @@
   "files": [
     "dist",
     "icon.png",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ]
 }
