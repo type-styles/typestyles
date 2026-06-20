@@ -7,7 +7,7 @@ import {
   buildTokenPreviewForLeaf,
   buildTokenPreviewForReference,
 } from './document-index';
-import { colorSwatchMarkdown, formatTokenPreviewMarkdown } from './token-preview';
+import { colorSwatchHtml, formatTokenPreviewMarkdown } from './token-preview';
 import { createSourceFile } from './ast-utils';
 import { collectThemeDefinitions } from './theme-index';
 
@@ -37,7 +37,9 @@ describe('theming-light-dark.ts integration', () => {
     expect(preview?.variants[1]).toMatchObject({ label: 'Theme base', value: '#66b3ff' });
 
     const markdown = formatTokenPreviewMarkdown(preview!);
-    expect(markdown).toContain('data:image/svg+xml');
+    expect(markdown).toContain('background-color:#0066ff');
+    expect(markdown).toContain('background-color:#66b3ff');
+    expect(markdown).not.toContain('data:image/svg+xml');
     expect(markdown).toContain('**Default**');
     expect(markdown).toContain('**Theme base**');
   });
@@ -50,7 +52,8 @@ describe('theming-light-dark.ts integration', () => {
     expect(leaf).toBeDefined();
     const preview = buildTokenPreviewForLeaf(index, leaf!);
     expect(preview?.variants.length).toBeGreaterThanOrEqual(2);
-    expect(colorSwatchMarkdown('#0066ff')).toContain('data:image/svg+xml');
+    expect(colorSwatchHtml('#0066ff')).toContain('background-color:#0066ff');
+    expect(colorSwatchHtml('#0066ff')).not.toContain('data:image/svg');
   });
 
   it('expands colorMode.systemWithLightDarkOverride presets', () => {

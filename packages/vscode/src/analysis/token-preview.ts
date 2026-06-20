@@ -12,29 +12,37 @@ export function formatTokenPreviewMarkdown(preview: TokenPreview): string {
 
   for (const variant of preview.variants) {
     parts.push(formatVariantLine(variant));
+    parts.push('');
   }
 
-  return parts.join('\n');
+  return parts.join('\n').trimEnd();
 }
 
 function formatVariantLine(variant: TokenValueVariant): string {
-  const swatch = colorSwatchMarkdown(variant.color ?? variant.value);
+  const swatch = colorSwatchHtml(variant.color ?? variant.value);
   const detail = variant.detail ? ` _(${variant.detail})_` : '';
-  return `${swatch} **${variant.label}**${detail} — \`${variant.value}\``;
+  return `${swatch}**${variant.label}**${detail} — \`${variant.value}\``;
 }
 
-export function colorSwatchMarkdown(colorOrValue: string): string {
+/**
+ * Inline HTML color chip for VS Code hovers (`supportHtml: true`).
+ * Markdown image data-URIs break when hex colors contain `#` (URL fragment).
+ */
+export function colorSwatchHtml(colorOrValue: string): string {
   const color = parseColor(colorOrValue);
-  if (!color) return '◻️';
+  if (!color) return '◻️ ';
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect x="1" y="1" width="14" height="14" rx="3" fill="${escapeXml(color)}" stroke="%23888" stroke-width="1"/></svg>`;
-  return `![${escapeMarkdownAlt(colorOrValue)}](data:image/svg+xml,${svg})`;
+  const safe = escapeHtmlAttr(color);
+  return `<span style="display:inline-block;width:14px;height:14px;background-color:${safe};border:1px solid rgba(128,128,128,0.55);border-radius:3px;vertical-align:middle;margin-right:6px;" aria-hidden="true"></span>`;
 }
 
-function escapeXml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-}
+/** @deprecated Use colorSwatchHtml — kept as alias for tests. */
+export const colorSwatchMarkdown = colorSwatchHtml;
 
-function escapeMarkdownAlt(value: string): string {
-  return value.replace(/\[|\]/g, '');
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;');
 }
