@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "timestamp": "2026-06-22T17:45:48.400Z",
+  "node": "v24.1.0",
+  "platform": "darwin-arm64",
+  "results": {
+    "cssGeneration": {
+      "registration": {
+        "median": 1.0475840000000005,
+        "p95": 1.5222500000000139,
+        "min": 0.8356670000000008,
+        "max": 1.6534169999999904,
+        "mean": 1.1426611999999987,
+        "iterations": 30
+      },
+      "selectorCalls": {
+        "median": 0.0943749999999568,
+        "p95": 0.12045799999998508,
+        "min": 0.08308300000004465,
+        "max": 0.21683400000000574,
+        "mean": 0.0993692300000032,
+        "iterations": 100
+      }
+    },
+    "cssFileSize": {
+      "semantic": {
+        "raw": 32125,
+        "gzip": 4809,
+        "ruleCount": 232
+      },
+      "hashed": {
+        "raw": 31432,
+        "gzip": 5354,
+        "ruleCount": 232
+      },
+      "compact": {
+        "raw": 29742,
+        "gzip": 4986,
+        "ruleCount": 232
+      },
+      "atomic": {
+        "raw": 19412,
+        "gzip": 4816,
+        "ruleCount": 296
+      }
+    },
+    "runtimeInjection": {
+      "fullCycle": {
+        "median": 1.1488339999999653,
+        "p95": 1.2471669999999904,
+        "min": 1.0553339999999025,
+        "max": 1.2684169999999995,
+        "mean": 1.1517166333333306,
+        "iterations": 30
+      }
+    },
+    "ssrCollection": {
+      "perRequest": {
+        "median": 1.1823329999999714,
+        "p95": 1.32487500000002,
+        "min": 1.0311249999999745,
+        "max": 1.3549170000000004,
+        "mean": 1.1848693999999946,
+        "iterations": 30
+      },
+      "collectedCssBytes": 32125
+    },
+    "vanillaExtract": {
+      "registration": {
+        "median": 0.7097079999999778,
+        "p95": 1.0090420000000222,
+        "min": 0.6480830000000424,
+        "max": 1.0656669999999622,
+        "mean": 0.7656569000000066,
+        "iterations": 30
+      },
+      "selectorCalls": {
+        "median": 0.03387499999996635,
+        "p95": 0.05120800000008785,
+        "min": 0.027832999999986896,
+        "max": 0.06137499999999818,
+        "mean": 0.035342490000002724,
+        "iterations": 100
+      },
+      "cssFileSize": {
+        "raw": 31259,
+        "gzip": 4754,
+        "ruleCount": 196
+      }
+    }
+  }
+}
