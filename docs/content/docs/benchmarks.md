@@ -138,12 +138,10 @@ pnpm --filter @typestyles/benchmarks bench:update
 
 Results are written to `benchmarks/baseline.json`. The CI job compares each run against this baseline:
 
-- **Timing metrics**: fail if median regresses > 20%
 - **File size metrics**: fail if raw or gzip size grows > 5%
+- **Timing metrics**: printed for visibility but not gated — timing varies too much across hardware (Apple Silicon vs CI VMs can differ 3x+) to use a checked-in baseline reliably
 
-Only TypeStyles metrics are gated — VE results are tracked for comparison but don't block CI (we don't control VE's performance).
-
-The 20% timing threshold is intentionally generous — CI VMs are noisy. The goal is catching real regressions (accidental quadratic loops, unnecessary allocations), not micro-optimizations.
+VE results are tracked for comparison but never gate CI (we don't control VE's performance).
 
 ## Caveats
 

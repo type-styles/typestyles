@@ -114,22 +114,17 @@ export type RegressionReport = {
   failures: string[];
 };
 
+/**
+ * Only file sizes are gated in CI — they're deterministic and platform-independent.
+ * Timing varies wildly across hardware (Apple Silicon vs CI VMs can differ 3x+),
+ * so timing results are printed for visibility but don't block the build.
+ */
 export function checkRegressions(
   current: BenchmarkResults,
   baseline: BenchmarkResults,
 ): RegressionReport {
   const failures: string[] = [];
-  const TIMING_THRESHOLD = 0.2;
   const SIZE_THRESHOLD = 0.05;
-
-  function checkTiming(label: string, current: BenchResult, baseline: BenchResult) {
-    const ratio = current.median / baseline.median;
-    if (ratio > 1 + TIMING_THRESHOLD) {
-      failures.push(
-        `${label}: ${formatMs(current.median)} (was ${formatMs(baseline.median)}, +${((ratio - 1) * 100).toFixed(0)}%, threshold ${(TIMING_THRESHOLD * 100).toFixed(0)}%)`,
-      );
-    }
-  }
 
   function checkSize(label: string, current: number, baseline: number) {
     const ratio = current / baseline;
@@ -139,28 +134,6 @@ export function checkRegressions(
       );
     }
   }
-
-  // TypeStyles regressions (gated)
-  checkTiming(
-    'CSS generation (registration)',
-    current.cssGeneration.registration,
-    baseline.cssGeneration.registration,
-  );
-  checkTiming(
-    'CSS generation (selector calls)',
-    current.cssGeneration.selectorCalls,
-    baseline.cssGeneration.selectorCalls,
-  );
-  checkTiming(
-    'Runtime injection (full cycle)',
-    current.runtimeInjection.fullCycle,
-    baseline.runtimeInjection.fullCycle,
-  );
-  checkTiming(
-    'SSR collection (per request)',
-    current.ssrCollection.perRequest,
-    baseline.ssrCollection.perRequest,
-  );
 
   for (const mode of ['semantic', 'hashed', 'compact', 'atomic'] as const) {
     checkSize(
@@ -174,9 +147,6 @@ export function checkRegressions(
       baseline.cssFileSize[mode].gzip,
     );
   }
-
-  // VE results are tracked but not gated — we don't control VE's performance.
-  // They're in the baseline for comparison only.
 
   return { passed: failures.length === 0, failures };
 }
