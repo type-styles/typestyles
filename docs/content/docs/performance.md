@@ -238,34 +238,9 @@ Deep nesting makes CSS harder to maintain and can impact selector matching perfo
 
 ## Benchmarks
 
-### Style creation
+For reproducible, CI-validated performance numbers — including CSS generation time, extracted file sizes across all naming modes, runtime injection latency, and SSR collection overhead — see the dedicated **[Benchmarks](/docs/benchmarks)** page.
 
-```
-Creating 1000 style definitions:
-- TypeStyles: ~15ms
-- styled-components: ~150ms
-- Emotion: ~80ms
-```
-
-### Selector calls (class name generation)
-
-```
-Generating 10,000 class name strings:
-- TypeStyles: ~2ms
-- styled-components: ~50ms (includes hash computation)
-- Emotion: ~30ms (includes hash computation)
-```
-
-### Initial render (injecting CSS)
-
-```
-Rendering 100 components with unique styles:
-- TypeStyles: ~25ms
-- styled-components: ~100ms
-- Emotion: ~60ms
-```
-
-_Benchmarks run on M1 Mac, Chrome 120. Your results may vary._
+The benchmark harness runs a 50-component reference design system and reports median/p95 timings. Regressions are caught automatically in CI.
 
 ## Measuring performance
 
