@@ -37,7 +37,8 @@
           "enum": [
             "semantic",
             "hashed",
-            "compact"
+            "compact",
+            "atomic"
           ],
           "default": "semantic",
           "description": "Class naming mode used for hover CSS previews when scopeId cannot be inferred from the file."

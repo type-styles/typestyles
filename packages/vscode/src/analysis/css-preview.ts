@@ -171,7 +171,7 @@ export function findStylePropertyKeyHover(
         position <= node.name.getEnd() &&
         ts.isObjectLiteralExpression(node.parent)
       ) {
-        const registration = findRegistrationForStyleObject(index, node.parent, sourceFile);
+        const registration = findRegistrationForStyleObject(index, node.parent);
         if (registration) {
           result = { property: key, registration };
         }
@@ -188,7 +188,6 @@ export function findStylePropertyKeyHover(
 function findRegistrationForStyleObject(
   index: DocumentIndex,
   styleObject: ts.ObjectLiteralExpression,
-  sourceFile: ts.SourceFile,
 ): StyleRegistration | null {
   for (const reg of index.registrations) {
     for (const obj of reg.styleObjects) {
@@ -201,14 +200,11 @@ function findRegistrationForStyleObject(
     }
   }
 
-  // Walk up to the registration call if the object is nested inside it.
   let current: ts.Node | undefined = styleObject;
   while (current) {
     if (ts.isCallExpression(current)) {
-      const text = current.getText(sourceFile);
       for (const reg of index.registrations) {
         if (reg.node === current) return reg;
-        if (text.includes(reg.namespace)) return reg;
       }
     }
     current = current.parent;

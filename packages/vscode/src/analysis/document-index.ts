@@ -47,7 +47,12 @@ function inferNamingConfig(
           }
           if (key === 'mode' && ts.isStringLiteral(prop.initializer)) {
             const value = prop.initializer.text;
-            if (value === 'semantic' || value === 'hashed' || value === 'compact') {
+            if (
+              value === 'semantic' ||
+              value === 'hashed' ||
+              value === 'compact' ||
+              value === 'atomic'
+            ) {
               mode = value;
             }
           }
@@ -247,11 +252,17 @@ function indexClassNames(
   return map;
 }
 
+let cachedIndex: DocumentIndex | null = null;
+let cachedKey = '';
+
 export function buildDocumentIndex(
   filePath: string,
   content: string,
   options?: { previewMode?: ClassNamingMode },
 ): DocumentIndex {
+  const key = `${filePath}\0${content.length}\0${options?.previewMode ?? ''}\0${content}`;
+  if (cachedIndex && cachedKey === key) return cachedIndex;
+
   const sourceFile = createSourceFile(filePath, content);
   const naming = inferNamingConfig(sourceFile, options?.previewMode);
   const tokenValues = new Map<string, string>();
@@ -261,7 +272,7 @@ export function buildDocumentIndex(
   const componentBindings = collectComponentBindings(registrations);
   const classNameToRegistration = indexClassNames(registrations, naming, tokenValues);
 
-  return {
+  cachedIndex = {
     filePath,
     naming,
     registrations,
@@ -270,11 +281,13 @@ export function buildDocumentIndex(
     componentBindings,
     classNameToRegistration,
   };
+  cachedKey = key;
+  return cachedIndex;
 }
 
 export function parseColor(value: string): string | null {
   const trimmed = value.trim();
-  if (/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(trimmed)) return trimmed;
+  if (/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(trimmed)) return trimmed;
   if (/^rgba?\(/i.test(trimmed)) return trimmed;
   if (/^hsla?\(/i.test(trimmed)) return trimmed;
   return null;

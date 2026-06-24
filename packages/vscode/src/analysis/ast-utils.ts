@@ -148,7 +148,11 @@ export function getNamespaceCall(node: ts.CallExpression, filePath: string): Nam
 
   if (ts.isPropertyAccessExpression(expression)) {
     const method = memberPropertyName(expression);
-    if (method === 'class' || method === 'component') {
+    if (
+      (method === 'class' || method === 'component') &&
+      ts.isIdentifier(expression.expression) &&
+      /style/i.test(expression.expression.text)
+    ) {
       const nameNode = firstStringArg(args);
       if (!nameNode) return null;
       return {
@@ -309,7 +313,11 @@ export function getStyleObjectArguments(node: ts.CallExpression): {
       return { objects, isDynamicConfig: false };
     }
     if (method === 'hashClass') {
-      pushObject(args[0]);
+      if (args[0] && ts.isStringLiteral(args[0])) {
+        pushObject(args[1]);
+      } else {
+        pushObject(args[0]);
+      }
       return { objects, isDynamicConfig: false };
     }
   }

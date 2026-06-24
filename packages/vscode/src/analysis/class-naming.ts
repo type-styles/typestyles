@@ -4,7 +4,7 @@
 
 import type { StyleRecord } from './css-serialize';
 
-export type ClassNamingMode = 'semantic' | 'hashed' | 'compact';
+export type ClassNamingMode = 'semantic' | 'hashed' | 'compact' | 'atomic';
 
 export interface ClassNamingConfig {
   mode: ClassNamingMode;
