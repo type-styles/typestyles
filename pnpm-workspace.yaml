@@ -2,6 +2,7 @@ packages:
   - packages/*
   - examples/*
   - docs
+  - benchmarks
 
 linkWorkspacePackages: true
 preferWorkspacePackages: true

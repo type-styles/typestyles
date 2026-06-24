@@ -606,24 +606,18 @@ Class names become `my-app-button-base` — unique across your dependency tree.
 
 ### For published packages
 
-Published packages **must** use a `scopeId` to avoid colliding with consumer code or other packages. Use the package name:
+Published packages **must** use a `scopeId` to avoid colliding with consumer code or other packages. Use the package name and `hashed` mode:
 
 ```ts
 import { createTypeStyles } from 'typestyles';
 
 export const { styles, tokens } = createTypeStyles({
   scopeId: '@acme/ui',
-});
-```
-
-For extra safety in library code, consider `hashed` or `compact` mode — class names are derived from a hash that includes the `scopeId`, making collisions structurally impossible:
-
-```ts
-export const { styles, tokens } = createTypeStyles({
-  scopeId: '@acme/ui',
   mode: 'hashed',
 });
 ```
+
+See the full [Publishing Packages](/docs/publishing-packages) guide for ESLint enforcement, token scoping, and a complete library setup example.
 
 ### Per-file isolation (CSS Modules style)
 

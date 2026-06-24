@@ -60,9 +60,11 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       items: [
         { slug: 'migration', title: 'Migration Guide' },
         { slug: 'style-dictionary', title: 'Style Dictionary & W3C tokens' },
+        { slug: 'publishing-packages', title: 'Publishing Packages' },
         { slug: 'best-practices', title: 'Best Practices' },
         { slug: 'testing', title: 'Testing' },
         { slug: 'performance', title: 'Performance' },
+        { slug: 'benchmarks', title: 'Benchmarks' },
         { slug: 'typescript-tips', title: 'TypeScript Tips' },
         { slug: 'troubleshooting', title: 'Troubleshooting' },
       ],

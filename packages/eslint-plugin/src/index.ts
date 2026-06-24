@@ -1,14 +1,21 @@
+import { noDefaultScopeInPackage } from './rules/no-default-scope-in-package';
 import { noDuplicateNamespace } from './rules/no-duplicate-namespace';
 import { noInvalidUnitlessValue } from './rules/no-invalid-unitless-value';
 import { noShorthandLonghandConflict } from './rules/no-shorthand-longhand-conflict';
 
 export const rules = {
+  'no-default-scope-in-package': noDefaultScopeInPackage,
   'no-shorthand-longhand-conflict': noShorthandLonghandConflict,
   'no-invalid-unitless-value': noInvalidUnitlessValue,
   'no-duplicate-namespace': noDuplicateNamespace,
 };
 
-export { noShorthandLonghandConflict, noInvalidUnitlessValue, noDuplicateNamespace };
+export {
+  noDefaultScopeInPackage,
+  noShorthandLonghandConflict,
+  noInvalidUnitlessValue,
+  noDuplicateNamespace,
+};
 
 const plugin = {
   meta: {
@@ -28,6 +35,18 @@ export const configs = {
       '@typestyles/no-shorthand-longhand-conflict': 'error',
       '@typestyles/no-invalid-unitless-value': 'error',
       '@typestyles/no-duplicate-namespace': 'error',
+    },
+  },
+  /** Preset for publishable packages — adds `no-default-scope-in-package`. */
+  package: {
+    plugins: {
+      '@typestyles': plugin,
+    },
+    rules: {
+      '@typestyles/no-shorthand-longhand-conflict': 'error',
+      '@typestyles/no-invalid-unitless-value': 'error',
+      '@typestyles/no-duplicate-namespace': 'error',
+      '@typestyles/no-default-scope-in-package': 'error',
     },
   },
 };

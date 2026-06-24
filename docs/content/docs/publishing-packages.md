@@ -1,0 +1,196 @@
+---
+title: Publishing a Package with TypeStyles
+description: Safe defaults and collision-proof patterns for npm-published libraries using TypeStyles
+---
+
+If you publish a package that ships TypeStyles components, you need class-name
+isolation out of the box. Two npm packages that both call
+`styles.component('button', …)` without a `scopeId` will silently overwrite each
+other's CSS in the consuming app.
+
+This guide covers the setup that prevents that.
+
+## The problem
+
+The default `styles` and `tokens` exports use an empty `scopeId`. In semantic
+mode (the default), `styles.component('button', …)` emits class names like
+`button-base`. If a consumer installs two packages that both define a `'button'`
+namespace, the later import wins — no error, no warning, just broken styles.
+
+Even in `hashed` mode the hash is derived from the namespace and declarations.
+Two packages with different styles but the same namespace will hash differently
+and not collide — but two with identical declarations _will_.
+
+`scopeId` solves this: it prefixes semantic names and mixes into hashes, making
+collisions across packages structurally impossible.
+
+## Recommended setup
+
+Use `createTypeStyles` with your package name as `scopeId` and `hashed` mode:
+
+```ts
+// src/styles.ts
+import { createTypeStyles } from 'typestyles';
+
+export const { styles, tokens, global } = createTypeStyles({
+  scopeId: '@acme/ui',
+  mode: 'hashed',
+});
+```
+
+Then import `styles` and `tokens` from this module throughout your package:
+
+```ts
+// src/components/Button.styles.ts
+import { styles } from '../styles';
+
+export const button = styles.component('button', {
+  base: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    cursor: 'pointer',
+  },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#0066ff', color: '#fff' },
+      secondary: { backgroundColor: '#e5e7eb', color: '#111' },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+```
+
+Class names will look like `ts-button-1a2b3c` instead of `button-base` — unique
+to your package by construction.
+
+### Why `hashed` mode?
+
+| Mode       | Output                                      | Collision risk                                                                                                |
+| ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `semantic` | `acme-ui-button-base`                       | Low with `scopeId`, but still human-readable names that _could_ overlap if two packages choose the same scope |
+| `hashed`   | `ts-button-1a2b3c`                          | Hash includes `scopeId` — collision requires identical scope, namespace, and declarations                     |
+| `compact`  | `ts-1a2b3c`                                 | Same hash safety as `hashed`, shortest output                                                                 |
+| `atomic`   | One class per declaration, deduped globally | Safe; declarations dedupe intentionally                                                                       |
+
+For libraries, `hashed` is the sweet spot: hash-safe, but the namespace slug is
+still visible in class names for debugging.
+
+## Tokens
+
+The same `createTypeStyles` call scopes your tokens too. Custom property names
+include the scope:
+
+```ts
+const color = tokens.create('color', {
+  primary: '#0066ff',
+  surface: '#ffffff',
+});
+// --acme-ui-color-primary: #0066ff;
+// --acme-ui-color-surface: #ffffff;
+```
+
+Consumers can theme your package by overriding these properties without any
+risk of colliding with their own or other packages' tokens.
+
+## ESLint enforcement
+
+The `@typestyles/eslint-plugin` includes a `no-default-scope-in-package` rule
+that flags direct use of the default `styles.class()` and `styles.component()`
+exports — the ones without a `scopeId`. Enable it in your package's ESLint
+config:
+
+```js
+// eslint.config.js
+import typestyles from '@typestyles/eslint-plugin';
+
+export default [
+  typestyles.configs.package,
+  // ... your other config
+];
+```
+
+Or enable the rule individually:
+
+```js
+export default [
+  typestyles.configs.recommended,
+  {
+    rules: {
+      '@typestyles/no-default-scope-in-package': 'error',
+    },
+  },
+];
+```
+
+The rule reports on `styles.class(…)` and `styles.component(…)` — the default
+exports. Calls on custom bindings (e.g. `myStyles.class(…)` from
+`createTypeStyles`) are fine, because the factory requires you to set a
+`scopeId`.
+
+## Checklist
+
+Before publishing a package that uses TypeStyles:
+
+1. **Create a scoped factory** — `createTypeStyles({ scopeId: pkg.name })` at
+   the root of your styles
+2. **Choose a non-semantic mode** — `hashed` (readable + safe) or `compact`
+   (shortest output)
+3. **Enable the ESLint rule** — `@typestyles/no-default-scope-in-package` to
+   catch unscoped usage
+4. **Export tokens explicitly** — so consumers can theme without reaching into
+   internals
+5. **Document your `scopeId`** — mention it in your README so consumers know
+   which CSS custom properties to override
+
+## Example
+
+A complete library setup:
+
+```ts
+// src/styles.ts
+import { createTypeStyles } from 'typestyles';
+
+export const { styles, tokens, global } = createTypeStyles({
+  scopeId: '@acme/ui',
+  mode: 'hashed',
+});
+```
+
+```ts
+// src/tokens/color.ts
+import { tokens } from '../styles';
+
+export const color = tokens.create('color', {
+  primary: '#0066ff',
+  primaryHover: '#0052cc',
+  surface: '#ffffff',
+  text: '#111827',
+});
+```
+
+```ts
+// src/components/Button.styles.ts
+import { styles } from '../styles';
+import { color } from '../tokens/color';
+
+export const button = styles.component('button', {
+  base: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 500,
+  },
+  variants: {
+    intent: {
+      primary: { backgroundColor: color.primary, color: '#fff' },
+      secondary: { backgroundColor: 'transparent', border: '1px solid currentColor' },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+```
+
+The consumer's app can install `@acme/ui` alongside any other TypeStyles package
+with zero class-name or token collisions.

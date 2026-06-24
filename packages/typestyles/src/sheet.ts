@@ -1,5 +1,6 @@
 import {
   namespacesFromTypestylesHmrPrefixes,
+  registeredNamespaces,
   releaseReservedNamespacesForComponentOrClassNames,
   resetEmittedClassNameTracking,
 } from './registry';
@@ -353,6 +354,7 @@ export function reset(): void {
   if (active !== getGlobalSheetState()) {
     resetSheetState(active);
   }
+  registeredNamespaces.clear();
   resetEmittedClassNameTracking();
   notifyRegisteredCssChanged();
   if (isBrowser && styleElement) {
