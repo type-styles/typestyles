@@ -504,6 +504,7 @@ Documentation for each published npm package lives in its README — these are t
 | [`@typestyles/open-props`](./packages/open-props)       | Open Props tokens for typestyles                              |
 | [`@typestyles/migrate`](./packages/migrate)             | Codemods from styled-components / Emotion                     |
 | [`@typestyles/eslint-plugin`](./packages/eslint-plugin) | ESLint rules for style objects                                |
+| [`typestyles-vscode`](./packages/vscode)                | VS Code extension — hover CSS previews and go-to-definition   |
 
 Site docs: [typestyles.dev](https://typestyles.dev) · Docs site source: [`docs/README.md`](./docs/README.md)
 
