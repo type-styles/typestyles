@@ -172,7 +172,7 @@ Bugs and credibility issues that lose evaluations on contact. Do these first.
     `{ name: string; var: string; toString(): string }`.
   - Effort: Medium (token proxy changes + `@property` CSS emission).
 
-- [ ] **P3.25 — `@typestyles/react` package (css prop + styled API)**
+- [x] **P3.25 — `@typestyles/react` package (css prop + styled API)**
   - Migration convenience for teams coming from Emotion/styled-components.
   - Scope: `css` prop via JSX transform (inline styles → `styles.hashClass` at build
     time or runtime); `styled('button', config)` thin wrapper over `styles.component`
