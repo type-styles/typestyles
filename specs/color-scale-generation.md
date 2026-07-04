@@ -4,6 +4,15 @@ Implements `IMPROVEMENTS.md` P5.1 — generate a full functional color palette f
 one accent color. Work through the tasks in order — each is a discrete,
 independently committable unit.
 
+**Status: shipped.** This is a historical record of the design as implemented,
+kept as-is rather than edited after the fact — including its
+`examples/design-system` path references, which reflect where the
+design-system-layer half (`create-color-theme.ts`, `palette.ts`) lived at
+implementation time. That package has since moved to var-ui, a separate
+public project, as `@var-ui/core`; the core half
+(`packages/typestyles/src/color-scale.ts`, the `typestyles/color-scale`
+subpath) is unaffected and lives in this repo permanently.
+
 ---
 
 ## Guiding Principles
