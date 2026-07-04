@@ -290,13 +290,147 @@ would notice in the first 30 minutes.
     what hasn't been tested at scale.
   - Effort: Medium (test authoring + edge case investigation).
 
-## P4 — Future (unscheduled)
+## P5 — Design-system theming architecture (Astryx parity)
+
+Meta open-sourced Astryx, an internal-tools design system built on StyleX. Astryx's
+pitch is that a restrictive compiler (StyleX) can still yield a flexible, easily
+themeable system — but it gets there by working _around_ StyleX: theming is 100%
+plain CSS custom properties generated from a `defineTheme()` config (runtime-injected
+or CLI-precompiled), component-level overrides are plain CSS scoped via `@scope`
+against stable classes, and StyleX itself is demoted to an internal implementation
+detail plus an optional `xstyle` power-user escape hatch.
+
+TypeStyles already _is_ what Astryx had to build a workaround to get: real CSS custom
+properties, semantic/readable class names, cascade layers, and a more general theme
+condition engine (`tokens.when` / `tokens.colorMode`) than Astryx's fixed light/dark
+modes — with no compiler restriction to route around in the first place. The gap is
+productization: Astryx turns raw CSS capability into an authoring experience — a full
+token system generated from a few knobs, a first-class arbitrary-CSS override
+contract, prebuilt theme packages, and CLI/AI-agent tooling wrapped around all of it.
+This phase closes that gap. Scope is theming/styling architecture only — component
+_count_ parity (Astryx ships ~90 components; `examples/design-system` ships ~17) is a
+separate, later initiative and is explicitly out of scope here.
+
+- [ ] **P5.1 — Generative color-scale API (`tokens.colorScale`)**
+  - Astryx's `expandColorScale` derives ~30 functional tokens (neutral backgrounds,
+    text, borders, status colors, categorical hues) from one accent + `neutralStyle`
+    - `contrast`, using the HCT perceptual color model. TypeStyles' `typestyles/color`
+      has OKLCH/alpha primitives but no full-palette generator — every example theme
+      (default/forest/rose/amber/…) hand-picks every value by hand.
+  - Scope: `tokens.colorScale({ accent, neutralStyle, contrast })` → a flat token map
+    pluggable into `tokens.create` / `createTheme` base/mode overrides. Use OKLCH
+    (already the house color primitive) rather than porting HCT. Cover: neutral ramp
+    (bg/surface/subtle/elevated), text (primary/secondary/disabled/placeholder via
+    `color-mix`), accent + hover + subtle, border (default/strong/focus), status
+    colors (danger/success/warning/info) each with default/subtle/border/solid, and N
+    categorical hues for badges/charts. Merge order matches Astryx's `defineTheme`:
+    generated tokens are lowest precedence, explicit `tokens` overrides always win.
+  - Effort: High (color math + palette-quality tuning + contrast validation).
+
+- [ ] **P5.2 — Generative typography/motion/radius scales**
+  - Astryx's `expandTypeScale` / `expandMotionScale` / `expandRadiusScale` turn
+    `{ base, ratio }` into a full type ramp, `{ fast, medium, slow, ratio }` into
+    min/max duration bands, and `{ base, multiplier }` into a radius ladder — a theme
+    author writes 2-3 numbers instead of dozens of hand-picked values.
+  - Scope: `tokens.typeScale({ base, ratio, weights? })`,
+    `tokens.motionScale({ fast, medium, slow, ratio })`,
+    `tokens.radiusScale({ base, multiplier })`, each returning a flat token map for
+    `tokens.create`. Wire into the `examples/design-system` theme factory so built-in
+    themes can opt in instead of listing every step by hand.
+  - Effort: Medium.
+
+- [ ] **P5.3 — Formalize the component-override public contract + `@scope` helper**
+  - `styles.component()` semantic class names (`button-intent-primary`) already let
+    consumers write plain CSS overrides today — but this isn't documented as a stable
+    public contract, has no isolation from global specificity fights, and `@scope`
+    support is still an open item in this doc's backlog. Astryx solves isolation with
+    `@scope` plus a `components: {...}` config DSL compiled to theme-scoped rules.
+  - Scope: (a) document that `styles.component()` semantic class names and their
+    pseudo-selectors are a stable, semver-guarded public surface consumers may target
+    directly with plain CSS — this _is_ TypeStyles' `xstyle`/`.xds-*` equivalent,
+    minus the indirection; (b) ship an `@scope` emission helper (e.g.
+    `styles.scope({ from: '.theme-acme', to: '.button-base' }, overrides)`) so
+    theme-level overrides don't leak or lose specificity fights with page CSS; (c) add
+    an `@typestyles/eslint-plugin` rule flagging a renamed semantic class name as a
+    breaking change requiring a changeset. Supersedes the `@scope` bullet in P6.
+  - Effort: Medium (mostly `@scope` emission + docs; name stability is already true
+    in practice, it just needs to be promised).
+
+- [ ] **P5.4 — Nested/contextual re-theming primitive ("Surface")**
+  - Astryx's `<MediaTheme surface="dark">` lets a subtree (e.g. an inverted toast on a
+    dark surface inside a light page) flip color-scheme and semantic tokens
+    independently, auto-deriving on-dark/on-light token sets.
+  - Scope: build this on the existing `tokens.when` / `colorMode` engine rather than a
+    new primitive — a scoped attribute (e.g. `data-surface="inverted"`) plus a
+    `tokens.onSurface({...})` helper emitting token overrides scoped to
+    `[data-surface="inverted"]`. Framework-agnostic (Astryx's version is React-only).
+  - Effort: Medium.
+
+- [ ] **P5.5 — Theme packaging: gallery + standalone reuse**
+  - `examples/design-system` already ships 9 themes (more than Astryx's 7:
+    ai-glow, amber, classic-system, default, forest, neo-brutalist-shadows, new-wave,
+    rose, windows-95) but they're only reachable by importing the whole
+    design-system package, with no visual gallery and no standalone install path.
+  - Scope: add a live theme-gallery docs page (light/dark preview + copy-paste
+    snippet per theme, building on the `LiveDemo` component from P1.6). Decide
+    whether individual themes warrant standalone `@typestyles/theme-*` packages or
+    stay as named exports, based on whether consumers want tokens-only vs. the full
+    recipe set.
+  - Effort: Medium.
+
+- [ ] **P5.6 — Distribution parity: confirm and document build-time theme extraction**
+  - Astryx warns at runtime and pushes users toward `astryx theme build` for static
+    CSS. TypeStyles' bundler plugins likely already extract theme/token CSS at build
+    time as a byproduct of normal extraction, but this isn't stated as an explicit
+    claim anywhere.
+  - Scope: verify via `verifyTypestylesBuild()` (P1.7) that `tokens.create` /
+    `createTheme` output is captured by zero-runtime extraction across all six
+    bundler integrations; add a "theme extraction" section to the zero-runtime docs
+    page stating TypeStyles never needs a "did you forget to build your theme"
+    runtime warning, unlike Astryx's unbuilt-theme fallback.
+  - Effort: Low (verification + docs; no known code gap).
+
+- [ ] **P5.7 — Market `@property`-typed tokens as animatable-theme differentiator**
+  - P3.24 already shipped `@property` on token leaves + `styles.property`, but it
+    isn't positioned as a competitive claim. StyleX's own documented capability list
+    marks `@property (explicit)` as unsupported ("compiles but invalid CSS output"),
+    meaning Astryx/StyleX theme color or size transitions that need `@property`
+    (e.g. smoothly animating a gradient angle or a color token on theme switch) are
+    structurally unavailable to them.
+  - Scope: add a docs callout plus one worked example (animated theme-switch
+    transition using `@property`-registered color tokens) to the theming docs, and
+    reference it from the comparison page (P3.5.5).
+  - Effort: Low (docs + one demo).
+
+- [ ] **P5.8 — Per-recipe structured docs for human + AI-agent discovery**
+  - Astryx pairs every component with a `{Name}.doc.mjs` file and a CLI
+    (`astryx docs`, `astryx component <name> --dense`, `astryx swizzle`) designed so
+    people and AI coding assistants build the same way against the same reference —
+    they even run "vibe-tests" measuring how well their agent docs produce correct
+    LLM-generated code. TypeStyles' recent API work (P3.22, P3.23) already optimizes
+    for assistant correctness via types; this extends that to docs/tooling.
+  - Scope MVP: add a colocated structured doc format per recipe in
+    `examples/design-system` (props/variants/token dependencies as a `.doc.ts` file).
+    Defer a full CLI — evaluate `packages/vscode` (already in progress) as the
+    delivery vehicle for discovery instead of building a new one from scratch.
+  - Effort: High (new tooling surface; ship the doc-format MVP before any CLI work).
+
+- [ ] **P5.9 — Comparison page: add theming-architecture claims vs. Astryx/StyleX**
+  - P3.5.3's benchmark suite and P3.5.5's comparison page don't yet name Astryx or
+    state the specific claim that matters here: no compiler workarounds needed for
+    theming.
+  - Scope: add a comparison section on theming architecture specifically — plain CSS
+    vars vs. StyleX-generated vars requiring `.stylex.ts` files; build-always vs.
+    runtime-injection-with-warning; arbitrary component CSS overrides vs. `@scope` +
+    data-attribute config DSL. Documentation-only follow-up to P3.5.3/P3.5.5, no new
+    engine work.
+  - Effort: Low.
+
+## P6 — Future (unscheduled)
 
 - Editable playground/REPL
 - Recipes/cookbook section (resurrect the `recipes.astro` redirect)
 - W3C Design Tokens import + Figma sync
-- `@scope` support (document raw nested at-rule usage; add helpers when browser
-  support matures)
 - Responsive object syntax (breakpoint shorthand in style values)
 - Custom CSS variable name control (`nameTemplate` on `tokens.create`)
 - 1.0 stability policy and criteria
