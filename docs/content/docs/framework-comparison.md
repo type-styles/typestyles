@@ -249,6 +249,31 @@ Global stylesheets, BEM modifiers, or attribute selectors—**no** TS variant la
 
 ---
 
+## Theming architecture: TypeStyles vs. StyleX (and Astryx)
+
+Theming is where compiler restrictions surface in practice. **Astryx**—Meta's design system for internal tools, built on **StyleX**—has a genuinely flexible theming story, but it gets there by working _around_ StyleX's constraints. TypeStyles never had those constraints, so the workaround layer doesn't exist. Three concrete differences:
+
+### Token variables: plain custom properties vs. compiler-managed vars
+
+- **TypeStyles** — [`tokens.create`](/docs/tokens) emits **plain CSS custom properties** with predictable names (`--app-color-primary` under `scopeId: 'app'`) from any ordinary TypeScript module. Themes are [`tokens.createTheme`](/docs/theming-patterns) surfaces: a stable `theme-{name}` class whose properties override token values for that subtree. Because the variables are just CSS, any stylesheet—yours, legacy, third-party—can read or set them directly.
+- **StyleX** — `defineVars` also compiles to custom properties, but with **hashed names the compiler owns**, and variable definitions **must live in `.stylex.ts` / `.stylex.js` files** so imports can be resolved statically; theming (`createTheme`) flows through those same files. Astryx's theming flexibility is built by routing around these rules. With TypeStyles there is **no compiler restriction to route around**.
+
+TypeStyles theme surfaces also carry a general condition engine—`tokens.when` (media queries, attributes, class names, `or` / `and` / `not` combinators) plus [`tokens.colorMode`](/docs/theming-patterns#light-dark-system-on-data) presets—so "dark when the OS prefers it, unless `data-color-mode="light"` wins" is a declaration, not bespoke infrastructure on top of fixed light/dark modes.
+
+### Distribution: build-always vs. runtime injection with a warning
+
+- **TypeStyles** — Token and theme CSS goes through the **same pipeline as every other style**: runtime injection in dev, static CSS via [zero-runtime extraction](/docs/zero-runtime) when you want it. There is no dedicated theme-build command, because none is needed—and therefore no "did you forget to build your theme" state to warn about.
+- **Astryx** — Themes that weren't compiled ahead of time are **injected at runtime with a console warning**, and users are pushed toward a separate `astryx theme build` step to get static CSS.
+
+### Component overrides: plain CSS vs. a config DSL
+
+- **TypeStyles** — [`styles.component`](/docs/components) emits **semantic, deterministic class names** (`button-intent-primary`). A consumer restyling a component writes ordinary CSS targeting that class—any property, any selector, any stylesheet—and [cascade layers](/docs/cascade-layers) keep override order predictable.
+- **StyleX / Astryx** — Hashed atomic classes can't be targeted from outside the compiler, so Astryx exposes overrides through an **`@scope` + data-attribute configuration DSL**: you can override what the DSL anticipates, in the shapes it anticipates.
+
+The pattern across all three: a StyleX-based system must **generate an escape hatch** for each theming capability its compiler forecloses. TypeStyles ships the underlying primitives—real custom properties, readable class names, cascade layers—so the capability is the default, not the workaround.
+
+---
+
 ## When TypeStyles is a strong default
 
 - **Readable classes** and **scoped CSS variables** for DevTools, legacy CSS, and third-party markup.
@@ -273,6 +298,7 @@ Start with [Migration](/docs/migration): Panda- and CVA-like APIs map closely to
 
 - [Getting started](/docs/getting-started)
 - [Design system with tokens](/docs/design-system)
+- [Theming patterns](/docs/theming-patterns)
 - [Cascade layers](/docs/cascade-layers)
 - [Zero-runtime extraction](/docs/zero-runtime)
 - [Component library setup](/docs/component-library)

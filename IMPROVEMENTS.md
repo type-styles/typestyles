@@ -388,16 +388,12 @@ in var-ui's own roadmap, not here.
   in this repo — remains a candidate delivery vehicle var-ui could build on,
   if it wants one, rather than a new CLI from scratch.)
 
-- [ ] **P5.9 — Comparison page: add theming-architecture claims vs. Astryx/StyleX**
-  - P3.5.3's benchmark suite and P3.5.5's comparison page don't yet name Astryx or
-    state the specific claim that matters here: no compiler workarounds needed for
-    theming.
-  - Scope: add a comparison section on theming architecture specifically — plain CSS
-    vars vs. StyleX-generated vars requiring `.stylex.ts` files; build-always vs.
-    runtime-injection-with-warning; arbitrary component CSS overrides vs. `@scope` +
-    data-attribute config DSL. Documentation-only follow-up to P3.5.3/P3.5.5, no new
-    engine work.
-  - Effort: Low.
+- [x] **P5.9 — Comparison page: add theming-architecture claims vs. Astryx/StyleX**
+  - Shipped in `docs/content/docs/framework-comparison.md` — "Theming architecture:
+    TypeStyles vs. StyleX (and Astryx)" section covering plain CSS custom properties
+    vs. compiler-managed vars in `.stylex.ts` files, build-always extraction vs.
+    runtime-injection-with-warning, and plain-CSS component overrides via semantic
+    class names vs. `@scope` + data-attribute config DSL. Documentation-only.
 
 ## P6 — Future (unscheduled)
 
