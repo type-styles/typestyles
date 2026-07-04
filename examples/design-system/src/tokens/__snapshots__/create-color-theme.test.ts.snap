@@ -1,0 +1,286 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createColorTheme > clamps chroma for a near-gray accent 1`] = `
+{
+  "dark": {
+    "accent": {
+      "default": "oklch(72.00% 0.069 89.87556292373665)",
+      "hover": "oklch(80.33% 0.05 89.87556292373665)",
+    },
+    "background": {
+      "app": "oklch(22.00% 0.005 89.87556292373665)",
+      "elevated": "oklch(22.00% 0.005 89.87556292373665)",
+      "subtle": "oklch(30.33% 0.007 89.87556292373665)",
+      "surface": "oklch(22.00% 0.005 89.87556292373665)",
+    },
+    "border": {
+      "default": "oklch(47.00% 0.013 89.87556292373665)",
+      "focus": "oklch(55.33% 0.08 89.87556292373665)",
+      "strong": "oklch(63.67% 0.015 89.87556292373665)",
+    },
+    "danger": {
+      "default": "oklch(72.00% 0.181 27)",
+      "solid": "oklch(47.00% 0.189 27)",
+    },
+    "info": {
+      "default": "oklch(72.00% 0.189 294)",
+      "onSolid": "oklch(100% 0 0)",
+    },
+    "overlay": {
+      "default": "color-mix(in oklch, oklch(97.00% 0.002 89.87556292373665) 70%, transparent)",
+    },
+    "shadow": {
+      "offset": "oklch(6.5% 0.035 89.87556292373665)",
+    },
+    "success": {
+      "default": "oklch(72.00% 0.163 145)",
+      "solid": "oklch(47.00% 0.171 145)",
+    },
+    "text": {
+      "onAccent": "oklch(22.00% 0.005 89.87556292373665)",
+      "onDanger": "oklch(100% 0 0)",
+      "primary": "oklch(97.00% 0.002 89.87556292373665)",
+      "secondary": "oklch(72.00% 0.013 89.87556292373665)",
+    },
+    "warning": {
+      "default": "oklch(72.00% 0.146 72)",
+      "onSolid": "oklch(97.00% 0.002 89.87556292373665)",
+    },
+  },
+  "light": {
+    "accent": {
+      "default": "oklch(47.00% 0.072 89.87556292373665)",
+      "hover": "oklch(38.67% 0.054 89.87556292373665)",
+    },
+    "background": {
+      "app": "oklch(97.00% 0.002 89.87556292373665)",
+      "elevated": "oklch(97.00% 0.002 89.87556292373665)",
+      "subtle": "oklch(88.67% 0.005 89.87556292373665)",
+      "surface": "oklch(97.00% 0.002 89.87556292373665)",
+    },
+    "border": {
+      "default": "oklch(72.00% 0.013 89.87556292373665)",
+      "focus": "oklch(63.67% 0.08 89.87556292373665)",
+      "strong": "oklch(55.33% 0.015 89.87556292373665)",
+    },
+    "danger": {
+      "default": "oklch(47.00% 0.189 27)",
+      "solid": "oklch(38.67% 0.143 27)",
+    },
+    "info": {
+      "default": "oklch(47.00% 0.198 294)",
+      "onSolid": "oklch(100% 0 0)",
+    },
+    "overlay": {
+      "default": "color-mix(in oklch, oklch(22.00% 0.005 89.87556292373665) 55%, transparent)",
+    },
+    "shadow": {
+      "offset": "color-mix(in oklch, oklch(88.67% 0.005 89.87556292373665) 50%, transparent)",
+    },
+    "success": {
+      "default": "oklch(47.00% 0.171 145)",
+      "solid": "oklch(38.67% 0.129 145)",
+    },
+    "text": {
+      "onAccent": "oklch(100% 0 0)",
+      "onDanger": "oklch(100% 0 0)",
+      "primary": "oklch(22.00% 0.005 89.87556292373665)",
+      "secondary": "oklch(47.00% 0.013 89.87556292373665)",
+    },
+    "warning": {
+      "default": "oklch(47.00% 0.153 72)",
+      "onSolid": "oklch(22.00% 0.005 89.87556292373665)",
+    },
+  },
+}
+`;
+
+exports[`createColorTheme > returns DesignColorValues-shaped light and dark for the default accent 1`] = `
+{
+  "dark": {
+    "accent": {
+      "default": "oklch(72.00% 0.176 258.81008101651366)",
+      "hover": "oklch(80.33% 0.127 258.81008101651366)",
+    },
+    "background": {
+      "app": "oklch(22.00% 0.005 258.81008101651366)",
+      "elevated": "oklch(22.00% 0.005 258.81008101651366)",
+      "subtle": "oklch(30.33% 0.007 258.81008101651366)",
+      "surface": "oklch(22.00% 0.005 258.81008101651366)",
+    },
+    "border": {
+      "default": "oklch(47.00% 0.013 258.81008101651366)",
+      "focus": "oklch(55.33% 0.205 258.81008101651366)",
+      "strong": "oklch(63.67% 0.015 258.81008101651366)",
+    },
+    "danger": {
+      "default": "oklch(72.00% 0.181 27)",
+      "solid": "oklch(47.00% 0.189 27)",
+    },
+    "info": {
+      "default": "oklch(72.00% 0.189 294)",
+      "onSolid": "oklch(100% 0 0)",
+    },
+    "overlay": {
+      "default": "color-mix(in oklch, oklch(97.00% 0.002 258.81008101651366) 70%, transparent)",
+    },
+    "shadow": {
+      "offset": "oklch(6.5% 0.035 258.81008101651366)",
+    },
+    "success": {
+      "default": "oklch(72.00% 0.163 145)",
+      "solid": "oklch(47.00% 0.171 145)",
+    },
+    "text": {
+      "onAccent": "oklch(22.00% 0.005 258.81008101651366)",
+      "onDanger": "oklch(100% 0 0)",
+      "primary": "oklch(97.00% 0.002 258.81008101651366)",
+      "secondary": "oklch(72.00% 0.013 258.81008101651366)",
+    },
+    "warning": {
+      "default": "oklch(72.00% 0.146 72)",
+      "onSolid": "oklch(97.00% 0.002 258.81008101651366)",
+    },
+  },
+  "light": {
+    "accent": {
+      "default": "oklch(47.00% 0.184 258.81008101651366)",
+      "hover": "oklch(38.67% 0.139 258.81008101651366)",
+    },
+    "background": {
+      "app": "oklch(97.00% 0.002 258.81008101651366)",
+      "elevated": "oklch(97.00% 0.002 258.81008101651366)",
+      "subtle": "oklch(88.67% 0.005 258.81008101651366)",
+      "surface": "oklch(97.00% 0.002 258.81008101651366)",
+    },
+    "border": {
+      "default": "oklch(72.00% 0.013 258.81008101651366)",
+      "focus": "oklch(63.67% 0.205 258.81008101651366)",
+      "strong": "oklch(55.33% 0.015 258.81008101651366)",
+    },
+    "danger": {
+      "default": "oklch(47.00% 0.189 27)",
+      "solid": "oklch(38.67% 0.143 27)",
+    },
+    "info": {
+      "default": "oklch(47.00% 0.198 294)",
+      "onSolid": "oklch(100% 0 0)",
+    },
+    "overlay": {
+      "default": "color-mix(in oklch, oklch(22.00% 0.005 258.81008101651366) 55%, transparent)",
+    },
+    "shadow": {
+      "offset": "color-mix(in oklch, oklch(88.67% 0.005 258.81008101651366) 50%, transparent)",
+    },
+    "success": {
+      "default": "oklch(47.00% 0.171 145)",
+      "solid": "oklch(38.67% 0.129 145)",
+    },
+    "text": {
+      "onAccent": "oklch(100% 0 0)",
+      "onDanger": "oklch(100% 0 0)",
+      "primary": "oklch(22.00% 0.005 258.81008101651366)",
+      "secondary": "oklch(47.00% 0.013 258.81008101651366)",
+    },
+    "warning": {
+      "default": "oklch(47.00% 0.153 72)",
+      "onSolid": "oklch(22.00% 0.005 258.81008101651366)",
+    },
+  },
+}
+`;
+
+exports[`createColorTheme > returns themes for a saturated pink accent 1`] = `
+{
+  "dark": {
+    "accent": {
+      "default": "oklch(72.00% 0.225 356.9447697294126)",
+      "hover": "oklch(80.33% 0.162 356.9447697294126)",
+    },
+    "background": {
+      "app": "oklch(22.00% 0.005 356.9447697294126)",
+      "elevated": "oklch(22.00% 0.005 356.9447697294126)",
+      "subtle": "oklch(30.33% 0.007 356.9447697294126)",
+      "surface": "oklch(22.00% 0.005 356.9447697294126)",
+    },
+    "border": {
+      "default": "oklch(47.00% 0.013 356.9447697294126)",
+      "focus": "oklch(55.33% 0.261 356.9447697294126)",
+      "strong": "oklch(63.67% 0.015 356.9447697294126)",
+    },
+    "danger": {
+      "default": "oklch(72.00% 0.181 27)",
+      "solid": "oklch(47.00% 0.189 27)",
+    },
+    "info": {
+      "default": "oklch(72.00% 0.189 294)",
+      "onSolid": "oklch(100% 0 0)",
+    },
+    "overlay": {
+      "default": "color-mix(in oklch, oklch(97.00% 0.002 356.9447697294126) 70%, transparent)",
+    },
+    "shadow": {
+      "offset": "oklch(6.5% 0.035 356.9447697294126)",
+    },
+    "success": {
+      "default": "oklch(72.00% 0.163 145)",
+      "solid": "oklch(47.00% 0.171 145)",
+    },
+    "text": {
+      "onAccent": "oklch(22.00% 0.005 356.9447697294126)",
+      "onDanger": "oklch(100% 0 0)",
+      "primary": "oklch(97.00% 0.002 356.9447697294126)",
+      "secondary": "oklch(72.00% 0.013 356.9447697294126)",
+    },
+    "warning": {
+      "default": "oklch(72.00% 0.146 72)",
+      "onSolid": "oklch(97.00% 0.002 356.9447697294126)",
+    },
+  },
+  "light": {
+    "accent": {
+      "default": "oklch(47.00% 0.235 356.9447697294126)",
+      "hover": "oklch(38.67% 0.178 356.9447697294126)",
+    },
+    "background": {
+      "app": "oklch(97.00% 0.002 356.9447697294126)",
+      "elevated": "oklch(97.00% 0.002 356.9447697294126)",
+      "subtle": "oklch(88.67% 0.005 356.9447697294126)",
+      "surface": "oklch(97.00% 0.002 356.9447697294126)",
+    },
+    "border": {
+      "default": "oklch(72.00% 0.013 356.9447697294126)",
+      "focus": "oklch(63.67% 0.261 356.9447697294126)",
+      "strong": "oklch(55.33% 0.015 356.9447697294126)",
+    },
+    "danger": {
+      "default": "oklch(47.00% 0.189 27)",
+      "solid": "oklch(38.67% 0.143 27)",
+    },
+    "info": {
+      "default": "oklch(47.00% 0.198 294)",
+      "onSolid": "oklch(100% 0 0)",
+    },
+    "overlay": {
+      "default": "color-mix(in oklch, oklch(22.00% 0.005 356.9447697294126) 55%, transparent)",
+    },
+    "shadow": {
+      "offset": "color-mix(in oklch, oklch(88.67% 0.005 356.9447697294126) 50%, transparent)",
+    },
+    "success": {
+      "default": "oklch(47.00% 0.171 145)",
+      "solid": "oklch(38.67% 0.129 145)",
+    },
+    "text": {
+      "onAccent": "oklch(100% 0 0)",
+      "onDanger": "oklch(100% 0 0)",
+      "primary": "oklch(22.00% 0.005 356.9447697294126)",
+      "secondary": "oklch(47.00% 0.013 356.9447697294126)",
+    },
+    "warning": {
+      "default": "oklch(47.00% 0.153 72)",
+      "onSolid": "oklch(22.00% 0.005 356.9447697294126)",
+    },
+  },
+}
+`;

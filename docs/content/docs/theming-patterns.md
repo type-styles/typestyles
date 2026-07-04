@@ -25,6 +25,48 @@ Try a minimal light/dark surface in the live example below — toggle **Dark** t
 
 <!-- doc-live-demo id="theming-light-dark" -->
 
+## Generating a theme from one accent color
+
+The design-system example ships `createColorTheme` — a semantic mapper that turns a single
+hex accent into light and dark `DesignColorValues` using the core `typestyles/color-scale`
+math (OKLCH ramps + WCAG contrast checks).
+
+```ts
+import { createColorTheme } from '@examples/design-system';
+
+const { light, dark } = createColorTheme({
+  accent: '#0064E0',
+  neutralStyle: 'neutral', // 'neutral' | 'cool' | 'warm'
+  contrast: 'standard', // 'standard' | 'high'
+});
+
+// Plug into createDesignTheme / tokens.createTheme mode overrides:
+export const brandTheme = createDesignTheme({
+  name: 'brand',
+  light: { color: light, syntax: defaultLightSyntaxValues },
+  dark: { color: dark, syntax: defaultDarkSyntaxValues },
+});
+```
+
+**Layering:** `typestyles/color-scale` is vocabulary-agnostic (`parseColor`, `generateRamp`,
+`contrastRatio`). `createColorTheme` lives in `examples/design-system` and decides which ramp
+step maps to `background.app`, `accent.default`, and so on. Derived tokens such as
+`accent.subtle` and `text.disabled` still come from the existing `color-mix()` machinery in
+`tokens/index.ts` — `createColorTheme` only fills the base semantic slots.
+
+**Core API** (usable without the design-system vocabulary):
+
+```ts
+import { parseColor, generateRamp, contrastRatio } from 'typestyles/color-scale';
+
+const accent = parseColor('#0064E0'); // { l, c, h } in OKLCH units
+const ramp = generateRamp({ hue: accent.h, chroma: accent.c }); // 10-step OKLCH strings
+contrastRatio('#000', '#fff'); // 21
+```
+
+Dev-mode contrast warnings (`console.warn`) fire when generated pairs fall below 4.5:1
+(standard) or 7:1 (high); they never throw.
+
 ## Basic light/dark mode
 
 ### Creating a theme

@@ -86,6 +86,18 @@ Composes naturally with token references.
 
 See [Color](/docs/color).
 
+### `color-scale` (`typestyles/color-scale`)
+
+OKLCH ramp generation and WCAG contrast math, on a **separate subpath** (zero impact on main bundle size).
+
+**Functions:**
+
+- `parseColor(hex)`: Hex → `{ l, c, h }` in OKLCH units (hex only in v1)
+- `generateRamp({ hue, chroma, steps?, lightnessRange? })`: Perceptual OKLCH ramp (lightest → darkest)
+- `contrastRatio(colorA, colorB)`: WCAG relative luminance ratio (hex or `oklch()` strings)
+
+See [Theming Patterns — Generating a theme from one accent color](/docs/theming-patterns#generating-a-theme-from-one-accent-color).
+
 ### `calc` and `clamp`
 
 Helpers for CSS `calc()` and `clamp()` that always emit balanced outer parentheses:

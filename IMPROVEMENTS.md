@@ -311,21 +311,10 @@ This phase closes that gap. Scope is theming/styling architecture only — compo
 _count_ parity (Astryx ships ~90 components; `examples/design-system` ships ~17) is a
 separate, later initiative and is explicitly out of scope here.
 
-- [ ] **P5.1 — Generative color-scale API (`tokens.colorScale`)**
-  - Astryx's `expandColorScale` derives ~30 functional tokens (neutral backgrounds,
-    text, borders, status colors, categorical hues) from one accent + `neutralStyle`
-    - `contrast`, using the HCT perceptual color model. TypeStyles' `typestyles/color`
-      has OKLCH/alpha primitives but no full-palette generator — every example theme
-      (default/forest/rose/amber/…) hand-picks every value by hand.
-  - Scope: `tokens.colorScale({ accent, neutralStyle, contrast })` → a flat token map
-    pluggable into `tokens.create` / `createTheme` base/mode overrides. Use OKLCH
-    (already the house color primitive) rather than porting HCT. Cover: neutral ramp
-    (bg/surface/subtle/elevated), text (primary/secondary/disabled/placeholder via
-    `color-mix`), accent + hover + subtle, border (default/strong/focus), status
-    colors (danger/success/warning/info) each with default/subtle/border/solid, and N
-    categorical hues for badges/charts. Merge order matches Astryx's `defineTheme`:
-    generated tokens are lowest precedence, explicit `tokens` overrides always win.
-  - Effort: High (color math + palette-quality tuning + contrast validation).
+- [x] **P5.1 — Generative color-scale API (`typestyles/color-scale` + `createColorTheme`)**
+  - Shipped in `packages/typestyles/src/color-scale.ts` (`parseColor`, `generateRamp`,
+    `contrastRatio`) and `examples/design-system/src/tokens/create-color-theme.ts`.
+    Spec: `specs/color-scale-generation.md`.
 
 - [ ] **P5.2 — Generative typography/motion/radius scales**
   - Astryx's `expandTypeScale` / `expandMotionScale` / `expandRadiusScale` turn

@@ -66,6 +66,16 @@
         "types": "./dist/color.d.cts",
         "default": "./dist/color.cjs"
       }
+    },
+    "./color-scale": {
+      "import": {
+        "types": "./dist/color-scale.d.ts",
+        "default": "./dist/color-scale.js"
+      },
+      "require": {
+        "types": "./dist/color-scale.d.cts",
+        "default": "./dist/color-scale.cjs"
+      }
     }
   },
   "files": [

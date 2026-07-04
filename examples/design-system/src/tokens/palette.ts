@@ -1,9 +1,9 @@
-import { color } from 'typestyles/color';
+import { generateRamp } from 'typestyles/color-scale';
 
 export const PALETTE_STEPS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
 export type PaletteStep = (typeof PALETTE_STEPS)[number];
 export type BaseColorPalette = Record<PaletteStep, string>;
-type FamilySpec = { readonly h: number; readonly cMax: number };
+export type FamilySpec = { readonly h: number; readonly cMax: number };
 
 export const PALETTE_FAMILIES = [
   'amber',
@@ -50,7 +50,7 @@ export const PALETTE_FAMILIES = [
 export type PaletteFamily = (typeof PALETTE_FAMILIES)[number];
 export type PaletteTokenKey = `${PaletteFamily}-${PaletteStep}`;
 
-const FAMILY_SPECS = {
+export const FAMILY_SPECS = {
   amber: { h: 72, cMax: 0.17 },
   blue: { h: 262, cMax: 0.22 },
   bronze: { h: 58, cMax: 0.12 },
@@ -92,22 +92,11 @@ const FAMILY_SPECS = {
   zinc: { h: 268, cMax: 0.015 },
 } as const satisfies Record<PaletteFamily, FamilySpec>;
 
-const STEP_COUNT = PALETTE_STEPS.length;
-const CHROMA_ENVELOPE = [0.14, 0.34, 0.62, 0.86, 1, 1, 0.9, 0.68, 0.48, 0.32] as const;
-
-function lightnessStops(): readonly number[] {
-  const hi = 97;
-  const lo = 22;
-  return Array.from({ length: STEP_COUNT }, (_, i) => hi - (i / (STEP_COUNT - 1)) * (hi - lo));
-}
-
 function buildScale(h: number, cMax: number): BaseColorPalette {
-  const L = lightnessStops();
+  const ramp = generateRamp({ hue: h, chroma: cMax });
   const out = {} as Record<PaletteStep, string>;
-  for (let i = 0; i < STEP_COUNT; i++) {
-    const step = PALETTE_STEPS[i];
-    const c = cMax * CHROMA_ENVELOPE[i];
-    out[step] = color.oklch(`${L[i].toFixed(2)}%`, Number(c.toFixed(3)), h);
+  for (let i = 0; i < PALETTE_STEPS.length; i++) {
+    out[PALETTE_STEPS[i]] = ramp[i];
   }
   return out;
 }
