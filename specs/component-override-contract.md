@@ -145,7 +145,7 @@ detection, scopeId guardrails).
   these calls) and computing the class name string the same way
   `class-naming.ts` does.
 - A companion script (not the lint rule itself) regenerates the snapshot:
-  `typestyles snapshot-classnames --write`. Updating the snapshot is a
+  `typestyles snapshot --write`. Updating the snapshot is a
   deliberate, explicit step — the same "you must acknowledge this" pattern
   changesets already use in this repo, rather than an eslint `--fix` that
   silently approves a rename.
@@ -204,7 +204,7 @@ Task 2's guide.
 
 ### Task 4 — Classname snapshot script
 
-Build `typestyles snapshot-classnames --write` (or fold into an existing CLI
+Build `typestyles snapshot --write` (or fold into an existing CLI
 entry point if one exists by the time this is implemented) per Part C.
 
 **Done when:** running it against a real `styles.component()`-using package

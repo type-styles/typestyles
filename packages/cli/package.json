@@ -1,11 +1,14 @@
 {
-  "name": "@typestyles/eslint-plugin",
-  "version": "0.2.0",
-  "description": "ESLint rules for TypeStyles style objects and namespace usage",
+  "name": "@typestyles/cli",
+  "version": "0.1.0",
+  "description": "TypeStyles command-line tools",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "typestyles": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "import": {
@@ -28,31 +31,26 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
-    "eslint",
-    "eslintplugin",
     "typestyles",
-    "css-in-ts"
+    "cli",
+    "design-system",
+    "css",
+    "semver"
   ],
-  "peerDependencies": {
-    "eslint": "^8.57.0 || ^9.0.0"
-  },
-  "dependencies": {
-    "@typescript-eslint/utils": "^8.54.0",
-    "@typestyles/cli": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "^25.2.1",
-    "@typescript-eslint/parser": "^8.54.0",
-    "@typescript-eslint/rule-tester": "^8.54.0",
-    "eslint": "^9.39.2",
-    "tsup": "^8.0.0",
-    "typescript": "^5.4.0",
-    "vitest": "^3.0.0"
-  },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/type-styles/typestyles",
-    "directory": "packages/eslint-plugin"
+    "directory": "packages/cli"
+  },
+  "dependencies": {
+    "fast-glob": "^3.3.3",
+    "typescript": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "eslint": "^9.39.2",
+    "tsup": "^8.0.0",
+    "vitest": "^3.0.0"
   }
 }

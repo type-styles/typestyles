@@ -32,6 +32,7 @@ import {
 } from './class-naming';
 import { decomposeAtomicStyle, classNamesAndRulesForProperties } from './atomic-decompose';
 import { createComponent } from './component';
+import { createScope, type ScopeOptions } from './scope';
 import { createStylesPropertyFn } from './registered-property';
 import {
   container as containerQuery,
@@ -285,6 +286,11 @@ export type StylesApi = {
   };
   withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApi<U>;
   compose: typeof compose;
+  /**
+   * Proximity-correct theme overrides via CSS `@scope` for nested theme regions.
+   * Prefer component-scoped CSS custom properties (Tier 1) when possible; see theming docs.
+   */
+  scope: (opts: ScopeOptions, className: string, overrides: CSSProperties) => void;
 };
 
 /** Options argument for styles when `createStyles({ layers })` is used. */
@@ -352,8 +358,13 @@ export type LayeredComponentFnWithUtils<L extends string> = {
 
 export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = Omit<
   StylesWithUtilsApi<U>,
-  'class' | 'hashClass' | 'component'
+  'class' | 'hashClass' | 'component' | 'scope'
 > & {
+  scope: (
+    opts: ScopeOptions & { layer?: L },
+    className: string,
+    overrides: CSSPropertiesWithUtils<U>,
+  ) => void;
   class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<L>) => string;
   hashClass: (
     properties: CSSPropertiesWithUtils<U>,
@@ -365,8 +376,9 @@ export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = 
 
 export type StylesApiWithLayers<L extends string> = Omit<
   StylesApi,
-  'class' | 'hashClass' | 'component' | 'withUtils'
+  'class' | 'hashClass' | 'component' | 'withUtils' | 'scope'
 > & {
+  scope: (opts: ScopeOptions & { layer?: L }, className: string, overrides: CSSProperties) => void;
   class: (name: string, properties: CSSProperties, options: LayerOption<L>) => string;
   hashClass: (properties: CSSProperties, options: LayerOption<L> & { label?: string }) => string;
   component: LayeredComponentFn<L>;
@@ -472,6 +484,8 @@ function buildStylesRuntimeApi(
     });
 
   const property = createStylesPropertyFn(classNaming);
+  const scope = (opts: ScopeOptions, className: string, overrides: CSSProperties) =>
+    createScope(classNaming, opts, className, overrides);
 
   if (layered) {
     return {
@@ -494,6 +508,7 @@ function buildStylesRuntimeApi(
       component: componentImpl as unknown as LayeredComponentFn<string>,
       withUtils: (utils) => createStylesWithUtilsLayered(utils, classNaming),
       compose,
+      scope,
       // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
     } as StylesApiWithLayers<string>;
   }
@@ -520,6 +535,7 @@ function buildStylesRuntimeApi(
       )) as StylesApi['component'],
     withUtils: (utils) => createStylesWithUtils(utils, classNaming),
     compose,
+    scope,
     // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
   } as StylesApi;
 }
@@ -552,6 +568,7 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
     ): MultiSlotReturn<Slots>;
   };
   compose: typeof compose;
+  scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) => void;
 };
 
 /**
@@ -611,6 +628,8 @@ export function createStylesWithUtils<U extends StyleUtils>(
     hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
     component: component as StylesWithUtilsApi<U>['component'],
     compose,
+    scope: (opts, className, overrides) =>
+      createScope(classNaming, opts, className, apply(overrides)),
   };
 }
 
@@ -666,6 +685,8 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     ) => createHashClass(classNaming, apply(properties), options.label, options.layer),
     component: component as unknown as LayeredComponentFnWithUtils<string>,
     compose,
+    scope: (opts, className, overrides) =>
+      createScope(classNaming, opts, className, apply(overrides)),
   };
 }
 

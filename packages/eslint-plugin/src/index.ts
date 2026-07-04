@@ -1,6 +1,7 @@
 import { noDefaultScopeInPackage } from './rules/no-default-scope-in-package';
 import { noDuplicateNamespace } from './rules/no-duplicate-namespace';
 import { noInvalidUnitlessValue } from './rules/no-invalid-unitless-value';
+import { noRemovedPublicClassname } from './rules/no-removed-public-classname';
 import { noShorthandLonghandConflict } from './rules/no-shorthand-longhand-conflict';
 
 export const rules = {
@@ -8,6 +9,7 @@ export const rules = {
   'no-shorthand-longhand-conflict': noShorthandLonghandConflict,
   'no-invalid-unitless-value': noInvalidUnitlessValue,
   'no-duplicate-namespace': noDuplicateNamespace,
+  'no-removed-public-classname': noRemovedPublicClassname,
 };
 
 export {
@@ -15,6 +17,7 @@ export {
   noShorthandLonghandConflict,
   noInvalidUnitlessValue,
   noDuplicateNamespace,
+  noRemovedPublicClassname,
 };
 
 const plugin = {

@@ -324,22 +324,13 @@ in var-ui's own roadmap, not here.
     (var-ui wires these into its own `primitive.ts`).
     Spec: `specs/type-motion-radius-scale-generation.md`.
 
-- [ ] **P5.3 — Formalize the component-override public contract + `@scope` helper**
-  - `styles.component()` semantic class names (`button-intent-primary`) already let
-    consumers write plain CSS overrides today — but this isn't documented as a stable
-    public contract, has no isolation from global specificity fights, and `@scope`
-    support is still an open item in this doc's backlog.
-  - Scope: (a) document that `styles.component()` semantic class names and their
-    pseudo-selectors are a stable, semver-guarded public surface any consumer may
-    target directly with plain CSS; (b) ship an `@scope`-emitting helper
-    (`styles.scope({ root, to?, layer? }, className, overrides)`, reusing the
-    existing `serializeStyle`/`applyLayerToRules`/`insertRules`) so nested
-    theme regions don't lose specificity ties on load order; (c) add an
-    `@typestyles/eslint-plugin` rule flagging a renamed semantic class name as a
-    breaking change requiring a changeset. Supersedes the `@scope` bullet in P6.
+- [x] **P5.3 — Formalize the component-override public contract + `@scope` helper**
+  - Shipped: `styles.scope()` (`packages/typestyles/src/scope.ts`) reuses `serializeStyle`,
+    `applyLayerToRules`, and `insertRules`; `typestyles snapshot --write` +
+    `@typestyles/no-removed-public-classname` guard semantic renames; theming/components/publishing
+    docs cover the two-tier override model and public class name contract.
     Spec: `specs/component-override-contract.md`.
-  - Effort: Medium (mostly `@scope` emission + docs; name stability is already true
-    in practice, it just needs to be promised).
+    PR: https://github.com/type-styles/typestyles/pull/119.
 
 - [x] **P5.4 — `descendant` scope on the theme condition engine**
   - Shipped in `packages/typestyles/src/theme.ts` / `types.ts`: `'descendant'` as

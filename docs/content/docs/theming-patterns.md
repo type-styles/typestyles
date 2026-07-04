@@ -824,6 +824,74 @@ app.get('/', (req, res) => {
 });
 ```
 
+## Component overrides (two-tier model)
+
+When a theme needs to change how a component looks beyond token overrides, there are
+two tiers — pick the lightest option that fits.
+
+### Tier 1 — component-scoped CSS custom properties (preferred)
+
+If a component author exposed a property as a CSS custom property (`ctx.vars` /
+`c.vars`), consumers override it per theme with ordinary token or theme CSS. Custom
+properties inherit down the DOM and reset at each `.theme-*` boundary, so nested
+themes stay proximity-correct with no extra tooling.
+
+See [Components — expose themeable properties as vars](/docs/components#expose-themeable-properties-as-vars).
+
+### Tier 2 — plain CSS against semantic class names
+
+For properties the author did not expose as vars, target the stable semantic class
+names from `styles.component()` (for example `button-base`, `button-intent-primary`).
+See [Class naming](/docs/class-naming) and the [public contract](#public-semantic-class-names).
+
+**Non-nested themes:** a descendant selector in a later cascade layer is enough:
+
+```ts
+import { createStyles } from 'typestyles';
+
+const styles = createStyles({
+  layers: ['components', 'overrides'] as const,
+});
+
+const button = styles.component(
+  'button',
+  { base: { padding: '8px 16px' } },
+  { layer: 'components' },
+);
+
+// In theme setup for `.theme-acme`:
+styles.class('.theme-acme .button-base', { borderRadius: '999px' }, { layer: 'overrides' });
+```
+
+**Nested conflicting themes:** when two `.theme-*` regions nest and both override the
+same component class, plain selectors tie on specificity and source order wins. Use
+`styles.scope()` so the nearest scoping root wins:
+
+```ts
+styles.scope({ root: '.theme-beta', to: '.theme-acme', layer: 'overrides' }, 'button-base', {
+  backgroundColor: 'rebeccapurple',
+  '&:hover': { opacity: 0.9 },
+});
+```
+
+`styles.scope()` reuses the same `serializeStyle` / `applyLayerToRules` / `insertRules`
+pipeline as other TypeStyles APIs — pseudo-selectors and `@media` in `overrides` work
+unchanged.
+
+**Browser support:** `@scope` ships in Chrome 118+, Firefox 128+, Safari 17.4+. Treat
+it as an opt-in escalation for nested conflicts; older browsers can keep Tier 2 plain
+selectors and accept the documented load-order caveat.
+
+## Public semantic class names
+
+In **`semantic` naming mode** (the default), every class emitted by
+`styles.component()` / `styles.class()` is a **public, semver-guarded surface**.
+Consumers may target those names in plain CSS, `styles.scope()`, or any other CSS
+tooling. Renaming a namespace or variant key is a **breaking change** — TypeScript will
+not catch a renamed string literal, so publishable design systems should opt into the
+[`@typestyles/no-removed-public-classname`](/docs/publishing-packages#guard-public-class-names)
+rule and regenerate `.typestyles-public-classnames.json` deliberately when names change.
+
 ## Best practices
 
 1. **Use semantic token names** - `primary`, `surface`, `text` instead of `blue`, `white`, `black`
