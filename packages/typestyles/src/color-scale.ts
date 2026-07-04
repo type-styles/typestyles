@@ -80,8 +80,15 @@ function oklabToSrgb(L: number, a: number, b: number): [number, number, number] 
   return [gammaEncodeSrgb(linear[0]), gammaEncodeSrgb(linear[1]), gammaEncodeSrgb(linear[2])];
 }
 
+/** Below this, a/b are floating-point noise (matrix constants don't sum to exactly 1),
+ *  so atan2 produces a hue that's arbitrary and unstable across JS engines. */
+const ACHROMATIC_CHROMA_EPSILON = 1e-4;
+
 function oklabToOklch(L: number, a: number, b: number): OklchColor {
   const c = Math.sqrt(a * a + b * b);
+  if (c < ACHROMATIC_CHROMA_EPSILON) {
+    return { l: L * 100, c, h: 0 };
+  }
   let h = (Math.atan2(b, a) * 180) / Math.PI;
   if (h < 0) h += 360;
   return { l: L * 100, c, h };

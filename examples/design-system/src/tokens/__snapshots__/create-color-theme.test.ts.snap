@@ -4,19 +4,19 @@ exports[`createColorTheme > clamps chroma for a near-gray accent 1`] = `
 {
   "dark": {
     "accent": {
-      "default": "oklch(72.00% 0.069 89.87556292373665)",
-      "hover": "oklch(80.33% 0.05 89.87556292373665)",
+      "default": "oklch(72.00% 0.069 0)",
+      "hover": "oklch(80.33% 0.05 0)",
     },
     "background": {
-      "app": "oklch(22.00% 0.005 89.87556292373665)",
-      "elevated": "oklch(22.00% 0.005 89.87556292373665)",
-      "subtle": "oklch(30.33% 0.007 89.87556292373665)",
-      "surface": "oklch(22.00% 0.005 89.87556292373665)",
+      "app": "oklch(22.00% 0.005 0)",
+      "elevated": "oklch(22.00% 0.005 0)",
+      "subtle": "oklch(30.33% 0.007 0)",
+      "surface": "oklch(22.00% 0.005 0)",
     },
     "border": {
-      "default": "oklch(47.00% 0.013 89.87556292373665)",
-      "focus": "oklch(55.33% 0.08 89.87556292373665)",
-      "strong": "oklch(63.67% 0.015 89.87556292373665)",
+      "default": "oklch(47.00% 0.013 0)",
+      "focus": "oklch(55.33% 0.08 0)",
+      "strong": "oklch(63.67% 0.015 0)",
     },
     "danger": {
       "default": "oklch(72.00% 0.181 27)",
@@ -27,41 +27,41 @@ exports[`createColorTheme > clamps chroma for a near-gray accent 1`] = `
       "onSolid": "oklch(100% 0 0)",
     },
     "overlay": {
-      "default": "color-mix(in oklch, oklch(97.00% 0.002 89.87556292373665) 70%, transparent)",
+      "default": "color-mix(in oklch, oklch(97.00% 0.002 0) 70%, transparent)",
     },
     "shadow": {
-      "offset": "oklch(6.5% 0.035 89.87556292373665)",
+      "offset": "oklch(6.5% 0.035 0)",
     },
     "success": {
       "default": "oklch(72.00% 0.163 145)",
       "solid": "oklch(47.00% 0.171 145)",
     },
     "text": {
-      "onAccent": "oklch(22.00% 0.005 89.87556292373665)",
+      "onAccent": "oklch(22.00% 0.005 0)",
       "onDanger": "oklch(100% 0 0)",
-      "primary": "oklch(97.00% 0.002 89.87556292373665)",
-      "secondary": "oklch(72.00% 0.013 89.87556292373665)",
+      "primary": "oklch(97.00% 0.002 0)",
+      "secondary": "oklch(72.00% 0.013 0)",
     },
     "warning": {
       "default": "oklch(72.00% 0.146 72)",
-      "onSolid": "oklch(97.00% 0.002 89.87556292373665)",
+      "onSolid": "oklch(97.00% 0.002 0)",
     },
   },
   "light": {
     "accent": {
-      "default": "oklch(47.00% 0.072 89.87556292373665)",
-      "hover": "oklch(38.67% 0.054 89.87556292373665)",
+      "default": "oklch(47.00% 0.072 0)",
+      "hover": "oklch(38.67% 0.054 0)",
     },
     "background": {
-      "app": "oklch(97.00% 0.002 89.87556292373665)",
-      "elevated": "oklch(97.00% 0.002 89.87556292373665)",
-      "subtle": "oklch(88.67% 0.005 89.87556292373665)",
-      "surface": "oklch(97.00% 0.002 89.87556292373665)",
+      "app": "oklch(97.00% 0.002 0)",
+      "elevated": "oklch(97.00% 0.002 0)",
+      "subtle": "oklch(88.67% 0.005 0)",
+      "surface": "oklch(97.00% 0.002 0)",
     },
     "border": {
-      "default": "oklch(72.00% 0.013 89.87556292373665)",
-      "focus": "oklch(63.67% 0.08 89.87556292373665)",
-      "strong": "oklch(55.33% 0.015 89.87556292373665)",
+      "default": "oklch(72.00% 0.013 0)",
+      "focus": "oklch(63.67% 0.08 0)",
+      "strong": "oklch(55.33% 0.015 0)",
     },
     "danger": {
       "default": "oklch(47.00% 0.189 27)",
@@ -72,10 +72,10 @@ exports[`createColorTheme > clamps chroma for a near-gray accent 1`] = `
       "onSolid": "oklch(100% 0 0)",
     },
     "overlay": {
-      "default": "color-mix(in oklch, oklch(22.00% 0.005 89.87556292373665) 55%, transparent)",
+      "default": "color-mix(in oklch, oklch(22.00% 0.005 0) 55%, transparent)",
     },
     "shadow": {
-      "offset": "color-mix(in oklch, oklch(88.67% 0.005 89.87556292373665) 50%, transparent)",
+      "offset": "color-mix(in oklch, oklch(88.67% 0.005 0) 50%, transparent)",
     },
     "success": {
       "default": "oklch(47.00% 0.171 145)",
@@ -84,12 +84,12 @@ exports[`createColorTheme > clamps chroma for a near-gray accent 1`] = `
     "text": {
       "onAccent": "oklch(100% 0 0)",
       "onDanger": "oklch(100% 0 0)",
-      "primary": "oklch(22.00% 0.005 89.87556292373665)",
-      "secondary": "oklch(47.00% 0.013 89.87556292373665)",
+      "primary": "oklch(22.00% 0.005 0)",
+      "secondary": "oklch(47.00% 0.013 0)",
     },
     "warning": {
       "default": "oklch(47.00% 0.153 72)",
-      "onSolid": "oklch(22.00% 0.005 89.87556292373665)",
+      "onSolid": "oklch(22.00% 0.005 0)",
     },
   },
 }
