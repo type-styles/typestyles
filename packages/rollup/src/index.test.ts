@@ -69,6 +69,42 @@ styles.component('rollup-convention', { base: { color: 'red' } });`,
     expect(emitted[0]?.source).toContain('rollup-convention');
   });
 
+  it('extracts tokens.create and createTheme CSS into the emitted asset', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'typestyles-rollup-theme-'));
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(
+      join(dir, 'src/typestyles-entry.ts'),
+      `import { tokens, createTheme } from 'typestyles';
+const color = tokens.create('rollup-color', { primary: '#0066ff' });
+createTheme('rollup-dark', { base: { 'rollup-color': { primary: '#66aaff' } } });`,
+    );
+
+    const plugin = typestylesRollupPlugin({ root: dir });
+    const buildStart = rollupHookFn(plugin.buildStart);
+    const generateBundle = rollupHookFn(plugin.generateBundle);
+    if (buildStart == null || generateBundle == null) {
+      throw new Error('expected buildStart and generateBundle hooks');
+    }
+
+    const emitted: Array<{ fileName: string; source: string }> = [];
+    const ctx = {
+      emitFile(file: { type: 'asset'; fileName: string; source: string }) {
+        emitted.push({ fileName: file.fileName, source: file.source });
+      },
+      error(message: string) {
+        throw new Error(message);
+      },
+    };
+
+    await buildStart.call(ctx as never);
+    await generateBundle.call(ctx as never);
+
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]?.source).toContain('--rollup-color-primary: #0066ff');
+    expect(emitted[0]?.source).toContain('.theme-rollup-dark');
+    expect(emitted[0]?.source).toContain('--rollup-color-primary: #66aaff');
+  });
+
   it('errors when the same style namespace is used in another module', async () => {
     const plugin = typestylesRollupPlugin();
     const transform = rollupHookFn(plugin.transform);

@@ -364,17 +364,15 @@ in var-ui's own roadmap, not here.
     `surfaces` config has moved to var-ui).
   - Effort: Medium.
 
-- [ ] **P5.6 — Distribution parity: confirm and document build-time theme extraction**
-  - Astryx warns at runtime and pushes users toward `astryx theme build` for static
-    CSS. TypeStyles' bundler plugins likely already extract theme/token CSS at build
-    time as a byproduct of normal extraction, but this isn't stated as an explicit
-    claim anywhere.
-  - Scope: verify via `verifyTypestylesBuild()` (P1.7) that `tokens.create` /
-    `createTheme` output is captured by zero-runtime extraction across all six
-    bundler integrations; add a "theme extraction" section to the zero-runtime docs
-    page stating TypeStyles never needs a "did you forget to build your theme"
-    runtime warning, unlike Astryx's unbuilt-theme fallback.
-  - Effort: Low (verification + docs; no known code gap).
+- [x] **P5.6 — Distribution parity: confirm and document build-time theme extraction**
+  - Verified: `tokens.create` / `createTheme` CSS is captured by zero-runtime
+    extraction across all six bundler integrations, with per-integration tests
+    (Vite parity + plugin e2e, Rollup, esbuild + `verifyTypestylesBuild`,
+    webpack + `verifyTypestylesBuild`, Next `buildTypestylesForNext`, and new
+    `@typestyles/astro` test infrastructure). No extraction gap found. Documented
+    in the "Theme extraction" section of `docs/content/docs/zero-runtime.md`
+    (no unbuilt-theme runtime warning needed, unlike Astryx's
+    `astryx theme build` fallback).
 
 - [ ] **P5.7 — Market `@property`-typed tokens as animatable-theme differentiator**
   - P3.24 already shipped `@property` on token leaves + `styles.property`, but it
