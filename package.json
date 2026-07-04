@@ -18,6 +18,7 @@
     "esbuild": "pnpm --filter @typestyles/esbuild",
     "webpack": "pnpm --filter @typestyles/webpack",
     "next": "pnpm --filter @typestyles/next",
+    "react": "pnpm --filter @typestyles/react",
     "migrate": "pnpm --filter @typestyles/migrate",
     "eslint-plugin": "pnpm --filter @typestyles/eslint-plugin",
     "vite-app": "pnpm --filter typestyles-vite-example",
