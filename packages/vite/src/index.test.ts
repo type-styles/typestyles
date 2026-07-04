@@ -249,6 +249,42 @@ styles.component('shared-ns', { base: { color: 'blue' } });`;
     );
   });
 
+  it('extracts tokens.create and createTheme CSS into the emitted asset on build', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'typestyles-vite-theme-'));
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(
+      join(dir, 'src/typestyles-entry.ts'),
+      `import { tokens, createTheme } from 'typestyles';
+const color = tokens.create('vite-color', { primary: '#0066ff' });
+createTheme('vite-dark', { base: { 'vite-color': { primary: '#66aaff' } } });`,
+    );
+
+    const mod = await import('./index');
+    const plugin = mod.default();
+    const config = viteHookFn(plugin.config);
+    await Promise.resolve(config?.({ root: dir }, { command: 'build', mode: 'production' }));
+    viteHookFn(plugin.configResolved)?.({ command: 'build', root: dir } as ResolvedConfig);
+
+    const emitted: Array<{ fileName: string; source: string }> = [];
+    const ctx = {
+      emitFile(file: { type: 'asset'; fileName: string; source: string }) {
+        emitted.push({ fileName: file.fileName, source: file.source });
+      },
+      error(message: string) {
+        throw new Error(message);
+      },
+    };
+    const generateBundle = viteHookFn(plugin.generateBundle);
+    if (generateBundle == null) throw new Error('expected plugin.generateBundle');
+    await generateBundle.call(ctx as never);
+
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]?.fileName).toBe('typestyles.css');
+    expect(emitted[0]?.source).toContain('--vite-color-primary: #0066ff');
+    expect(emitted[0]?.source).toContain('.theme-vite-dark');
+    expect(emitted[0]?.source).toContain('--vite-color-primary: #66aaff');
+  });
+
   it('does not inject HMR during vite build', async () => {
     const mod = await import('./index');
     const plugin = mod.default();

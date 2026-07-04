@@ -46,6 +46,44 @@ The Vite plugin implements this split when at least one extraction module is res
 
 ---
 
+## Theme extraction
+
+Theme and token CSS needs no separate build step. Because extraction is execute-and-collect, everything a module registers when it runs — including the `:root { --… }` blocks from **`tokens.create`** and the `.theme-*` classes from **`createTheme`** — lands in the same static CSS asset as your component styles. Theme CSS is a byproduct of normal extraction across all six bundler integrations: **Vite**, **Rollup / Rolldown**, **esbuild**, **webpack**, **Next.js**, and **Astro**.
+
+```ts
+// src/typestyles-entry.ts
+import { tokens, createTheme } from 'typestyles';
+
+export const color = tokens.create('color', { primary: '#0066ff', surface: '#ffffff' });
+createTheme('dark', { base: { color: { primary: '#66aaff', surface: '#111111' } } });
+```
+
+```css
+/* typestyles.css (emitted at build time) */
+:root {
+  --color-primary: #0066ff;
+  --color-surface: #ffffff;
+}
+.theme-dark {
+  --color-primary: #66aaff;
+  --color-surface: #111111;
+}
+```
+
+This means TypeStyles never needs a "did you forget to build your theme" runtime warning. Some zero-runtime libraries treat themes as a separate compilation unit — Astryx, for example, falls back to runtime theme evaluation and warns when a theme wasn't pre-built with `astryx theme build`. In TypeStyles there is no unbuilt-theme state to fall back from: if your entry module reaches the theme, the theme is in the CSS file.
+
+The one thing to get right is the same as for component styles: the modules calling `tokens.create` / `createTheme` must be reachable from your [convention entry](#vite) (or explicit `extract.modules`). To guard against a theme module dropping out of the entry graph, assert on a token variable or theme class with `verifyTypestylesBuild()` (see [Verify extraction in CI](#verify-extraction-in-ci)):
+
+```ts
+verifyTypestylesBuild({
+  root: process.cwd(),
+  cssFile: 'dist/typestyles.css',
+  requiredCssSubstrings: [':root { --color-primary:', '.theme-dark'],
+});
+```
+
+---
+
 ## Vite
 
 Install the Vite plugin:
