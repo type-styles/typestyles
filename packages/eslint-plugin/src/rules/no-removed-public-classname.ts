@@ -6,7 +6,7 @@ import {
   diffRemovedPublicClassNames,
   loadPublicClassNamesSnapshot,
   type PublicClassNameEntry,
-} from 'typestyles/snapshot-classnames';
+} from '@typestyles/cli';
 
 type RuleOptions = [
   {
@@ -47,7 +47,7 @@ function resolveRemovedClassNames(
   return cachedRemoved;
 }
 
-export const noRemovedPublicClassname = createRule<RuleOptions>({
+export const noRemovedPublicClassname = createRule<RuleOptions, 'removed'>({
   name: 'no-removed-public-classname',
   meta: {
     type: 'problem',
@@ -57,7 +57,7 @@ export const noRemovedPublicClassname = createRule<RuleOptions>({
     },
     messages: {
       removed:
-        'Public class name `{{className}}` was removed or renamed. This is a breaking change — restore the name or regenerate the snapshot with `typestyles snapshot-classnames --write` after a deliberate semver bump.',
+        'Public class name `{{className}}` was removed or renamed. This is a breaking change — restore the name or regenerate the snapshot with `typestyles snapshot --write` after a deliberate semver bump.',
     },
     schema: [
       {

@@ -200,7 +200,8 @@ with zero class-name or token collisions.
 Publishable component libraries should treat semantic class names as semver surface
 area. Opt in with:
 
-1. Generate a snapshot: `typestyles snapshot-classnames --write` (writes
+1. Add `@typestyles/cli` as a dev dependency, then generate a snapshot:
+   `typestyles snapshot --write` (writes
    `.typestyles-public-classnames.json` in the project root).
 2. Enable `@typestyles/no-removed-public-classname` in ESLint (not part of the
    recommended preset):
@@ -224,7 +225,7 @@ export default [
 
 Adding new class names never fails the rule — only removals or renames do. After an
 intentional breaking rename, bump semver and regenerate the snapshot with
-`typestyles snapshot-classnames --write`.
+`typestyles snapshot --write`.
 
 See [Theming Patterns — public semantic class names](/docs/theming-patterns#public-semantic-class-names)
 and [Components — expose themeable properties as vars](/docs/components#expose-themeable-properties-as-vars).

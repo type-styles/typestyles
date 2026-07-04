@@ -2,7 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import fg from 'fast-glob';
-import { sanitizeClassSegment } from './class-naming';
+
+/** Mirrors `sanitizeClassSegment` in `typestyles` class naming. */
+function sanitizeClassSegment(label: string): string {
+  const normalized = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-');
+  return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '') || 'style';
+}
 
 const RESERVED_COMPONENT_KEYS = new Set([
   'base',
@@ -590,7 +598,7 @@ export function loadPublicClassNamesSnapshot(
   const raw = JSON.parse(fs.readFileSync(snapshotPath, 'utf8')) as PublicClassNamesSnapshot;
   if (!raw || raw.version !== 1 || !Array.isArray(raw.classNames)) {
     throw new Error(
-      `[typestyles] Invalid public class name snapshot at ${snapshotPath}. Regenerate with \`typestyles snapshot-classnames --write\`.`,
+      `[typestyles] Invalid public class name snapshot at ${snapshotPath}. Regenerate with \`typestyles snapshot --write\`.`,
     );
   }
   return raw;

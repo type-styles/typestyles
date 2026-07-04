@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import path from 'node:path';
 import {
   PUBLIC_CLASSNAMES_SNAPSHOT,
@@ -6,7 +5,7 @@ import {
   writePublicClassNamesSnapshot,
 } from '../snapshot-classnames.js';
 
-const HELP = `typestyles snapshot-classnames [options]
+export const SNAPSHOT_HELP = `typestyles snapshot [options]
 
 Scan TypeScript sources for semantic \`styles.class\` / \`styles.component\` class names
 and write or print the public API snapshot used by \`@typestyles/no-removed-public-classname\`.
@@ -18,12 +17,14 @@ Options:
   --help                  Show this help
 `;
 
-function parseArgs(argv: string[]): {
+type SnapshotOptions = {
   write: boolean;
   outPath: string;
   rootDir: string;
   help: boolean;
-} {
+};
+
+function parseSnapshotArgs(argv: string[]): SnapshotOptions {
   let write = false;
   let outPath = PUBLIC_CLASSNAMES_SNAPSHOT;
   let rootDir = process.cwd();
@@ -53,10 +54,18 @@ function parseArgs(argv: string[]): {
   return { write, outPath, rootDir, help };
 }
 
-async function main(): Promise<void> {
-  const { write, outPath, rootDir, help } = parseArgs(process.argv.slice(2));
+function buildPreview(entries: Awaited<ReturnType<typeof collectPublicClassNames>>) {
+  return {
+    version: 1 as const,
+    classNames: entries.map((entry) => entry.className),
+    entries,
+  };
+}
+
+export async function runSnapshot(argv: string[]): Promise<void> {
+  const { write, outPath, rootDir, help } = parseSnapshotArgs(argv);
   if (help) {
-    process.stdout.write(HELP);
+    process.stdout.write(SNAPSHOT_HELP);
     return;
   }
 
@@ -73,17 +82,3 @@ async function main(): Promise<void> {
 
   process.stdout.write(`${JSON.stringify(buildPreview(entries), null, 2)}\n`);
 }
-
-function buildPreview(entries: Awaited<ReturnType<typeof collectPublicClassNames>>) {
-  return {
-    version: 1 as const,
-    classNames: entries.map((entry) => entry.className),
-    entries,
-  };
-}
-
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`[typestyles] ${message}\n`);
-  process.exit(1);
-});

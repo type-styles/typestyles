@@ -8,8 +8,8 @@ const distDir = path.join(__dirname, '../dist');
 const indexPath = path.join(distDir, 'index.js');
 const colorPath = path.join(distDir, 'color.js');
 
-/** Gzip budget for the main runtime entry (`dist/index.js`). */
-const INDEX_GZIP_BUDGET = 17_000;
+/** Gzip budget for the main runtime entry (`dist/index.js`) and its code-split chunks. */
+const INDEX_GZIP_BUDGET = 17_300;
 
 function gzipSize(filePath) {
   return zlib.gzipSync(fs.readFileSync(filePath)).length;

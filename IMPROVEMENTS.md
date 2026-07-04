@@ -326,7 +326,7 @@ in var-ui's own roadmap, not here.
 
 - [x] **P5.3 — Formalize the component-override public contract + `@scope` helper**
   - Shipped: `styles.scope()` (`packages/typestyles/src/scope.ts`) reuses `serializeStyle`,
-    `applyLayerToRules`, and `insertRules`; `typestyles snapshot-classnames --write` +
+    `applyLayerToRules`, and `insertRules`; `typestyles snapshot --write` +
     `@typestyles/no-removed-public-classname` guard semantic renames; theming/components/publishing
     docs cover the two-tier override model and public class name contract.
     Spec: `specs/component-override-contract.md`.
