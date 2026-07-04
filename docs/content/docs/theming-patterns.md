@@ -593,6 +593,59 @@ export const shell = tokens.createTheme('shell', {
 
 Set `data-color-mode` on `html` (or another ancestor); apply `shell.className` on your themed subtree.
 
+## Condition scopes: `self`, `ancestor`, `descendant`
+
+`tokens.when.attr(name, value, { scope })` and `tokens.when.className(name, { scope })` accept three `scope` values describing where the marker lives relative to the theme root:
+
+- **`'self'`** — the marker is on the theme root itself: `.theme-app[data-mode="dark"]`.
+- **`'ancestor'`** — the marker is on an ancestor of the theme root (e.g. `data-color-mode` on `html`): `[data-mode="dark"] .theme-app`.
+- **`'descendant'`** — the marker is on a descendant of the theme root, somewhere inside the themed subtree: `.theme-app [data-mode="dark"]`.
+
+### Fixed-tone surfaces with `scope: 'descendant'`
+
+Sometimes a specific element should render with a **fixed** tone regardless of the page's ambient mode — a toast that is always dark even on a light page, a syntax-highlighted code block that stays dark in light mode. That is not "dark mode": it is a design decision fixed to one element. A descendant-scoped mode expresses exactly that — the marker attribute goes on the element itself, inside the themed subtree:
+
+```ts
+import { tokens } from 'typestyles';
+
+const light = { color: { text: '#111827', surface: '#ffffff' } };
+const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
+
+export const app = tokens.createTheme('app', {
+  base: light,
+  modes: [
+    // Ambient light/dark switching, as usual:
+    ...tokens.colorMode.systemWithLightDarkOverride({
+      attribute: 'data-color-mode',
+      values: { light: 'light', dark: 'dark' },
+      scope: 'ancestor',
+      light,
+      dark,
+    }),
+    // Fixed-tone override for marked elements inside the themed subtree:
+    {
+      id: 'surface-dark',
+      overrides: dark,
+      when: tokens.when.attr('data-surface', 'dark', { scope: 'descendant' }),
+    },
+  ],
+});
+```
+
+```html
+<div class="theme-app">
+  <p>Follows the ambient light/dark mode…</p>
+  <div data-surface="dark">…but this toast is always dark.</div>
+</div>
+```
+
+The descendant-scoped rule compiles to `.theme-app [data-surface="dark"]`, so any element carrying `data-surface="dark"` inside the theme gets the dark token values — no matter what `prefers-color-scheme` or `data-color-mode` currently say. Note that `colorMode.*` presets return plain mode arrays, so you can spread one into `modes` alongside hand-written entries (as above) instead of using the `colorMode` config field.
+
+Two properties worth knowing:
+
+- **No built-in "reset to ambient".** Once a descendant-scoped mode matches, it applies to that whole subtree; a nested child cannot fall back to the ambient mode automatically. Define an explicit mode (e.g. `data-surface="light"`) if you need a counter-tone.
+- **`when.not()` is not supported on descendant-scoped conditions** — a descendant relationship cannot collapse into a single `:not()` compound selector. In development this logs a warning and emits no rule.
+
 ## Accessibility considerations
 
 ### High contrast mode

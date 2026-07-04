@@ -264,19 +264,19 @@ export type ThemeConditionMedia = {
   readonly query: string;
 };
 
-/** Match an attribute on the themed element (`self`) or an ancestor (`ancestor`). */
+/** Match an attribute on the themed element (`self`), an ancestor (`ancestor`), or a descendant of the theme root (`descendant`). */
 export type ThemeConditionAttr = {
   readonly type: 'attr';
   readonly name: string;
   readonly value: string;
-  readonly scope: 'self' | 'ancestor';
+  readonly scope: 'self' | 'ancestor' | 'descendant';
 };
 
-/** Match a class on the themed element (`self`) or an ancestor (`ancestor`). */
+/** Match a class on the themed element (`self`), an ancestor (`ancestor`), or a descendant of the theme root (`descendant`). */
 export type ThemeConditionClass = {
   readonly type: 'class';
   readonly name: string;
-  readonly scope: 'self' | 'ancestor';
+  readonly scope: 'self' | 'ancestor' | 'descendant';
 };
 
 /** Raw selector escape hatch — the selector is used as an ancestor context for the theme class. */

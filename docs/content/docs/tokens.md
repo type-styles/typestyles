@@ -147,7 +147,7 @@ const shell = tokens.createTheme('shell', {
 });
 ```
 
-Other presets: `tokens.colorMode.mediaOnly`, `attributeOnly`, `mediaOrAttribute`. Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`.
+Other presets: `tokens.colorMode.mediaOnly`, `attributeOnly`, `mediaOrAttribute`. Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`. `attr` and `className` take a `scope` of `'self'`, `'ancestor'`, or `'descendant'` describing where the marker lives relative to the theme root (see [Theming patterns](/docs/theming-patterns#condition-scopes-self-ancestor-descendant)).
 
 See [Theming patterns](/docs/theming-patterns) for end-to-end examples.
 
