@@ -244,6 +244,26 @@ describe('mode layers with attribute conditions', () => {
     expect(rule).toContain('[data-mode="dark"] .theme-t4');
     expect(rule).toContain('--color-text: #eee');
   });
+
+  it('attr scope=descendant appends a descendant-combinator selector', () => {
+    createTheme('t4d', {
+      modes: [
+        {
+          id: 'surface-dark',
+          overrides: { color: { text: '#eee' } },
+          when: when.attr('data-surface', 'dark', { scope: 'descendant' }),
+        },
+      ],
+    });
+    flushSync();
+
+    const rule = findRule((t) => t.includes('[data-surface="dark"]'));
+    expect(rule).toBeDefined();
+    // Descendant scope: .theme-t4d [data-surface="dark"] (space = descendant combinator)
+    expect(rule).toContain('.theme-t4d [data-surface="dark"]');
+    expect(rule).not.toContain('.theme-t4d[data-surface="dark"]');
+    expect(rule).toContain('--color-text: #eee');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -284,6 +304,24 @@ describe('mode layers with class conditions', () => {
 
     const rule = findRule((t) => t.includes('.dark .theme-t6'));
     expect(rule).toBeDefined();
+    expect(rule).toContain('--color-text: #ddd');
+  });
+
+  it('className scope=descendant appends a descendant-combinator selector', () => {
+    createTheme('t6d', {
+      modes: [
+        {
+          id: 'surface-dark',
+          overrides: { color: { text: '#ddd' } },
+          when: when.className('surface-dark', { scope: 'descendant' }),
+        },
+      ],
+    });
+    flushSync();
+
+    const rule = findRule((t) => t.includes('.theme-t6d .surface-dark'));
+    expect(rule).toBeDefined();
+    expect(rule).not.toContain('.theme-t6d.surface-dark');
     expect(rule).toContain('--color-text: #ddd');
   });
 });
@@ -534,6 +572,87 @@ describe('when.not', () => {
 
     expect(spy).toHaveBeenCalledWith(expect.stringMatching(/when\.selector/));
     spy.mockRestore();
+  });
+
+  it('warns for when.not on a descendant-scoped attr condition and emits no rule', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    createTheme('n7', {
+      base: { color: { text: '#000' } },
+      modes: [
+        {
+          id: 'bad',
+          overrides: { color: { text: '#999' } },
+          when: when.not(when.attr('data-surface', 'dark', { scope: 'descendant' })),
+        },
+      ],
+    });
+    flushSync();
+
+    expect(spy).toHaveBeenCalledWith(expect.stringMatching(/descendant/));
+    // Must hit the explicit descendant branch, not the generic fallback warning.
+    expect(spy).not.toHaveBeenCalledWith(expect.stringMatching(/unexpected selector suffix shape/));
+    const rules = getRuleTexts().filter((t) => t.includes('theme-n7'));
+    expect(rules).toHaveLength(1); // base only
+    spy.mockRestore();
+  });
+
+  it('warns for when.not on a descendant-scoped className condition and emits no rule', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    createTheme('n8', {
+      modes: [
+        {
+          id: 'bad',
+          overrides: { color: { text: '#999' } },
+          when: when.not(when.className('surface-dark', { scope: 'descendant' })),
+        },
+      ],
+    });
+    flushSync();
+
+    expect(spy).toHaveBeenCalledWith(expect.stringMatching(/descendant/));
+    expect(spy).not.toHaveBeenCalledWith(expect.stringMatching(/unexpected selector suffix shape/));
+    const rules = getRuleTexts().filter((t) => t.includes('theme-n8'));
+    expect(rules).toHaveLength(1); // base only, no mode rule
+    expect(rules[0]).not.toContain('surface-dark');
+    spy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fixed-tone surface — descendant scope integration
+// ---------------------------------------------------------------------------
+
+describe('fixed-tone surface (descendant scope integration)', () => {
+  beforeEach(() => reset());
+
+  it('mixes ambient color modes and a descendant-scoped mode in one modes array', () => {
+    createTheme('acme', {
+      base: { color: { bg: '#fff' } },
+      modes: [
+        ...colorMode.systemWithLightDarkOverride({
+          attribute: 'data-color-mode',
+          values: { light: 'light', dark: 'dark' },
+          scope: 'ancestor',
+          light: { color: { bg: '#fff' } },
+          dark: { color: { bg: '#111' } },
+        }),
+        {
+          id: 'surface-dark',
+          overrides: { color: { bg: '#111' } },
+          when: when.attr('data-surface', 'dark', { scope: 'descendant' }),
+        },
+      ],
+    });
+    flushSync();
+
+    // Ambient light/dark rules are unaffected.
+    expect(findRule((t) => t.includes('prefers-color-scheme: dark'))).toBeDefined();
+    expect(findRule((t) => t.includes('[data-color-mode="dark"] .theme-acme'))).toBeDefined();
+
+    // Fixed-tone surface rule matches a marker inside the themed subtree.
+    const surfaceRule = findRule((t) => t.includes('.theme-acme [data-surface="dark"]'));
+    expect(surfaceRule).toBeDefined();
+    expect(surfaceRule).toContain('--color-bg: #111');
   });
 });
 

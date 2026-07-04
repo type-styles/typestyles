@@ -348,21 +348,13 @@ in var-ui's own roadmap, not here.
   - Effort: Medium (mostly `@scope` emission + docs; name stability is already true
     in practice, it just needs to be promised).
 
-- [ ] **P5.4 — `descendant` scope on the theme condition engine**
-  - `ThemeConditionAttr`/`ThemeConditionClass` support `scope: 'self' | 'ancestor'`
-    but nothing expresses "this marker lives on a descendant of the theme root" —
-    the relationship a fixed-tone surface (e.g. an always-dark toast on an
-    otherwise light page) needs, so two nested theme regions overriding the same
-    component don't end up decided by module load order instead of DOM proximity.
-  - Scope: add `'descendant'` as a third `scope` value on both condition types
-    (`types.ts`), compiling to a leading-space descendant-combinator suffix in
-    `compileCondition`; reject `when.not()` on a descendant-scoped condition with
-    the existing dev-warning pattern rather than the generic fallback warning. No
-    new top-level function — a descendant-scoped entry is just another
-    `ThemeModeDefinition` in `createTheme`'s existing `modes` array. Spec:
-    `specs/surface-tone-override.md` (core-only; the design-system-layer
+- [x] **P5.4 — `descendant` scope on the theme condition engine**
+  - Shipped in `packages/typestyles/src/theme.ts` / `types.ts`: `'descendant'` as
+    a third `scope` value on `ThemeConditionAttr`/`ThemeConditionClass`, compiling
+    to a descendant-combinator suffix (`.theme-name [data-x="y"]`); `when.not()`
+    on a descendant-scoped condition is rejected with an explicit dev warning.
+    Spec: `specs/surface-tone-override.md` (core-only; the design-system-layer
     `surfaces` config has moved to var-ui).
-  - Effort: Medium.
 
 - [ ] **P5.6 — Distribution parity: confirm and document build-time theme extraction**
   - Astryx warns at runtime and pushes users toward `astryx theme build` for static

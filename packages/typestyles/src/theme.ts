@@ -36,12 +36,15 @@ function condMedia(query: string): ThemeConditionMedia {
 function condAttr(
   name: string,
   value: string,
-  opts: { scope: 'self' | 'ancestor' },
+  opts: { scope: 'self' | 'ancestor' | 'descendant' },
 ): ThemeConditionAttr {
   return { type: 'attr', name, value, scope: opts.scope };
 }
 
-function condClassName(name: string, opts: { scope: 'self' | 'ancestor' }): ThemeConditionClass {
+function condClassName(
+  name: string,
+  opts: { scope: 'self' | 'ancestor' | 'descendant' },
+): ThemeConditionClass {
   return { type: 'class', name, scope: opts.scope };
 }
 
@@ -68,7 +71,7 @@ function condOr(...conditions: ThemeCondition[]): ThemeConditionOr {
  * - `when.attr` / `when.className` with `scope: 'self'` → `:not(…)` on the theme class
  * - `when.attr` / `when.className` with `scope: 'ancestor'` → `:root:not(…) .theme-*` (intended when state lives on `html` / `:root`)
  *
- * Not supported: `when.selector`, `when.or`, combined `@media` + selector, or both ancestor and self selector parts on the same branch. Those log a dev warning and emit no rule.
+ * Not supported: `when.selector`, `when.or`, `scope: 'descendant'` conditions (a descendant relationship can't collapse into a single `:not()` compound selector), combined `@media` + selector, or both ancestor and self selector parts on the same branch. Those log a dev warning and emit no rule.
  */
 function condNot(condition: ThemeCondition): ThemeCondition {
   if (condition.type === 'not') {
@@ -85,6 +88,7 @@ function condNot(condition: ThemeCondition): ThemeCondition {
  * tokens.when.prefersDark
  * tokens.when.media('(prefers-color-scheme: dark)')
  * tokens.when.attr('data-color-mode', 'dark', { scope: 'ancestor' })
+ * tokens.when.attr('data-surface', 'dark', { scope: 'descendant' })
  * tokens.when.or(tokens.when.prefersDark, tokens.when.attr('data-mode', 'dark', { scope: 'self' }))
  * ```
  */
@@ -167,11 +171,19 @@ function compileCondition(condition: ThemeCondition): CompiledCondition[] {
       if (condition.scope === 'self') {
         return [{ selectorSuffix: `[${condition.name}="${condition.value}"]` }];
       }
+      if (condition.scope === 'descendant') {
+        // Leading space → genuine descendant combinator: `.theme-name [data-x="y"]`.
+        return [{ selectorSuffix: ` [${condition.name}="${condition.value}"]` }];
+      }
       return [{ selectorPrefix: `[${condition.name}="${condition.value}"]` }];
 
     case 'class':
       if (condition.scope === 'self') {
         return [{ selectorSuffix: `.${condition.name}` }];
+      }
+      if (condition.scope === 'descendant') {
+        // Leading space → genuine descendant combinator: `.theme-name .marker`.
+        return [{ selectorSuffix: ` .${condition.name}` }];
       }
       return [{ selectorPrefix: `.${condition.name}` }];
 
@@ -266,6 +278,16 @@ function negateCompiled(c: CompiledCondition): CompiledCondition | null {
   }
 
   if (hasSuf && selectorSuffix) {
+    if (selectorSuffix.startsWith(' ')) {
+      // Descendant-scoped condition — a descendant relationship can't collapse
+      // into a single compound selector the way :not() requires.
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          "[typestyles] when.not() does not support descendant-scoped conditions — a descendant relationship can't be expressed as a single :not() compound selector. Define an explicit mode for the non-matching state instead.",
+        );
+      }
+      return null;
+    }
     const s = selectorSuffix.trim();
     if (s.startsWith('[') || s.startsWith('.')) {
       return { selectorSuffix: `:not(${s})` };
