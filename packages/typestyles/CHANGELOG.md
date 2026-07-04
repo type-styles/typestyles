@@ -1,5 +1,33 @@
 # typestyles
 
+## 0.7.0
+
+### Minor Changes
+
+- [#94](https://github.com/type-styles/typestyles/pull/94) [`47bc7bd`](https://github.com/type-styles/typestyles/commit/47bc7bd9b7e916e86c9876b2428c84a28781fc71) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Document streaming SSR and RSC patterns against request-scoped collection (P1.9). Add `TYPESTYLES_STYLE_ID`, `typestylesStyleHtml`, `injectStylesIntoHtml`, and `streamingDocumentShell` helpers on `typestyles/server`. Expand the SSR guide with request-safe collection, RSC decision table, and streaming examples.
+
+- [#95](https://github.com/type-styles/typestyles/pull/95) [`f06fb48`](https://github.com/type-styles/typestyles/commit/f06fb488b07123c85df72fd070961d0ee0431d71) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Rename hash-only class naming mode to `compact` and implement true per-declaration `atomic` output with cross-component dedup (P2.10). `styles.class`, `styles.component`, and `styles.hashClass` in `atomic` mode now emit one class per CSS declaration; identical declarations share a class.
+
+- [#105](https://github.com/type-styles/typestyles/pull/105) [`0729526`](https://github.com/type-styles/typestyles/commit/07295265f2ca7ac006ce0b99a3c5533b97ac41bf) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `@property` registration for typed token leaves (`{ value, syntax, inherits? }` in `tokens.create`) and standalone `styles.property(id, opts)`. Both return `{ name, var, toString }` refs (P3.24).
+
+- [#112](https://github.com/type-styles/typestyles/pull/112) [`b701e62`](https://github.com/type-styles/typestyles/commit/b701e627c73c8626e168ced7acc79dab7e67607c) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `typestyles/color-scale` subpath with `parseColor` (hex → OKLCH), `generateRamp` (perceptual OKLCH ramps), and `contrastRatio` (WCAG relative luminance). Design-system palette ramps now call the shared `generateRamp` implementation (P5.1).
+
+- [#113](https://github.com/type-styles/typestyles/pull/113) [`3459b70`](https://github.com/type-styles/typestyles/commit/3459b70650c30d83e957e18fa5ab317e6760697b) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `typestyles/token-scale` subpath with `generateGeometricScale` (modular ladders like font sizes from `{ base, ratio, steps }`), `generateLinearScale` (grid-based ladders like radii from `{ base, multiplier, steps }`), and `expandDurationBand` (a `{ min, base, max }` motion band from `{ base, ratio }`, rounded to the nearest 5ms by default). Pure numeric outputs with zero naming opinions — mapping steps to token names stays a design-system concern (P5.2).
+
+### Patch Changes
+
+- [#101](https://github.com/type-styles/typestyles/pull/101) [`23bd4f1`](https://github.com/type-styles/typestyles/commit/23bd4f107766c9435e21468ec1b934def64f5039) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Consolidate planning docs: remove 6 stale files, update ARCHITECTURE.md and IMPROVEMENTS.md.
+
+- [#98](https://github.com/type-styles/typestyles/pull/98) [`e17b8a0`](https://github.com/type-styles/typestyles/commit/e17b8a06d0a54ed3f6f0907fe84beb3d4fd03989) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add npm landing-page READMEs for every published package, an examples index with contributor guidance, and doc-to-example cross-links (P2.13).
+
+- [#103](https://github.com/type-styles/typestyles/pull/103) [`a4ccfbc`](https://github.com/type-styles/typestyles/commit/a4ccfbcc3c85c2e52c76dcf319b0cfc6203ff0b5) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - `styles.compose()` now infers merged variant selection types from composed component functions (P3.22). Unknown variant keys are rejected by TypeScript and logged in development when no composed function accepts them.
+
+- [#104](https://github.com/type-styles/typestyles/pull/104) [`8de36fa`](https://github.com/type-styles/typestyles/commit/8de36fa8ff24cd589d9a45a482f562f874fde403) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - `tokens.use()` now infers token shapes from a `tokens.create()` return value (P3.23). Pass the created ref for cross-package typing, or declare a `TokenRegistry` on `createTokens()` for string-based lookups.
+
+- [#107](https://github.com/type-styles/typestyles/pull/107) [`aff0a8c`](https://github.com/type-styles/typestyles/commit/aff0a8c4e7d71b72779b47e2205c04fdcf4fb725) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix `reset()` to also clear `registeredNamespaces` — previously required manual clearing in tests.
+
+- [#102](https://github.com/type-styles/typestyles/pull/102) [`a984b6b`](https://github.com/type-styles/typestyles/commit/a984b6bddb950d1907371a316db838d5928fb9fc) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Dev-mode warning for unscoped namespace collisions (P3.5.2): `styles.component()` now emits a `console.warn` when the same namespace is registered more than once without a `scopeId`, helping catch cross-file class name collisions before they reach production.
+
 ## 0.6.0
 
 ### Minor Changes

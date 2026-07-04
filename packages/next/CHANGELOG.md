@@ -1,5 +1,16 @@
 # @typestyles/next
 
+## 0.5.0
+
+### Minor Changes
+
+- [#100](https://github.com/type-styles/typestyles/pull/100) [`f5b9c6d`](https://github.com/type-styles/typestyles/commit/f5b9c6d079a638e5d62c21746f12b0a2e53e29a2) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Per-route critical CSS for Next.js App Router (P2.15): `buildTypestylesForNext` emits route-scoped stylesheets and manifest v2 with a `routes` map; `getRouteCss` reads them at request time instead of the full `getRegisteredCss()` buffer.
+
+### Patch Changes
+
+- Updated dependencies [[`468375c`](https://github.com/type-styles/typestyles/commit/468375cbf9524059e6749f6a48513495c41a9376), [`e17b8a0`](https://github.com/type-styles/typestyles/commit/e17b8a06d0a54ed3f6f0907fe84beb3d4fd03989), [`f5b9c6d`](https://github.com/type-styles/typestyles/commit/f5b9c6d079a638e5d62c21746f12b0a2e53e29a2)]:
+  - @typestyles/build-runner@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes
