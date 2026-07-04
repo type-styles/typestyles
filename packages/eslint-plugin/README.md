@@ -76,6 +76,31 @@ Tracks `styles.component`, `styles.class`, `tokens.create`, `tokens.createTheme`
 
 > Bundler plugins (`@typestyles/vite`, etc.) also fail the build on duplicate `styles.component` / `styles.class` namespaces. ESLint catches the issue earlier in the editor.
 
+### `@typestyles/no-removed-public-classname`
+
+**Opt-in** (not in any preset). Semantic-mode class names (`button-base`, `button-intent-primary`) are a public, semver-guarded surface once a package ships — consumers may target them with plain CSS or `styles.scope()`. Renaming the string literal that produces them is invisible to TypeScript, so this rule diffs the class names a file currently emits against a committed snapshot and errors on anything the snapshot promises but the file no longer produces.
+
+Enable it by committing a snapshot (default path `.typestyles-public-classnames.json`, configurable via `{ snapshot: '…' }`; file paths are relative to the lint root):
+
+```json
+{
+  "version": 1,
+  "files": {
+    "src/button.ts": ["button-base", "button-intent-primary", "button-intent-secondary"]
+  }
+}
+```
+
+```ts
+// src/button.ts — ❌ after renaming intent → tone, three shipped names disappear
+styles.component('button', {
+  base: { padding: 8 },
+  variants: { tone: { primary: { color: 'blue' }, secondary: { color: 'gray' } } },
+});
+```
+
+Adding new class names never fails — only removals/renames do. Acknowledging one is a deliberate step: update the snapshot **and** add a changeset declaring the breaking change. Without a snapshot file the rule is a no-op, and dynamic configs it cannot analyze statically are skipped rather than misreported.
+
 ## Enable individual rules
 
 ```js

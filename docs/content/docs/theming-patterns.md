@@ -355,6 +355,80 @@ function App() {
 
 CSS custom properties cascade naturally, so the inner theme overrides only affect its subtree.
 
+## Overriding component styles from a theme
+
+Sometimes a theme needs to change how a component looks beyond the tokens it consumes. TypeStyles supports this with a **two-tier model** — and a public contract that makes it safe.
+
+### The public contract: semantic class names are stable API
+
+Once a package ships a `styles.component()` or `styles.class()` call in `semantic` naming mode, its emitted class names (`button-base`, `button-intent-primary`, and every other `{namespace}-{variant-segment}` combination) and their pseudo-selectors are a **stable, semver-guarded public surface**. You are entitled to target them directly — with plain CSS, `styles.scope()`, or any other CSS tooling. Renaming a namespace or a variant key is a breaking change under the package's normal versioning rules.
+
+TypeScript can't defend this promise (renaming the string literal in `styles.component('button', …)` produces no compiler error anywhere), so it's defended deliberately: package authors can enable the opt-in [`@typestyles/no-removed-public-classname`](/docs/publishing-packages#eslint-enforcement) ESLint rule, which diffs the class names a file emits against a committed snapshot and errors on removals/renames until the change is acknowledged with a changeset.
+
+See [Components → Class names are a public contract](/docs/components#class-names-are-a-public-contract) for the component-author side of this promise.
+
+### Tier 1 — component-scoped CSS custom properties (use this first)
+
+If a component author exposed a property as a CSS custom property (see [`c.vars`](/docs/components)), override the var at your theme boundary. This is the primary override surface — custom properties inherit down the DOM tree and get reassigned at each `.theme-*` boundary, so **nested themes are proximity-correct for free**, with no `@scope`, no layers, and no tooling:
+
+```ts
+import { global } from 'typestyles';
+
+// The button exposes --button-bg; each theme region reassigns it for its own subtree.
+global.style('.theme-acme', { '--button-bg': '#ff6600' });
+global.style('.theme-beta', { '--button-bg': '#0066ff' });
+```
+
+### Tier 2 — plain CSS against the public class name (the escape hatch)
+
+For a property the author didn't anticipate exposing as a var, write CSS against the stable class name.
+
+**Non-nested theme regions** — this already works today; no new API needed. A themed selector placed in a cascade layer after the component's own layer wins outright (layer order decides, not specificity):
+
+```ts
+import { createStyles } from 'typestyles';
+
+const styles = createStyles({ scopeId: 'app', layers: ['components', 'overrides'] as const });
+
+styles.class(
+  'acme-button-override',
+  {
+    /* … */
+  },
+  { layer: 'overrides' },
+);
+// or a global themed selector:
+// global.style('.theme-acme .button-intent-primary', { borderRadius: '999px' });
+```
+
+**Nested, conflicting theme regions** — the one case plain selectors can't solve. `.theme-acme .button-base { … }` and `.theme-beta .button-base { … }` have identical specificity, so within a layer the winner is whichever rule was inserted **later** — a fact about module load order, not DOM structure. `styles.scope()` closes that gap with CSS `@scope`, whose proximity-based matching picks the rule whose scoping root is the _nearest_ ancestor:
+
+```ts
+import { styles } from 'typestyles';
+
+// A .theme-beta widget nested inside a .theme-acme page: each override
+// wins exactly inside its own nearest theme region, regardless of load order.
+styles.scope({ root: '.theme-acme' }, 'button-intent-primary', {
+  backgroundColor: 'rebeccapurple',
+  '&:hover': { backgroundColor: 'purple' },
+});
+
+styles.scope({ root: '.theme-beta' }, 'button-intent-primary', {
+  backgroundColor: 'seagreen',
+});
+```
+
+`styles.scope({ root, to?, layer? }, className, overrides)`:
+
+- `overrides` goes through the same serializer as `styles.class` / `styles.component`, so pseudo-selectors and nested at-rules (`'&:hover'`, `'@media …'`) work unchanged.
+- `to` sets a lower boundary: `@scope (.theme-acme) to (.island)` stops matching at `.island`.
+- `layer` (on a `createStyles({ layers })` instance) wraps the `@scope` rule in `@layer` so scoped overrides participate in your existing layer stack. It stays optional — an unlayered override intentionally beats all layered styles.
+- Rules register through the normal sheet: deduped, SSR-collected, and captured by zero-runtime build extraction automatically.
+
+> **Browser support:** `@scope` ships in Chrome 118+, Firefox 128+, and Safari 17.4+. It's an opt-in escalation for the nested-conflict case only — if you target older browsers, stay on the non-nested Tier 2 pattern (plain selector + layer) and accept that nested conflicting themes resolve by registration order.
+
+**Decision guide:** exposed as a var → override the var (Tier 1). Not a var, themes don't nest → plain selector + layer. Not a var, nested conflicting themes → `styles.scope()`.
+
 ## Component-specific themes
 
 ### Isolated component theming

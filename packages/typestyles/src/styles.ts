@@ -40,6 +40,7 @@ import {
 } from './container';
 import { atRuleBlock as atRuleBlockFn } from './at-rule-block';
 import { has as hasNested, is as isNested, where as whereNested } from './relational-pseudo';
+import { createScope, type ScopeOptions } from './scope';
 
 /**
  * Create a single class with the given styles. Returns the class name string.
@@ -263,6 +264,11 @@ export type StylesApi = {
    * Returns `{ name, var, toString }` for use in style values and variant overrides.
    */
   property: (id: string, options?: RegisteredPropertyOptions) => RegisteredPropertyRef;
+  /**
+   * Emit a proximity-scoped override for a public class name using CSS `@scope`
+   * (nested-theme conflicts only — see the component-override contract docs).
+   */
+  scope: (opts: ScopeOptions, className: string, overrides: CSSProperties) => void;
   class: (name: string, properties: CSSProperties) => string;
   hashClass: (properties: CSSProperties, label?: string) => string;
   component: {
@@ -352,7 +358,7 @@ export type LayeredComponentFnWithUtils<L extends string> = {
 
 export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = Omit<
   StylesWithUtilsApi<U>,
-  'class' | 'hashClass' | 'component'
+  'class' | 'hashClass' | 'component' | 'scope'
 > & {
   class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<L>) => string;
   hashClass: (
@@ -360,16 +366,18 @@ export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = 
     options: LayerOption<L> & { label?: string },
   ) => string;
   component: LayeredComponentFnWithUtils<L>;
+  scope: (opts: ScopeOptions<L>, className: string, overrides: CSSPropertiesWithUtils<U>) => void;
   compose: typeof compose;
 };
 
 export type StylesApiWithLayers<L extends string> = Omit<
   StylesApi,
-  'class' | 'hashClass' | 'component' | 'withUtils'
+  'class' | 'hashClass' | 'component' | 'withUtils' | 'scope'
 > & {
   class: (name: string, properties: CSSProperties, options: LayerOption<L>) => string;
   hashClass: (properties: CSSProperties, options: LayerOption<L> & { label?: string }) => string;
   component: LayeredComponentFn<L>;
+  scope: (opts: ScopeOptions<L>, className: string, overrides: CSSProperties) => void;
   withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApiLayered<U, L>;
 };
 
@@ -473,6 +481,9 @@ function buildStylesRuntimeApi(
 
   const property = createStylesPropertyFn(classNaming);
 
+  const scope = (opts: ScopeOptions, className: string, overrides: CSSProperties): void =>
+    createScope(classNaming, opts, className, overrides);
+
   if (layered) {
     return {
       classNaming,
@@ -483,6 +494,7 @@ function buildStylesRuntimeApi(
       is: isNested,
       where: whereNested,
       property,
+      scope,
       class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
         const layer = options.layer;
         return createClass(classNaming, name, properties, layer);
@@ -507,6 +519,7 @@ function buildStylesRuntimeApi(
     is: isNested,
     where: whereNested,
     property,
+    scope,
     class: (name: string, properties: CSSProperties) => createClass(classNaming, name, properties),
     hashClass: (properties: CSSProperties, label?: string) =>
       createHashClass(classNaming, properties, label),
@@ -531,6 +544,11 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   readonly has: typeof hasNested;
   readonly is: typeof isNested;
   readonly where: typeof whereNested;
+  /**
+   * Emit a proximity-scoped override for a public class name using CSS `@scope`
+   * (nested-theme conflicts only — see the component-override contract docs).
+   */
+  scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) => void;
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
   component: {
@@ -607,6 +625,8 @@ export function createStylesWithUtils<U extends StyleUtils>(
     has: hasNested,
     is: isNested,
     where: whereNested,
+    scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) =>
+      createScope(classNaming, opts, className, apply(overrides)),
     class: (name, properties) => createClass(classNaming, name, apply(properties)),
     hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
     component: component as StylesWithUtilsApi<U>['component'],
@@ -658,6 +678,8 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     has: hasNested,
     is: isNested,
     where: whereNested,
+    scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) =>
+      createScope(classNaming, opts, className, apply(overrides)),
     class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<string>) =>
       createClass(classNaming, name, apply(properties), options.layer),
     hashClass: (

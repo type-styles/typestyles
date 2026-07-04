@@ -21,6 +21,7 @@ per package or micro-frontend for isolation.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
 - `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
 - `styles.hashClass(properties, label?)`: Create a deterministic hashed class
+- `styles.scope({ root, to?, layer? }, className, overrides)`: Emit a CSS `@scope` override for a public class name — proximity-correct in nested theme regions (see [Theming Patterns](/docs/theming-patterns#overriding-component-styles-from-a-theme)). `ScopeOptions` is exported.
 - `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create a utility-aware styles API (prefer `createStyles({ utils })` for a single instance)

@@ -28,6 +28,7 @@ export type {
   LayerOption,
   LayeredComponentFn,
 } from './styles';
+export type { ScopeOptions } from './scope';
 export type { CreateTokensOptions, TokensApi } from './tokens';
 
 export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';

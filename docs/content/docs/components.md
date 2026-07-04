@@ -123,6 +123,17 @@ const accordionTrigger = styles.component('accordion-trigger', {
 });
 ```
 
+## Class names are a public contract
+
+In `semantic` naming mode (the default), the class names `styles.component()` and `styles.class()` emit are a direct function of the string literals you write: `styles.component('button', { variants: { intent: { primary: … } } })` always produces `button-base`, `button-intent-primary`, and so on. Once your package ships, those names — and their pseudo-selectors — are **stable public API**: consumers are entitled to target them with plain CSS or [`styles.scope()`](/docs/theming-patterns#overriding-component-styles-from-a-theme), and renaming a namespace or a variant key is a breaking change under your normal versioning rules.
+
+Two consequences for component authors:
+
+1. **If you expect a property to vary per theme, expose it as a var.** A component-scoped custom property (`ctx.vars({ … })` in a function config — see [Dynamic styles](/docs/dynamic-styles)) is the one override surface that is proximity-correct in nested themes for free — consumers who theme through your vars never need `@scope`, a cascade layer, or any tooling. Save class-name overrides for what you didn't anticipate.
+2. **Defend the names deliberately.** TypeScript won't catch a renamed string literal (no call site breaks), so publishable packages can enable the opt-in [`@typestyles/no-removed-public-classname`](/docs/publishing-packages#eslint-enforcement) ESLint rule, which errors when a shipped class name disappears until the rename is acknowledged with a snapshot update and a changeset.
+
+See [Theming Patterns → Overriding component styles](/docs/theming-patterns#overriding-component-styles-from-a-theme) for the consumer-side decision guide.
+
 ## Migration quick-start
 
 ### From CVA

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "files": {
+    "src/components/button.ts": ["button-base", "button-intent-primary", "button-intent-secondary"],
+    "src/components/card.ts": ["card"],
+    "src/components/badge.ts": ["badge-base", "badge-elevated"],
+    "src/components/menu.ts": ["menu-root", "menu-item", "menu-item-tone-danger"]
+  }
+}

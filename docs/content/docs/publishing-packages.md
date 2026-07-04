@@ -127,6 +127,39 @@ exports. Calls on custom bindings (e.g. `myStyles.class(…)` from
 `createTypeStyles`) are fine, because the factory requires you to set a
 `scopeId`.
 
+### Guarding public class names (design systems)
+
+If your package **is** a design system that publishes `semantic` class names as
+its override surface (see [the component-override contract](/docs/theming-patterns#overriding-component-styles-from-a-theme)),
+enable the opt-in `@typestyles/no-removed-public-classname` rule. Commit a
+snapshot of the class names each file emits:
+
+```json
+// .typestyles-public-classnames.json
+{
+  "version": 1,
+  "files": {
+    "src/button.ts": ["button-base", "button-intent-primary", "button-intent-secondary"]
+  }
+}
+```
+
+```js
+export default [
+  {
+    rules: {
+      '@typestyles/no-removed-public-classname': 'error',
+    },
+  },
+];
+```
+
+Renaming a namespace or removing a variant key then fails lint until you update
+the snapshot **and** ship a changeset declaring the breaking change. Adding new
+class names never fails — only removals/renames do. The rule is a no-op without
+a snapshot file, and is deliberately not part of the `recommended` preset: it's
+for published component libraries, not application code.
+
 ## Checklist
 
 Before publishing a package that uses TypeStyles:

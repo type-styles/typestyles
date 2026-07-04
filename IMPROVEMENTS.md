@@ -331,22 +331,14 @@ in var-ui's own roadmap, not here.
     (core-only; the design-system-layer wiring section has moved to var-ui).
   - Effort: Medium.
 
-- [ ] **P5.3 — Formalize the component-override public contract + `@scope` helper**
-  - `styles.component()` semantic class names (`button-intent-primary`) already let
-    consumers write plain CSS overrides today — but this isn't documented as a stable
-    public contract, has no isolation from global specificity fights, and `@scope`
-    support is still an open item in this doc's backlog.
-  - Scope: (a) document that `styles.component()` semantic class names and their
-    pseudo-selectors are a stable, semver-guarded public surface any consumer may
-    target directly with plain CSS; (b) ship an `@scope`-emitting helper
-    (`styles.scope({ root, to?, layer? }, className, overrides)`, reusing the
-    existing `serializeStyle`/`applyLayerToRules`/`insertRules`) so nested
-    theme regions don't lose specificity ties on load order; (c) add an
-    `@typestyles/eslint-plugin` rule flagging a renamed semantic class name as a
-    breaking change requiring a changeset. Supersedes the `@scope` bullet in P6.
-    Spec: `specs/component-override-contract.md`.
-  - Effort: Medium (mostly `@scope` emission + docs; name stability is already true
-    in practice, it just needs to be promised).
+- [x] **P5.3 — Formalize the component-override public contract + `@scope` helper**
+  - Shipped in `packages/typestyles/src/scope.ts` (`styles.scope({ root, to?, layer? },
+className, overrides)`, reusing `serializeStyle`/`applyLayerToRules`/`insertRules`)
+    and `packages/eslint-plugin` (opt-in `no-removed-public-classname` rule diffing
+    emitted semantic class names against a committed snapshot). Contract + two-tier
+    override guide documented on the theming-patterns, components, and
+    publishing-packages docs pages. Spec: `specs/component-override-contract.md`.
+    (Supersedes the former `@scope` bullet in P6.)
 
 - [ ] **P5.4 — `descendant` scope on the theme condition engine**
   - `ThemeConditionAttr`/`ThemeConditionClass` support `scope: 'self' | 'ancestor'`
