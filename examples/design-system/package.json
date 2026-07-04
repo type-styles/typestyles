@@ -9,10 +9,12 @@
   },
   "types": "./src/index.ts",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "eslint": "^9.39.2"
+    "eslint": "^9.39.2",
+    "vitest": "^3.0.0"
   },
   "dependencies": {
     "typestyles": "workspace:*"

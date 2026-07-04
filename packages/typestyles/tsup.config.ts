@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     color: 'src/color-entry.ts',
+    'color-scale': 'src/color-scale-entry.ts',
     globals: 'src/globals.ts',
     server: 'src/server.ts',
     hmr: 'src/hmr.ts',

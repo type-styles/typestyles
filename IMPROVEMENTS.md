@@ -290,13 +290,127 @@ would notice in the first 30 minutes.
     what hasn't been tested at scale.
   - Effort: Medium (test authoring + edge case investigation).
 
-## P4 — Future (unscheduled)
+## P5 — Theming engine capabilities for design systems built on TypeStyles
+
+This phase was originally scoped while designing `examples/design-system` as a
+competitor to Meta's Astryx (an internal-tools design system built on StyleX,
+which gets a flexible theming story only by working _around_ StyleX's
+restrictions). That design-system work has since moved out of this repo — it's
+now developed as **var-ui**, a separate public/open-source project
+(`@var-ui/*` on npm) with its own repository and site. This repo's job is the
+**engine capabilities var-ui (and any other design system built on
+TypeStyles) needs from the core library** — not the design system itself.
+
+TypeStyles already has what a StyleX-based system has to build a workaround to
+get: real CSS custom properties, semantic/readable class names, cascade
+layers, and a more general theme condition engine (`tokens.when` /
+`tokens.colorMode`) than fixed light/dark modes — with no compiler restriction
+to route around in the first place. The remaining gap is a handful of specific
+generative/authoring capabilities, each surfaced by an actual var-ui need
+rather than speculative feature-parity work. Design-system-specific concerns
+(theme galleries, packaging, component breadth, per-recipe docs) are tracked
+in var-ui's own roadmap, not here.
+
+- [x] **P5.1 — Generative color-scale API (`typestyles/color-scale`)**
+  - Shipped in `packages/typestyles/src/color-scale.ts` (`parseColor`, `generateRamp`,
+    `contrastRatio`). Spec: `specs/color-scale-generation.md`. Consumed today by
+    var-ui's `createColorTheme` (`@var-ui/core`).
+
+- [ ] **P5.2 — Generative typography/motion/radius scale primitives**
+  - A theme author should be able to write 2-3 numbers (`{ base, ratio }`,
+    `{ base, multiplier }`) instead of hand-picking a whole font-size ladder,
+    duration min/max bands, or radius steps.
+  - Scope: `generateGeometricScale({ base, ratio, steps, round? })`,
+    `generateLinearScale({ base, multiplier, steps, round? })`,
+    `expandDurationBand({ base, ratio, roundTo? })` in a new
+    `packages/typestyles/src/token-scale.ts`, exported via a `typestyles/token-scale`
+    subpath. These return plain numeric arrays/structures with zero naming
+    opinions — no `fontSize`/`radius` vocabulary in core; that mapping is a
+    design-system concern (var-ui wires these into its own `primitive.ts`; see
+    var-ui's roadmap). Spec: `specs/type-motion-radius-scale-generation.md`
+    (core-only; the design-system-layer wiring section has moved to var-ui).
+  - Effort: Medium.
+
+- [ ] **P5.3 — Formalize the component-override public contract + `@scope` helper**
+  - `styles.component()` semantic class names (`button-intent-primary`) already let
+    consumers write plain CSS overrides today — but this isn't documented as a stable
+    public contract, has no isolation from global specificity fights, and `@scope`
+    support is still an open item in this doc's backlog.
+  - Scope: (a) document that `styles.component()` semantic class names and their
+    pseudo-selectors are a stable, semver-guarded public surface any consumer may
+    target directly with plain CSS; (b) ship an `@scope`-emitting helper
+    (`styles.scope({ root, to?, layer? }, className, overrides)`, reusing the
+    existing `serializeStyle`/`applyLayerToRules`/`insertRules`) so nested
+    theme regions don't lose specificity ties on load order; (c) add an
+    `@typestyles/eslint-plugin` rule flagging a renamed semantic class name as a
+    breaking change requiring a changeset. Supersedes the `@scope` bullet in P6.
+    Spec: `specs/component-override-contract.md`.
+  - Effort: Medium (mostly `@scope` emission + docs; name stability is already true
+    in practice, it just needs to be promised).
+
+- [ ] **P5.4 — `descendant` scope on the theme condition engine**
+  - `ThemeConditionAttr`/`ThemeConditionClass` support `scope: 'self' | 'ancestor'`
+    but nothing expresses "this marker lives on a descendant of the theme root" —
+    the relationship a fixed-tone surface (e.g. an always-dark toast on an
+    otherwise light page) needs, so two nested theme regions overriding the same
+    component don't end up decided by module load order instead of DOM proximity.
+  - Scope: add `'descendant'` as a third `scope` value on both condition types
+    (`types.ts`), compiling to a leading-space descendant-combinator suffix in
+    `compileCondition`; reject `when.not()` on a descendant-scoped condition with
+    the existing dev-warning pattern rather than the generic fallback warning. No
+    new top-level function — a descendant-scoped entry is just another
+    `ThemeModeDefinition` in `createTheme`'s existing `modes` array. Spec:
+    `specs/surface-tone-override.md` (core-only; the design-system-layer
+    `surfaces` config has moved to var-ui).
+  - Effort: Medium.
+
+- [ ] **P5.6 — Distribution parity: confirm and document build-time theme extraction**
+  - Astryx warns at runtime and pushes users toward `astryx theme build` for static
+    CSS. TypeStyles' bundler plugins likely already extract theme/token CSS at build
+    time as a byproduct of normal extraction, but this isn't stated as an explicit
+    claim anywhere.
+  - Scope: verify via `verifyTypestylesBuild()` (P1.7) that `tokens.create` /
+    `createTheme` output is captured by zero-runtime extraction across all six
+    bundler integrations; add a "theme extraction" section to the zero-runtime docs
+    page stating TypeStyles never needs a "did you forget to build your theme"
+    runtime warning, unlike Astryx's unbuilt-theme fallback.
+  - Effort: Low (verification + docs; no known code gap).
+
+- [ ] **P5.7 — Market `@property`-typed tokens as animatable-theme differentiator**
+  - P3.24 already shipped `@property` on token leaves + `styles.property`, but it
+    isn't positioned as a competitive claim. StyleX's own documented capability list
+    marks `@property (explicit)` as unsupported ("compiles but invalid CSS output"),
+    meaning Astryx/StyleX theme color or size transitions that need `@property`
+    (e.g. smoothly animating a gradient angle or a color token on theme switch) are
+    structurally unavailable to them.
+  - Scope: add a docs callout plus one worked example (animated theme-switch
+    transition using `@property`-registered color tokens) to the theming docs, and
+    reference it from the comparison page (P3.5.5).
+  - Effort: Low (docs + one demo).
+
+- **P5.8 — Moved to var-ui** (not tracked here — neither open nor shipped in
+  this repo). Per-recipe structured docs for human + AI-agent discovery is
+  about documenting var-ui's own components, not a TypeStyles engine concern.
+  Tracked in var-ui's `ROADMAP.md`. (`packages/vscode` — already in progress
+  in this repo — remains a candidate delivery vehicle var-ui could build on,
+  if it wants one, rather than a new CLI from scratch.)
+
+- [ ] **P5.9 — Comparison page: add theming-architecture claims vs. Astryx/StyleX**
+  - P3.5.3's benchmark suite and P3.5.5's comparison page don't yet name Astryx or
+    state the specific claim that matters here: no compiler workarounds needed for
+    theming.
+  - Scope: add a comparison section on theming architecture specifically — plain CSS
+    vars vs. StyleX-generated vars requiring `.stylex.ts` files; build-always vs.
+    runtime-injection-with-warning; arbitrary component CSS overrides vs. `@scope` +
+    data-attribute config DSL. Documentation-only follow-up to P3.5.3/P3.5.5, no new
+    engine work.
+  - Effort: Low.
+
+## P6 — Future (unscheduled)
 
 - Editable playground/REPL
 - Recipes/cookbook section (resurrect the `recipes.astro` redirect)
 - W3C Design Tokens import + Figma sync
-- `@scope` support (document raw nested at-rule usage; add helpers when browser
-  support matures)
 - Responsive object syntax (breakpoint shorthand in style values)
 - Custom CSS variable name control (`nameTemplate` on `tokens.create`)
 - 1.0 stability policy and criteria
