@@ -76,6 +76,16 @@
         "types": "./dist/color-scale.d.cts",
         "default": "./dist/color-scale.cjs"
       }
+    },
+    "./token-scale": {
+      "import": {
+        "types": "./dist/token-scale.d.ts",
+        "default": "./dist/token-scale.js"
+      },
+      "require": {
+        "types": "./dist/token-scale.d.cts",
+        "default": "./dist/token-scale.cjs"
+      }
     }
   },
   "files": [

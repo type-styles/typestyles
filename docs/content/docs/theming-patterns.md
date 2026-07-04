@@ -67,6 +67,50 @@ contrastRatio('#000', '#fff'); // 21
 Dev-mode contrast warnings (`console.warn`) fire when generated pairs fall below 4.5:1
 (standard) or 7:1 (high); they never throw.
 
+## Generating type, motion, and radius scales
+
+The `typestyles/token-scale` subpath does for numeric ladders what `color-scale` does for
+color: it turns 2-3 numbers into a whole scale, so a theme author writes `{ base, ratio }`
+instead of hand-picking every step. Like `color-scale`, it is vocabulary-agnostic — the
+generators return plain numbers and never see names like `fontSize`, `radius`, or `fast`;
+zipping your own step names onto the output is your design system's concern.
+
+Reach for each generator by shape:
+
+- **`generateGeometricScale`** — multiplicative ladders where each step is a ratio of the
+  last (font sizes, spacing that grows faster at the top). `steps` are signed integer
+  offsets from the base: `value(offset) = base * ratio ** offset`.
+- **`generateLinearScale`** — even, grid-based ladders (radius steps on a 4px grid).
+  `steps` are ordinal multipliers: `value(step) = base * step * multiplier`.
+- **`expandDurationBand`** — one motion anchor expanded into a `{ min, base, max }` band:
+  `min = base * ratio`, `max = base / ratio`, rounded to the nearest 5ms by default so
+  computed bands look hand-picked instead of visibly computed (no `93.75ms`).
+
+```ts
+import {
+  generateGeometricScale,
+  generateLinearScale,
+  expandDurationBand,
+} from 'typestyles/token-scale';
+
+// Font-size ladder: major third anchored at 16 (offset 0 is always exactly base).
+generateGeometricScale({ base: 16, ratio: 1.25, steps: [-2, -1, 0, 1, 2, 3, 4] });
+// → [10, 13, 16, 20, 25, 31, 39]
+
+// Radius ladder on a 4px grid.
+generateLinearScale({ base: 4, multiplier: 1, steps: [1, 2, 3, 4, 6] });
+// → [4, 8, 12, 16, 24]
+
+// One duration anchor → a min/base/max band (call once per named anchor).
+expandDurationBand({ base: 150, ratio: 0.625 });
+// → { min: 95, base: 150, max: 240 }
+```
+
+Outputs are unitless — append `px`/`rem`/`ms` yourself when zipping the numbers into your
+own `tokens.create()` calls. All three generators round to whole numbers by default; the
+array generators accept a `round` override and `expandDurationBand` accepts a `roundTo`
+granularity for callers that want different precision.
+
 ## Basic light/dark mode
 
 ### Creating a theme
