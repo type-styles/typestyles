@@ -98,6 +98,18 @@ OKLCH ramp generation and WCAG contrast math, on a **separate subpath** (zero im
 
 See [Theming Patterns — Generating a theme from one accent color](/docs/theming-patterns#generating-a-theme-from-one-accent-color).
 
+### `token-scale` (`typestyles/token-scale`)
+
+Generic numeric ramp generators for type/motion/radius ladders, on a **separate subpath** (zero impact on main bundle size). Pure numbers in, pure numbers out — naming steps is a design-system concern.
+
+**Functions:**
+
+- `generateGeometricScale({ base, ratio, steps, round? })`: `base * ratio ** offset` for each signed integer offset in `steps` (font-size-style ladders)
+- `generateLinearScale({ base, multiplier, steps, round? })`: `base * step * multiplier` for each ordinal in `steps` (radius-style ladders)
+- `expandDurationBand({ base, ratio, roundTo? })`: `{ min, base, max }` motion band (`min = base * ratio`, `max = base / ratio`, rounded to nearest 5 by default)
+
+See [Theming Patterns — Generating type, motion, and radius scales](/docs/theming-patterns#generating-type-motion-and-radius-scales).
+
 ### `calc` and `clamp`
 
 Helpers for CSS `calc()` and `clamp()` that always emit balanced outer parentheses:

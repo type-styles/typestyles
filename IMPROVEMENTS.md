@@ -316,20 +316,13 @@ in var-ui's own roadmap, not here.
     `contrastRatio`). Spec: `specs/color-scale-generation.md`. Consumed today by
     var-ui's `createColorTheme` (`@var-ui/core`).
 
-- [ ] **P5.2 — Generative typography/motion/radius scale primitives**
-  - A theme author should be able to write 2-3 numbers (`{ base, ratio }`,
-    `{ base, multiplier }`) instead of hand-picking a whole font-size ladder,
-    duration min/max bands, or radius steps.
-  - Scope: `generateGeometricScale({ base, ratio, steps, round? })`,
-    `generateLinearScale({ base, multiplier, steps, round? })`,
-    `expandDurationBand({ base, ratio, roundTo? })` in a new
-    `packages/typestyles/src/token-scale.ts`, exported via a `typestyles/token-scale`
-    subpath. These return plain numeric arrays/structures with zero naming
-    opinions — no `fontSize`/`radius` vocabulary in core; that mapping is a
-    design-system concern (var-ui wires these into its own `primitive.ts`; see
-    var-ui's roadmap). Spec: `specs/type-motion-radius-scale-generation.md`
-    (core-only; the design-system-layer wiring section has moved to var-ui).
-  - Effort: Medium.
+- [x] **P5.2 — Generative typography/motion/radius scale primitives**
+  - Shipped in `packages/typestyles/src/token-scale.ts` (`generateGeometricScale`,
+    `generateLinearScale`, `expandDurationBand`), exported via the
+    `typestyles/token-scale` subpath. Pure numeric outputs, zero naming opinions —
+    mapping steps to `fontSize`/`radius`/`duration` names is a design-system concern
+    (var-ui wires these into its own `primitive.ts`).
+    Spec: `specs/type-motion-radius-scale-generation.md`.
 
 - [ ] **P5.3 — Formalize the component-override public contract + `@scope` helper**
   - `styles.component()` semantic class names (`button-intent-primary`) already let
