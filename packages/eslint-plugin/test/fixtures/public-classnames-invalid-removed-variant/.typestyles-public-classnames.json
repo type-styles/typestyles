@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "classNames": ["button-base", "button-intent-primary", "button-intent-ghost"],
+  "entries": [
+    {
+      "className": "button-base",
+      "kind": "component",
+      "namespace": "button",
+      "suffix": "base",
+      "file": "button.ts",
+      "line": 1
+    },
+    {
+      "className": "button-intent-primary",
+      "kind": "component",
+      "namespace": "button",
+      "suffix": "intent-primary",
+      "file": "button.ts",
+      "line": 1
+    },
+    {
+      "className": "button-intent-ghost",
+      "kind": "component",
+      "namespace": "button",
+      "suffix": "intent-ghost",
+      "file": "button.ts",
+      "line": 1
+    }
+  ]
+}

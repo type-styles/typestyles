@@ -73,4 +73,17 @@ describe('styles.scope()', () => {
     expect(css).toContain('@layer overrides;');
     expect(css).toMatch(/@layer overrides \{[\s\S]*@scope \(\.theme-acme\)/);
   });
+
+  it('keeps scoped rules distinct when the same class is scoped in different layers', () => {
+    const styles = createStyles({
+      layers: ['theme-a', 'theme-b'] as const,
+    });
+    styles.scope({ root: '.theme-acme', layer: 'theme-a' }, 'btn-base', { color: 'red' });
+    styles.scope({ root: '.theme-acme', layer: 'theme-b' }, 'btn-base', { color: 'blue' });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('color: red');
+    expect(css).toContain('color: blue');
+  });
 });

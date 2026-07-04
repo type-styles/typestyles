@@ -76,6 +76,27 @@ Tracks `styles.component`, `styles.class`, `tokens.create`, `tokens.createTheme`
 
 > Bundler plugins (`@typestyles/vite`, etc.) also fail the build on duplicate `styles.component` / `styles.class` namespaces. ESLint catches the issue earlier in the editor.
 
+### `@typestyles/no-removed-public-classname` (opt-in)
+
+Guards **publishable** design systems against semver-breaking semantic class renames. Compares the current project scan to a committed `.typestyles-public-classnames.json` snapshot (generate with `typestyles snapshot --write` from [`@typestyles/cli`](../cli)).
+
+```js
+'@typestyles/no-removed-public-classname': [
+  'error',
+  { snapshotFile: '.typestyles-public-classnames.json' },
+],
+```
+
+Adding new class names never fails — only removals or renames do.
+
+**Diagnostics** are reported once per ESLint run (on `Program:exit`), not at the specific `styles.component()` call site. Treat them as project-level semver checks, similar to `no-duplicate-namespace`.
+
+**Static analysis limits** (best-effort, not exhaustive):
+
+- Namespace must be a **string literal** — variables and template literals are skipped
+- Only direct `styles.component()` / `binding.component()` calls are found
+- Projects with multiple `createStyles({ scopeId })` configs only infer a default binding when all configs agree
+
 ## Enable individual rules
 
 ```js
@@ -108,11 +129,12 @@ export const typestylesAppConfig = tseslint.config(
 
 ## Related packages
 
-| Package                             | Role                                  |
-| ----------------------------------- | ------------------------------------- |
-| [`typestyles`](../typestyles)       | Core library the rules analyze        |
-| [`@typestyles/migrate`](../migrate) | Codemods — run ESLint after migrating |
-| [`@typestyles/vite`](../vite)       | Build-time duplicate namespace checks |
+| Package                             | Role                                       |
+| ----------------------------------- | ------------------------------------------ |
+| [`typestyles`](../typestyles)       | Core library the rules analyze             |
+| [`@typestyles/migrate`](../migrate) | Codemods — run ESLint after migrating      |
+| [`@typestyles/cli`](../cli)         | `typestyles snapshot` and future CLI tools |
+| [`@typestyles/vite`](../vite)       | Build-time duplicate namespace checks      |
 
 ## License
 

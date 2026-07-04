@@ -18,8 +18,14 @@ function wrapRuleInScope(opts: ScopeOptions, css: string): string {
   return `@scope (${opts.root})${toClause} {\n${css}\n}`;
 }
 
-function scopeRuleKey(opts: ScopeOptions, className: string, ruleKey: string): string {
-  return `scope:${opts.root}:${opts.to ?? ''}:${className}:${ruleKey}`;
+function scopeRuleKey(
+  opts: ScopeOptions,
+  className: string,
+  ruleKey: string,
+  layer?: string,
+): string {
+  const layerSegment = opts.layer ?? layer ?? '';
+  return `scope:${opts.root}:${opts.to ?? ''}:${layerSegment}:${className}:${ruleKey}`;
 }
 
 /**
@@ -37,7 +43,7 @@ export function createScope(
   const selector = `.${className}`;
   const serialized = serializeStyle(selector, overrides);
   const scopedRules = serialized.map((rule) => ({
-    key: scopeRuleKey(opts, className, rule.key),
+    key: scopeRuleKey(opts, className, rule.key, opts.layer),
     css: wrapRuleInScope(opts, rule.css),
   }));
 
@@ -67,7 +73,7 @@ export function scopeRulesForTest(
   const selector = `.${className}`;
   const serialized = serializeStyle(selector, overrides);
   let rules = serialized.map((rule) => ({
-    key: scopeRuleKey(opts, className, rule.key),
+    key: scopeRuleKey(opts, className, rule.key, layer),
     css: wrapRuleInScope(opts, rule.css),
   }));
   if (layer && stack) {

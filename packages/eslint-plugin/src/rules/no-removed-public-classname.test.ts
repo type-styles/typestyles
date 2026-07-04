@@ -15,6 +15,10 @@ const invalidFixtureRoot = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../test/fixtures/public-classnames-invalid',
 );
+const removedVariantFixtureRoot = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../test/fixtures/public-classnames-invalid-removed-variant',
+);
 
 describe('no-removed-public-classname', () => {
   beforeEach(() => {
@@ -52,6 +56,27 @@ describe('no-removed-public-classname / invalid', () => {
         filename: path.join(invalidFixtureRoot, 'renamed.ts'),
         options: [{ rootDir: invalidFixtureRoot }],
         errors: [{ messageId: 'removed' }, { messageId: 'removed' }],
+      },
+    ],
+  });
+});
+
+describe('no-removed-public-classname / removed variant', () => {
+  beforeEach(() => {
+    resetRemovedPublicClassnameState();
+  });
+
+  ruleTester.run('no-removed-public-classname-removed-variant', noRemovedPublicClassname, {
+    valid: [],
+    invalid: [
+      {
+        code: `styles.component('button', {
+          base: { color: 'red' },
+          variants: { intent: { primary: { backgroundColor: 'blue' } } },
+        });`,
+        filename: path.join(removedVariantFixtureRoot, 'button.ts'),
+        options: [{ rootDir: removedVariantFixtureRoot }],
+        errors: [{ messageId: 'removed' }],
       },
     ],
   });
