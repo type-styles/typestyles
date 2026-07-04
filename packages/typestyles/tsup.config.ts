@@ -10,6 +10,8 @@ export default defineConfig({
     server: 'src/server.ts',
     hmr: 'src/hmr.ts',
     build: 'src/build.ts',
+    'snapshot-classnames': 'src/snapshot-classnames.ts',
+    'cli/snapshot-classnames': 'src/cli/snapshot-classnames.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

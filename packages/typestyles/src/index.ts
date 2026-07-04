@@ -40,6 +40,9 @@ export {
   fileScopeId,
 } from './class-naming';
 
+export type { ScopeOptions } from './scope';
+export { createScope } from './scope';
+
 export { createStyles, createTokens, createTypeStyles, createGlobal };
 
 export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';

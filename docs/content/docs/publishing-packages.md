@@ -194,3 +194,37 @@ export const button = styles.component('button', {
 
 The consumer's app can install `@acme/ui` alongside any other TypeStyles package
 with zero class-name or token collisions.
+
+## Guard public class names
+
+Publishable component libraries should treat semantic class names as semver surface
+area. Opt in with:
+
+1. Generate a snapshot: `typestyles snapshot-classnames --write` (writes
+   `.typestyles-public-classnames.json` in the project root).
+2. Enable `@typestyles/no-removed-public-classname` in ESLint (not part of the
+   recommended preset):
+
+```js
+// eslint.config.js
+import typestyles from '@typestyles/eslint-plugin';
+
+export default [
+  {
+    plugins: { '@typestyles': typestyles },
+    rules: {
+      '@typestyles/no-removed-public-classname': [
+        'error',
+        { snapshotFile: '.typestyles-public-classnames.json' },
+      ],
+    },
+  },
+];
+```
+
+Adding new class names never fails the rule — only removals or renames do. After an
+intentional breaking rename, bump semver and regenerate the snapshot with
+`typestyles snapshot-classnames --write`.
+
+See [Theming Patterns — public semantic class names](/docs/theming-patterns#public-semantic-class-names)
+and [Components — expose themeable properties as vars](/docs/components#expose-themeable-properties-as-vars).

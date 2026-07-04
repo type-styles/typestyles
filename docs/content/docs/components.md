@@ -136,7 +136,49 @@ The main difference is class generation/injection is handled by typestyles.
 
 See the [Migration Guide](/docs/migration) for library-specific examples.
 
+## Expose themeable properties as vars
+
+If you expect a property to vary by theme region, expose it as a component-scoped CSS
+custom property instead of hard-coding the value in `base` or variant styles. Token
+and theme overrides then stay on [Tier 1](/docs/theming-patterns#tier-1--component-scoped-css-custom-properties-preferred)
+and consumers rarely need plain class overrides or `@scope`.
+
+```ts
+const button = styles.component('button', (c) => {
+  const v = c.vars({
+    background: { value: '#fff', syntax: '<color>', inherits: false },
+    foreground: { value: '#111', syntax: '<color>', inherits: false },
+  });
+  return {
+    base: {
+      backgroundColor: v.background.var,
+      color: v.foreground.var,
+    },
+    variants: {
+      intent: {
+        primary: {
+          [v.background.name]: '#0066ff',
+          [v.foreground.name]: '#fff',
+        },
+      },
+    },
+  };
+});
+```
+
+The [design-system example](/docs/design-system) uses this pattern throughout
+(`examples/design-system/src/components/button.ts`).
+
+## Public class name stability
+
+Semantic class names (`button-base`, `button-intent-primary`, …) are public API for
+consumers theming your package. Do not rename namespaces or variant keys without a
+major semver bump. Opt into snapshot + ESLint guardrails described in
+[Publishing Packages — guard public class names](/docs/publishing-packages#guard-public-class-names).
+
 ## Related docs
+
+- [Theming Patterns — component overrides](/docs/theming-patterns#component-overrides-two-tier-model)
 
 - [Styles](/docs/styles)
 - [Migration Guide](/docs/migration)

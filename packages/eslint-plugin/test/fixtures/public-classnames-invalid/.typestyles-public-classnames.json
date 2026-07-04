@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "classNames": ["button-base", "button-intent-primary"],
+  "entries": [
+    {
+      "className": "button-base",
+      "kind": "component",
+      "namespace": "button",
+      "suffix": "base",
+      "file": "renamed.ts",
+      "line": 1
+    },
+    {
+      "className": "button-intent-primary",
+      "kind": "component",
+      "namespace": "button",
+      "suffix": "intent-primary",
+      "file": "renamed.ts",
+      "line": 1
+    }
+  ]
+}
