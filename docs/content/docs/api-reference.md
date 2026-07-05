@@ -52,9 +52,11 @@ bundles share a page.
 
 ### `createTokens(options?)`
 
-Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme('dark', …)` registers `.theme-{scopeId}-dark` (sanitized segments). With **`layers`**, **`tokenLayer`** is required and token/theme CSS is wrapped in that layer.
+Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme('dark', …)` registers `.theme-{scopeId}-dark` (sanitized segments). With **`layers`**, **`tokenLayer`** is required and token/theme CSS is wrapped in that layer. Optional **`nameTemplate`** on the instance or per `tokens.create` call controls emitted `--*` names (see [Tokens](/docs/tokens#custom-css-variable-names-nametemplate)).
 
 The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
+
+Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**. Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
 
 ### `keyframes`
 

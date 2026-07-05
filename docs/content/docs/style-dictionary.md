@@ -240,6 +240,31 @@ const semantic = tokens.create('color', {
 
 The second strategy is worth the extra layer when you ship **multiple brand themes** that share the same semantic contract.
 
+## Matching external CSS names
+
+When Style Dictionary (or another tool) already defines your canonical `--*` naming convention, mirror it with **`nameTemplate`** on `tokens.create` so TypeStyles refs point at the same names TypeStyles injects — without duplicating `:root` blocks from SD.
+
+```ts
+const tokens = createTokens({ scopeId: 'acme' });
+
+// SD might emit --color-brand-500; match that pattern (drop scope from var names if globals are unscoped).
+const color = tokens.create('color', generatedPalette, {
+  nameTemplate: ({ segments }) => `--color-${segments.join('-')}`,
+});
+
+const semantic = tokens.create(
+  'color-semantic',
+  {
+    text: { primary: color.brand[500] },
+  },
+  {
+    nameTemplate: ({ path }) => `--ds-color-${path}`,
+  },
+);
+```
+
+**Defaults are still recommended** for new apps — custom names are for interop and migration, not aesthetics. **`scopeId`** on `createTokens` / `createStyles` still scopes theme **classes** even when var names match globals.
+
 ## Gotchas
 
 - **Do not let Style Dictionary emit the CSS.** If both Style Dictionary and TypeStyles ship `:root { --color-brand: … }`, you get duplicate declarations and scoping conflicts. Keep TypeStyles as the single source of CSS.

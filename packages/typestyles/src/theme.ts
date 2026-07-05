@@ -13,8 +13,9 @@ import type {
   ThemeSurface,
   TokenValues,
 } from './types';
-import { flattenTokenEntries } from './types';
+import { flattenTokenEntries, flattenTokenPaths } from './types';
 import { sanitizeClassSegment, scopedTokenNamespace } from './class-naming';
+import type { ThemeTokenNaming } from './token-naming';
 import { insertRule, insertRules } from './sheet';
 import type { ResolvedCascadeLayers } from './layers';
 import { applyLayerToRules } from './layers';
@@ -319,10 +320,22 @@ function mergeCompiled(a: CompiledCondition, b: CompiledCondition): CompiledCond
 // CSS declaration building
 // ---------------------------------------------------------------------------
 
-function buildDeclarations(scopeId: string | undefined, overrides: ThemeOverrides): string {
+function buildDeclarations(
+  scopeId: string | undefined,
+  overrides: ThemeOverrides,
+  naming?: ThemeTokenNaming,
+): string {
   const parts: string[] = [];
   for (const [namespace, values] of Object.entries(overrides)) {
     if (values === null || values === undefined) continue;
+
+    if (naming) {
+      for (const { path, segments, value } of flattenTokenPaths(values as TokenValues)) {
+        parts.push(`${naming.resolveName(namespace, path, segments)}: ${value}`);
+      }
+      continue;
+    }
+
     const cssNs = scopedTokenNamespace(scopeId, namespace);
     for (const [key, value] of flattenTokenEntries(values as TokenValues)) {
       parts.push(`--${cssNs}-${key}: ${value}`);
@@ -529,6 +542,7 @@ export function createTheme(
   config: ThemeConfig,
   scopeId?: string,
   layerContext?: ThemeEmitLayerContext,
+  naming?: ThemeTokenNaming,
 ): ThemeSurface {
   if (process.env.NODE_ENV !== 'production') {
     if (config.modes && config.colorMode) {
@@ -551,7 +565,7 @@ export function createTheme(
   };
 
   // 1. Base rule
-  const baseDecls = config.base ? buildDeclarations(scopeId, config.base) : '';
+  const baseDecls = config.base ? buildDeclarations(scopeId, config.base, naming) : '';
   if (baseDecls) {
     emitRule(`theme:${segment}:base`, `.${className} { ${baseDecls}; }`);
   } else {
@@ -564,7 +578,7 @@ export function createTheme(
   const rules: Array<{ key: string; css: string }> = [];
 
   for (const mode of modes) {
-    const decls = buildDeclarations(scopeId, mode.overrides);
+    const decls = buildDeclarations(scopeId, mode.overrides, naming);
     if (!decls) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(
@@ -615,6 +629,7 @@ export function createDarkMode(
   darkOverrides: ThemeOverrides,
   scopeId?: string,
   layerContext?: ThemeEmitLayerContext,
+  naming?: ThemeTokenNaming,
 ): ThemeSurface {
   return createTheme(
     name,
@@ -623,5 +638,6 @@ export function createDarkMode(
     },
     scopeId,
     layerContext,
+    naming,
   );
 }

@@ -29,6 +29,7 @@ export type {
   LayeredComponentFn,
 } from './styles';
 export type { CreateTokensOptions, TokensApi } from './tokens';
+export type { TokenNameContext, TokenNameTemplate } from './token-naming';
 
 export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';
 
@@ -82,6 +83,7 @@ export type {
   TokenRegistry,
   ThemeOverrides,
   FlatTokenEntry,
+  FlatTokenPathEntry,
   KeyframeStops,
   VariantDefinitions,
   VariantOptionStyle,
@@ -129,7 +131,7 @@ export type {
   DeepPartialTokenValues,
 } from './types';
 
-export { flattenTokenEntries, isTokenDescriptor } from './types';
+export { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
 
 export { createVar, assignVars };
 

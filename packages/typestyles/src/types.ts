@@ -110,6 +110,15 @@ export type TokenValues =
 export type FlatTokenEntry = [key: string, value: string];
 
 /**
+ * A flattened token path with segment preservation for custom name templates.
+ */
+export type FlatTokenPathEntry = {
+  path: string;
+  segments: readonly string[];
+  value: string;
+};
+
+/**
  * Flattens a nested TokenValues object into an array of [key, value] pairs.
  * Deeply nested objects are flattened with keys joined by hyphens.
  *
@@ -158,6 +167,47 @@ export function flattenTokenEntries(obj: TokenValues, prefix = ''): FlatTokenEnt
       entries.push([newKey, String(value.value)]);
     } else if (value !== null && typeof value === 'object') {
       entries.push(...flattenTokenEntries(value as TokenValues, newKey));
+    }
+  }
+
+  return entries;
+}
+
+export function flattenTokenPaths(
+  obj: TokenValues,
+  prefix = '',
+  segments: readonly string[] = [],
+): FlatTokenPathEntry[] {
+  const entries: FlatTokenPathEntry[] = [];
+
+  if (obj === null || obj === undefined) {
+    return entries;
+  }
+
+  if (typeof obj === 'string' || typeof obj === 'number') {
+    if (prefix) {
+      entries.push({ path: prefix, segments, value: String(obj) });
+    }
+    return entries;
+  }
+
+  if (isTokenDescriptor(obj)) {
+    if (prefix) {
+      entries.push({ path: prefix, segments, value: String(obj.value) });
+    }
+    return entries;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    const nextSegments = prefix ? [...segments, key] : [key];
+    const newKey = prefix ? `${prefix}-${key}` : key;
+
+    if (typeof value === 'string' || typeof value === 'number') {
+      entries.push({ path: newKey, segments: nextSegments, value: String(value) });
+    } else if (isTokenDescriptor(value)) {
+      entries.push({ path: newKey, segments: nextSegments, value: String(value.value) });
+    } else if (value !== null && typeof value === 'object') {
+      entries.push(...flattenTokenPaths(value as TokenValues, newKey, nextSegments));
     }
   }
 

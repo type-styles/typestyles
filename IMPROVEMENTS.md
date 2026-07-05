@@ -382,5 +382,9 @@ in var-ui's own roadmap, not here.
 - Recipes/cookbook section (resurrect the `recipes.astro` redirect)
 - W3C Design Tokens import + Figma sync
 - Responsive object syntax (breakpoint shorthand in style values)
-- Custom CSS variable name control (`nameTemplate` on `tokens.create`)
+- [x] **Custom CSS variable name control (`nameTemplate` on `tokens.create`)**
+  - Shipped: `nameTemplate` on `createTokens` and `tokens.create` with `TokenNameContext`
+    (`scopeId`, `scope`, `namespace`, `path`, `segments`); segment-preserving
+    `flattenTokenPaths`; theme/`tokens.use()`/`@property` wired through the same
+    path→name registry. Spec: `specs/token-name-template.md`.
 - 1.0 stability policy and criteria
