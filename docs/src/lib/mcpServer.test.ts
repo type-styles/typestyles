@@ -5,7 +5,7 @@ import {
   listMcpToolNames,
   mcpContentBundle,
   mcpTools,
-} from './mcpServer';
+} from '../../netlify/functions/mcpServer';
 
 function textOf(result: { content: Array<{ type: string; text?: string }> }): string {
   return result.content.map((c) => c.text ?? '').join('\n');
