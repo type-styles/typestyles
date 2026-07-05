@@ -63,6 +63,40 @@ export const space = tokens.create('space', {
 // With scopeId 'app': padding: space.md  →  var(--app-space-md)
 ```
 
+## Custom CSS variable names (`nameTemplate`)
+
+The default naming pattern (`--{scopeId}-{namespace}-{path}`) is recommended for greenfield TypeStyles apps. When migrating from an existing CSS variable system, matching Style Dictionary output, or aliasing across namespaces, pass an optional **`nameTemplate`** function to control emitted `--*` names while keeping typed `var(--…)` references and theme integration.
+
+```ts
+const tokens = createTokens({ scopeId: 'acme' });
+
+const primitive = tokens.create('color', palette, {
+  nameTemplate: ({ segments }) => `--color-${segments.join('-')}`,
+});
+// --color-brand-500 (no acme- prefix on these vars)
+
+const semantic = tokens.create(
+  'semantic-color',
+  {
+    text: { primary: primitive.brand[500] },
+  },
+  {
+    nameTemplate: ({ path }) => `--ds-color-${path}`,
+  },
+);
+// --ds-color-text-primary: var(--color-brand-500)
+```
+
+Set a default on the instance with `createTokens({ nameTemplate })`, or override per namespace in `tokens.create(…, { nameTemplate })`. Templates receive `scopeId`, `scope`, `namespace`, flattened `path`, and `segments` (object keys at each nesting level — use `segments` when your external spec uses a different joiner than `-`).
+
+**Migration notes:**
+
+- Omitting `scopeId` from a custom template restores cross-package collision risk — keep `scopeId` on **classes** even when vars match global names.
+- Theme overrides use the same names registered at `tokens.create` time; renaming a template after shipping is a breaking change for plain CSS targeting `--*`.
+- Do not let Style Dictionary emit `:root` CSS — TypeStyles remains the single injector. Mirror SD naming via `nameTemplate` instead.
+
+See [Style Dictionary & W3C tokens](/docs/style-dictionary#matching-external-css-names) for pipeline examples.
+
 ## Referencing tokens defined elsewhere
 
 When tokens are created in another module or package, use `tokens.use(namespace)` to get the same `var(--namespace-key)` references **without** emitting another `:root` rule. The namespace must already be registered (via `tokens.create`) before those variables exist in CSS.

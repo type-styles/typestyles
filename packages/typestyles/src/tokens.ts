@@ -8,8 +8,15 @@ import type {
   ThemeOverrides,
   TokenDescriptor,
 } from './types';
-import { flattenTokenEntries, isTokenDescriptor } from './types';
+import { flattenTokenPaths, isTokenDescriptor } from './types';
 import { scopedTokenNamespace } from './class-naming';
+import {
+  buildTokenNameContext,
+  createThemeTokenNaming,
+  resolveTokenName,
+  type TokenNameTemplate,
+  type ThemeTokenNaming,
+} from './token-naming';
 import { insertRule, insertRules } from './sheet';
 import { createRegisteredPropertyRef, registerAtPropertyRule } from './registered-property';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
@@ -26,12 +33,19 @@ function getTokenNamespace(ref: object): string | undefined {
   return tokenMetaByRef.get(ref)?.namespace;
 }
 
+export type { TokenNameContext, TokenNameTemplate } from './token-naming';
+
 export type CreateTokensOptions = {
   /**
    * Prefix for CSS custom property namespaces and theme class segments so multiple
    * packages on one page do not share `--color-*` or `.theme-*` collisions.
    */
   scopeId?: string;
+  /**
+   * Default template for emitted `--*` custom property names. Per-namespace override:
+   * `tokens.create('color', values, { nameTemplate })`.
+   */
+  nameTemplate?: TokenNameTemplate;
   /**
    * When set with **`tokenLayer`**, `:root` custom properties and theme surfaces are wrapped in
    * `@layer tokenLayer { … }`, and a matching `@layer …;` order preamble is registered.
@@ -53,7 +67,7 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
   create: <T extends TokenValues, N extends string>(
     namespace: N,
     values: T,
-    options?: { layer?: string },
+    options?: { layer?: string; nameTemplate?: TokenNameTemplate },
   ) => CreatedTokenRef<T, N>;
   use: {
     <T extends TokenValues, N extends string>(ref: CreatedTokenRef<T, N>): TokenRef<T>;
@@ -143,15 +157,15 @@ function collectDescriptorMeta(
 }
 
 function createTokenProxy(
-  namespace: string,
+  resolvePathName: (path: string) => string,
   prefix: string,
   allKeys: Set<string>,
   descriptorLeaves: Set<string>,
 ): object {
-  const makeToken = (p: string) => `var(--${namespace}-${p})`;
+  const makeToken = (p: string) => `var(${resolvePathName(p)})`;
   const makeLeaf = (p: string) => {
     if (descriptorLeaves.has(p)) {
-      return createRegisteredPropertyRef(`--${namespace}-${p}`);
+      return createRegisteredPropertyRef(resolvePathName(p));
     }
     return makeToken(p);
   };
@@ -189,7 +203,7 @@ function createTokenProxy(
           (k) => k !== newPrefix && k.startsWith(newPrefix + '-'),
         );
         if (hasChildren) {
-          return createTokenProxy(namespace, newPrefix, allKeys, descriptorLeaves);
+          return createTokenProxy(resolvePathName, newPrefix, allKeys, descriptorLeaves);
         }
         return makeLeaf(newPrefix);
       }
@@ -198,7 +212,7 @@ function createTokenProxy(
         return makeLeaf(newPrefix);
       }
 
-      return createTokenProxy(namespace, newPrefix, allKeys, descriptorLeaves);
+      return createTokenProxy(resolvePathName, newPrefix, allKeys, descriptorLeaves);
     },
     has(_target, _prop) {
       return true;
@@ -258,11 +272,36 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const registeredNamespaces = new Set<string>();
   const createdTokenKeys = new Map<string, Set<string>>();
   const createdDescriptorLeaves = new Map<string, Set<string>>();
+  const createdTokenTemplates = new Map<string, TokenNameTemplate | undefined>();
+  const createdTokenNameByPath = new Map<string, Map<string, string>>();
+  const instanceDefaultTemplate = options.nameTemplate;
+
+  const themeTokenNaming: ThemeTokenNaming = createThemeTokenNaming(
+    scopeId,
+    instanceDefaultTemplate,
+    createdTokenTemplates,
+    createdTokenNameByPath,
+  );
+
+  function buildResolvePathName(
+    namespace: string,
+    template: TokenNameTemplate | undefined,
+    nameByPath: Map<string, string>,
+  ): (path: string) => string {
+    return (path: string) => {
+      const registered = nameByPath.get(path);
+      if (registered) return registered;
+
+      const segments = path.includes('-') ? path.split('-') : [path];
+      const ctx = buildTokenNameContext(scopeId, namespace, path, segments);
+      return resolveTokenName(template, ctx, namespace);
+    };
+  }
 
   function create<T extends TokenValues, N extends string>(
     namespace: N,
     values: T,
-    options?: { layer?: string },
+    options?: { layer?: string; nameTemplate?: TokenNameTemplate },
   ): CreatedTokenRef<T, N> {
     if (options?.layer != null && !themeLayerContext) {
       throw new Error(
@@ -273,9 +312,39 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     registeredNamespaces.add(namespace);
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
-    const flatEntries = flattenTokenEntries(values);
+    const effectiveTemplate = options?.nameTemplate ?? instanceDefaultTemplate;
+    const flatEntries = flattenTokenPaths(values);
+    const nameByPath = new Map<string, string>();
+    const seenNames = new Map<string, string>();
+
+    for (const { path, segments } of flatEntries) {
+      const ctx = buildTokenNameContext(scopeId, namespace, path, segments);
+      const name = resolveTokenName(effectiveTemplate, ctx, namespace);
+
+      if (process.env.NODE_ENV !== 'production') {
+        const priorPath = seenNames.get(name);
+        if (priorPath != null && priorPath !== path) {
+          throw new Error(
+            `[typestyles] tokens.create('${namespace}'): nameTemplate produced duplicate custom property name ` +
+              `"${name}" for paths "${priorPath}" and "${path}".`,
+          );
+        }
+        seenNames.set(name, path);
+      }
+
+      nameByPath.set(path, name);
+    }
+
     const declarations = flatEntries
-      .map(([key, value]) => `--${cssNs}-${key}: ${value}`)
+      .map(({ path, value }) => {
+        const propName = nameByPath.get(path);
+        if (propName === undefined) {
+          throw new Error(
+            `[typestyles] tokens.create('${namespace}'): internal error resolving name for "${path}".`,
+          );
+        }
+        return `${propName}: ${value}`;
+      })
       .join('; ');
 
     const css = `:root { ${declarations}; }`;
@@ -293,10 +362,13 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     const descriptorLeaves = new Set(descriptorMeta.keys());
     createdTokenKeys.set(namespace, allKeys);
     createdDescriptorLeaves.set(namespace, descriptorLeaves);
+    createdTokenTemplates.set(namespace, effectiveTemplate);
+    createdTokenNameByPath.set(namespace, nameByPath);
 
     for (const [path, entry] of descriptorMeta) {
-      if (entry.syntax != null) {
-        registerAtPropertyRule(`--${cssNs}-${path}`, {
+      const propName = nameByPath.get(path);
+      if (propName !== undefined && entry.syntax != null) {
+        registerAtPropertyRule(propName, {
           value: entry.value,
           syntax: entry.syntax,
           inherits: entry.inherits,
@@ -304,7 +376,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       }
     }
 
-    const ref = createTokenProxy(cssNs, '', allKeys, descriptorLeaves) as CreatedTokenRef<T, N>;
+    const resolvePathName = buildResolvePathName(namespace, effectiveTemplate, nameByPath);
+    const ref = createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as CreatedTokenRef<
+      T,
+      N
+    >;
     attachTokenMeta(ref, namespace);
     return ref;
   }
@@ -329,19 +405,22 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       );
     }
 
-    const cssNs = scopedTokenNamespace(scopeId, namespace);
     const allKeys = createdTokenKeys.get(namespace) ?? new Set<string>();
     const descriptorLeaves = createdDescriptorLeaves.get(namespace) ?? new Set<string>();
-    return createTokenProxy(cssNs, '', allKeys, descriptorLeaves) as TokenRef<T>;
+    const template = createdTokenTemplates.get(namespace) ?? instanceDefaultTemplate;
+    const nameByPath = createdTokenNameByPath.get(namespace) ?? new Map<string, string>();
+    const resolvePathName = buildResolvePathName(namespace, template, nameByPath);
+    return createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as TokenRef<T>;
   }
 
   return {
     scopeId,
     create,
     use: use as TokensApi<R>['use'],
-    createTheme: (name, config) => createTheme(name, config, scopeId, themeLayerContext),
+    createTheme: (name, config) =>
+      createTheme(name, config, scopeId, themeLayerContext, themeTokenNaming),
     createDarkMode: (name, darkOverrides) =>
-      createDarkMode(name, darkOverrides, scopeId, themeLayerContext),
+      createDarkMode(name, darkOverrides, scopeId, themeLayerContext, themeTokenNaming),
     when,
     colorMode,
   };

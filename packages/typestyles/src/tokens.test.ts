@@ -145,6 +145,96 @@ describe('tokens.create', () => {
       var: 'var(--color-accent)',
     });
   });
+
+  describe('nameTemplate', () => {
+    it('keeps default output when nameTemplate is omitted', () => {
+      const api = createTokens({ scopeId: 'app' });
+      const color = api.create('color', { primary: '#0066ff' });
+      expect(color.primary).toBe('var(--app-color-primary)');
+    });
+
+    it('uses custom template for emission and proxy refs', () => {
+      const api = createTokens({ scopeId: 'acme' });
+      const color = api.create(
+        'color',
+        { brand: { 500: '#0066ff' } },
+        {
+          nameTemplate: ({ segments }) => `--color-${segments.join('-')}`,
+        },
+      );
+
+      expect(color.brand[500]).toBe('var(--color-brand-500)');
+
+      flushSync();
+      const css = getRegisteredCss();
+      expect(css).toContain('--color-brand-500: #0066ff');
+      expect(css).not.toContain('--acme-color-brand-500');
+    });
+
+    it('joins segments with a custom separator', () => {
+      const api = createTokens();
+      const color = api.create(
+        'color',
+        { brand: { primary: '#0066ff' } },
+        {
+          nameTemplate: ({ segments }) => `--color-${segments.join('_')}`,
+        },
+      );
+
+      expect(color.brand.primary).toBe('var(--color-brand_primary)');
+    });
+
+    it('applies instance default with per-namespace override', () => {
+      const api = createTokens({
+        scopeId: 'app',
+        nameTemplate: ({ scope, namespace, path }) => `--${scope}-${namespace}-${path}`,
+      });
+
+      const scoped = api.create('space', { md: '16px' });
+      expect(scoped.md).toBe('var(--app-space-md)');
+
+      const plain = api.create(
+        'color',
+        { primary: '#0066ff' },
+        { nameTemplate: ({ path }) => `--color-${path}` },
+      );
+      expect(plain.primary).toBe('var(--color-primary)');
+    });
+
+    it('registers @property on templated names for descriptor leaves', () => {
+      const api = createTokens();
+      api.create(
+        'motion',
+        { duration: { value: '200ms', syntax: '<time>' } },
+        { nameTemplate: ({ path }) => `--motion-${path}` },
+      );
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('@property --motion-duration');
+      expect(css).toContain('--motion-duration: 200ms');
+    });
+
+    it('throws on duplicate template output for distinct paths in dev', () => {
+      const api = createTokens();
+      expect(() =>
+        api.create('color', { a: '#111', b: '#222' }, { nameTemplate: () => '--color-same' }),
+      ).toThrow(/duplicate custom property name/);
+    });
+
+    it('tokens.use returns same var() strings after custom create', () => {
+      const api = createTokens();
+      api.create(
+        'color',
+        { primary: '#0066ff' },
+        { nameTemplate: ({ path }) => `--ds-color-${path}` },
+      );
+      flushSync();
+
+      const used = api.use('color');
+      expect(used.primary).toBe('var(--ds-color-primary)');
+    });
+  });
 });
 
 describe('tokens.use', () => {
@@ -302,5 +392,30 @@ describe('createTheme', () => {
     expect(themeRule.cssText).toContain('--color-text-secondary');
     expect(themeRule.cssText).toContain('--color-background-surface');
     expect(themeRule.cssText).toContain('--color-background-subtle');
+  });
+
+  it('uses templated custom property names from tokens.create', () => {
+    const api = createTokens();
+    api.create(
+      'color',
+      { primary: '#0066ff' },
+      { nameTemplate: ({ path }) => `--ds-color-${path}` },
+    );
+
+    api.createTheme('brand', {
+      base: { color: { primary: '#111827' } },
+    });
+
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rules = Array.from(style.sheet?.cssRules ?? []);
+    const themeRule = rules.find(
+      (r) => (r as CSSStyleRule).selectorText === '.theme-brand',
+    ) as CSSStyleRule;
+
+    expect(themeRule).toBeDefined();
+    expect(themeRule.cssText).toContain('--ds-color-primary: #111827');
+    expect(themeRule.cssText).not.toContain('--color-primary');
   });
 });
