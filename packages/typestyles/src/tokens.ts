@@ -24,13 +24,28 @@ import type { CascadeLayersInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
+const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
 
 function attachTokenMeta(ref: object, namespace: string): void {
   tokenMetaByRef.set(ref, { namespace });
 }
 
+function attachTokenLeafValues(ref: object, leafValues: Record<string, string>): void {
+  tokenLeafValuesByRef.set(ref, leafValues);
+}
+
 function getTokenNamespace(ref: object): string | undefined {
   return tokenMetaByRef.get(ref)?.namespace;
+}
+
+/**
+ * Read scalar leaf values from a `tokens.create()` ref (e.g. media query conditions).
+ * Returns literal strings stored at create time, not `var(--…)` references.
+ */
+export function getTokenLeafValues(
+  ref: CreatedTokenRef<TokenValues, string>,
+): Record<string, string> {
+  return tokenLeafValuesByRef.get(ref) ?? {};
 }
 
 export type { TokenNameContext, TokenNameTemplate } from './token-naming';
@@ -390,11 +405,16 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     }
 
     const resolvePathName = buildResolvePathName(namespace, effectiveTemplate, nameByPath);
+    const leafValues = Object.fromEntries(
+      flattenTokenEntries(values).map(([path, leafValue]) => [path, leafValue]),
+    );
+
     const ref = createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as CreatedTokenRef<
       T,
       N
     >;
     attachTokenMeta(ref, namespace);
+    attachTokenLeafValues(ref, leafValues);
     return ref;
   }
 

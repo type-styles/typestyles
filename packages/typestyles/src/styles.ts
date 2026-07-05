@@ -41,6 +41,7 @@ import {
 } from './container';
 import { atRuleBlock as atRuleBlockFn } from './at-rule-block';
 import { has as hasNested, is as isNested, where as whereNested } from './relational-pseudo';
+import { resolveBreakpoints, type BreakpointsConfig } from './breakpoints';
 
 /**
  * Create a single class with the given styles. Returns the class name string.
@@ -161,7 +162,7 @@ export function createHashClass(
   // colliding on one class string is a real hash collision.
   trackEmittedClassName(className, `hashClass:${serialized}`);
   const selector = `.${className}`;
-  const rules = serializeStyle(selector, properties);
+  const rules = serializeStyle(selector, properties, { breakpoints: classNaming.breakpoints });
   if (classNaming.cascadeLayers) {
     if (layer == null || layer === '') {
       throw new Error(
@@ -298,6 +299,11 @@ export type LayerOption<L extends string = string> = { readonly layer: L };
 
 export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
   layers?: CascadeLayersInput;
+  /**
+   * Breakpoint names mapped to media query conditions (without `@media` wrapper).
+   * Enables responsive object values like `{ base: '8px', md: '16px' }` on CSS properties.
+   */
+  breakpoints?: BreakpointsConfig;
   /**
    * Only applies when using `createTokens` / `createTypeStyles` for `:root` and theme CSS.
    * Ignored by `createStyles` alone (passing it here avoids repeating the key at the factory).
@@ -442,7 +448,13 @@ export function createStyles(
   | StylesWithUtilsApi<StyleUtils>
   | StylesWithUtilsApiLayered<StyleUtils, string> {
   const partial = (options ?? {}) as CreateStylesInput;
-  const { layers, tokenLayer: tokenLayerHint, utils, ...namingPartial } = partial;
+  const {
+    layers,
+    tokenLayer: tokenLayerHint,
+    utils,
+    breakpoints: breakpointsConfig,
+    ...namingPartial
+  } = partial;
 
   if (process.env.NODE_ENV !== 'production' && tokenLayerHint !== undefined && !layers) {
     console.warn(
@@ -451,7 +463,8 @@ export function createStyles(
   }
 
   const cascadeLayers = layers ? resolveCascadeLayers(layers, namingPartial.scopeId) : undefined;
-  const classNaming = mergeClassNaming({ ...namingPartial, cascadeLayers });
+  const breakpoints = resolveBreakpoints(breakpointsConfig);
+  const classNaming = mergeClassNaming({ ...namingPartial, cascadeLayers, breakpoints });
 
   if (utils !== undefined) {
     if (classNaming.cascadeLayers) {

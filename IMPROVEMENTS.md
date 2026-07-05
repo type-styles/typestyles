@@ -381,7 +381,10 @@ in var-ui's own roadmap, not here.
 - Editable playground/REPL
 - Recipes/cookbook section (resurrect the `recipes.astro` redirect)
 - W3C Design Tokens import + Figma sync
-- Responsive object syntax (breakpoint shorthand in style values)
+- [x] **Responsive object syntax (breakpoint shorthand in style values)**
+  - Shipped: `breakpoints` on `createStyles` / `createTypeStyles`; `{ base, md, lg }` on CSS
+    property values expands to `@media` blocks at serialization time; `_` alias; `breakpoints.fromTokens`;
+    atomic mode support. Spec: `specs/responsive-object-syntax.md`.
 - [x] **Custom CSS variable name control (`nameTemplate` on `tokens.create`)**
   - Shipped: `nameTemplate` on `createTokens` and `tokens.create` with `TokenNameContext`
     (`scopeId`, `scope`, `namespace`, `path`, `segments`); segment-preserving

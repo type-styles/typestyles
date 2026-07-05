@@ -11,6 +11,8 @@ import {
 import { globalFontFace } from './global';
 import type { GlobalStyleTuple } from './global-style-tuple';
 import { parseGlobalStyleArgs } from './global-style-tuple';
+import { resolveBreakpoints, type BreakpointsConfig } from './breakpoints';
+import type { BreakpointMap } from './breakpoints';
 
 type CreateGlobalOptions = {
   /**
@@ -19,6 +21,8 @@ type CreateGlobalOptions = {
    * `global.style('body', …)` with different properties is ignored; non-production builds warn.
    */
   scopeId?: string;
+  /** Same breakpoint map as `createStyles({ breakpoints })` for responsive global styles. */
+  breakpoints?: BreakpointsConfig;
 };
 
 type CreateGlobalWithLayers = CreateGlobalOptions & {
@@ -56,6 +60,7 @@ export function createGlobal(
 ): GlobalApiUnlayered | GlobalApiLayered {
   const scopeId = options?.scopeId;
   const scopePrefix = scopeId != null && scopeId !== '' ? `g:${scopeId}:` : '';
+  const breakpoints: BreakpointMap | undefined = resolveBreakpoints(options?.breakpoints);
   const layersOpt = options && 'layers' in options ? options.layers : undefined;
   const globalLayerDefault =
     options && 'layers' in options && 'globalLayer' in options ? options.globalLayer : undefined;
@@ -73,7 +78,7 @@ export function createGlobal(
   ): void => {
     const { selector, properties, options: opts } = parseGlobalStyleArgs(first, second, third);
 
-    const rules = serializeStyle(selector, properties).map((r) => ({
+    const rules = serializeStyle(selector, properties, { breakpoints }).map((r) => ({
       ...r,
       key: scopePrefix + r.key,
     }));

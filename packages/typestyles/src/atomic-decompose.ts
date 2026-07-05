@@ -1,5 +1,6 @@
 import type { CSSProperties } from './types';
 import { formatDeclaration, resolveNestedSelector, serializeStyle, type CSSRule } from './css';
+import { expandResponsiveInProperties } from './breakpoints';
 import {
   buildComponentClassName,
   buildSingleClassName,
@@ -44,7 +45,9 @@ function walkAtomic(
   classNames: string[],
   rules: CSSRule[],
 ): void {
-  for (const [prop, value] of Object.entries(properties)) {
+  const expanded = expandResponsiveInProperties(properties, cfg.breakpoints);
+
+  for (const [prop, value] of Object.entries(expanded)) {
     if (value == null) continue;
 
     if (isNestedPropertyKey(prop)) {
@@ -129,6 +132,6 @@ export function classNamesAndRulesForProperties(
 
   return {
     classNames: className,
-    rules: serializeStyle(`.${className}`, properties),
+    rules: serializeStyle(`.${className}`, properties, { breakpoints: classNaming.breakpoints }),
   };
 }

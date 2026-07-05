@@ -32,6 +32,11 @@ export type ClassNamingConfig = {
    * call must pass `{ layer: … }` and emitted rules are wrapped in `@layer`.
    */
   cascadeLayers?: ResolvedCascadeLayers;
+  /**
+   * Breakpoint names → media query conditions (without `@media` wrapper).
+   * Enables `{ base, md, lg }` shorthand on CSS property values.
+   */
+  breakpoints?: Record<string, string>;
 };
 
 /** Default naming options used by `createStyles()` when no overrides are passed. */
