@@ -1,5 +1,21 @@
 # typestyles
 
+## 0.8.0
+
+### Minor Changes
+
+- [#119](https://github.com/type-styles/typestyles/pull/119) [`10edb85`](https://github.com/type-styles/typestyles/commit/10edb85cf37802090cdc80b8294f0ecd342ba54b) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `styles.scope()` for proximity-correct nested theme overrides via CSS `@scope` (P5.3).
+
+  Introduce **`@typestyles/cli`**, a new package with the `typestyles` binary and subcommands. The first command is `typestyles snapshot`, which scans semantic `styles.class` / `styles.component` class names and writes `.typestyles-public-classnames.json` for semver guarding. Snapshot logic and heavy deps (`typescript`, `fast-glob`) live in this package so the core `typestyles` runtime stays lean.
+
+  Also ships the opt-in `@typestyles/no-removed-public-classname` ESLint rule (consumes `@typestyles/cli` programmatically).
+
+- [#116](https://github.com/type-styles/typestyles/pull/116) [`7ea7356`](https://github.com/type-styles/typestyles/commit/7ea7356299798f5412c1117e83c074b0f5f4374e) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `'descendant'` as a third `scope` value on `tokens.when.attr` / `tokens.when.className` theme conditions, compiling to a descendant-combinator selector (`.theme-name [data-x="y"]`) so a mode can match a marker element inside the themed subtree — the relationship a fixed-tone surface (e.g. an always-dark toast on a light page) needs. `when.not()` on a descendant-scoped condition is rejected with an explicit dev warning (P5.4).
+
+- [#121](https://github.com/type-styles/typestyles/pull/121) [`4be825a`](https://github.com/type-styles/typestyles/commit/4be825a34c0007cdec73d0057b64b3920bac1906) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add responsive object syntax for breakpoint shorthand in style property values. Register breakpoints once via `createStyles({ breakpoints })` or `createTypeStyles({ breakpoints })`, then use `{ base, md, lg }` on CSS properties — expands to `@media` blocks at serialization time. Supports `_` alias, `breakpoints.fromTokens`, atomic mode, and dev-time validation for unknown breakpoints.
+
+- [#120](https://github.com/type-styles/typestyles/pull/120) [`2bfa8a4`](https://github.com/type-styles/typestyles/commit/2bfa8a4cdcb59e569e831c7f6d4e7178c9acaaf9) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add optional `nameTemplate` on `createTokens` and `tokens.create` for custom CSS custom property names — migration from existing variable systems, Style Dictionary / DTCG naming conventions, and cross-namespace aliasing. Default `--{scopeId}-{namespace}-{path}` behavior is unchanged when `nameTemplate` is omitted. Theme overrides, `tokens.use()`, and `@property` registration share the same resolved names.
+
 ## 0.7.0
 
 ### Minor Changes
