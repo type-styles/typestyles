@@ -31,10 +31,30 @@ Run from the **repository root**:
 ```bash
 pnpm install          # install all workspace deps
 pnpm build            # turbo build (all packages + docs)
+pnpm verify           # lint + typecheck + test (same checks as CI)
 pnpm test             # turbo test
 pnpm typecheck        # turbo typecheck
 pnpm lint             # turbo lint
 ```
+
+## Before committing
+
+**Required.** Before creating a git commit (or when the user asks you to commit), run the same checks as [CI](.github/workflows/ci.yml):
+
+```bash
+pnpm verify
+```
+
+This runs `lint`, `typecheck`, and `test` in sequence. Fix any failures before committing — do not skip hooks or commit with known CI failures.
+
+When you changed only one package, you may scope checks for faster feedback (must still pass full `pnpm verify` before commit):
+
+```bash
+pnpm --filter typestyles test
+pnpm turbo run lint typecheck test --filter=typestyles
+```
+
+The pre-commit hook only runs Prettier on staged files; it does **not** replace `pnpm verify`.
 
 Docs site only:
 
