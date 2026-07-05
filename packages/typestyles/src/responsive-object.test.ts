@@ -8,10 +8,11 @@ import {
 } from './breakpoints';
 import { serializeStyle } from './css';
 import { createStyles } from './styles';
+import { createGlobal } from './create-global';
 import { createTokens } from './tokens';
 import { decomposeAtomicStyle } from './atomic-decompose';
 import { mergeClassNaming } from './class-naming';
-import { reset, getRegisteredCss } from './sheet';
+import { reset, flushSync, getRegisteredCss } from './sheet';
 import { registeredNamespaces } from './registry';
 
 const breakpoints = {
@@ -43,6 +44,28 @@ describe('resolveBreakpoints', () => {
       md: '(min-width: 800px)',
       lg: '(min-width: 1024px)',
     });
+  });
+
+  it('throws in development when a condition includes the @media wrapper', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+
+    expect(() => resolveBreakpoints({ md: '@media (min-width: 768px)' })).toThrow(
+      /without the `@media` wrapper/,
+    );
+
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  it('strips a mistaken @media prefix in production', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    expect(resolveBreakpoints({ md: '@media (min-width: 768px)' })).toEqual({
+      md: '(min-width: 768px)',
+    });
+
+    process.env.NODE_ENV = originalEnv;
   });
 });
 
@@ -217,6 +240,88 @@ describe('atomic mode responsive objects', () => {
     expect(rules[1]?.css).toMatch(
       /^@media \(min-width: 768px\) \{ \.a-[a-z0-9]+ \{ padding: 16px; \} \}$/,
     );
+  });
+
+  it('expands responsive values inside pseudo selectors', () => {
+    const { rules } = decomposeAtomicStyle(cfg, {
+      opacity: 1,
+      '&:hover': { opacity: { base: 0.9, md: 1 } },
+    });
+
+    const css = rules.map((r) => r.css);
+    expect(css.some((c) => c.match(/^\.a-[a-z0-9]+ \{ opacity: 1; \}$/))).toBe(true);
+    expect(css.some((c) => c.match(/^\.a-[a-z0-9]+:hover \{ opacity: 0\.9; \}$/))).toBe(true);
+    expect(
+      css.some((c) =>
+        c.match(/^@media \(min-width: 768px\) \{ \.a-[a-z0-9]+:hover \{ opacity: 1; \} \}$/),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('createGlobal integration', () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  it('serializes responsive global styles when breakpoints are configured', () => {
+    const global = createGlobal({ scopeId: 'global-bp', breakpoints });
+    global.style('.container', { padding: { base: '8px', md: '16px' } });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('padding: 8px');
+    expect(css).toContain('@media (min-width: 768px)');
+    expect(css).toContain('padding: 16px');
+  });
+});
+
+describe('styles.scope() integration', () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  it('serializes responsive overrides inside @scope', () => {
+    const styles = createStyles({ scopeId: 'scope-bp', breakpoints });
+    styles.scope({ root: '.theme-acme' }, 'button-base', {
+      padding: { base: '8px', md: '16px' },
+    });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('@scope (.theme-acme)');
+    expect(css).toContain('padding: 8px');
+    expect(css).toContain('@media (min-width: 768px)');
+    expect(css).toContain('padding: 16px');
+  });
+});
+
+describe('production behavior', () => {
+  const originalEnv = process.env.NODE_ENV;
+
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+    process.env.NODE_ENV = 'production';
+  });
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  it('silently omits responsive objects when breakpoints are unset', () => {
+    const styles = createStyles({ scopeId: 'prod-no-bp' });
+    styles.component('quiet', {
+      base: {
+        padding: { base: '8px', md: '16px' },
+        color: 'red',
+      },
+    });
+
+    const css = getRegisteredCss();
+    expect(css).toContain('color: red');
+    expect(css).not.toContain('padding');
+    expect(css).not.toContain('@media');
   });
 });
 

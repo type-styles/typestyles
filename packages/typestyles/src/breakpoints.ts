@@ -19,12 +19,40 @@ function isScalar(value: unknown): value is string | number {
   return typeof value === 'string' || typeof value === 'number';
 }
 
-function mediaAtRuleKey(condition: string): `@${string}` {
+function validateMediaCondition(name: string, condition: string): void {
+  if (process.env.NODE_ENV === 'production') return;
+  if (/^@media\s/i.test(condition.trim())) {
+    throw new Error(
+      `[typestyles] Breakpoint "${name}" must be a media condition without the \`@media\` wrapper — ` +
+        `e.g. \`(min-width: 768px)\`. Got ${JSON.stringify(condition)}.`,
+    );
+  }
+}
+
+/** Strip a mistaken `@media` prefix so prod still emits valid CSS. */
+function normalizeMediaCondition(condition: string): string {
   const trimmed = condition.trim();
+  if (/^@media\s/i.test(trimmed)) {
+    return trimmed.replace(/^@media\s+/i, '').trim();
+  }
+  return trimmed;
+}
+
+function mediaAtRuleKey(condition: string): `@${string}` {
+  const trimmed = normalizeMediaCondition(condition);
   if (trimmed.startsWith('(')) {
     return `@media ${trimmed}`;
   }
   return `@media (${trimmed})`;
+}
+
+function finalizeBreakpointMap(map: BreakpointMap): BreakpointMap {
+  const result: BreakpointMap = {};
+  for (const [name, condition] of Object.entries(map)) {
+    validateMediaCondition(name, condition);
+    result[name] = normalizeMediaCondition(condition);
+  }
+  return result;
 }
 
 export function resolveBreakpoints(
@@ -40,10 +68,10 @@ export function resolveBreakpoints(
     for (const [key, value] of Object.entries(explicit)) {
       if (typeof value === 'string') merged[key] = value;
     }
-    return merged;
+    return finalizeBreakpointMap(merged);
   }
 
-  return config as BreakpointMap;
+  return finalizeBreakpointMap(config as BreakpointMap);
 }
 
 function responsiveObjectKeys(value: Record<string, unknown>): string[] {
