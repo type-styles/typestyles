@@ -54,7 +54,6 @@ export type McpContentBundle = {
 };
 
 const FENCE_RE = /```(\w*)\n([\s\S]*?)```/g;
-const HEADING_RE = /^(#{1,6})\s+(.+)$/gm;
 
 /** Split api-reference clean markdown into symbol-keyed sections. */
 export function splitApiReferenceSections(markdown: string): Record<string, string> {
@@ -111,27 +110,10 @@ function extractCodeExamples(docs: DocEntry[]): McpCodeExample[] {
   const examples: McpCodeExample[] = [];
 
   for (const doc of docs) {
-    const headings: string[] = [];
-    let m: RegExpExecArray | null;
-    const headingRe = new RegExp(HEADING_RE.source, HEADING_RE.flags);
-    while ((m = headingRe.exec(doc.content)) !== null) {
-      headings.push(m[2].replace(/`/g, '').trim());
-    }
-
-    let lastHeading = doc.title;
-    const contentLines = doc.content.split('\n');
-    let lineIdx = 0;
-    for (const line of contentLines) {
-      const hm = /^(#{1,6})\s+(.+)$/.exec(line);
-      if (hm) {
-        lastHeading = hm[2].replace(/`/g, '').trim();
-      }
-      lineIdx++;
-    }
-
     // Walk content tracking nearest heading per fence
-    lastHeading = doc.title;
+    let lastHeading = doc.title;
     const fenceRe = new RegExp(FENCE_RE.source, FENCE_RE.flags);
+    let m: RegExpExecArray | null;
     let pos = 0;
     while ((m = fenceRe.exec(doc.content)) !== null) {
       const before = doc.content.slice(pos, m.index);
