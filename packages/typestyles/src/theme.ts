@@ -13,10 +13,9 @@ import type {
   ThemeSurface,
   TokenValues,
 } from './types';
-import { flattenTokenPaths } from './types';
-import { sanitizeClassSegment } from './class-naming';
+import { flattenTokenEntries, flattenTokenPaths } from './types';
+import { sanitizeClassSegment, scopedTokenNamespace } from './class-naming';
 import type { ThemeTokenNaming } from './token-naming';
-import { buildTokenNameContext, resolveTokenName } from './token-naming';
 import { insertRule, insertRules } from './sheet';
 import type { ResolvedCascadeLayers } from './layers';
 import { applyLayerToRules } from './layers';
@@ -329,11 +328,17 @@ function buildDeclarations(
   const parts: string[] = [];
   for (const [namespace, values] of Object.entries(overrides)) {
     if (values === null || values === undefined) continue;
-    for (const { path, segments, value } of flattenTokenPaths(values as TokenValues)) {
-      const name = naming
-        ? naming.resolveName(namespace, path, segments)
-        : resolveTokenName(undefined, buildTokenNameContext(scopeId, namespace, path, segments));
-      parts.push(`${name}: ${value}`);
+
+    if (naming) {
+      for (const { path, segments, value } of flattenTokenPaths(values as TokenValues)) {
+        parts.push(`${naming.resolveName(namespace, path, segments)}: ${value}`);
+      }
+      continue;
+    }
+
+    const cssNs = scopedTokenNamespace(scopeId, namespace);
+    for (const [key, value] of flattenTokenEntries(values as TokenValues)) {
+      parts.push(`--${cssNs}-${key}: ${value}`);
     }
   }
   return parts.join('; ');

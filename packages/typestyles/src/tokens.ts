@@ -8,7 +8,7 @@ import type {
   ThemeOverrides,
   TokenDescriptor,
 } from './types';
-import { flattenTokenPaths, isTokenDescriptor } from './types';
+import { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
 import { scopedTokenNamespace } from './class-naming';
 import {
   buildTokenNameContext,
@@ -275,6 +275,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const createdTokenTemplates = new Map<string, TokenNameTemplate | undefined>();
   const createdTokenNameByPath = new Map<string, Map<string, string>>();
   const instanceDefaultTemplate = options.nameTemplate;
+  let customNamingActive = Boolean(instanceDefaultTemplate);
 
   const themeTokenNaming: ThemeTokenNaming = createThemeTokenNaming(
     scopeId,
@@ -313,39 +314,51 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
     const effectiveTemplate = options?.nameTemplate ?? instanceDefaultTemplate;
-    const flatEntries = flattenTokenPaths(values);
+    if (effectiveTemplate !== undefined) customNamingActive = true;
+
+    let declarations: string;
     const nameByPath = new Map<string, string>();
-    const seenNames = new Map<string, string>();
 
-    for (const { path, segments } of flatEntries) {
-      const ctx = buildTokenNameContext(scopeId, namespace, path, segments);
-      const name = resolveTokenName(effectiveTemplate, ctx, namespace);
+    if (effectiveTemplate === undefined) {
+      const flatEntries = flattenTokenEntries(values);
+      for (const [path] of flatEntries) {
+        nameByPath.set(path, `--${cssNs}-${path}`);
+      }
+      declarations = flatEntries.map(([key, value]) => `--${cssNs}-${key}: ${value}`).join('; ');
+    } else {
+      const flatEntries = flattenTokenPaths(values);
+      const seenNames = new Map<string, string>();
 
-      if (process.env.NODE_ENV !== 'production') {
-        const priorPath = seenNames.get(name);
-        if (priorPath != null && priorPath !== path) {
-          throw new Error(
-            `[typestyles] tokens.create('${namespace}'): nameTemplate produced duplicate custom property name ` +
-              `"${name}" for paths "${priorPath}" and "${path}".`,
-          );
+      for (const { path, segments } of flatEntries) {
+        const ctx = buildTokenNameContext(scopeId, namespace, path, segments);
+        const name = resolveTokenName(effectiveTemplate, ctx, namespace);
+
+        if (process.env.NODE_ENV !== 'production') {
+          const priorPath = seenNames.get(name);
+          if (priorPath != null && priorPath !== path) {
+            throw new Error(
+              `[typestyles] tokens.create('${namespace}'): nameTemplate produced duplicate custom property name ` +
+                `"${name}" for paths "${priorPath}" and "${path}".`,
+            );
+          }
+          seenNames.set(name, path);
         }
-        seenNames.set(name, path);
+
+        nameByPath.set(path, name);
       }
 
-      nameByPath.set(path, name);
+      declarations = flatEntries
+        .map(({ path, value }) => {
+          const propName = nameByPath.get(path);
+          if (propName === undefined) {
+            throw new Error(
+              `[typestyles] tokens.create('${namespace}'): internal error resolving name for "${path}".`,
+            );
+          }
+          return `${propName}: ${value}`;
+        })
+        .join('; ');
     }
-
-    const declarations = flatEntries
-      .map(({ path, value }) => {
-        const propName = nameByPath.get(path);
-        if (propName === undefined) {
-          throw new Error(
-            `[typestyles] tokens.create('${namespace}'): internal error resolving name for "${path}".`,
-          );
-        }
-        return `${propName}: ${value}`;
-      })
-      .join('; ');
 
     const css = `:root { ${declarations}; }`;
     if (themeLayerContext) {
@@ -418,9 +431,21 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     create,
     use: use as TokensApi<R>['use'],
     createTheme: (name, config) =>
-      createTheme(name, config, scopeId, themeLayerContext, themeTokenNaming),
+      createTheme(
+        name,
+        config,
+        scopeId,
+        themeLayerContext,
+        customNamingActive ? themeTokenNaming : undefined,
+      ),
     createDarkMode: (name, darkOverrides) =>
-      createDarkMode(name, darkOverrides, scopeId, themeLayerContext, themeTokenNaming),
+      createDarkMode(
+        name,
+        darkOverrides,
+        scopeId,
+        themeLayerContext,
+        customNamingActive ? themeTokenNaming : undefined,
+      ),
     when,
     colorMode,
   };

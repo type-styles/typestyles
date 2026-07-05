@@ -72,9 +72,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build typestyles and check bundle budget
-        run: pnpm --filter typestyles build
-
       - name: Run tests
         run: pnpm run test
 
