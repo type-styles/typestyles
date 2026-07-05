@@ -6,6 +6,8 @@ Write type-safe styles in TypeScript, get **human-readable class names** in DevT
 
 Full documentation: [typestyles.dev](https://typestyles.dev) · Monorepo overview: [README](../../README.md)
 
+**For AI coding agents:** read [`llms.txt`](./llms.txt) in this package (API patterns, common mistakes, doc links) or query the live docs via MCP at [typestyles.dev/mcp](https://typestyles.dev/mcp).
+
 ## Install
 
 ```bash

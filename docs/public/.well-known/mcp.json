@@ -1,0 +1,9 @@
+{
+  "name": "typestyles-docs",
+  "description": "Read-only MCP server for typestyles documentation",
+  "version": "1.0.0",
+  "transport": {
+    "type": "streamable-http",
+    "url": "https://typestyles.dev/mcp"
+  }
+}

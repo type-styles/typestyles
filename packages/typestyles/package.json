@@ -89,7 +89,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "llms.txt"
   ],
   "scripts": {
     "build": "tsup && node scripts/check-bundle-size.mjs",

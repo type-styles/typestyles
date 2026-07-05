@@ -1,0 +1,88 @@
+# typestyles — agent reference
+
+> CSS-in-TypeScript with typed variants, design tokens, and zero-runtime production extraction.
+
+Full docs: https://typestyles.dev/llms.txt · MCP: https://typestyles.dev/mcp
+
+## Install
+
+```bash
+pnpm add typestyles @typestyles/vite   # Vite + zero-runtime
+# or: npm install typestyles          # runtime-only prototyping
+```
+
+## Core patterns
+
+```ts
+import { createTypeStyles, cx } from 'typestyles';
+
+export const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+
+const color = tokens.create('color', {
+  primary: '#0066ff',
+  surface: '#ffffff',
+});
+
+export const button = styles.component('button', {
+  base: {
+    padding: '8px 16px',
+    borderRadius: '6px',
+    backgroundColor: color.primary,
+    color: color.surface,
+    '&:hover': { filter: 'brightness(0.9)' },
+  },
+  variants: {
+    intent: {
+      primary: { backgroundColor: color.primary },
+      ghost: { backgroundColor: 'transparent', color: color.primary },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+
+// Usage: button({ intent: 'ghost' }) → class string
+```
+
+## Key APIs
+
+- `createTypeStyles({ scopeId, mode?, prefix?, layers? })` — scoped `styles` + `tokens` instance
+- `styles.component(namespace, config)` — CVA-style variants (`base`, `variants`, `defaultVariants`, `compoundVariants`)
+- `styles.class(name, properties)` — single class
+- `tokens.create(namespace, values)` — CSS custom properties (`--{scopeId}-…`)
+- `tokens.createTheme(name, config)` — theme class overrides
+- `cx(...classes)` — join class names (handles falsy values)
+- `styles.compose(...fns)` — compose style functions
+
+Detailed API: https://typestyles.dev/docs/api-reference.md
+
+## Zero-runtime
+
+1. Add bundler plugin (`@typestyles/vite`, `@typestyles/next`, …)
+2. Create `typestyles-entry.ts` importing all style modules
+3. `vite build` emits static `typestyles.css` — no client runtime
+
+Guide: https://typestyles.dev/docs/zero-runtime.md
+
+## Common mistakes
+
+- **Missing side-effect entry** — build extraction only sees imported style modules
+- **Default unscoped `styles`** in libraries — use `createTypeStyles({ scopeId: 'pkg' })` per package
+- **Dynamic class strings** — use variants or `styles.hashClass`, not template literals for one-off classes
+- **Forgetting `scopeId`** when multiple bundles share a page — token/class collisions
+- **SSR without server helpers** — import from `typestyles/server` for streaming/collection
+
+## Subpath exports
+
+| Import | Use |
+| ------ | --- |
+| `typestyles` | Core runtime |
+| `typestyles/server` | SSR (`collectStyles`, …) |
+| `typestyles/build` | Build stubs when runtime disabled |
+| `typestyles/color` | Color helpers (off main bundle) |
+
+## More
+
+- Getting started: https://typestyles.dev/docs/getting-started.md
+- React: https://typestyles.dev/docs/react-integration.md
+- Tokens: https://typestyles.dev/docs/tokens.md
+- Troubleshooting: https://typestyles.dev/docs/troubleshooting.md

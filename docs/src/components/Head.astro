@@ -8,14 +8,23 @@ type Props = {
   appearanceBootstrap: AppearanceBootstrap;
   /** Pre-extracted Typestyles stylesheet (`@typestyles/vite` serves it in dev and emits it on build). */
   typestylesCssHref?: string;
+  /** Canonical page URL for SEO and AI alternates. */
+  canonicalUrl?: string;
+  /** Sibling `.md` URL for `<link rel="alternate">`. */
+  markdownAlternateUrl?: string;
 };
 
-const { title, appearanceBootstrap, typestylesCssHref } = Astro.props;
+const { title, appearanceBootstrap, typestylesCssHref, canonicalUrl, markdownAlternateUrl } =
+  Astro.props;
 ---
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+{markdownAlternateUrl && (
+  <link rel="alternate" type="text/markdown" href={markdownAlternateUrl} />
+)}
 <title>{title}</title>
 <ClientRouter />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
