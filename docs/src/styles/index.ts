@@ -11,6 +11,7 @@ export { doc } from './doc';
 export { skipLink } from './skipLink';
 export { toc } from './toc';
 export { docPage } from './docPage';
+export { docAiActions } from './docAiActions';
 export { home } from './home';
 export { liveDemo } from './liveDemo';
 export * from './global';

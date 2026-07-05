@@ -1,0 +1,40 @@
+---
+// @ts-nocheck
+import { linkButton } from '@examples/design-system';
+import { docAiActions } from '../styles/docAiActions';
+
+type Props = {
+  markdownUrl: string;
+};
+
+const { markdownUrl } = Astro.props;
+const claudeUrl = `https://claude.ai/new?q=${encodeURIComponent(`Read ${markdownUrl} so we can discuss it`)}`;
+const chatGptUrl = `https://chatgpt.com/?q=${encodeURIComponent(`Read ${markdownUrl} so we can discuss it`)}`;
+---
+
+<div class={docAiActions.root} data-doc-ai-actions data-md-url={markdownUrl}>
+  <button type="button" class:list={[linkButton.base, linkButton.ghost, docAiActions.button]} data-doc-copy-md>
+    Copy as Markdown
+  </button>
+  <a class:list={[linkButton.base, linkButton.ghost, docAiActions.button]} href={markdownUrl}>
+    View as Markdown
+  </a>
+  <details class={docAiActions.menu}>
+    <summary class:list={[linkButton.base, linkButton.ghost, docAiActions.button, docAiActions.menuSummary]}>
+      Open in AI
+    </summary>
+    <div class={docAiActions.menuPanel} role="menu">
+      <a class={docAiActions.menuItem} href={claudeUrl} target="_blank" rel="noopener noreferrer">
+        Open in Claude
+      </a>
+      <a class={docAiActions.menuItem} href={chatGptUrl} target="_blank" rel="noopener noreferrer">
+        Open in ChatGPT
+      </a>
+    </div>
+  </details>
+</div>
+
+<script>
+  import { attachDocAiActions } from '../scripts/docAiActions';
+  attachDocAiActions();
+</script>

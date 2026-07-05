@@ -24,6 +24,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
         { slug: 'vite-plugin', title: 'Vite Plugin' },
         { slug: 'framework-comparison', title: 'Framework comparison' },
         { slug: 'api-reference', title: 'API Reference' },
+        { slug: 'ai-tools', title: 'Use with AI tools' },
         { href: '/docs/changelog', title: 'Changelog' },
       ],
     },

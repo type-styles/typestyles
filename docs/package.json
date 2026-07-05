@@ -7,13 +7,17 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@examples/design-system": "workspace:*",
     "@lucide/astro": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@netlify/functions": "^3.1.0",
     "@typestyles/props": "workspace:*",
     "astro": "^5.6.1",
+    "fetch-to-node": "^2.1.0",
     "hast-util-to-text": "^4.0.2",
     "highlight.js": "^11.11.1",
     "marked": "^15.0.0",
@@ -23,14 +27,16 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "typestyles": "workspace:*",
-    "unified": "^11.0.5"
+    "unified": "^11.0.5",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@astrojs/sitemap": "^3.4.0",
     "@typestyles/build-runner": "workspace:*",
     "@typestyles/astro": "workspace:*",
     "eslint": "^9.39.2",
     "typescript": "^5.4.0",
     "vite-tsconfig-paths": "^5.0.1",
-    "zod": "^3.24.0"
+    "vitest": "^3.0.0"
   }
 }

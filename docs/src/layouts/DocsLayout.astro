@@ -27,6 +27,8 @@ type Props = {
   hideDesktopSidebar?: boolean;
   /** Wider main column for marketing layouts. */
   mainVariant?: 'doc' | 'landing';
+  canonicalUrl?: string;
+  markdownAlternateUrl?: string;
 };
 
 const {
@@ -36,6 +38,8 @@ const {
   tocHeadings = [],
   hideDesktopSidebar = false,
   mainVariant = 'doc',
+  canonicalUrl,
+  markdownAlternateUrl,
 } = Astro.props;
 const sidebarRootOpenClass = sidebar.rootOpen;
 const sidebarBackdropVisibleClass = sidebar.backdropVisible;
@@ -67,6 +71,8 @@ const appearanceBootstrap = {
       title={title}
       appearanceBootstrap={appearanceBootstrap}
       typestylesCssHref={typestylesCssHref}
+      canonicalUrl={canonicalUrl}
+      markdownAlternateUrl={markdownAlternateUrl}
     />
   </head>
   <body>
