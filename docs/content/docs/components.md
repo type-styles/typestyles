@@ -169,6 +169,81 @@ const button = styles.component('button', (c) => {
 The [design-system example](/docs/design-system) uses this pattern throughout
 (`examples/design-system/src/components/button.ts`).
 
+## Responsive property values
+
+Register breakpoints once on your styles instance, then use `{ base, md, lg }` shorthand on individual CSS properties instead of repeating full `@media` keys beside every property.
+
+```ts
+const { styles } = createTypeStyles({
+  scopeId: 'app',
+  breakpoints: {
+    sm: '(min-width: 640px)',
+    md: '(min-width: 768px)',
+    lg: '(min-width: 1024px)',
+    xl: '(min-width: 1280px)',
+  },
+});
+
+const container = styles.component('container', {
+  base: {
+    width: '100%',
+    paddingLeft: { base: '1rem', md: '1.5rem' },
+    paddingRight: { base: '1rem', md: '1.5rem' },
+    maxWidth: {
+      base: '100%',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+    },
+  },
+});
+```
+
+This compiles to the same CSS you would write with explicit `'@media (min-width: …)'` object keys — one base declaration per property, plus nested `@media` blocks per breakpoint.
+
+**Conventions:**
+
+- `base` is the mobile-first default; `_` is an alias (Panda migration).
+- Breakpoint values are media conditions **without** the `@media` wrapper — same strings as `@typestyles/props` `{ '@media': '(min-width: 640px)' }`.
+- Values must be scalars (`string | number`); nested styles per breakpoint still use explicit `@media` keys.
+- Responsive objects work in `styles.class`, `styles.component`, `styles.scope`, and `createTypeStyles({ breakpoints }).global.style` (or `createGlobal({ breakpoints }).style`). The root `global` export has no breakpoint registry — use a factory instance.
+
+**Before (manual media keys):**
+
+```ts
+base: {
+  padding: '1rem',
+  '@media (min-width: 768px)': { padding: '1.5rem' },
+  '@media (min-width: 1024px)': { padding: '2rem' },
+}
+```
+
+**After:**
+
+```ts
+base: {
+  padding: { base: '1rem', md: '1.5rem', lg: '2rem' },
+}
+```
+
+For atomic utility props with responsive class names, use [`@typestyles/props`](/docs/atomic-css#responsive-conditions) — that system resolves to utility classes at runtime. Responsive property values are for declarative style objects that compile to plain CSS rules.
+
+You can derive breakpoints from media tokens:
+
+```ts
+const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+const media = tokens.create('media', {
+  sm: '(min-width: 640px)',
+  md: '(min-width: 768px)',
+});
+
+const stylesWithMedia = createStyles({
+  scopeId: 'app',
+  breakpoints: { fromTokens: media, lg: '(min-width: 1024px)' },
+});
+```
+
 ## Public class name stability
 
 Semantic class names (`button-base`, `button-intent-primary`, …) are public API for

@@ -41,7 +41,7 @@ export function createScope(
   overrides: CSSProperties,
 ): void {
   const selector = `.${className}`;
-  const serialized = serializeStyle(selector, overrides);
+  const serialized = serializeStyle(selector, overrides, { breakpoints: classNaming.breakpoints });
   const scopedRules = serialized.map((rule) => ({
     key: scopeRuleKey(opts, className, rule.key, opts.layer),
     css: wrapRuleInScope(opts, rule.css),
@@ -69,9 +69,10 @@ export function scopeRulesForTest(
   overrides: CSSProperties,
   stack?: ResolvedCascadeLayers,
   layer?: string,
+  breakpoints?: ClassNamingConfig['breakpoints'],
 ): string[] {
   const selector = `.${className}`;
-  const serialized = serializeStyle(selector, overrides);
+  const serialized = serializeStyle(selector, overrides, { breakpoints });
   let rules = serialized.map((rule) => ({
     key: scopeRuleKey(opts, className, rule.key, layer),
     css: wrapRuleInScope(opts, rule.css),

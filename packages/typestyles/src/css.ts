@@ -1,4 +1,6 @@
 import type { CSSProperties } from './types';
+import type { BreakpointMap } from './breakpoints';
+import { expandResponsiveInProperties } from './breakpoints';
 
 /**
  * Convert a camelCase CSS property name to kebab-case.
@@ -107,10 +109,24 @@ export interface CSSRule {
   css: string;
 }
 
+export type SerializeStyleOptions = {
+  breakpoints?: BreakpointMap;
+};
+
 /**
  * Serialize a style definition object into CSS rule(s) for a given selector.
  */
-export function serializeStyle(selector: string, properties: CSSProperties): CSSRule[] {
+export function serializeStyle(
+  selector: string,
+  properties: CSSProperties,
+  options?: SerializeStyleOptions,
+): CSSRule[] {
+  const breakpoints = options?.breakpoints;
+  const expanded = expandResponsiveInProperties(properties, breakpoints);
+  return serializeStyleExpanded(selector, expanded);
+}
+
+function serializeStyleExpanded(selector: string, properties: CSSProperties): CSSRule[] {
   const rules: CSSRule[] = [];
   const declarations: string[] = [];
 
@@ -119,10 +135,10 @@ export function serializeStyle(selector: string, properties: CSSProperties): CSS
 
     const nestedSelector = resolveNestedSelector(selector, prop);
     if (nestedSelector) {
-      rules.push(...serializeStyle(nestedSelector, value as CSSProperties));
+      rules.push(...serializeStyleExpanded(nestedSelector, value as CSSProperties));
     } else if (prop.startsWith('@')) {
       // At-rule: wrap the serialized content in the at-rule
-      const innerRules = serializeStyle(selector, value as CSSProperties);
+      const innerRules = serializeStyleExpanded(selector, value as CSSProperties);
       for (const inner of innerRules) {
         rules.push({
           key: `${prop}:${inner.key}`,

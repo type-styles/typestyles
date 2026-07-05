@@ -10,10 +10,13 @@ import type {
   StylesWithUtilsApiLayered,
 } from './styles';
 import type { StyleUtils } from './types';
+import type { BreakpointsConfig } from './breakpoints';
 import { createTokens } from './tokens';
 import type { TokensApi } from './tokens';
 
-type NamingPartial = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>>;
+type NamingPartial = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+  breakpoints?: BreakpointsConfig;
+};
 
 type GlobalLayerOption<L extends string = string> = {
   /**
@@ -100,6 +103,7 @@ export function createTypeStyles(
       layers,
       scopeId: rest.scopeId,
       globalLayer,
+      breakpoints: rest.breakpoints,
     });
     return { styles, tokens, global };
   }
@@ -118,6 +122,6 @@ export function createTypeStyles(
 
   const styles = utils !== undefined ? createStyles({ ...rest, utils }) : createStyles(rest);
   const tokens = createTokens({ scopeId: rest.scopeId });
-  const global = createGlobal({ scopeId: rest.scopeId });
+  const global = createGlobal({ scopeId: rest.scopeId, breakpoints: rest.breakpoints });
   return { styles, tokens, global };
 }

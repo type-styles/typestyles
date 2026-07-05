@@ -29,7 +29,10 @@ export type {
   LayeredComponentFn,
 } from './styles';
 export type { CreateTokensOptions, TokensApi } from './tokens';
-export type { TokenNameContext, TokenNameTemplate } from './token-naming';
+export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
+export { resolveBreakpoints } from './breakpoints';
+export { getTokenLeafValues } from './tokens';
+export type { SerializeStyleOptions } from './css';
 
 export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';
 
