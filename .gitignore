@@ -30,3 +30,5 @@ dist-ssr
 .pnpm-store
 .content-collections
 docs/.astro
+
+.parcel-cache
