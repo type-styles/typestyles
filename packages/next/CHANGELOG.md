@@ -1,5 +1,12 @@
 # @typestyles/next
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [[`de79e3a`](https://github.com/type-styles/typestyles/commit/de79e3a17eb1765b5a1349bf08b7b7f7ca486838)]:
+  - @typestyles/build-runner@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes
