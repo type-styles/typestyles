@@ -1,5 +1,12 @@
 # typestyles-esbuild-example
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`f641e3f`](https://github.com/type-styles/typestyles/commit/f641e3f63a6f61f14c9153cdaae4c9f0a0707c1a)]:
+  - typestyles@0.8.1
+
 ## 0.0.2
 
 ### Patch Changes
