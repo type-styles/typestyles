@@ -4,7 +4,12 @@ import {
   releaseReservedNamespacesForComponentOrClassNames,
   resetEmittedClassNameTracking,
 } from './registry';
-import { getSheetState, getGlobalSheetState, resetSheetState } from './sheet-context';
+import {
+  getSheetState,
+  getGlobalSheetState,
+  resetSheetState,
+  type SheetState,
+} from './sheet-context';
 
 /** Stable id for the managed `<style>` element (SSR, hydration, and client runtime). */
 export const TYPESTYLES_STYLE_ID = 'typestyles';
@@ -434,18 +439,38 @@ export function flushSync(): void {
 }
 
 /**
+ * Drop CSS text queued in `pendingRules` / `allRules` / an active `ssrBuffer` for rules whose
+ * key was just invalidated. Without this, re-registering a namespace before its first
+ * registration has flushed (no intervening `flushSync()` / microtask) leaves the stale CSS
+ * sitting in these arrays — `insertedRules` no longer references it, so it's never deduped, and
+ * it gets flushed alongside the new CSS as a duplicate, conflicting rule.
+ */
+function pruneRemovedCss(state: SheetState, removedCss: ReadonlySet<string>): void {
+  if (removedCss.size === 0) return;
+  state.pendingRules = state.pendingRules.filter((css) => !removedCss.has(css));
+  state.allRules = state.allRules.filter((css) => !removedCss.has(css));
+  if (state.ssrBuffer) {
+    state.ssrBuffer = state.ssrBuffer.filter((css) => !removedCss.has(css));
+  }
+}
+
+/**
  * Invalidate all dedup keys that start with the given prefix.
  * Also removes matching rules from the live stylesheet.
  * Used for HMR — allows modules to re-register their styles after editing.
  */
 export function invalidatePrefix(prefix: string): void {
   const state = getSheetState();
+  const removedCss = new Set<string>();
   for (const key of state.insertedRules) {
     if (key.startsWith(prefix)) {
+      const css = state.ruleCssByKey.get(key);
+      if (css != null) removedCss.add(css);
       state.insertedRules.delete(key);
       state.ruleCssByKey.delete(key);
     }
   }
+  pruneRemovedCss(state, removedCss);
 
   releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes([prefix]));
 
@@ -472,18 +497,24 @@ export function invalidatePrefix(prefix: string): void {
  */
 export function invalidateKeys(keys: string[], prefixes: string[]): void {
   const state = getSheetState();
+  const removedCss = new Set<string>();
   for (const key of keys) {
+    const css = state.ruleCssByKey.get(key);
+    if (css != null) removedCss.add(css);
     state.insertedRules.delete(key);
     state.ruleCssByKey.delete(key);
   }
   for (const prefix of prefixes) {
     for (const key of state.insertedRules) {
       if (key.startsWith(prefix)) {
+        const css = state.ruleCssByKey.get(key);
+        if (css != null) removedCss.add(css);
         state.insertedRules.delete(key);
         state.ruleCssByKey.delete(key);
       }
     }
   }
+  pruneRemovedCss(state, removedCss);
 
   releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes(prefixes));
 
@@ -534,6 +565,30 @@ export function invalidateComponentNamespaceForDev(
   emittedClassPrefix?: string,
 ): void {
   const selectorInfix = `.${emittedClassPrefix ?? `${namespace}-`}`;
+  const state = getSheetState();
+  const keysToDrop: string[] = [];
+  for (const k of state.insertedRules) {
+    if (k.includes(selectorInfix)) {
+      keysToDrop.push(k);
+    }
+  }
+  invalidateKeys(keysToDrop, [selectorInfix]);
+}
+
+/**
+ * Drop every rule key tied to a `styles.class('name', …)` registration — the base selector plus
+ * any pseudo/nested/at-rule-wrapped variants — and release the reserved namespace entry. Used for
+ * Vite HMR and for dev recovery when a module re-runs before `hot.dispose`, including
+ * multi-environment SSR setups (e.g. the Vite Environment API, or RSC frameworks like Waku) that
+ * re-evaluate the same source module once per environment within a single process.
+ *
+ * No-op when `emittedClassName` is `undefined` (hashed/compact/atomic modes derive the class name
+ * from the serialized properties, so there's no reliable selector to invalidate ahead of time —
+ * same limitation `invalidateComponentNamespaceForDev` has for those modes).
+ */
+export function invalidateClassNamespaceForDev(emittedClassName?: string): void {
+  if (!emittedClassName) return;
+  const selectorInfix = `.${emittedClassName}`;
   const state = getSheetState();
   const keysToDrop: string[] = [];
   for (const k of state.insertedRules) {
