@@ -9,7 +9,18 @@ import { getSheetState, getGlobalSheetState, resetSheetState } from './sheet-con
 /** Stable id for the managed `<style>` element (SSR, hydration, and client runtime). */
 export const TYPESTYLES_STYLE_ID = 'typestyles';
 
+/**
+ * Stable id for the text-fallback `<style>` element. Rules the CSSOM rejects
+ * via `insertRule` land here as text. They must never be appended as text to
+ * the main element: mutating a `<style>` element's text makes the browser
+ * re-parse the element from its text content, discarding every rule that was
+ * previously added through `insertRule` — one rejected rule would wipe the
+ * entire runtime sheet.
+ */
+export const TYPESTYLES_FALLBACK_STYLE_ID = 'typestyles-fallback';
+
 const STYLE_ELEMENT_ID = TYPESTYLES_STYLE_ID;
+const FALLBACK_STYLE_ELEMENT_ID = TYPESTYLES_FALLBACK_STYLE_ID;
 
 function duplicateRuleKeyConflictWarningsEnabled(): boolean {
   if (typeof process === 'undefined') return true;
@@ -63,6 +74,12 @@ const RUNTIME_DISABLED =
 let styleElement: HTMLStyleElement | null = null;
 
 /**
+ * The managed text-fallback <style> element, lazily created (see
+ * {@link TYPESTYLES_FALLBACK_STYLE_ID}).
+ */
+let fallbackStyleElement: HTMLStyleElement | null = null;
+
+/**
  * Whether we're running in a browser environment.
  */
 const isBrowser = typeof document !== 'undefined' && typeof window !== 'undefined';
@@ -80,11 +97,11 @@ function writeAllRulesToStyleElement(el: HTMLStyleElement): void {
       try {
         sheet.insertRule(css, sheet.cssRules.length);
       } catch {
-        el.appendChild(document.createTextNode(css));
+        appendFallbackRule(css);
       }
     }
   } else {
-    el.appendChild(document.createTextNode(allRules.join('\n')));
+    appendFallbackRule(allRules.join('\n'));
   }
 }
 
@@ -113,6 +130,40 @@ function getStyleElement(): HTMLStyleElement {
   }
 
   return styleElement;
+}
+
+/**
+ * The fallback element mirrors the main element's lifecycle: reuse a connected
+ * element by id, recover from detachment (doc swaps), and keep a deterministic
+ * position immediately after the main element so cascade order stays stable.
+ */
+function getFallbackStyleElement(): HTMLStyleElement {
+  if (fallbackStyleElement && !fallbackStyleElement.isConnected) {
+    fallbackStyleElement = null;
+  }
+  if (fallbackStyleElement) return fallbackStyleElement;
+
+  const existing = document.getElementById(FALLBACK_STYLE_ELEMENT_ID) as HTMLStyleElement | null;
+  if (existing?.isConnected) {
+    fallbackStyleElement = existing;
+    return fallbackStyleElement;
+  }
+
+  const main = getStyleElement();
+  fallbackStyleElement = document.createElement('style');
+  fallbackStyleElement.id = FALLBACK_STYLE_ELEMENT_ID;
+  main.insertAdjacentElement('afterend', fallbackStyleElement);
+  return fallbackStyleElement;
+}
+
+/**
+ * Append a rule the CSSOM rejected as text to the fallback element. The
+ * fallback element only ever holds text (never `insertRule`), so re-parsing
+ * it on append cannot lose rules.
+ */
+function appendFallbackRule(css: string): void {
+  const el = getFallbackStyleElement();
+  el.appendChild(document.createTextNode(`${css}\n`));
 }
 
 /**
@@ -147,13 +198,15 @@ function flush(): void {
       try {
         sheet.insertRule(rule, sheet.cssRules.length);
       } catch {
-        // Fallback: append as text (handles edge cases with certain selectors)
-        el.appendChild(document.createTextNode(rule));
+        // Fallback: append as text on the dedicated fallback element (handles
+        // edge cases with certain selectors) — never on `el`, where the text
+        // re-parse would discard all previously inserted CSSOM rules.
+        appendFallbackRule(rule);
       }
     }
   } else {
     // Sheet not available yet, append as text
-    el.appendChild(document.createTextNode(rules.join('\n')));
+    appendFallbackRule(rules.join('\n'));
   }
 }
 
@@ -203,11 +256,17 @@ export function registerCascadeLayerOrder(preambleKey: string, css: string): voi
     try {
       sheet.insertRule(css, 0);
     } catch {
-      el.insertBefore(document.createTextNode(`${css}\n`), el.firstChild);
+      prependFallbackRule(css);
     }
   } else {
-    el.insertBefore(document.createTextNode(`${css}\n`), el.firstChild);
+    prependFallbackRule(css);
   }
+}
+
+/** Front-insert for the `@layer` order preamble when the CSSOM rejects it. */
+function prependFallbackRule(css: string): void {
+  const el = getFallbackStyleElement();
+  el.insertBefore(document.createTextNode(`${css}\n`), el.firstChild);
 }
 
 /**
@@ -360,6 +419,10 @@ export function reset(): void {
   if (isBrowser && styleElement) {
     styleElement.remove();
     styleElement = null;
+  }
+  if (isBrowser && fallbackStyleElement) {
+    fallbackStyleElement.remove();
+    fallbackStyleElement = null;
   }
 }
 
