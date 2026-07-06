@@ -86,6 +86,15 @@ export async function runTypestylesBuild({
     format: 'cjs',
     target: 'node18',
     external: ['typestyles'],
+    // Style registration calls (styles.component/class, createTypeStyles) are
+    // side-effect-only: the CSS they register into the global registry is the
+    // point, regardless of whether the returned classname function is ever
+    // read. esbuild's default tree shaking doesn't know that, so any
+    // consumer module reached only through an unread namespace/barrel import
+    // (or a package marked "sideEffects": false) can have its registration
+    // calls silently dropped as "unused". Disable tree shaking here so every
+    // registration in the extraction graph survives.
+    treeShaking: false,
     stdin: {
       contents: importLines,
       resolveDir: root,
