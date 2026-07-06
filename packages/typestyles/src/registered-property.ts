@@ -20,12 +20,27 @@ export function createRegisteredPropertyRef(name: string): RegisteredPropertyRef
   };
 }
 
+/**
+ * `@property` initial values must be *computationally independent*
+ * (CSS Properties & Values Level 1, §2.4) — `var()` / `env()` references are
+ * not, and browsers reject the whole rule at parse/insert time.
+ */
+function isComputationallyIndependent(value: string): boolean {
+  return !/\b(?:var|env)\(/i.test(value);
+}
+
 export function registerAtPropertyRule(
   name: string,
   options: { value: string; syntax: string; inherits?: boolean },
 ): void {
   const inherits = options.inherits ?? false;
-  const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${options.value}; }`;
+  // For dependent values (token refs), degrade to the universal syntax, which
+  // is the only form allowed to omit `initial-value`. Type checking is lost,
+  // but `inherits` — the load-bearing behavior — survives, and the default
+  // still reaches the cascade via `registerRootCustomProperty` / base styles.
+  const css = isComputationallyIndependent(options.value)
+    ? `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${options.value}; }`
+    : `@property ${name} { syntax: "*"; inherits: ${inherits}; }`;
   insertRule(`@property:${name}`, css);
 }
 
