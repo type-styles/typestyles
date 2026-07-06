@@ -18,12 +18,13 @@ import type {
   RegisteredPropertyRef,
 } from './types';
 import { serializeStyle } from './css';
-import { insertRules } from './sheet';
+import { insertRules, invalidateClassNamespaceForDev } from './sheet';
 import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
-import { registeredNamespaces, trackEmittedClassName } from './registry';
+import { registeredNamespaces, trackEmittedClassName, warnUnscopedCollision } from './registry';
 import {
   defaultClassNamingConfig,
+  emittedClassName,
   hashString,
   mergeClassNaming,
   sanitizeClassSegment,
@@ -64,25 +65,36 @@ function registryKeyForClass(classNaming: ClassNamingConfig, name: string): stri
   return `${scope}:${name}`;
 }
 
+/**
+ * Reserves the logical class name before rules are computed so nested calls cannot bypass
+ * duplicate detection.
+ *
+ * In **development**, a second registration for the same scope + name clears the prior rule(s)
+ * for that class (same as `typestyles/hmr` invalidation, and the same trade-off
+ * `styles.component` already makes — see `claimComponentNamespace` in `component.ts`). Some
+ * bundlers/frameworks re-run a module before `import.meta.hot.dispose` fires — or, for
+ * multi-environment SSR (the Vite Environment API, or RSC frameworks like Waku), re-run the same
+ * module once per environment within a single process — so this keeps re-execution from throwing.
+ * In **production**, duplicate registration does not throw (rule insertion dedupes by key).
+ */
+function claimClassNamespace(classNaming: ClassNamingConfig, name: string): void {
+  const regKey = registryKeyForClass(classNaming, name);
+  if (process.env.NODE_ENV !== 'production' && registeredNamespaces.has(regKey)) {
+    if (!classNaming.scopeId) {
+      warnUnscopedCollision(name, 'styles.class');
+    }
+    invalidateClassNamespaceForDev(emittedClassName(classNaming, name) ?? undefined);
+  }
+  registeredNamespaces.add(regKey);
+}
+
 export function createClass(
   classNaming: ClassNamingConfig,
   name: string,
   properties: CSSProperties,
   layer?: string,
 ): string {
-  const regKey = registryKeyForClass(classNaming, name);
-  if (process.env.NODE_ENV !== 'production' && registeredNamespaces.has(regKey)) {
-    const scopeLabel = classNaming.scopeId?.trim()
-      ? `'${classNaming.scopeId}'`
-      : 'default (empty scopeId)';
-    throw new Error(
-      `[typestyles] styles.class('${name}', ...) was called more than once for scope ${scopeLabel}. ` +
-        `Class names would collide. Use a unique class name, or isolate with ` +
-        `createStyles({ scopeId: fileScopeId(import.meta) }) or createStyles({ scopeId: 'your-package' }) ` +
-        `(import \`fileScopeId\` from 'typestyles').`,
-    );
-  }
-  registeredNamespaces.add(regKey);
+  claimClassNamespace(classNaming, name);
 
   const { classNames, rules } = classNamesAndRulesForProperties(
     classNaming,

@@ -135,6 +135,16 @@ export function emittedComponentClassPrefix(
   return null;
 }
 
+/**
+ * The emitted class name a `styles.class(name, …)` call produces under this naming config.
+ * `null` in `hashed`/`compact`/`atomic` mode — the name is derived from the serialized
+ * properties, which aren't available before they're computed.
+ */
+export function emittedClassName(cfg: ClassNamingConfig, name: string): string | null {
+  if (cfg.mode === 'semantic') return `${semanticScopePrefix(cfg)}${name}`;
+  return null;
+}
+
 /** `styles.class(name, …)` */
 export function buildSingleClassName(
   cfg: ClassNamingConfig,

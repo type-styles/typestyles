@@ -8,7 +8,7 @@ import {
 } from './styles';
 import { cx } from './index';
 import { createComponent } from './component';
-import { defaultClassNamingConfig } from './class-naming';
+import { defaultClassNamingConfig, mergeClassNaming } from './class-naming';
 import { reset, flushSync, getRegisteredCss } from './sheet';
 import { registeredNamespaces } from './registry';
 
@@ -53,11 +53,31 @@ describe('createClass', () => {
     expect(selectors).toContain('.hover-card:hover');
   });
 
-  it('throws in development when the same class name is registered twice under one scope', () => {
+  it('in development, re-registering the same class name succeeds (HMR / out-of-order dispose / multi-environment SSR re-evaluation)', () => {
     createClass(defaultClassNamingConfig, 'dup-class', { color: 'red' });
-    expect(() => createClass(defaultClassNamingConfig, 'dup-class', { color: 'blue' })).toThrow(
-      /styles\.class\('dup-class'/,
+    expect(() =>
+      createClass(defaultClassNamingConfig, 'dup-class', { color: 'blue' }),
+    ).not.toThrow();
+  });
+
+  it('re-registration replaces the previous rule instead of duplicating it', () => {
+    createClass(defaultClassNamingConfig, 'dup-class', { color: 'red' });
+    createClass(defaultClassNamingConfig, 'dup-class', { color: 'blue' });
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rules = Array.from(style.sheet?.cssRules ?? []).filter(
+      (r): r is CSSStyleRule => r instanceof CSSStyleRule && r.selectorText === '.dup-class',
     );
+    expect(rules).toHaveLength(1);
+    expect(rules[0].style.color).toBe('blue');
+  });
+
+  it('allows the same class name when scopeId differs', () => {
+    const a = mergeClassNaming({ scopeId: 'pkg-a' });
+    const b = mergeClassNaming({ scopeId: 'pkg-b' });
+    createClass(a, 'shared', { margin: '0px' });
+    expect(() => createClass(b, 'shared', { margin: '0px' })).not.toThrow();
   });
 
   it('does not throw duplicate class in production', () => {
