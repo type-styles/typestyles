@@ -1,6 +1,6 @@
 {
   "name": "@typestyles/astro",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Astro integration for typestyles (dev HMR, production CSS extraction)",
   "type": "module",
   "main": "./dist/index.cjs",
