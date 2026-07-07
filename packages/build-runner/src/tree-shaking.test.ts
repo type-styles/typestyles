@@ -84,4 +84,72 @@ export { lib };
       await rm(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('retains CSS from a component reachable through a plain bare import of a sideEffects:false package', async () => {
+    const projectRoot = process.cwd();
+    const tempDir = await mkdtemp(join(tmpdir(), 'typestyles-tree-shake-bare-'));
+    const libDir = join(tempDir, 'fixture-lib-bare');
+    const libFile = join(libDir, 'index.ts');
+    const entryFile = join(tempDir, 'entry.ts');
+
+    await mkdir(libDir, { recursive: true });
+    await writeFile(
+      libDir + '/package.json',
+      JSON.stringify({ name: 'fixture-lib-bare', sideEffects: false }),
+      'utf8',
+    );
+
+    await writeFile(
+      libFile,
+      `
+import { styles } from 'typestyles';
+
+export const FixtureBareButton = styles.component('fixture-tree-shake-bare-button', {
+  base: { padding: '8px' },
+});
+`,
+      'utf8',
+    );
+
+    // Unlike the namespace-import case above, this entry imports the library
+    // with a completely bare `import './fixture-lib-bare';` — no binding at
+    // all, not even an unread namespace. esbuild has a separate optimization,
+    // independent of `treeShaking`, that drops a bare import entirely when it
+    // resolves to a module/package marked "sideEffects": false — this is the
+    // exact shape of a real consumer's extraction entry when one of several
+    // side-effect-only imports happens to point at a "sideEffects": false
+    // package (a common, correct marking for a tree-shakeable component
+    // library). The unrelated global assignment keeps the entry file itself
+    // from bundling to nothing (matching a real multi-import entry file).
+    await writeFile(
+      entryFile,
+      `
+import './fixture-lib-bare';
+globalThis.__typestylesTreeShakeBareFixtureEntryMarker = true;
+`,
+      'utf8',
+    );
+
+    const moduleForBuild = relative(projectRoot, entryFile);
+
+    try {
+      reset();
+      await import(`${pathToFileURL(entryFile).href}?runtime=${Date.now()}`);
+      flushSync();
+      const runtimeCss = getRegisteredCss();
+      expect(runtimeCss).toContain('.fixture-tree-shake-bare-button-base');
+
+      reset();
+      const buildCss = await runTypestylesBuild({
+        root: projectRoot,
+        modules: [moduleForBuild],
+      });
+
+      expect(buildCss).toContain('.fixture-tree-shake-bare-button-base');
+      expect(buildCss).toBe(runtimeCss);
+    } finally {
+      reset();
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
 });
