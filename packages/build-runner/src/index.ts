@@ -95,6 +95,17 @@ export async function runTypestylesBuild({
     // calls silently dropped as "unused". Disable tree shaking here so every
     // registration in the extraction graph survives.
     treeShaking: false,
+    // `treeShaking: false` only stops esbuild from pruning declarations
+    // *within* an already-included module. It's a separate esbuild behavior
+    // — driven directly by "sideEffects": false / @__PURE__ annotations, not
+    // by the treeShaking option — that drops a plain bare import entirely
+    // (`import './some-lib'` with no binding at all) when it resolves to a
+    // module/package marked "sideEffects": false, before that module is ever
+    // considered for inclusion. A real extraction entry is exactly this
+    // shape: several side-effect-only imports, any one of which may point at
+    // a (correctly) tree-shakeable component library. Ignore both kinds of
+    // annotation so every import in the extraction graph is included.
+    ignoreAnnotations: true,
     stdin: {
       contents: importLines,
       resolveDir: root,
