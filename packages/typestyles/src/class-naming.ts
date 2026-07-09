@@ -11,8 +11,15 @@ import { trackEmittedClassName } from './registry';
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
  * - `compact` — hash-only names (shortest) for whole style objects; same collision properties as `hashed` when `scopeId` differs.
  * - `atomic` — one class per CSS declaration; identical declarations dedupe across the codebase.
+ * - `attribute` — dimensioned `styles.component()` variants compile to `&[data-{dimension}="{option}"]`
+ *   selectors under one base class instead of discrete classes; the call returns
+ *   `{ className, attrs, props }`. See `specs/attribute-driven-variants.md`. Not supported for
+ *   `slots` or flat configs — `styles.class()` and flat configs behave like `semantic`.
+ * - `bem` — dimensioned/slot `styles.component()` variants compile to BEM modifier classes
+ *   (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix.
+ *   See `specs/bem-variant-mode.md`. `styles.class()` and flat configs behave like `semantic`.
  */
-export type ClassNamingMode = 'semantic' | 'hashed' | 'compact' | 'atomic';
+export type ClassNamingMode = 'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem';
 
 export type ClassNamingConfig = {
   mode: ClassNamingMode;
@@ -37,13 +44,6 @@ export type ClassNamingConfig = {
    * Enables `{ base, md, lg }` shorthand on CSS property values.
    */
   breakpoints?: Record<string, string>;
-  /**
-   * Default `variantStrategy` for `styles.component()` dimensioned configs that don't set their
-   * own. Default `'class'`. Set to `'attribute'` so every component compiles `variants` to
-   * `&[data-{dimension}="{option}"]` selectors by default; override per-component with
-   * `variantStrategy: 'class'`.
-   */
-  defaultVariantStrategy?: 'class' | 'attribute';
 };
 
 /** Default naming options used by `createStyles()` when no overrides are passed. */
@@ -137,7 +137,9 @@ export function emittedComponentClassPrefix(
   cfg: ClassNamingConfig,
   namespace: string,
 ): string | null {
-  if (cfg.mode === 'semantic') return `${semanticScopePrefix(cfg)}${namespace}-`;
+  if (cfg.mode === 'bem') return `${semanticScopePrefix(cfg)}${namespace}`;
+  if (cfg.mode === 'semantic' || cfg.mode === 'attribute')
+    return `${semanticScopePrefix(cfg)}${namespace}-`;
   if (cfg.mode === 'hashed') return `${cfg.prefix}-${sanitizeClassSegment(namespace)}-`;
   return null;
 }
@@ -148,7 +150,8 @@ export function emittedComponentClassPrefix(
  * properties, which aren't available before they're computed.
  */
 export function emittedClassName(cfg: ClassNamingConfig, name: string): string | null {
-  if (cfg.mode === 'semantic') return `${semanticScopePrefix(cfg)}${name}`;
+  if (cfg.mode === 'semantic' || cfg.mode === 'attribute' || cfg.mode === 'bem')
+    return `${semanticScopePrefix(cfg)}${name}`;
   return null;
 }
 
@@ -158,7 +161,7 @@ export function buildSingleClassName(
   name: string,
   properties: CSSProperties,
 ): string {
-  if (cfg.mode === 'semantic') {
+  if (cfg.mode === 'semantic' || cfg.mode === 'attribute' || cfg.mode === 'bem') {
     const className = `${semanticScopePrefix(cfg)}${name}`;
     trackEmittedClassName(className, ownerKey(cfg, name));
     return className;
@@ -189,7 +192,7 @@ export function buildComponentClassName(
   suffix: string,
   properties: CSSProperties,
 ): string {
-  if (cfg.mode === 'semantic') {
+  if (cfg.mode === 'semantic' || cfg.mode === 'attribute' || cfg.mode === 'bem') {
     const className = `${semanticScopePrefix(cfg)}${namespace}-${suffix}`;
     trackEmittedClassName(className, ownerKey(cfg, namespace));
     return className;
@@ -206,6 +209,46 @@ export function buildComponentClassName(
     cfg.mode === 'compact'
       ? `${cfg.prefix}-${h}`
       : `${cfg.prefix}-${sanitizeClassSegment(namespace)}-${h}`;
+  trackEmittedClassName(className, ownerKey(cfg, namespace));
+  return className;
+}
+
+/**
+ * `mode: 'bem'` naming — see `specs/bem-variant-mode.md`. Pure string templates (BEM is always
+ * readable, never hashed), with the same registry tracking `buildComponentClassName` does.
+ */
+
+/** The `root` slot / single-component base class: the bare block, e.g. `button`, `my-ui-dialog`. */
+export function buildBemBlockClassName(cfg: ClassNamingConfig, namespace: string): string {
+  const className = `${semanticScopePrefix(cfg)}${namespace}`;
+  trackEmittedClassName(className, ownerKey(cfg, namespace));
+  return className;
+}
+
+/** A non-`root` slot: `${block}__${slot}`, e.g. `dialog__trigger`. */
+export function buildBemElementClassName(
+  cfg: ClassNamingConfig,
+  namespace: string,
+  slot: string,
+): string {
+  const className = `${semanticScopePrefix(cfg)}${namespace}__${slot}`;
+  trackEmittedClassName(className, ownerKey(cfg, namespace));
+  return className;
+}
+
+/**
+ * A modifier on a given block or element class: `${blockOrElementClassName}--${option}`.
+ * `blockOrElementClassName` is whatever `buildBemBlockClassName`/`buildBemElementClassName`
+ * already returned for this component/slot — callers pass it through rather than recomputing it,
+ * so this never re-derives the scope prefix.
+ */
+export function buildBemModifierClassName(
+  cfg: ClassNamingConfig,
+  namespace: string,
+  blockOrElementClassName: string,
+  option: string,
+): string {
+  const className = `${blockOrElementClassName}--${option}`;
   trackEmittedClassName(className, ownerKey(cfg, namespace));
   return className;
 }
