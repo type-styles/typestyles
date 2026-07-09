@@ -528,13 +528,10 @@ export type ComponentConfigContext = {
 };
 
 /**
- * The full config object passed to styles.component() with dimensioned variants.
- *
- * `variantStrategy` selects how each `variants` option compiles:
- * - `'class'` (default) — each option is a discrete class, selected by the JS call.
- * - `'attribute'` — each option compiles to a `&[data-{dimension}="{option}"]` selector scoped
- *   under the single `base` class; the call returns a {@link ComponentAttrsResult} instead of a
- *   class string. See {@link ComponentAttrsReturn}.
+ * The full config object passed to styles.component() with dimensioned variants. How `variants`
+ * compiles (discrete classes, `&[data-x="y"]` attributes, or BEM modifier classes) is selected by
+ * `createStyles({ mode })`, not by anything in this config — see {@link ComponentAttrsReturn} and
+ * `specs/attribute-driven-variants.md` / `specs/bem-variant-mode.md`.
  */
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
@@ -544,18 +541,7 @@ export type ComponentConfig<V extends VariantDefinitions> = {
     style: VariantOptionStyle;
   }>;
   defaultVariants?: ComponentSelections<V>;
-  variantStrategy?: 'class' | 'attribute';
 };
-
-/**
- * Dimensioned config requiring the literal `variantStrategy: 'attribute'` — used to select the
- * {@link ComponentAttrsReturn}-returning overload of `styles.component()`. Also covers the
- * function-config form (`(ctx) => ...`) so internal vars (`ctx.var`/`ctx.vars`) still type-check
- * under attribute mode.
- */
-export type ComponentConfigInputAttribute<V extends VariantDefinitions> =
-  | (ComponentConfig<V> & { variantStrategy: 'attribute' })
-  | ((ctx: ComponentConfigContext) => ComponentConfig<V> & { variantStrategy: 'attribute' });
 
 // ---------------------------------------------------------------------------
 // Flat variant config (no `variants` key — each key besides `base` is a variant)
@@ -577,7 +563,6 @@ export type FlatComponentConfig<K extends string> = {
   defaultVariants?: never;
   compoundVariants?: never;
   slots?: never;
-  variantStrategy?: never;
 } & Record<K, CSSProperties>;
 
 /**
@@ -673,8 +658,6 @@ export type SlotComponentConfig<
     style: SlotStyles<Slots[number]>;
   }>;
   defaultVariants?: ComponentSelections<V>;
-  /** Not supported for multi-slot components in v1 — see `specs/attribute-driven-variants.md`. */
-  variantStrategy?: never;
 };
 
 export type SlotComponentFunction<
