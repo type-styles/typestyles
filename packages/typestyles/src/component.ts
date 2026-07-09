@@ -1,9 +1,12 @@
 import type {
   CSSProperties,
   VariantDefinitions,
+  ComponentAttrsResult,
+  ComponentAttrsReturn,
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,
+  ComponentConfigInputAttribute,
   ComponentReturn,
   FlatComponentConfig,
   FlatComponentConfigInput,
@@ -27,7 +30,14 @@ import { attachComposeMeta } from './compose-meta';
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
 // ---------------------------------------------------------------------------
-const RESERVED_KEYS = new Set(['base', 'variants', 'compoundVariants', 'defaultVariants', 'slots']);
+const RESERVED_KEYS = new Set([
+  'base',
+  'variants',
+  'compoundVariants',
+  'defaultVariants',
+  'slots',
+  'variantStrategy',
+]);
 
 function devWarnUnknownVariantDimensions(
   namespace: string,
@@ -82,7 +92,12 @@ function devWarnUnknownFlatVariantKeys(
 function isDimensionedConfig(
   config: Record<string, unknown>,
 ): config is ComponentConfig<VariantDefinitions> {
-  return 'variants' in config || 'compoundVariants' in config || 'defaultVariants' in config;
+  return (
+    'variants' in config ||
+    'compoundVariants' in config ||
+    'defaultVariants' in config ||
+    'variantStrategy' in config
+  );
 }
 
 function isSlotWithVariantsConfig(
@@ -194,6 +209,42 @@ function resolveComponentConfig(
  * });
  * ```
  */
+/**
+ * Attribute-driven variants — `variantStrategy: 'attribute'` compiles each `variants` option to a
+ * `&[data-{dimension}="{option}"]` selector scoped under the single `base` class instead of a
+ * discrete class. Boolean dimensions (`{ true, false }` option keys) are presence-based:
+ * `true` → `&[data-{dimension}]`, `false` → `&:not([data-{dimension}])`.
+ *
+ * ```ts
+ * const button = styles.component('button', {
+ *   base: { padding: '8px 16px' },
+ *   variants: {
+ *     variant: {
+ *       primary: { backgroundColor: '#0066ff', color: '#fff' },
+ *       secondary: { backgroundColor: '#6b7280', color: '#fff' },
+ *     },
+ *   },
+ *   defaultVariants: { variant: 'primary' },
+ *   variantStrategy: 'attribute',
+ * });
+ *
+ * const b = button({ variant: 'primary' });
+ * b.className   // "button-base"
+ * b.attrs       // { 'data-variant': 'primary' }
+ * b.props       // { className: 'button-base', 'data-variant': 'primary' }
+ * String(b)     // "button-base"
+ * ```
+ *
+ * Only the plain dimensioned config shape is supported — not `slots` or flat configs.
+ * Not settable per-dimension: `variantStrategy` applies to the whole component.
+ */
+export function createComponent<const V extends VariantDefinitions>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: ComponentConfigInputAttribute<V>,
+  layer?: string,
+): ComponentAttrsReturn<V>;
+
 export function createComponent<const V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
@@ -261,12 +312,13 @@ export function createComponent(
     );
   }
   if (isDimensionedConfig(resolved)) {
-    return createDimensionedComponent(
-      classNaming,
-      namespace,
-      resolved as ComponentConfig<VariantDefinitions>,
-      layer,
-    );
+    const dimensionedConfig = resolved as ComponentConfig<VariantDefinitions>;
+    const effectiveVariantStrategy =
+      dimensionedConfig.variantStrategy ?? classNaming.defaultVariantStrategy ?? 'class';
+    if (effectiveVariantStrategy === 'attribute') {
+      return createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
+    }
+    return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
   }
   return createFlatComponent(
     classNaming,
@@ -455,6 +507,158 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   attachComposeMeta(result, Object.keys(variants));
 
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Dimensioned variant component — attribute strategy
+// (variantStrategy: 'attribute'; see specs/attribute-driven-variants.md)
+// ---------------------------------------------------------------------------
+
+/**
+ * Whether a dimension's option keys are exactly `{ true, false }` — the boolean-variant
+ * convention already used by `normalizeSelection` / the docs. Boolean dimensions compile to a
+ * presence selector (`&[data-x]` / `&:not([data-x])`) instead of a value match.
+ */
+function isBooleanOptionKeys(optionKeys: readonly string[]): boolean {
+  return optionKeys.length === 2 && optionKeys.includes('true') && optionKeys.includes('false');
+}
+
+/** `&[data-{dimension}="{option}"]`, or the boolean presence-selector form. */
+function attributeSelectorFor(
+  dimension: string,
+  option: string,
+  optionKeys: readonly string[],
+): string {
+  const attrName = `data-${dimension}`;
+  if (isBooleanOptionKeys(optionKeys)) {
+    return option === 'true' ? `[${attrName}]` : `:not([${attrName}])`;
+  }
+  return `[${attrName}="${option}"]`;
+}
+
+/** Merge `properties` into `target[key]`, combining with any prior properties at that selector. */
+function mergeIntoSelectorKey(
+  target: Record<string, unknown>,
+  key: string,
+  properties: CSSProperties,
+): void {
+  const existing = target[key] as CSSProperties | undefined;
+  target[key] = existing ? { ...existing, ...properties } : { ...properties };
+}
+
+function createAttributeDimensionedComponent<V extends VariantDefinitions>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: ComponentConfig<V>,
+  layer?: string,
+): ComponentAttrsReturn<V> {
+  const { base, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
+
+  // Fold each variant option's style into `base` as a synthetic `&[data-x="y"]` nested-selector
+  // key, then run it through the same base-emission path every other component shape uses — this
+  // reuses the existing nested-selector CSS pipeline (atomic-decompose.ts / css.ts) as-is, so
+  // semantic/hashed/compact/atomic naming modes all work with no mode-specific branching here.
+  const mergedBase: Record<string, unknown> = { ...(base ?? {}) };
+
+  for (const [dimension, options] of Object.entries(variants)) {
+    const optionMap = options as Record<string, CSSProperties>;
+    const optionKeys = Object.keys(optionMap);
+    for (const [option, properties] of Object.entries(optionMap)) {
+      if (properties == null || Object.keys(properties).length === 0) continue;
+      const selectorKey = `&${attributeSelectorFor(dimension, option, optionKeys)}`;
+      mergeIntoSelectorKey(mergedBase, selectorKey, properties);
+    }
+  }
+
+  (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
+    (cv) => {
+      const selectorSuffix = Object.entries(cv.variants)
+        .map(([dimension, expected]) => {
+          const optionMap = (variants as Record<string, Record<string, CSSProperties>>)[dimension];
+          if (!optionMap) return '';
+          const optionKeys = Object.keys(optionMap);
+          const values = Array.isArray(expected) ? expected : [expected];
+          const selectors = values
+            .map((value) => normalizeSelection(value, optionMap))
+            .filter((selected): selected is string => selected != null)
+            .map((selected) => attributeSelectorFor(dimension, selected, optionKeys));
+          if (selectors.length === 0) return '';
+          return selectors.length === 1 ? selectors[0] : `:is(${selectors.join(', ')})`;
+        })
+        .join('');
+
+      if (!selectorSuffix) return;
+      mergeIntoSelectorKey(mergedBase, `&${selectorSuffix}`, cv.style);
+    },
+  );
+
+  const rules: Array<{ key: string; css: string }> = [];
+  const emitted = classNamesAndRulesForProperties(
+    classNaming,
+    mergedBase as CSSProperties,
+    namespace,
+    'base',
+    'component',
+  );
+  const baseClassName = emitted.classNames;
+  rules.push(...emitted.rules);
+
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
+
+  const selectorFn = (selections: Record<string, unknown> = {}): ComponentAttrsResult => {
+    devWarnUnknownVariantDimensions(namespace, selections, variants as Record<string, unknown>);
+
+    const attrs: Record<string, string> = {};
+    for (const [dimension, options] of Object.entries(variants)) {
+      const optionMap = options as Record<string, CSSProperties>;
+      const optionKeys = Object.keys(optionMap);
+      const explicit = selections[dimension];
+      const fallback = (defaultVariants as Record<string, unknown>)[dimension];
+      const effective = explicit ?? fallback;
+      const selected = normalizeSelection(effective, optionMap);
+
+      devWarnInvalidDimensionOption(
+        namespace,
+        dimension,
+        effective,
+        selected,
+        optionMap as Record<string, unknown>,
+      );
+
+      if (selected == null) continue;
+
+      if (isBooleanOptionKeys(optionKeys)) {
+        if (selected === 'true') attrs[`data-${dimension}`] = '';
+      } else {
+        attrs[`data-${dimension}`] = selected;
+      }
+    }
+
+    return createComponentAttrsResult(baseClassName, attrs);
+  };
+
+  return makeCallableObject(
+    (...args: unknown[]) => selectorFn(args[0] as Record<string, unknown> | undefined),
+    { base: baseClassName },
+  ) as ComponentAttrsReturn<V>;
+}
+
+function createComponentAttrsResult(
+  className: string,
+  attrs: Record<string, string>,
+): ComponentAttrsResult {
+  const props = { className, ...attrs };
+  return {
+    className,
+    attrs,
+    props,
+    toString() {
+      return className;
+    },
+    [Symbol.toPrimitive]() {
+      return className;
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -765,7 +969,7 @@ function normalizeSelection(value: unknown, options: Record<string, unknown>): s
  * - Destructuring works via standard property enumeration
  */
 function makeCallableObject(
-  selectorFn: (...args: unknown[]) => string,
+  selectorFn: (...args: unknown[]) => unknown,
   classMap: Record<string, string>,
 ): unknown {
   // Create the function as the base (makes it callable)

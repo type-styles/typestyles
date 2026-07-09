@@ -37,6 +37,13 @@ export type ClassNamingConfig = {
    * Enables `{ base, md, lg }` shorthand on CSS property values.
    */
   breakpoints?: Record<string, string>;
+  /**
+   * Default `variantStrategy` for `styles.component()` dimensioned configs that don't set their
+   * own. Default `'class'`. Set to `'attribute'` so every component compiles `variants` to
+   * `&[data-{dimension}="{option}"]` selectors by default; override per-component with
+   * `variantStrategy: 'class'`.
+   */
+  defaultVariantStrategy?: 'class' | 'attribute';
 };
 
 /** Default naming options used by `createStyles()` when no overrides are passed. */

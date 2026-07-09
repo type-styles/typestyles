@@ -123,6 +123,63 @@ const accordionTrigger = styles.component('accordion-trigger', {
 });
 ```
 
+## Attribute-driven variants
+
+Some design systems want variant state expressed as `data-*` attributes on the DOM (Radix/shadcn-style: one stable class, `data-variant`/`data-size` legible in the markup) rather than as discrete classes. Set `variantStrategy: 'attribute'` and each `variants` option compiles to a `&[data-{dimension}="{option}"]` selector scoped under the single `base` class, instead of its own class:
+
+```ts
+const button = styles.component('button', {
+  base: { padding: '8px 16px', borderRadius: '6px' },
+  variants: {
+    variant: {
+      primary: { backgroundColor: '#0066ff', color: '#fff' },
+      secondary: { backgroundColor: '#6b7280', color: '#fff' },
+    },
+    size: {
+      small: { fontSize: '14px' },
+      large: { fontSize: '18px' },
+    },
+  },
+  defaultVariants: { variant: 'primary', size: 'small' },
+  variantStrategy: 'attribute',
+});
+
+const b = button({ variant: 'primary', size: 'small' });
+b.className; // "button-base"
+b.attrs; // { 'data-variant': 'primary', 'data-size': 'small' }
+b.props; // { className: 'button-base', 'data-variant': 'primary', 'data-size': 'small' }
+
+<button {...b.props}>...</button>;
+// <button class="button-base" data-variant="primary" data-size="small">
+```
+
+`String(b)` / template-literal coercion and `cx(b, 'extra')` still return `"button-base"`, same as a plain class string.
+
+Boolean dimensions (option keys exactly `{ true, false }`) are presence-based rather than value-matched: `true` compiles to `&[data-disabled]` and sets `data-disabled` with an empty value; `false` compiles to `&:not([data-disabled])` and omits the attribute entirely.
+
+```ts
+variants: {
+  disabled: {
+    true: { opacity: 0.5, cursor: 'not-allowed' },
+    false: {},
+  },
+},
+```
+
+`compoundVariants` still work — each condition compiles to a single combined attribute selector (`.button-base[data-variant="primary"][data-size="large"]`) with no extra compound class and no runtime matching; an array of allowed values for one dimension (`{ tone: ['success', 'warning'], size: 'lg' }`) compiles to a `:is(...)` group ANDed with the rest of the condition.
+
+Set `defaultVariantStrategy: 'attribute'` on `createStyles`/`createTypeStyles` to make this the default for every `styles.component` call from that instance, without repeating `variantStrategy` per component. A component can still opt back into class-based variants with `variantStrategy: 'class'`.
+
+```ts
+const { styles } = createTypeStyles({ defaultVariantStrategy: 'attribute', utils: {} });
+```
+
+**Trade-offs:**
+
+- No per-option class hooks — `button['variant-primary']` doesn't exist in attribute mode, since there's no discrete class to expose. `button.base` still exposes the single base class.
+- Only the plain dimensioned config (`base` / `variants` / `compoundVariants` / `defaultVariants`) supports `variantStrategy: 'attribute'` — not `slots` and not the flat (non-dimensioned) config shape.
+- Attribute names are the dimension name verbatim (`data-{dimension}`), not kebab-cased. This matters only for multi-word camelCase dimension names (e.g. a dimension named `fontWeight` renders as `data-fontweight` in the DOM, since HTML lowercases attribute names on write) — it won't round-trip through `element.dataset.fontWeight`, which expects the kebab form `data-font-weight`. Single-word dimension names (`variant`, `size`, `tone`, `intent`) are unaffected.
+
 ## Migration quick-start
 
 ### From CVA
