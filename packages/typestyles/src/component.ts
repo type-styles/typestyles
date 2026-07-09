@@ -6,7 +6,6 @@ import type {
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,
-  ComponentConfigInputAttribute,
   ComponentReturn,
   FlatComponentConfig,
   FlatComponentConfigInput,
@@ -30,14 +29,7 @@ import { attachComposeMeta } from './compose-meta';
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
 // ---------------------------------------------------------------------------
-const RESERVED_KEYS = new Set([
-  'base',
-  'variants',
-  'compoundVariants',
-  'defaultVariants',
-  'slots',
-  'variantStrategy',
-]);
+const RESERVED_KEYS = new Set(['base', 'variants', 'compoundVariants', 'defaultVariants', 'slots']);
 
 function devWarnUnknownVariantDimensions(
   namespace: string,
@@ -92,12 +84,7 @@ function devWarnUnknownFlatVariantKeys(
 function isDimensionedConfig(
   config: Record<string, unknown>,
 ): config is ComponentConfig<VariantDefinitions> {
-  return (
-    'variants' in config ||
-    'compoundVariants' in config ||
-    'defaultVariants' in config ||
-    'variantStrategy' in config
-  );
+  return 'variants' in config || 'compoundVariants' in config || 'defaultVariants' in config;
 }
 
 function isSlotWithVariantsConfig(
@@ -210,12 +197,13 @@ function resolveComponentConfig(
  * ```
  */
 /**
- * Attribute-driven variants — `variantStrategy: 'attribute'` compiles each `variants` option to a
- * `&[data-{dimension}="{option}"]` selector scoped under the single `base` class instead of a
- * discrete class. Boolean dimensions (`{ true, false }` option keys) are presence-based:
- * `true` → `&[data-{dimension}]`, `false` → `&:not([data-{dimension}])`.
+ * Attribute-driven variants — `createStyles({ mode: 'attribute' })` compiles each `variants`
+ * option to a `&[data-{dimension}="{option}"]` selector scoped under the single `base` class
+ * instead of a discrete class. Boolean dimensions (`{ true, false }` option keys) are
+ * presence-based: `true` → `&[data-{dimension}]`, `false` → `&:not([data-{dimension}])`.
  *
  * ```ts
+ * const styles = createStyles({ mode: 'attribute' });
  * const button = styles.component('button', {
  *   base: { padding: '8px 16px' },
  *   variants: {
@@ -225,7 +213,6 @@ function resolveComponentConfig(
  *     },
  *   },
  *   defaultVariants: { variant: 'primary' },
- *   variantStrategy: 'attribute',
  * });
  *
  * const b = button({ variant: 'primary' });
@@ -235,16 +222,10 @@ function resolveComponentConfig(
  * String(b)     // "button-base"
  * ```
  *
- * Only the plain dimensioned config shape is supported — not `slots` or flat configs.
- * Not settable per-dimension: `variantStrategy` applies to the whole component.
+ * Only the plain dimensioned config shape is supported — not `slots` or flat configs. See
+ * `specs/attribute-driven-variants.md`. For BEM modifier classes instead, see
+ * `createStyles({ mode: 'bem' })` (`specs/bem-variant-mode.md`).
  */
-export function createComponent<const V extends VariantDefinitions>(
-  classNaming: ClassNamingConfig,
-  namespace: string,
-  config: ComponentConfigInputAttribute<V>,
-  layer?: string,
-): ComponentAttrsReturn<V>;
-
 export function createComponent<const V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
@@ -296,6 +277,7 @@ export function createComponent(
 
   const resolved = resolveComponentConfig(classNaming, namespace, config);
   if (isMultiSlotConfig(resolved)) {
+    assertSlotsSupportedForMode(classNaming, namespace);
     return createMultiSlotComponent(
       classNaming,
       namespace,
@@ -304,6 +286,7 @@ export function createComponent(
     );
   }
   if (isSlotWithVariantsConfig(resolved)) {
+    assertSlotsSupportedForMode(classNaming, namespace);
     return createSlotComponent(
       classNaming,
       namespace,
@@ -313,9 +296,7 @@ export function createComponent(
   }
   if (isDimensionedConfig(resolved)) {
     const dimensionedConfig = resolved as ComponentConfig<VariantDefinitions>;
-    const effectiveVariantStrategy =
-      dimensionedConfig.variantStrategy ?? classNaming.defaultVariantStrategy ?? 'class';
-    if (effectiveVariantStrategy === 'attribute') {
+    if (classNaming.mode === 'attribute') {
       return createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
     }
     return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
@@ -326,6 +307,21 @@ export function createComponent(
     resolved as FlatComponentConfig<string>,
     layer,
   );
+}
+
+/**
+ * `slots` (multi-slot and slot-with-variants configs) is not supported under
+ * `createStyles({ mode: 'attribute' })` — excluded at the type level (no `slots`-accepting
+ * overload exists on that instance's `styles.component()`, see `styles.ts`), and re-checked here
+ * as a runtime backstop for callers who bypass the types (`as any`, plain JS). See
+ * `specs/attribute-driven-variants.md`'s "Explicitly out of scope."
+ */
+function assertSlotsSupportedForMode(classNaming: ClassNamingConfig, namespace: string): void {
+  if (classNaming.mode === 'attribute') {
+    throw new Error(
+      `[typestyles] \`slots\` is not supported with \`createStyles({ mode: 'attribute' })\` — namespace "${namespace}". See specs/attribute-driven-variants.md.`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

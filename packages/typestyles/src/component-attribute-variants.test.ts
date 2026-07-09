@@ -1,38 +1,38 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createComponent } from './component';
-import { defaultClassNamingConfig, mergeClassNaming } from './class-naming';
+import { mergeClassNaming } from './class-naming';
 import { createStyles } from './styles';
 import { cx } from './cx';
 import { reset, flushSync, getRegisteredCss } from './sheet';
 import { registeredNamespaces } from './registry';
 
-describe('createComponent — attribute-strategy dimensioned variants', () => {
+const attributeMode = mergeClassNaming({ mode: 'attribute' });
+
+describe('createComponent — attribute-mode dimensioned variants', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
   });
 
   it('returns a callable function', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'attrbtn', {
+    const btn = createComponent(attributeMode, 'attrbtn', {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
-      variantStrategy: 'attribute',
     });
     expect(typeof btn).toBe('function');
   });
 
   it('exposes only the base class — no per-option destructurable keys', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'noopt', {
+    const btn = createComponent(attributeMode, 'noopt', {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
-      variantStrategy: 'attribute',
     });
     expect(btn.base).toBe('noopt-base');
     expect(Object.keys(btn)).toEqual(['base']);
   });
 
   it('resolves className, attrs, and props for a single dimension', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'sbtn', {
+    const btn = createComponent(attributeMode, 'sbtn', {
       base: { padding: '8px' },
       variants: {
         variant: {
@@ -40,7 +40,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
           secondary: { backgroundColor: 'gray' },
         },
       },
-      variantStrategy: 'attribute',
     });
 
     const b = btn({ variant: 'primary' });
@@ -50,7 +49,7 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
   });
 
   it('resolves className, attrs, and props for multiple dimensions', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'mbtn', {
+    const btn = createComponent(attributeMode, 'mbtn', {
       base: { padding: '8px' },
       variants: {
         variant: {
@@ -62,7 +61,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
           large: { fontSize: '18px' },
         },
       },
-      variantStrategy: 'attribute',
     });
 
     const b = btn({ variant: 'primary', size: 'small' });
@@ -76,7 +74,7 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
   });
 
   it('applies defaultVariants when selection is omitted', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'dbtn', {
+    const btn = createComponent(attributeMode, 'dbtn', {
       base: { padding: '8px' },
       variants: {
         variant: {
@@ -85,7 +83,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
         },
       },
       defaultVariants: { variant: 'primary' },
-      variantStrategy: 'attribute',
     });
 
     expect(btn().attrs).toEqual({ 'data-variant': 'primary' });
@@ -94,7 +91,7 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
   });
 
   it('boolean dimension is presence-based: true -> empty-string attr, false -> omitted', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'boolbtn', {
+    const btn = createComponent(attributeMode, 'boolbtn', {
       base: { padding: '8px' },
       variants: {
         disabled: {
@@ -102,7 +99,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
           false: {},
         },
       },
-      variantStrategy: 'attribute',
     });
 
     expect(btn({ disabled: true }).attrs).toEqual({ 'data-disabled': '' });
@@ -111,10 +107,9 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
   });
 
   it('String(result) and template coercion return the base class name', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'strbtn', {
+    const btn = createComponent(attributeMode, 'strbtn', {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
-      variantStrategy: 'attribute',
     });
 
     const b = btn({ variant: 'primary' });
@@ -123,10 +118,9 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
   });
 
   it('interops with cx()', () => {
-    const btn = createComponent(defaultClassNamingConfig, 'cxbtn', {
+    const btn = createComponent(attributeMode, 'cxbtn', {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
-      variantStrategy: 'attribute',
     });
 
     const b = btn({ variant: 'primary' });
@@ -136,10 +130,9 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
   it('logs console.error in dev for unknown variant dimension', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const btn = createComponent(defaultClassNamingConfig, 'unknowndim', {
+    const btn = createComponent(attributeMode, 'unknowndim', {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
-      variantStrategy: 'attribute',
     });
 
     btn({ bogus: 'x' } as unknown as Record<string, unknown>);
@@ -151,10 +144,9 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
   it('logs console.error in dev for unknown variant option', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const btn = createComponent(defaultClassNamingConfig, 'unknownopt', {
+    const btn = createComponent(attributeMode, 'unknownopt', {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
-      variantStrategy: 'attribute',
     });
 
     btn({ variant: 'nope' as 'primary' });
@@ -163,9 +155,18 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
     err.mockRestore();
   });
 
+  it('throws when a slots config is passed under mode: "attribute"', () => {
+    expect(() =>
+      createComponent(attributeMode, 'slotbtn', {
+        slots: ['root', 'trigger'],
+        base: { root: { display: 'grid' } },
+      } as never),
+    ).toThrow(/does not support|not supported/i);
+  });
+
   describe('CSS emission', () => {
     it('compiles each option to a &[data-dimension="option"] selector scoped under one base class', () => {
-      createComponent(defaultClassNamingConfig, 'css-basic', {
+      createComponent(attributeMode, 'css-basic', {
         base: { padding: '8px' },
         variants: {
           variant: {
@@ -173,7 +174,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
             secondary: { backgroundColor: 'gray' },
           },
         },
-        variantStrategy: 'attribute',
       });
 
       flushSync();
@@ -183,19 +183,17 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
       expect(css).toContain(
         '.css-basic-base[data-variant="secondary"] { background-color: gray; }',
       );
-      // No discrete per-option class is ever emitted.
       expect(css).not.toContain('.css-basic-variant-primary');
     });
 
     it('compiles a boolean dimension to presence / :not() selectors', () => {
-      createComponent(defaultClassNamingConfig, 'css-bool', {
+      createComponent(attributeMode, 'css-bool', {
         variants: {
           disabled: {
             true: { opacity: 0.5 },
             false: { opacity: 1 },
           },
         },
-        variantStrategy: 'attribute',
       });
 
       flushSync();
@@ -205,7 +203,7 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
     });
 
     it('skips CSS emission entirely for an empty option style block', () => {
-      createComponent(defaultClassNamingConfig, 'css-empty-opt', {
+      createComponent(attributeMode, 'css-empty-opt', {
         base: { padding: '8px' },
         variants: {
           disabled: {
@@ -213,7 +211,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
             false: {},
           },
         },
-        variantStrategy: 'attribute',
       });
 
       flushSync();
@@ -222,7 +219,7 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
     });
 
     it('compiles a compound variant to a single combined attribute selector, no compound class', () => {
-      createComponent(defaultClassNamingConfig, 'css-compound', {
+      createComponent(attributeMode, 'css-compound', {
         variants: {
           variant: {
             primary: { color: 'blue' },
@@ -239,7 +236,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
             style: { fontWeight: 700 },
           },
         ],
-        variantStrategy: 'attribute',
       });
 
       flushSync();
@@ -251,7 +247,7 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
     });
 
     it('compiles a compound variant with an array value to :is(...)', () => {
-      createComponent(defaultClassNamingConfig, 'css-compound-arr', {
+      createComponent(attributeMode, 'css-compound-arr', {
         variants: {
           tone: {
             success: { color: 'green' },
@@ -268,7 +264,6 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
             style: { textTransform: 'uppercase' },
           },
         ],
-        variantStrategy: 'attribute',
       });
 
       flushSync();
@@ -277,40 +272,17 @@ describe('createComponent — attribute-strategy dimensioned variants', () => {
         '.css-compound-arr-base:is([data-tone="success"], [data-tone="warning"])[data-size="lg"] { text-transform: uppercase; }',
       );
     });
-
-    it('atomic naming mode: attribute-branch declarations still scope under the base selector', () => {
-      const cfg = mergeClassNaming({ mode: 'atomic', prefix: 'a' });
-      const btn = createComponent(cfg, 'atomicbtn', {
-        base: { padding: '8px' },
-        variants: {
-          variant: {
-            primary: { backgroundColor: 'blue' },
-          },
-        },
-        variantStrategy: 'attribute',
-      });
-
-      flushSync();
-      const css = getRegisteredCss();
-      // One atomic class for the base declaration, one for the attribute-branch declaration.
-      expect(css).toMatch(/\.a-[a-z0-9]+ \{ padding: 8px; \}/);
-      expect(css).toMatch(/\.a-[a-z0-9]+\[data-variant="primary"\] \{ background-color: blue; \}/);
-
-      const b = btn({ variant: 'primary' });
-      expect(b.className.split(' ')).toHaveLength(2);
-      expect(b.attrs).toEqual({ 'data-variant': 'primary' });
-    });
   });
 });
 
-describe('createStyles({ defaultVariantStrategy })', () => {
+describe('createStyles({ mode: "attribute" })', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();
   });
 
-  it('a component omitting variantStrategy inherits the global default', () => {
-    const styles = createStyles({ defaultVariantStrategy: 'attribute', scopeId: 'ds-a' });
+  it('every dimensioned component from the instance compiles in attribute mode', () => {
+    const styles = createStyles({ mode: 'attribute', scopeId: 'ds-a' });
     const btn = styles.component('gbtn', {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
@@ -320,18 +292,7 @@ describe('createStyles({ defaultVariantStrategy })', () => {
     expect(b.attrs).toEqual({ 'data-variant': 'primary' });
   });
 
-  it('a component setting variantStrategy: "class" overrides the global default back', () => {
-    const styles = createStyles({ defaultVariantStrategy: 'attribute', scopeId: 'ds-b' });
-    const btn = styles.component('cbtn', {
-      base: { padding: '8px' },
-      variants: { variant: { primary: { color: 'blue' } } },
-      variantStrategy: 'class',
-    });
-
-    expect(btn({ variant: 'primary' })).toBe('ds-b-cbtn-base ds-b-cbtn-variant-primary');
-  });
-
-  it('defaults to class strategy when defaultVariantStrategy is unset', () => {
+  it('a plain (non-attribute-mode) instance compiles class-based variants as before', () => {
     const styles = createStyles({ scopeId: 'ds-c' });
     const btn = styles.component('plainbtn', {
       base: { padding: '8px' },
