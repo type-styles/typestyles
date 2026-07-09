@@ -148,3 +148,97 @@ describe('createComponent — bem-mode dimensioned variants', () => {
     });
   });
 });
+
+describe('createComponent — bem-mode slots', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('root slot maps to the bare block class; other slots map to block__element', () => {
+    const dialog = createComponent(bemMode, 'dialog', {
+      slots: ['root', 'trigger', 'content'],
+      base: { root: { display: 'grid' }, trigger: { cursor: 'pointer' } },
+    });
+    const classes = dialog();
+    expect(classes.root).toBe('dialog');
+    expect(classes.trigger).toBe('dialog__trigger');
+    expect(classes.content).toBe('dialog__content');
+  });
+
+  it('slot variant options compile to block__slot--modifier (or block--modifier for root)', () => {
+    const dialog = createComponent(bemMode, 'dialog2', {
+      slots: ['root', 'trigger', 'content'],
+      base: { root: { display: 'grid' } },
+      variants: {
+        size: {
+          sm: { trigger: { fontSize: '12px' }, content: { padding: '8px' }, root: { gap: '4px' } },
+          lg: { trigger: { fontSize: '16px' }, content: { padding: '12px' } },
+        },
+      },
+    });
+    const classes = dialog({ size: 'lg' });
+    expect(classes.root).toBe('dialog2');
+    expect(classes.trigger).toBe('dialog2__trigger dialog2__trigger--lg');
+    expect(classes.content).toBe('dialog2__content dialog2__content--lg');
+  });
+
+  it('multi-slot config (no variants) maps root/element the same way, no modifier classes', () => {
+    const dialog = createComponent(bemMode, 'dialog3', {
+      slots: ['root', 'trigger'],
+      root: { display: 'grid' },
+      trigger: { cursor: 'pointer' },
+    });
+    const classes = dialog();
+    expect(classes.root).toBe('dialog3');
+    expect(classes.trigger).toBe('dialog3__trigger');
+  });
+
+  it('collision warning is scoped per slot', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const dialog = createComponent(bemMode, 'dialog4', {
+      slots: ['root', 'trigger', 'content'],
+      variants: {
+        intent: { primary: { trigger: { color: 'blue' } } },
+        theme: { primary: { trigger: { backgroundColor: 'black' } } },
+      },
+    });
+    dialog();
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('dialog4__trigger--primary'));
+    err.mockRestore();
+
+    const err2 = vi.spyOn(console, 'error').mockImplementation(() => {});
+    createComponent(bemMode, 'dialog5', {
+      slots: ['root', 'trigger', 'content'],
+      variants: {
+        intent: { primary: { trigger: { color: 'blue' }, content: { color: 'red' } } },
+      },
+    });
+    // Same option "primary" on two different slots is NOT a collision.
+    expect(err2).not.toHaveBeenCalled();
+    err2.mockRestore();
+  });
+
+  describe('CSS emission', () => {
+    it('compiles a slot compound variant to a chained selector scoped to that slot', () => {
+      createComponent(bemMode, 'dialog6', {
+        slots: ['root', 'trigger'],
+        variants: {
+          intent: { primary: { trigger: { color: 'blue' } } },
+          size: { lg: { trigger: { fontSize: '18px' } } },
+        },
+        compoundVariants: [
+          {
+            variants: { intent: 'primary', size: 'lg' },
+            style: { trigger: { fontWeight: 700 } },
+          },
+        ],
+      });
+      flushSync();
+      const css = getRegisteredCss();
+      expect(css).toContain(
+        '.dialog6__trigger--primary.dialog6__trigger--lg { font-weight: 700; }',
+      );
+    });
+  });
+});

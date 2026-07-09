@@ -24,6 +24,7 @@ import { registeredNamespaces, warnUnscopedCollision } from './registry';
 import {
   emittedComponentClassPrefix,
   buildBemBlockClassName,
+  buildBemElementClassName,
   buildBemModifierClassName,
   type ClassNamingConfig,
 } from './class-naming';
@@ -307,6 +308,14 @@ export function createComponent(
   if (isMultiSlotConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
+    if (classNaming.mode === 'bem') {
+      return createBemMultiSlotComponent(
+        classNaming,
+        namespace,
+        resolved as MultiSlotConfig<readonly string[]>,
+        layer,
+      );
+    }
     return createMultiSlotComponent(
       classNaming,
       namespace,
@@ -317,6 +326,14 @@ export function createComponent(
   if (isSlotWithVariantsConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
+    if (classNaming.mode === 'bem') {
+      return createBemSlotComponent(
+        classNaming,
+        namespace,
+        resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
+        layer,
+      );
+    }
     return createSlotComponent(
       classNaming,
       namespace,
@@ -923,6 +940,197 @@ function createMultiSlotComponent<Slots extends readonly string[]>(
   };
 
   return makeMultiSlotObject(selectorFn, slotClassMap) as MultiSlotReturn<Slots>;
+}
+
+// ---------------------------------------------------------------------------
+// Multi-slot component — bem mode (mode: 'bem'; see specs/bem-variant-mode.md)
+// ---------------------------------------------------------------------------
+
+function bemSlotClassName(classNaming: ClassNamingConfig, namespace: string, slot: string): string {
+  return slot === 'root'
+    ? buildBemBlockClassName(classNaming, namespace)
+    : buildBemElementClassName(classNaming, namespace, slot);
+}
+
+function createBemMultiSlotComponent<Slots extends readonly string[]>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: MultiSlotConfig<Slots>,
+  layer?: string,
+): MultiSlotReturn<Slots> {
+  const { slots } = config;
+
+  const rules: Array<{ key: string; css: string }> = [];
+  const slotClassMap: Record<string, string> = {};
+
+  for (const slot of slots as readonly string[]) {
+    const className = bemSlotClassName(classNaming, namespace, slot);
+    slotClassMap[slot] = className;
+    const properties = (config as Record<string, CSSProperties | undefined>)[slot];
+    if (properties) {
+      rules.push(
+        ...serializeStyle(`.${className}`, properties, { breakpoints: classNaming.breakpoints }),
+      );
+    }
+  }
+
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
+
+  const selectorFn = (): Record<string, string> => {
+    const result: Record<string, string> = {};
+    for (const slot of slots as readonly string[]) {
+      result[slot] = slotClassMap[slot] || '';
+    }
+    return result;
+  };
+
+  return makeMultiSlotObject(selectorFn, slotClassMap) as MultiSlotReturn<Slots>;
+}
+
+// ---------------------------------------------------------------------------
+// Slot component — bem mode (mode: 'bem'; see specs/bem-variant-mode.md)
+// ---------------------------------------------------------------------------
+
+function createBemSlotComponent<
+  Slots extends readonly string[],
+  V extends SlotVariantDefinitions<Slots[number]>,
+>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: SlotComponentConfig<Slots, V>,
+  layer?: string,
+): SlotComponentFunction<Slots, V> {
+  const {
+    slots,
+    base = {},
+    variants = {} as V,
+    compoundVariants = [],
+    defaultVariants = {},
+  } = config;
+
+  const rules: Array<{ key: string; css: string }> = [];
+  const baseClassBySlot: Record<string, string> = {};
+  for (const slot of slots as readonly string[]) {
+    const className = bemSlotClassName(classNaming, namespace, slot);
+    baseClassBySlot[slot] = className;
+    const properties = (base as Record<string, CSSProperties>)[slot];
+    if (properties) {
+      rules.push(
+        ...serializeStyle(`.${className}`, properties, { breakpoints: classNaming.breakpoints }),
+      );
+    }
+  }
+
+  const variantClassByKey: Record<string, string> = {};
+  const seenModifierClassNamesBySlot = new Map<string, Map<string, string>>();
+  const propertiesByModifierClassName: Record<string, CSSProperties> = {};
+  for (const [dimension, options] of Object.entries(variants)) {
+    for (const [option, slotStyles] of Object.entries(
+      options as Record<string, Record<string, CSSProperties>>,
+    )) {
+      for (const [slot, properties] of Object.entries(slotStyles)) {
+        const slotClassName = baseClassBySlot[slot];
+        if (!slotClassName) continue;
+        const modifierClassName = buildBemModifierClassName(
+          classNaming,
+          namespace,
+          slotClassName,
+          option,
+        );
+        let seenForSlot = seenModifierClassNamesBySlot.get(slot);
+        if (!seenForSlot) {
+          seenForSlot = new Map<string, string>();
+          seenModifierClassNamesBySlot.set(slot, seenForSlot);
+        }
+        devWarnBemModifierCollision(
+          `${namespace}__${slot}`,
+          modifierClassName,
+          dimension,
+          seenForSlot,
+        );
+        variantClassByKey[`${slot}-${dimension}-${option}`] = modifierClassName;
+        mergeIntoSelectorKey(propertiesByModifierClassName, modifierClassName, properties);
+      }
+    }
+  }
+  for (const [modifierClassName, properties] of Object.entries(propertiesByModifierClassName)) {
+    rules.push(
+      ...serializeStyle(`.${modifierClassName}`, properties, {
+        breakpoints: classNaming.breakpoints,
+      }),
+    );
+  }
+
+  (
+    compoundVariants as Array<{
+      variants: Record<string, unknown>;
+      style: Record<string, CSSProperties>;
+    }>
+  ).forEach((cv) => {
+    for (const [slot, properties] of Object.entries(cv.style)) {
+      const selectorSuffix = Object.entries(cv.variants)
+        .map(([dimension, expected]) => {
+          const options = (variants as Record<string, Record<string, unknown>>)[dimension];
+          if (!options) return '';
+          const values = Array.isArray(expected) ? expected : [expected];
+          const classSelectors = values
+            .map((value) => normalizeSelection(value, options))
+            .filter((selected): selected is string => selected != null)
+            .map((selected) => variantClassByKey[`${slot}-${dimension}-${selected}`])
+            .filter((cn): cn is string => cn != null)
+            .map((cn) => `.${cn}`);
+          if (classSelectors.length === 0) return '';
+          return classSelectors.length === 1
+            ? classSelectors[0]
+            : `:is(${classSelectors.join(', ')})`;
+        })
+        .join('');
+
+      if (!selectorSuffix) continue;
+      rules.push(
+        ...serializeStyle(selectorSuffix, properties, { breakpoints: classNaming.breakpoints }),
+      );
+    }
+  });
+
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
+
+  return ((selections: Record<string, unknown> = {}) => {
+    const classes = Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [slot, [baseClassBySlot[slot]] as string[]]),
+    ) as Record<string, string[]>;
+
+    devWarnUnknownVariantDimensions(namespace, selections, variants as Record<string, unknown>);
+
+    const resolvedSelections: Record<string, unknown> = {};
+    for (const [dimension, options] of Object.entries(variants)) {
+      const optionMap = options as Record<string, unknown>;
+      const explicit = selections[dimension];
+      const fallback = (defaultVariants as Record<string, unknown>)[dimension];
+      const effective = explicit ?? fallback;
+      const selected = normalizeSelection(effective, optionMap);
+      resolvedSelections[dimension] = selected;
+
+      devWarnInvalidDimensionOption(namespace, dimension, effective, selected, optionMap);
+    }
+
+    for (const [dimension, options] of Object.entries(variants)) {
+      const optionMap = options as Record<string, Record<string, CSSProperties>>;
+      const selected = normalizeSelection(resolvedSelections[dimension], optionMap);
+      if (selected == null) continue;
+      const slotStyles = optionMap[selected];
+      if (!slotStyles) continue;
+
+      for (const slot of Object.keys(slotStyles)) {
+        const cn = variantClassByKey[`${slot}-${dimension}-${selected}`];
+        if (cn && classes[slot]) classes[slot].push(cn);
+      }
+    }
+
+    return Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [slot, classes[slot].join(' ')]),
+    ) as Record<Slots[number], string>;
+  }) as SlotComponentFunction<Slots, V>;
 }
 
 function makeMultiSlotObject(
