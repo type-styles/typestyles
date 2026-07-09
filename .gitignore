@@ -32,3 +32,4 @@ dist-ssr
 docs/.astro
 
 .parcel-cache
+.worktrees/
