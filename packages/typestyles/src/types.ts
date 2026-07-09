@@ -407,6 +407,25 @@ export interface ThemeSurface {
   [Symbol.toPrimitive](hint: string): string;
 }
 
+/**
+ * The object returned by calling a `styles.component()` instance created with
+ * `variantStrategy: 'attribute'`.
+ *
+ * - `className` — the single base class (no per-option classes exist in attribute mode).
+ * - `attrs` — resolved `data-{dimension}` attribute pairs for the current selections. Boolean
+ *   dimensions (`{ true: {...}, false: {...} }`) are presence-based: `true` → empty-string value,
+ *   `false` → key omitted.
+ * - `props` — `attrs` merged with `className`, ready to spread onto an element.
+ * - `String(result)` / template-literal coercion returns `className`, same as `ThemeSurface`.
+ */
+export interface ComponentAttrsResult {
+  readonly className: string;
+  readonly attrs: Readonly<Record<string, string>>;
+  readonly props: Readonly<Record<string, string>>;
+  toString(): string;
+  [Symbol.toPrimitive](hint: string): string;
+}
+
 // ---------------------------------------------------------------------------
 // Component API types
 // ---------------------------------------------------------------------------
@@ -510,6 +529,12 @@ export type ComponentConfigContext = {
 
 /**
  * The full config object passed to styles.component() with dimensioned variants.
+ *
+ * `variantStrategy` selects how each `variants` option compiles:
+ * - `'class'` (default) — each option is a discrete class, selected by the JS call.
+ * - `'attribute'` — each option compiles to a `&[data-{dimension}="{option}"]` selector scoped
+ *   under the single `base` class; the call returns a {@link ComponentAttrsResult} instead of a
+ *   class string. See {@link ComponentAttrsReturn}.
  */
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
@@ -519,7 +544,18 @@ export type ComponentConfig<V extends VariantDefinitions> = {
     style: VariantOptionStyle;
   }>;
   defaultVariants?: ComponentSelections<V>;
+  variantStrategy?: 'class' | 'attribute';
 };
+
+/**
+ * Dimensioned config requiring the literal `variantStrategy: 'attribute'` — used to select the
+ * {@link ComponentAttrsReturn}-returning overload of `styles.component()`. Also covers the
+ * function-config form (`(ctx) => ...`) so internal vars (`ctx.var`/`ctx.vars`) still type-check
+ * under attribute mode.
+ */
+export type ComponentConfigInputAttribute<V extends VariantDefinitions> =
+  | (ComponentConfig<V> & { variantStrategy: 'attribute' })
+  | ((ctx: ComponentConfigContext) => ComponentConfig<V> & { variantStrategy: 'attribute' });
 
 // ---------------------------------------------------------------------------
 // Flat variant config (no `variants` key — each key besides `base` is a variant)
@@ -541,6 +577,7 @@ export type FlatComponentConfig<K extends string> = {
   defaultVariants?: never;
   compoundVariants?: never;
   slots?: never;
+  variantStrategy?: never;
 } & Record<K, CSSProperties>;
 
 /**
@@ -576,6 +613,19 @@ export type ComponentReturn<V extends VariantDefinitions> = {
 } & {
   /** Individual variant class strings, keyed as `{dimension}-{option}`. */
   readonly [K in DimensionedVariantKeys<V>]: string;
+};
+
+/**
+ * The return for dimensioned variants compiled with `variantStrategy: 'attribute'`.
+ * Callable, returning a {@link ComponentAttrsResult}. No per-option destructurable keys — there
+ * are no discrete option classes in attribute mode, only the single `base` class.
+ */
+export type ComponentAttrsReturn<V extends VariantDefinitions> = {
+  /** Call with variant selections to get the resolved `{ className, attrs, props }` result. */
+  (selections?: ComponentSelections<V>): ComponentAttrsResult;
+} & {
+  /** The base class string. */
+  readonly base: string;
 };
 
 /**
@@ -623,6 +673,8 @@ export type SlotComponentConfig<
     style: SlotStyles<Slots[number]>;
   }>;
   defaultVariants?: ComponentSelections<V>;
+  /** Not supported for multi-slot components in v1 — see `specs/attribute-driven-variants.md`. */
+  variantStrategy?: never;
 };
 
 export type SlotComponentFunction<

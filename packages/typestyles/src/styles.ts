@@ -3,9 +3,11 @@ import type {
   CSSPropertiesWithUtils,
   StyleUtils,
   VariantDefinitions,
+  ComponentAttrsReturn,
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,
+  ComponentConfigInputAttribute,
   ComponentReturn,
   FlatComponentConfigInput,
   FlatComponentReturn,
@@ -282,6 +284,10 @@ export type StylesApi = {
   component: {
     <const V extends VariantDefinitions>(
       namespace: string,
+      config: ComponentConfigInputAttribute<V>,
+    ): ComponentAttrsReturn<V>;
+    <const V extends VariantDefinitions>(
+      namespace: string,
       config: ComponentConfigInput<V>,
     ): ComponentReturn<V>;
     <const K extends string>(
@@ -331,6 +337,11 @@ export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>
 export type LayeredComponentFn<L extends string> = {
   <const V extends VariantDefinitions>(
     namespace: string,
+    config: ComponentConfigInputAttribute<V>,
+    options: LayerOption<L>,
+  ): ComponentAttrsReturn<V>;
+  <const V extends VariantDefinitions>(
+    namespace: string,
     config: ComponentConfigInput<V>,
     options: LayerOption<L>,
   ): ComponentReturn<V>;
@@ -352,6 +363,11 @@ export type LayeredComponentFn<L extends string> = {
 };
 
 export type LayeredComponentFnWithUtils<L extends string> = {
+  <const V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInputAttribute<V>,
+    options: LayerOption<L>,
+  ): ComponentAttrsReturn<V>;
   <const V extends VariantDefinitions>(
     namespace: string,
     config: ComponentConfigInput<V>,
@@ -575,6 +591,10 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
   component: {
+    <const V extends VariantDefinitions>(
+      namespace: string,
+      config: ComponentConfigInputAttribute<V>,
+    ): ComponentAttrsReturn<V>;
     <const V extends VariantDefinitions>(
       namespace: string,
       config: ComponentConfigInput<V>,
