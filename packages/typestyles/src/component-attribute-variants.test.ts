@@ -164,6 +164,28 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
     ).toThrow(/does not support|not supported/i);
   });
 
+  it('does not spuriously claim the namespace when a slots config is rejected under mode: "attribute"', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(() =>
+      createComponent(attributeMode, 'retrynamespace', {
+        slots: ['root', 'trigger'],
+        base: { root: { display: 'grid' } },
+      } as never),
+    ).toThrow();
+
+    createComponent(attributeMode, 'retrynamespace', {
+      base: { padding: '8px' },
+      variants: { variant: { primary: { color: 'blue' } } },
+    });
+
+    const collisionCalls = warn.mock.calls.filter(
+      (args) => typeof args[0] === 'string' && args[0].includes('registered more than once'),
+    );
+    expect(collisionCalls).toHaveLength(0);
+    warn.mockRestore();
+  });
+
   describe('CSS emission', () => {
     it('compiles each option to a &[data-dimension="option"] selector scoped under one base class', () => {
       createComponent(attributeMode, 'css-basic', {

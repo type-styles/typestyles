@@ -273,11 +273,10 @@ export function createComponent(
     assertOwnLayer(classNaming.cascadeLayers, layer, `styles.component('${namespace}', …)`);
   }
 
-  claimComponentNamespace(classNaming, namespace);
-
   const resolved = resolveComponentConfig(classNaming, namespace, config);
   if (isMultiSlotConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
+    claimComponentNamespace(classNaming, namespace);
     return createMultiSlotComponent(
       classNaming,
       namespace,
@@ -287,6 +286,7 @@ export function createComponent(
   }
   if (isSlotWithVariantsConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
+    claimComponentNamespace(classNaming, namespace);
     return createSlotComponent(
       classNaming,
       namespace,
@@ -295,12 +295,14 @@ export function createComponent(
     );
   }
   if (isDimensionedConfig(resolved)) {
+    claimComponentNamespace(classNaming, namespace);
     const dimensionedConfig = resolved as ComponentConfig<VariantDefinitions>;
     if (classNaming.mode === 'attribute') {
       return createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
     }
     return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
   }
+  claimComponentNamespace(classNaming, namespace);
   return createFlatComponent(
     classNaming,
     namespace,
