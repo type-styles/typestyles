@@ -78,6 +78,20 @@ describe('createComponent — bem-mode dimensioned variants', () => {
     err.mockRestore();
   });
 
+  it('merges colliding dimensions into one rule instead of dropping one', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    createComponent(bemMode, 'collide2', {
+      variants: {
+        intent: { primary: { color: 'blue' } },
+        theme: { primary: { backgroundColor: 'black' } },
+      },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.collide2--primary { color: blue; background-color: black; }');
+    err.mockRestore();
+  });
+
   describe('CSS emission', () => {
     it('emits block and modifier classes as independent top-level rules', () => {
       createComponent(bemMode, 'css-basic', {

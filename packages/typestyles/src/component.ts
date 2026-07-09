@@ -568,6 +568,7 @@ function createBemDimensionedComponent<V extends VariantDefinitions>(
 
   const variantClassByKey: Record<string, string> = {};
   const seenModifierClassNames = new Map<string, string>();
+  const propertiesByModifierClassName: Record<string, unknown> = {};
   for (const [dimension, options] of Object.entries(variants)) {
     for (const [option, properties] of Object.entries(options as Record<string, CSSProperties>)) {
       const key = `${dimension}-${option}`;
@@ -580,12 +581,15 @@ function createBemDimensionedComponent<V extends VariantDefinitions>(
       devWarnBemModifierCollision(namespace, modifierClassName, dimension, seenModifierClassNames);
       variantClassByKey[key] = modifierClassName;
       classMap[key] = modifierClassName;
-      rules.push(
-        ...serializeStyle(`.${modifierClassName}`, properties, {
-          breakpoints: classNaming.breakpoints,
-        }),
-      );
+      mergeIntoSelectorKey(propertiesByModifierClassName, modifierClassName, properties);
     }
+  }
+  for (const [modifierClassName, properties] of Object.entries(propertiesByModifierClassName)) {
+    rules.push(
+      ...serializeStyle(`.${modifierClassName}`, properties as CSSProperties, {
+        breakpoints: classNaming.breakpoints,
+      }),
+    );
   }
 
   (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
