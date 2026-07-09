@@ -21,8 +21,14 @@ import type {
 import { insertRules, invalidateComponentNamespaceForDev } from './sheet';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { registeredNamespaces, warnUnscopedCollision } from './registry';
-import { emittedComponentClassPrefix, type ClassNamingConfig } from './class-naming';
+import {
+  emittedComponentClassPrefix,
+  buildBemBlockClassName,
+  buildBemModifierClassName,
+  type ClassNamingConfig,
+} from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
+import { serializeStyle } from './css';
 import { createComponentConfigContextPair } from './component-config-context';
 import { attachComposeMeta } from './compose-meta';
 
@@ -60,6 +66,30 @@ function devWarnInvalidDimensionOption(
   console.error(
     `[typestyles] Unknown variant "${String(effective)}" for dimension "${dimension}" in namespace "${namespace}".`,
   );
+}
+
+/**
+ * `mode: 'bem'` has no dimension namespace in its modifier classes, so two different dimensions
+ * producing the same option string collide on the identical class name — warn rather than let one
+ * silently override the other. `seenBy` is scoped per component (or per slot, for slot components).
+ */
+function devWarnBemModifierCollision(
+  scopeLabel: string,
+  className: string,
+  dimension: string,
+  seenBy: Map<string, string>,
+): void {
+  if (process.env.NODE_ENV === 'production') return;
+  const owner = seenBy.get(className);
+  if (owner && owner !== dimension) {
+    console.error(
+      `[typestyles] BEM modifier class "${className}" is produced by both dimension "${owner}" ` +
+        `and dimension "${dimension}" in "${scopeLabel}" — one will silently override the ` +
+        `other's styles in the cascade. Choose non-colliding option names.`,
+    );
+    return;
+  }
+  seenBy.set(className, dimension);
 }
 
 function devWarnUnknownFlatVariantKeys(
@@ -300,6 +330,9 @@ export function createComponent(
     if (classNaming.mode === 'attribute') {
       return createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
     }
+    if (classNaming.mode === 'bem') {
+      return createBemDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
+    }
     return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
   }
   claimComponentNamespace(classNaming, namespace);
@@ -508,8 +541,129 @@ function createDimensionedComponent<V extends VariantDefinitions>(
 }
 
 // ---------------------------------------------------------------------------
-// Dimensioned variant component — attribute strategy
-// (variantStrategy: 'attribute'; see specs/attribute-driven-variants.md)
+// Dimensioned variant component — bem mode (mode: 'bem'; see specs/bem-variant-mode.md)
+// ---------------------------------------------------------------------------
+
+function createBemDimensionedComponent<V extends VariantDefinitions>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: ComponentConfig<V>,
+  layer?: string,
+): ComponentReturn<V> {
+  const { base, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
+
+  const rules: Array<{ key: string; css: string }> = [];
+  const classMap: Record<string, string> = {};
+
+  const blockClassName = buildBemBlockClassName(classNaming, namespace);
+  const hasBase = base != null;
+  if (hasBase) {
+    classMap['base'] = blockClassName;
+    rules.push(
+      ...serializeStyle(`.${blockClassName}`, base as CSSProperties, {
+        breakpoints: classNaming.breakpoints,
+      }),
+    );
+  }
+
+  const variantClassByKey: Record<string, string> = {};
+  const seenModifierClassNames = new Map<string, string>();
+  for (const [dimension, options] of Object.entries(variants)) {
+    for (const [option, properties] of Object.entries(options as Record<string, CSSProperties>)) {
+      const key = `${dimension}-${option}`;
+      const modifierClassName = buildBemModifierClassName(
+        classNaming,
+        namespace,
+        blockClassName,
+        option,
+      );
+      devWarnBemModifierCollision(namespace, modifierClassName, dimension, seenModifierClassNames);
+      variantClassByKey[key] = modifierClassName;
+      classMap[key] = modifierClassName;
+      rules.push(
+        ...serializeStyle(`.${modifierClassName}`, properties, {
+          breakpoints: classNaming.breakpoints,
+        }),
+      );
+    }
+  }
+
+  (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
+    (cv) => {
+      const selectorSuffix = Object.entries(cv.variants)
+        .map(([dimension, expected]) => {
+          const optionMap = (variants as Record<string, Record<string, CSSProperties>>)[dimension];
+          if (!optionMap) return '';
+          const values = Array.isArray(expected) ? expected : [expected];
+          const classSelectors = values
+            .map((value) => normalizeSelection(value, optionMap))
+            .filter((selected): selected is string => selected != null)
+            .map((selected) => `.${variantClassByKey[`${dimension}-${selected}`]}`);
+          if (classSelectors.length === 0) return '';
+          return classSelectors.length === 1
+            ? classSelectors[0]
+            : `:is(${classSelectors.join(', ')})`;
+        })
+        .join('');
+
+      if (!selectorSuffix) return;
+      rules.push(
+        ...serializeStyle(selectorSuffix, cv.style, { breakpoints: classNaming.breakpoints }),
+      );
+    },
+  );
+
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
+
+  const selectorFn = (selections: Record<string, unknown> = {}): string => {
+    const classes: string[] = [];
+    if (hasBase) classes.push(blockClassName);
+
+    devWarnUnknownVariantDimensions(namespace, selections, variants as Record<string, unknown>);
+
+    const resolved: Record<string, unknown> = {};
+    for (const [dimension, options] of Object.entries(variants)) {
+      const optionMap = options as Record<string, CSSProperties>;
+      const explicit = selections[dimension];
+      const fallback = (defaultVariants as Record<string, unknown>)[dimension];
+      const effective = explicit ?? fallback;
+      const selected = normalizeSelection(effective, optionMap);
+      resolved[dimension] = selected;
+
+      devWarnInvalidDimensionOption(
+        namespace,
+        dimension,
+        effective,
+        selected,
+        optionMap as Record<string, unknown>,
+      );
+    }
+
+    for (const [dimension, options] of Object.entries(variants)) {
+      const optionMap = options as Record<string, CSSProperties>;
+      const selected = normalizeSelection(resolved[dimension], optionMap);
+      if (selected != null) {
+        const cn = variantClassByKey[`${dimension}-${selected}`];
+        if (cn) classes.push(cn);
+      }
+    }
+
+    return classes.join(' ');
+  };
+
+  const result = makeCallableObject(
+    (...args: unknown[]) => selectorFn(args[0] as Record<string, unknown> | undefined),
+    classMap,
+  ) as ComponentReturn<V>;
+
+  attachComposeMeta(result, Object.keys(variants));
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Dimensioned variant component — attribute mode
+// (mode: 'attribute'; see specs/attribute-driven-variants.md)
 // ---------------------------------------------------------------------------
 
 /**
