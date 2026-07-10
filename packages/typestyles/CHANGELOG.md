@@ -1,5 +1,15 @@
 # typestyles
 
+## 0.9.0
+
+### Minor Changes
+
+- [#130](https://github.com/type-styles/typestyles/pull/130) [`644a96c`](https://github.com/type-styles/typestyles/commit/644a96c65e8c9fa0d5a0013a6b15bc86e255a88f) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - `variantStrategy: 'attribute'` (from the unreleased PR [#130](https://github.com/type-styles/typestyles/issues/130)) is now `createStyles({ mode: 'attribute' })` / `createTypeStyles({ mode: 'attribute' })` — an instance-wide setting instead of a per-component field, matching how `semantic`/`hashed`/`compact`/`atomic` already work. Every dimensioned `styles.component()` call from that instance compiles `variants` to `&[data-{dimension}="{option}"]` selectors and returns `{ className, attrs, props }`; `slots` is rejected at the type level. `variantStrategy`/`defaultVariantStrategy` no longer exist. See `specs/attribute-driven-variants.md`.
+
+- [#132](https://github.com/type-styles/typestyles/pull/132) [`6be2124`](https://github.com/type-styles/typestyles/commit/6be2124795c1b8a5d1a414a8a6f0ee93798cbeb0) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `mode: 'bem'` to `createStyles`/`createTypeStyles`: dimensioned and slot `styles.component()` variants compile to BEM modifier classes (`block--modifier`, `block__element--modifier`) instead of the default `{namespace}-{dimension}-{option}` naming. The base/root class drops the `-base` suffix (the bare block class is the base state). Compound variants compile to chained modifier-class selectors with no synthetic class. Dev mode warns when two dimensions would produce the same modifier class name. See `specs/bem-variant-mode.md`.
+
+- [#137](https://github.com/type-styles/typestyles/pull/137) [`9cf89f1`](https://github.com/type-styles/typestyles/commit/9cf89f1ce4861e16dba4bea508895072a028df4e) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `mode: 'template'` to `createStyles`/`createTypeStyles`: dimensioned and slot `styles.component()` variants compile to class names decided by a user-supplied `classNameTemplate: (ctx) => string` function, instead of a fixed convention. `mode: 'bem'` is now implemented internally as a built-in preset of this same mechanism — its public behavior for valid input is unchanged, though in development it now also validates that emitted class names are legal CSS identifiers (previously invalid variant/slot names could silently produce a broken selector). See `specs/classname-template-mode.md`.
+
 ## 0.8.2
 
 ### Patch Changes

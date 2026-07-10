@@ -1,5 +1,12 @@
 # @examples/typewind
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies [[`644a96c`](https://github.com/type-styles/typestyles/commit/644a96c65e8c9fa0d5a0013a6b15bc86e255a88f), [`6be2124`](https://github.com/type-styles/typestyles/commit/6be2124795c1b8a5d1a414a8a6f0ee93798cbeb0), [`9cf89f1`](https://github.com/type-styles/typestyles/commit/9cf89f1ce4861e16dba4bea508895072a028df4e)]:
+  - typestyles@0.9.0
+
 ## 0.0.6
 
 ### Patch Changes
