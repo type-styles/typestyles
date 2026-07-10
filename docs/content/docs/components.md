@@ -125,9 +125,11 @@ const accordionTrigger = styles.component('accordion-trigger', {
 
 ## Attribute-driven variants
 
-Some design systems want variant state expressed as `data-*` attributes on the DOM (Radix/shadcn-style: one stable class, `data-variant`/`data-size` legible in the markup) rather than as discrete classes. Set `variantStrategy: 'attribute'` and each `variants` option compiles to a `&[data-{dimension}="{option}"]` selector scoped under the single `base` class, instead of its own class:
+Some design systems want variant state expressed as `data-*` attributes on the DOM (Radix/shadcn-style: one stable class, `data-variant`/`data-size` legible in the markup) rather than as discrete classes. Set `mode: 'attribute'` on `createStyles`/`createTypeStyles` and every dimensioned `styles.component()` call from that instance compiles each `variants` option to a `&[data-{dimension}="{option}"]` selector scoped under the single `base` class, instead of its own class:
 
 ```ts
+const styles = createStyles({ mode: 'attribute' });
+
 const button = styles.component('button', {
   base: { padding: '8px 16px', borderRadius: '6px' },
   variants: {
@@ -141,7 +143,6 @@ const button = styles.component('button', {
     },
   },
   defaultVariants: { variant: 'primary', size: 'small' },
-  variantStrategy: 'attribute',
 });
 
 const b = button({ variant: 'primary', size: 'small' });
@@ -168,17 +169,69 @@ variants: {
 
 `compoundVariants` still work — each condition compiles to a single combined attribute selector (`.button-base[data-variant="primary"][data-size="large"]`) with no extra compound class and no runtime matching; an array of allowed values for one dimension (`{ tone: ['success', 'warning'], size: 'lg' }`) compiles to a `:is(...)` group ANDed with the rest of the condition.
 
-Set `defaultVariantStrategy: 'attribute'` on `createStyles`/`createTypeStyles` to make this the default for every `styles.component` call from that instance, without repeating `variantStrategy` per component. A component can still opt back into class-based variants with `variantStrategy: 'class'`.
-
-```ts
-const { styles } = createTypeStyles({ defaultVariantStrategy: 'attribute', utils: {} });
-```
+`mode` is an instance-wide setting on `createStyles`/`createTypeStyles`, like `semantic`/`hashed`/`compact`/`atomic` — there is no per-component override. A design system that wants both attribute-based and class-based (or BEM-based) components creates two instances.
 
 **Trade-offs:**
 
 - No per-option class hooks — `button['variant-primary']` doesn't exist in attribute mode, since there's no discrete class to expose. `button.base` still exposes the single base class.
-- Only the plain dimensioned config (`base` / `variants` / `compoundVariants` / `defaultVariants`) supports `variantStrategy: 'attribute'` — not `slots` and not the flat (non-dimensioned) config shape.
+- Only the plain dimensioned config (`base` / `variants` / `compoundVariants` / `defaultVariants`) supports `mode: 'attribute'` — not `slots` and not the flat (non-dimensioned) config shape. Passing `slots` under a `mode: 'attribute'` instance is a compile-time error. See ["BEM variant naming"](#bem-variant-naming) below for multi-part components.
 - Attribute names are the dimension name verbatim (`data-{dimension}`), not kebab-cased. This matters only for multi-word camelCase dimension names (e.g. a dimension named `fontWeight` renders as `data-fontweight` in the DOM, since HTML lowercases attribute names on write) — it won't round-trip through `element.dataset.fontWeight`, which expects the kebab form `data-font-weight`. Single-word dimension names (`variant`, `size`, `tone`, `intent`) are unaffected.
+
+## BEM variant naming
+
+Some design systems author class names as BEM (Block Element Modifier). Set `mode: 'bem'` and dimensioned/slot `styles.component()` variants compile to BEM modifier classes instead of the default `{namespace}-{dimension}-{option}` naming:
+
+```ts
+const styles = createStyles({ mode: 'bem' });
+
+const button = styles.component('button', {
+  base: { padding: '8px 16px', borderRadius: '6px' },
+  variants: {
+    variant: {
+      primary: { backgroundColor: '#0066ff', color: '#fff' },
+      secondary: { backgroundColor: '#6b7280', color: '#fff' },
+    },
+    size: {
+      small: { fontSize: '14px' },
+      large: { fontSize: '18px' },
+    },
+  },
+  compoundVariants: [
+    { variants: { variant: 'primary', size: 'large' }, style: { fontWeight: 700 } },
+  ],
+  defaultVariants: { variant: 'primary', size: 'small' },
+});
+
+button({ variant: 'primary', size: 'large' });
+// "button button--primary button--large"
+
+button.base; // "button" — no "-base" suffix; the bare block class IS the base state
+button['variant-primary']; // "button--primary" — no dimension name in the modifier
+```
+
+Compound variants compile to a chained modifier-class selector (`.button--primary.button--large`) with no synthetic compound class and no runtime matching — the browser resolves it once both modifier classes are present, the same way `mode: 'attribute'` handles compounds via chained attribute selectors.
+
+**Multi-part components** work via `slots`, mapping onto the `root`/`trigger`/`content` convention already used elsewhere in this doc: the `root` slot is the bare block class; every other slot is a BEM element (`block__element`):
+
+```ts
+const dialog = styles.component('dialog', {
+  slots: ['root', 'trigger', 'content'],
+  base: { root: { display: 'grid' }, trigger: { cursor: 'pointer' } },
+  variants: {
+    size: {
+      sm: { trigger: { fontSize: '12px' }, content: { padding: '8px' } },
+      lg: { trigger: { fontSize: '16px' }, content: { padding: '12px' } },
+    },
+  },
+});
+
+dialog({ size: 'lg' });
+// { root: "dialog", trigger: "dialog__trigger dialog__trigger--lg", content: "dialog__content dialog__content--lg" }
+```
+
+**The collision caveat:** BEM has no dimension namespace, so two _different_ dimensions producing the same option string collide on the identical class name (e.g. `intent: 'primary'` and `theme: 'primary'` both want `button--primary`). This is inherent to BEM, not a typestyles limitation — `styles.component()` warns in dev when it happens, rather than silently letting one CSS rule clobber the other in the cascade. Choose non-colliding option names across a component's dimensions.
+
+Like `mode: 'attribute'`, `mode: 'bem'` is an instance-wide setting — no per-component override, and mutually exclusive with the other four `ClassNamingMode` values in one `createStyles()` instance. `styles.class()` and flat (non-dimensioned) `styles.component()` configs are unaffected by `mode: 'bem'` — they name exactly as they would under `semantic` mode.
 
 ## Migration quick-start
 
