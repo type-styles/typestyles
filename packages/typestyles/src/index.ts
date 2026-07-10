@@ -93,7 +93,6 @@ export type {
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,
-  ComponentConfigInputAttribute,
   ComponentInternalVarRef,
   RegisteredPropertyRef,
   RegisteredPropertyOptions,

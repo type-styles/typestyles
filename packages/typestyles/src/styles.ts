@@ -7,7 +7,6 @@ import type {
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,
-  ComponentConfigInputAttribute,
   ComponentReturn,
   FlatComponentConfigInput,
   FlatComponentReturn,
@@ -284,10 +283,6 @@ export type StylesApi = {
   component: {
     <const V extends VariantDefinitions>(
       namespace: string,
-      config: ComponentConfigInputAttribute<V>,
-    ): ComponentAttrsReturn<V>;
-    <const V extends VariantDefinitions>(
-      namespace: string,
       config: ComponentConfigInput<V>,
     ): ComponentReturn<V>;
     <const K extends string>(
@@ -337,11 +332,6 @@ export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>
 export type LayeredComponentFn<L extends string> = {
   <const V extends VariantDefinitions>(
     namespace: string,
-    config: ComponentConfigInputAttribute<V>,
-    options: LayerOption<L>,
-  ): ComponentAttrsReturn<V>;
-  <const V extends VariantDefinitions>(
-    namespace: string,
     config: ComponentConfigInput<V>,
     options: LayerOption<L>,
   ): ComponentReturn<V>;
@@ -363,11 +353,6 @@ export type LayeredComponentFn<L extends string> = {
 };
 
 export type LayeredComponentFnWithUtils<L extends string> = {
-  <const V extends VariantDefinitions>(
-    namespace: string,
-    config: ComponentConfigInputAttribute<V>,
-    options: LayerOption<L>,
-  ): ComponentAttrsReturn<V>;
   <const V extends VariantDefinitions>(
     namespace: string,
     config: ComponentConfigInput<V>,
@@ -418,6 +403,48 @@ export type StylesApiWithLayers<L extends string> = Omit<
   component: LayeredComponentFn<L>;
   withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApiLayered<U, L>;
 };
+
+export function createStyles<const L extends readonly string[], U extends StyleUtils>(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+    mode: 'attribute';
+    layers: L;
+    tokenLayer?: L[number];
+    utils: U;
+  },
+): AttributeStylesWithUtilsApiLayered<U, L[number]>;
+
+export function createStyles<U extends StyleUtils>(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+    mode: 'attribute';
+    layers: CascadeLayersObjectInput;
+    tokenLayer?: string;
+    utils: U;
+  },
+): AttributeStylesWithUtilsApiLayered<U, string>;
+
+export function createStyles<U extends StyleUtils>(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & { mode: 'attribute'; utils: U },
+): AttributeStylesWithUtilsApi<U>;
+
+export function createStyles<const L extends readonly string[]>(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+    mode: 'attribute';
+    layers: L;
+    tokenLayer?: L[number];
+  },
+): AttributeStylesApiWithLayers<L[number]>;
+
+export function createStyles(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
+    mode: 'attribute';
+    layers: CascadeLayersObjectInput;
+    tokenLayer?: string;
+  },
+): AttributeStylesApiWithLayers<string>;
+
+export function createStyles(
+  options: Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & { mode: 'attribute' },
+): AttributeStylesApi;
 
 /**
  * Create a styles API with its own class naming config (scope, mode, prefix).
@@ -474,7 +501,11 @@ export function createStyles(
   | StylesApi
   | StylesApiWithLayers<string>
   | StylesWithUtilsApi<StyleUtils>
-  | StylesWithUtilsApiLayered<StyleUtils, string> {
+  | StylesWithUtilsApiLayered<StyleUtils, string>
+  | AttributeStylesApi
+  | AttributeStylesApiWithLayers<string>
+  | AttributeStylesWithUtilsApi<StyleUtils>
+  | AttributeStylesWithUtilsApiLayered<StyleUtils, string> {
   const partial = (options ?? {}) as CreateStylesInput;
   const {
     layers,
@@ -593,10 +624,6 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   component: {
     <const V extends VariantDefinitions>(
       namespace: string,
-      config: ComponentConfigInputAttribute<V>,
-    ): ComponentAttrsReturn<V>;
-    <const V extends VariantDefinitions>(
-      namespace: string,
       config: ComponentConfigInput<V>,
     ): ComponentReturn<V>;
     <const K extends string>(
@@ -614,6 +641,63 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   };
   compose: typeof compose;
   scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) => void;
+};
+
+// ---------------------------------------------------------------------------
+// mode: 'attribute' — dimensioned styles.component() returns { className, attrs, props }.
+// No slots overload exists on any of these — passing `slots` is a compile error under a
+// mode: 'attribute' instance. See specs/attribute-driven-variants.md.
+// ---------------------------------------------------------------------------
+
+export type AttributeComponentFn = {
+  <const V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+  ): ComponentAttrsReturn<V>;
+  <const K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+  ): FlatComponentReturn<K>;
+};
+
+export type LayeredAttributeComponentFn<L extends string> = {
+  <const V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+    options: LayerOption<L>,
+  ): ComponentAttrsReturn<V>;
+  <const K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+    options: LayerOption<L>,
+  ): FlatComponentReturn<K>;
+};
+
+export type AttributeStylesApi = Omit<StylesApi, 'component' | 'withUtils'> & {
+  component: AttributeComponentFn;
+  withUtils: <U extends StyleUtils>(utils: U) => AttributeStylesWithUtilsApi<U>;
+};
+
+export type AttributeStylesApiWithLayers<L extends string> = Omit<
+  StylesApiWithLayers<L>,
+  'component' | 'withUtils'
+> & {
+  component: LayeredAttributeComponentFn<L>;
+  withUtils: <U extends StyleUtils>(utils: U) => AttributeStylesWithUtilsApiLayered<U, L>;
+};
+
+export type AttributeStylesWithUtilsApi<U extends StyleUtils> = Omit<
+  StylesWithUtilsApi<U>,
+  'component'
+> & {
+  component: AttributeComponentFn;
+};
+
+export type AttributeStylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = Omit<
+  StylesWithUtilsApiLayered<U, L>,
+  'component'
+> & {
+  component: LayeredAttributeComponentFn<L>;
 };
 
 /**
