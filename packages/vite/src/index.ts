@@ -67,6 +67,38 @@ function resolveExtractModulesForVite(
   return resolveExtractModules(root, extract);
 }
 
+/** Public URL path for the extracted CSS asset (respects Vite `base`). */
+export function resolveTypestylesCssHref(base: string, fileName: string): string {
+  const normalizedFileName = fileName.replace(/^\//, '');
+  const normalizedBase = base.replace(/\/$/, '') || '';
+  if (normalizedBase === '' || normalizedBase === '/') {
+    return `/${normalizedFileName}`;
+  }
+  return `${normalizedBase}/${normalizedFileName}`;
+}
+
+/** True when `html` already links the extracted stylesheet (avoids duplicate injection). */
+export function htmlLinksTypestylesCss(html: string, cssHref: string, fileName: string): boolean {
+  const bareName = fileName.replace(/^\//, '');
+  const linkPattern = /<link\b[^>]*\brel=["']stylesheet["'][^>]*>/gi;
+  const hrefPattern = /\bhref=["']([^"']+)["']/i;
+
+  for (const match of html.matchAll(linkPattern)) {
+    const hrefMatch = match[0].match(hrefPattern);
+    const href = hrefMatch?.[1];
+    if (!href) continue;
+    if (
+      href === cssHref ||
+      href.endsWith(`/${bareName}`) ||
+      href === bareName ||
+      href === `./${bareName}`
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export { extractNamespaces };
 
 /**
@@ -234,6 +266,33 @@ if (import.meta.hot) {
         code: hmrImport + code + hmrCode,
         map: null,
       };
+    },
+
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html) {
+        if (resolvedExtractModules.length === 0) return;
+        if (resolvedMode === 'runtime') return;
+        if (!resolvedConfig) return;
+
+        const fileName = extract?.fileName ?? 'typestyles.css';
+        const href = resolveTypestylesCssHref(resolvedConfig.base, fileName);
+
+        if (htmlLinksTypestylesCss(html, href, fileName)) {
+          return;
+        }
+
+        return [
+          {
+            tag: 'link',
+            attrs: {
+              rel: 'stylesheet',
+              href,
+            },
+            injectTo: 'head',
+          },
+        ];
+      },
     },
 
     async generateBundle() {

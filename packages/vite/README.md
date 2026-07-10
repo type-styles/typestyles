@@ -63,7 +63,7 @@ export default defineConfig({
 });
 ```
 
-**3. Link the CSS** in your HTML shell:
+**3. Link the CSS** in your HTML shell (optional — the plugin auto-injects this during dev and build when extraction is enabled):
 
 ```html
 <link rel="stylesheet" href="/typestyles.css" />
