@@ -3,7 +3,7 @@ title: Class naming
 description: Per-instance semantic, hashed, or atomic class names via createStyles; scoped tokens via createTokens
 ---
 
-By default, typestyles emits **readable semantic** class names: `button-base`, `card-elevated`, `button-intent-primary`. You can switch to **hashed**, **compact** (hash-only whole-object), or **atomic** (one class per declaration) names for smaller strings, deduped CSS, or closer parity with CSS-in-JS tools that minify class names.
+By default, typestyles emits **readable semantic** class names: `button-base`, `card-elevated`, `button-intent-primary`. You can switch to **hashed**, **compact** (hash-only whole-object), or **atomic** (one class per declaration) names for smaller strings, deduped CSS, or closer parity with CSS-in-JS tools that minify class names. Three more modes target `styles.component()` variants specifically: **attribute** (data-attribute selectors instead of discrete classes), **bem** (BEM modifier classes), and **template** (a user-supplied naming function — BEM is a built-in preset of it).
 
 Naming applies to:
 
@@ -46,12 +46,12 @@ For **CSS cascade layers** (`@layer`) — optional, and off by default — see [
 
 Returns a style API with the same methods as the default `styles` export. Options are a partial **`ClassNamingConfig`** merged onto defaults:
 
-| Option    | Type                                                        | Default      | Description                                                                                                                                                                                                                                                                |
-| --------- | ----------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mode`    | `'semantic' \| 'hashed' \| 'compact' \| 'atomic'`           | `'semantic'` | How class strings are built (see below).                                                                                                                                                                                                                                   |
-| `prefix`  | `string`                                                    | `'ts'`       | Leading segment for hashed/compact/atomic output and for `hashClass`.                                                                                                                                                                                                      |
-| `scopeId` | `string`                                                    | `''`         | Optional id (package name, app name) so two packages can reuse the same logical namespace without sharing the same class string. In `semantic` mode the sanitized scope is prefixed onto class names; in `hashed`/`compact`/`atomic` mode it is mixed into the hash input. |
-| `layers`  | `readonly string[]` or `{ order, prependFrameworkLayers? }` | _(omitted)_  | When set, enables `@layer` output and requires `{ layer }` on each `class` / `hashClass` / `component` call. See [Cascade layers](/docs/cascade-layers).                                                                                                                   |
+| Option    | Type                                                                                    | Default      | Description                                                                                                                                                                                                                                                                |
+| --------- | --------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`    | `'semantic' \| 'hashed' \| 'compact' \| 'atomic' \| 'attribute' \| 'bem' \| 'template'` | `'semantic'` | How class strings are built (see below).                                                                                                                                                                                                                                   |
+| `prefix`  | `string`                                                                                | `'ts'`       | Leading segment for hashed/compact/atomic output and for `hashClass`.                                                                                                                                                                                                      |
+| `scopeId` | `string`                                                                                | `''`         | Optional id (package name, app name) so two packages can reuse the same logical namespace without sharing the same class string. In `semantic` mode the sanitized scope is prefixed onto class names; in `hashed`/`compact`/`atomic` mode it is mixed into the hash input. |
+| `layers`  | `readonly string[]` or `{ order, prependFrameworkLayers? }`                             | _(omitted)_  | When set, enables `@layer` output and requires `{ layer }` on each `class` / `hashClass` / `component` call. See [Cascade layers](/docs/cascade-layers).                                                                                                                   |
 
 The instance also exposes **`styles.classNaming`**: a read-only snapshot of the resolved config (useful for debugging).
 
@@ -105,6 +105,18 @@ Hash inputs include (when set) `scopeId`, the declaration path (property + neste
 #### Migrating from the old `atomic` name
 
 Before P2.10, `atomic` meant hash-only **whole-object** classes (no namespace slug). That mode is now **`compact`**. If you were using `mode: 'atomic'` for short hash-only class strings, switch to **`mode: 'compact'`**. Use **`mode: 'atomic'`** when you want true per-declaration output and dedup.
+
+### `attribute`
+
+Dimensioned `styles.component()` variants compile to `&[data-{dimension}="{option}"]` selectors under one base class instead of discrete classes; the call returns `{ className, attrs, props }` for spreading the resolved `data-*` attributes onto the element. Not supported for `slots` or flat configs — `styles.class()` and flat configs behave like `semantic`. See [Attribute-driven variants](/docs/components#attribute-driven-variants).
+
+### `bem`
+
+Dimensioned/slot `styles.component()` variants compile to BEM modifier classes (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix. `styles.class()` and flat configs behave like `semantic`. See [BEM variant naming](/docs/components#bem-variant-naming).
+
+### `template`
+
+Like `bem`, but the block/element/modifier class name is decided by a user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention — `mode: 'bem'` is itself a built-in preset of this same mechanism. `ctx` is a **`ClassNameContext`** (`scope`, `namespace`, `element`, `dimension`, `modifier`). Useful for SUIT CSS, prefixed/ITCSS conventions, or avoiding BEM's dimension-collision problem. `styles.class()` and flat configs behave like `semantic`. See [Generic classname template](/docs/components#generic-classname-template).
 
 ## `styles.hashClass`
 

@@ -350,17 +350,17 @@ in var-ui's own roadmap, not here.
     (no unbuilt-theme runtime warning needed, unlike Astryx's
     `astryx theme build` fallback).
 
-- [ ] **P5.7 — Market `@property`-typed tokens as animatable-theme differentiator**
-  - P3.24 already shipped `@property` on token leaves + `styles.property`, but it
-    isn't positioned as a competitive claim. StyleX's own documented capability list
-    marks `@property (explicit)` as unsupported ("compiles but invalid CSS output"),
-    meaning Astryx/StyleX theme color or size transitions that need `@property`
-    (e.g. smoothly animating a gradient angle or a color token on theme switch) are
-    structurally unavailable to them.
-  - Scope: add a docs callout plus one worked example (animated theme-switch
-    transition using `@property`-registered color tokens) to the theming docs, and
-    reference it from the comparison page (P3.5.5).
-  - Effort: Low (docs + one demo).
+- [x] **P5.7 — Market `@property`-typed tokens as animatable-theme differentiator**
+  - Shipped: "Animating typed tokens with `@property`" section in
+    `docs/content/docs/theming-patterns.md` (worked example — a `conic-gradient`
+    angle token that smoothly rotates across a theme switch via a registered
+    `@property` `<angle>` syntax, contrasted with the discrete snap an
+    unregistered token would produce), plus a fourth "Animatable typed tokens"
+    difference in the "Theming architecture" section of
+    `docs/content/docs/framework-comparison.md` (P3.5.5) noting StyleX's
+    documented `@property (explicit)` as unsupported. Documentation-only —
+    P3.24 already shipped the underlying `@property` support on token leaves
+    and `styles.property`.
 
 - **P5.8 — Moved to var-ui** (not tracked here — neither open nor shipped in
   this repo). Per-recipe structured docs for human + AI-agent discovery is

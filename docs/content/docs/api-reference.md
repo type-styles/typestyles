@@ -32,7 +32,7 @@ per package or micro-frontend for isolation.
 
 ### `createStyles(options?)`
 
-Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'compact' | 'atomic'`), `prefix`, `scopeId`. Optionally pass **`utils`** — a map of shorthand expanders — to get a utility-aware API in one step (same typing as `styles.withUtils(…)`; see [Styles](/docs/styles#utility-shortcuts)). Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)).
+Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem' | 'template'`), `prefix`, `scopeId`. Optionally pass **`utils`** — a map of shorthand expanders — to get a utility-aware API in one step (same typing as `styles.withUtils(…)`; see [Styles](/docs/styles#utility-shortcuts)). Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)).
 
 The default `import { styles } from 'typestyles'` is `createStyles()` with default options.
 
@@ -180,7 +180,7 @@ cx(card(), isElevated && card.elevated, externalClassName);
 - `defaultClassNamingConfig`: Default `mode`, `prefix`, and `scopeId`
 - `scopedTokenNamespace(scopeId, logicalNamespace)`: CSS variable namespace segment for scoped token instances
 
-See [Class naming](/docs/class-naming).
+Exported types: **`ClassNamingMode`**, **`ClassNamingConfig`**, **`ClassNameContext`**, **`ClassNameTemplate`** — the last two type `classNameTemplate` for `mode: 'template'` (and its `mode: 'bem'` preset). See [Class naming](/docs/class-naming).
 
 ## Usage Examples
 
