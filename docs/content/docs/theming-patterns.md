@@ -761,6 +761,36 @@ global.style('html', {
 
 Use a scoped `global` from `createTypeStyles({ layers, globalLayer })` when you emit globals into a cascade layer (see [Cascade layers](/docs/cascade-layers)).
 
+### Animating typed tokens with `@property`
+
+The transition above works because `background-color`, `color`, and `border-color` are already-animatable CSS properties — the browser interpolates the _computed_ value across the style change regardless of how it was derived from `var(--…)`. Plain custom properties themselves don't get that for free: an **unregistered** `--token` is just a token stream, so a value that's only ever consumed as raw text — a gradient angle, a `filter` amount, the custom property itself via `transition: --token` — snaps discretely instead of animating.
+
+> **Register the token with `syntax` to make it interpolate.** `tokens.create` and `styles.property` both accept `{ value, syntax, inherits }` and register a typed [`@property`](https://developer.mozilla.org/en-US/docs/Web/CSS/@property) rule for the custom property. Once a token has a typed `syntax` (`<color>`, `<angle>`, `<number>`, …), the browser knows how to interpolate it directly — including inside values, like gradients, that a `transition` on a real CSS property can't reach.
+
+```ts
+import { tokens, styles } from 'typestyles';
+
+// A typed, animatable custom property — not just a plain token.
+const brand = tokens.create('brand', {
+  angle: { value: '20deg', syntax: '<angle>', inherits: true },
+});
+
+const dark = tokens.createTheme('dark', {
+  base: {
+    brand: { angle: '260deg' },
+  },
+});
+
+const card = styles.class('card', {
+  backgroundImage: `conic-gradient(from ${brand.angle.var}, #0066ff, #66b3ff, #0066ff)`,
+  transition: `${brand.angle.name} 0.6s ease`,
+});
+```
+
+Toggling `dark.className` now smoothly rotates the gradient across the theme switch — the browser tweens `--brand-angle` (`brand.angle.name`) from `20deg` to `260deg` frame by frame, then the `conic-gradient` re-renders each step, because `@property` told it `--brand-angle` is an `<angle>`. Without the registered `syntax`, the same class swap would snap the gradient to its new angle with no animation at all.
+
+This is a genuine capability gap versus compiler-first tools: StyleX's own documented capability list marks explicit `@property` output as unsupported ("compiles but invalid CSS output"), so an Astryx/StyleX theme can't emit this pattern — a smoothly animating gradient angle or color token on theme switch is structurally unavailable to it. TypeStyles tokens and `styles.property` emit real `@property` rules because they're just CSS, not compiler-owned output. See [Theming architecture: TypeStyles vs. StyleX (and Astryx)](/docs/framework-comparison#theming-architecture-typestyles-vs-stylex-and-astryx) for the fuller comparison, and [`styles.property`](/docs/api-reference#styles) / [`tokens.create`](/docs/tokens#custom-css-variable-names-nametemplate) for the full options.
+
 ### Prevent flash during theme switch
 
 ```tsx
