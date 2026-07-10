@@ -494,3 +494,42 @@ describe('styles.property', () => {
     expect(getRegisteredCss()).not.toContain('--property-external-var');
   });
 });
+
+describe('mode: template', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('throws when mode: template is set without classNameTemplate', () => {
+    expect(() => createStyles({ mode: 'template' } as never)).toThrow(
+      /classNameTemplate.*is required/,
+    );
+  });
+
+  it('does not throw when mode: template is paired with classNameTemplate', () => {
+    expect(() =>
+      createStyles({ mode: 'template', classNameTemplate: (ctx) => `x-${ctx.namespace}` }),
+    ).not.toThrow();
+  });
+
+  it('uses classNameTemplate for dimensioned styles.component(), unaffected for styles.class()', () => {
+    const styles = createStyles({
+      mode: 'template',
+      classNameTemplate: ({ namespace, element, modifier }) => {
+        const base = element ? `${namespace}-${element}` : namespace;
+        return modifier ? `${base}-is-${modifier}` : base;
+      },
+    });
+
+    const button = styles.component('button', {
+      base: { padding: '8px' },
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
+    expect(button.base).toBe('button');
+    expect(button['intent-primary']).toBe('button-is-primary');
+
+    const icon = styles.class('icon', { width: '16px' });
+    expect(icon).toBe('icon');
+  });
+});

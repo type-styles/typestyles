@@ -525,6 +525,14 @@ export function createStyles(
   const breakpoints = resolveBreakpoints(breakpointsConfig);
   const classNaming = mergeClassNaming({ ...namingPartial, cascadeLayers, breakpoints });
 
+  if (classNaming.mode === 'template' && !classNaming.classNameTemplate) {
+    throw new Error(
+      "[typestyles] `classNameTemplate` is required when `mode: 'template'` — " +
+        "e.g. createStyles({ mode: 'template', classNameTemplate: (ctx) => `${ctx.namespace}...` }). " +
+        'See specs/classname-template-mode.md.',
+    );
+  }
+
   if (utils !== undefined) {
     if (classNaming.cascadeLayers) {
       return createStylesWithUtilsLayered(utils, classNaming) as StylesWithUtilsApiLayered<
