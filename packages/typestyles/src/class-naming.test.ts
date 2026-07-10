@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { fileScopeId } from './class-naming';
+import {
+  fileScopeId,
+  mergeClassNaming,
+  buildBemBlockClassName,
+  buildBemElementClassName,
+  buildBemModifierClassName,
+} from './class-naming';
 import { createStyles } from './styles';
 import { reset, flushSync } from './sheet';
 import { registeredNamespaces } from './registry';
@@ -247,5 +253,32 @@ describe('unscoped collision warning (dev)', () => {
       (args) => typeof args[0] === 'string' && args[0].includes("styles.component('tag'"),
     );
     expect(unscopedCalls).toHaveLength(1);
+  });
+});
+
+describe('BEM naming helpers', () => {
+  it('buildBemBlockClassName returns the bare namespace (no scope)', () => {
+    const cfg = mergeClassNaming({ mode: 'bem' });
+    expect(buildBemBlockClassName(cfg, 'button')).toBe('button');
+  });
+
+  it('buildBemBlockClassName prefixes the sanitized scopeId when set', () => {
+    const cfg = mergeClassNaming({ mode: 'bem', scopeId: 'My UI' });
+    expect(buildBemBlockClassName(cfg, 'button')).toBe('my-ui-button');
+  });
+
+  it('buildBemElementClassName appends __slot to the block name', () => {
+    const cfg = mergeClassNaming({ mode: 'bem' });
+    expect(buildBemElementClassName(cfg, 'dialog', 'trigger')).toBe('dialog__trigger');
+  });
+
+  it('buildBemModifierClassName appends --option to a given block/element class name', () => {
+    const cfg = mergeClassNaming({ mode: 'bem' });
+    const block = buildBemBlockClassName(cfg, 'button');
+    expect(buildBemModifierClassName(cfg, 'button', block, 'primary')).toBe('button--primary');
+    const element = buildBemElementClassName(cfg, 'dialog', 'trigger');
+    expect(buildBemModifierClassName(cfg, 'dialog', element, 'primary')).toBe(
+      'dialog__trigger--primary',
+    );
   });
 });

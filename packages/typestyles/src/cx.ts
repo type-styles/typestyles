@@ -1,7 +1,7 @@
 /**
  * Anything that coerces to a class string via `toString()`/`Symbol.toPrimitive` — covers
  * `ThemeSurface` (`tokens.createTheme(...)`) and `ComponentAttrsResult`
- * (`styles.component(..., { variantStrategy: 'attribute' })`) alongside plain strings.
+ * (`createStyles({ mode: 'attribute' })`) alongside plain strings.
  */
 type Stringable = { toString(): string };
 

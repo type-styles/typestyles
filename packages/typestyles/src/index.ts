@@ -27,6 +27,10 @@ export type {
   CreateStylesInput,
   LayerOption,
   LayeredComponentFn,
+  AttributeStylesApi,
+  AttributeStylesApiWithLayers,
+  AttributeComponentFn,
+  LayeredAttributeComponentFn,
 } from './styles';
 export type { CreateTokensOptions, TokensApi } from './tokens';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
@@ -93,7 +97,6 @@ export type {
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,
-  ComponentConfigInputAttribute,
   ComponentInternalVarRef,
   RegisteredPropertyRef,
   RegisteredPropertyOptions,

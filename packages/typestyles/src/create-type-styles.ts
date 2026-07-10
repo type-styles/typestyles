@@ -8,6 +8,10 @@ import type {
   StylesApiWithLayers,
   StylesWithUtilsApi,
   StylesWithUtilsApiLayered,
+  AttributeStylesApi,
+  AttributeStylesApiWithLayers,
+  AttributeStylesWithUtilsApi,
+  AttributeStylesWithUtilsApiLayered,
 } from './styles';
 import type { StyleUtils } from './types';
 import type { BreakpointsConfig } from './breakpoints';
@@ -28,6 +32,61 @@ type GlobalLayerOption<L extends string = string> = {
 };
 
 /** Unified factory: one `scopeId`, shared cascade layer stack for both class rules and token/theme CSS. */
+export function createTypeStyles<U extends StyleUtils>(
+  options: NamingPartial & { mode: 'attribute'; utils: U },
+): { styles: AttributeStylesWithUtilsApi<U>; tokens: TokensApi; global: GlobalApiUnlayered };
+
+export function createTypeStyles<
+  const L extends readonly [string, ...string[]],
+  U extends StyleUtils,
+>(
+  options: NamingPartial & {
+    mode: 'attribute';
+    layers: L;
+    tokenLayer: L[number];
+    utils: U;
+  } & GlobalLayerOption<L[number]>,
+): {
+  styles: AttributeStylesWithUtilsApiLayered<U, L[number]>;
+  tokens: TokensApi;
+  global: GlobalApiLayered;
+};
+
+export function createTypeStyles<U extends StyleUtils>(
+  options: NamingPartial & {
+    mode: 'attribute';
+    layers: CascadeLayersObjectInput;
+    tokenLayer: string;
+    utils: U;
+  } & GlobalLayerOption,
+): {
+  styles: AttributeStylesWithUtilsApiLayered<U, string>;
+  tokens: TokensApi;
+  global: GlobalApiLayered;
+};
+
+export function createTypeStyles(options: NamingPartial & { mode: 'attribute' }): {
+  styles: AttributeStylesApi;
+  tokens: TokensApi;
+  global: GlobalApiUnlayered;
+};
+
+export function createTypeStyles<const L extends readonly [string, ...string[]]>(
+  options: NamingPartial & {
+    mode: 'attribute';
+    layers: L;
+    tokenLayer: L[number];
+  } & GlobalLayerOption<L[number]>,
+): { styles: AttributeStylesApiWithLayers<L[number]>; tokens: TokensApi; global: GlobalApiLayered };
+
+export function createTypeStyles(
+  options: NamingPartial & {
+    mode: 'attribute';
+    layers: CascadeLayersObjectInput;
+    tokenLayer: string;
+  } & GlobalLayerOption,
+): { styles: AttributeStylesApiWithLayers<string>; tokens: TokensApi; global: GlobalApiLayered };
+
 export function createTypeStyles<U extends StyleUtils>(
   options: NamingPartial & { utils: U },
 ): { styles: StylesWithUtilsApi<U>; tokens: TokensApi; global: GlobalApiUnlayered };
@@ -82,7 +141,11 @@ export function createTypeStyles(
     | StylesApi
     | StylesApiWithLayers<string>
     | StylesWithUtilsApi<StyleUtils>
-    | StylesWithUtilsApiLayered<StyleUtils, string>;
+    | StylesWithUtilsApiLayered<StyleUtils, string>
+    | AttributeStylesApi
+    | AttributeStylesApiWithLayers<string>
+    | AttributeStylesWithUtilsApi<StyleUtils>
+    | AttributeStylesWithUtilsApiLayered<StyleUtils, string>;
   tokens: TokensApi;
   global: GlobalApiUnlayered | GlobalApiLayered;
 } {
