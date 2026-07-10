@@ -137,6 +137,10 @@ export function emittedComponentClassPrefix(
   cfg: ClassNamingConfig,
   namespace: string,
 ): string | null {
+  // No trailing delimiter (BEM has none) — dev-mode HMR invalidation (sheet.ts) matches by
+  // substring, so this can over-match a sibling namespace that's a string-prefix of this one
+  // (e.g. invalidating "button" also touches "buttongroup"). Narrow, dev-only edge case; not
+  // worth a delimiter that would break real BEM output.
   if (cfg.mode === 'bem') return `${semanticScopePrefix(cfg)}${namespace}`;
   if (cfg.mode === 'semantic' || cfg.mode === 'attribute')
     return `${semanticScopePrefix(cfg)}${namespace}-`;

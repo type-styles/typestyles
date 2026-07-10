@@ -409,7 +409,7 @@ export interface ThemeSurface {
 
 /**
  * The object returned by calling a `styles.component()` instance created with
- * `variantStrategy: 'attribute'`.
+ * `mode: 'attribute'`.
  *
  * - `className` — the single base class (no per-option classes exist in attribute mode).
  * - `attrs` — resolved `data-{dimension}` attribute pairs for the current selections. Boolean
@@ -601,7 +601,7 @@ export type ComponentReturn<V extends VariantDefinitions> = {
 };
 
 /**
- * The return for dimensioned variants compiled with `variantStrategy: 'attribute'`.
+ * The return for dimensioned variants compiled with `mode: 'attribute'`.
  * Callable, returning a {@link ComponentAttrsResult}. No per-option destructurable keys — there
  * are no discrete option classes in attribute mode, only the single `base` class.
  */

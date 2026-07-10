@@ -386,8 +386,13 @@ function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: stri
 }
 
 /**
- * Reserves the logical namespace before config resolution so nested `styles.component` calls
- * cannot bypass duplicate detection.
+ * Reserves the logical namespace so nested `styles.component` calls cannot bypass duplicate
+ * detection.
+ *
+ * Called once per dispatch branch in `createComponent`, after `resolveComponentConfig()` has
+ * resolved the config shape and after any applicable mode-support guard (e.g.
+ * `assertSlotsSupportedForMode`) has had a chance to throw. This ordering means a rejected call
+ * (e.g. `slots` under `mode: 'attribute'`) never claims the namespace.
  *
  * In **development**, a second registration for the same scope + namespace clears prior sheet
  * keys and registry state (same as `typestyles/hmr` invalidation). Some bundlers (notably Astro)
