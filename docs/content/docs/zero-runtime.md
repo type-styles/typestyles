@@ -154,7 +154,7 @@ typestyles({
 
 ### Linking the CSS file
 
-Add a `<link rel="stylesheet" href="/typestyles.css" />` (or your chosen `fileName`) to `index.html` so production serves the emitted asset. During `vite dev`, that URL may not exist yet; the runtime still applies the same rules.
+Add a `<link rel="stylesheet" href="/typestyles.css" />` (or your chosen `fileName`) to `index.html` only when you need manual control — **`@typestyles/vite` auto-injects this link** into HTML entry points when extraction is enabled. During `vite dev`, the dev server serves that URL; production builds include the emitted asset.
 
 ---
 

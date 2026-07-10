@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import type { ResolvedConfig } from 'vite';
-import { discoverDefaultExtractModules, extractNamespaces } from './index';
+import {
+  discoverDefaultExtractModules,
+  extractNamespaces,
+  htmlLinksTypestylesCss,
+  resolveTypestylesCssHref,
+} from './index';
 
 /** Vite plugin hooks may be a function or `{ handler }`. */
 function viteHookFn<F>(hook: F | { handler: F } | undefined | null): F | undefined {
@@ -146,6 +151,47 @@ describe('extractNamespaces', () => {
     const result = extractNamespaces(code);
     expect(result.keys).toEqual([]);
     expect(result.prefixes).toEqual([]);
+  });
+});
+
+describe('resolveTypestylesCssHref', () => {
+  it('returns root-absolute path when base is empty', () => {
+    expect(resolveTypestylesCssHref('', 'typestyles.css')).toBe('/typestyles.css');
+    expect(resolveTypestylesCssHref('/', 'typestyles.css')).toBe('/typestyles.css');
+  });
+
+  it('prefixes with Vite base when set', () => {
+    expect(resolveTypestylesCssHref('/app/', 'typestyles.css')).toBe('/app/typestyles.css');
+    expect(resolveTypestylesCssHref('/app', 'custom.css')).toBe('/app/custom.css');
+  });
+});
+
+describe('htmlLinksTypestylesCss', () => {
+  it('detects an existing stylesheet link', () => {
+    const html = '<head><link rel="stylesheet" href="/typestyles.css" /></head>';
+    expect(htmlLinksTypestylesCss(html, '/typestyles.css', 'typestyles.css')).toBe(true);
+  });
+
+  it('detects relative and basename hrefs', () => {
+    expect(
+      htmlLinksTypestylesCss(
+        '<link rel="stylesheet" href="./typestyles.css">',
+        '/typestyles.css',
+        'typestyles.css',
+      ),
+    ).toBe(true);
+    expect(
+      htmlLinksTypestylesCss(
+        '<link href="typestyles.css" rel="stylesheet">',
+        '/x',
+        'typestyles.css',
+      ),
+    ).toBe(true);
+  });
+
+  it('returns false when no matching link exists', () => {
+    const html = '<head><link rel="stylesheet" href="/other.css" /></head>';
+    expect(htmlLinksTypestylesCss(html, '/typestyles.css', 'typestyles.css')).toBe(false);
   });
 });
 
@@ -295,5 +341,93 @@ styles.component('x', { base: {} });`;
     if (transform == null) throw new Error('expected plugin.transform');
     const result = await transform.call({ warn: () => {} } as never, code, '/src/a.ts');
     expect(result).toBeNull();
+  });
+
+  it('auto-injects a stylesheet link into HTML when extraction is enabled', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'typestyles-vite-html-'));
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(join(dir, 'src/typestyles-entry.ts'), "import 'typestyles';\n");
+
+    const mod = await import('./index');
+    const plugin = mod.default();
+    const config = viteHookFn(plugin.config);
+    await Promise.resolve(config?.({ root: dir }, { command: 'build', mode: 'production' }));
+    viteHookFn(plugin.configResolved)?.({
+      command: 'build',
+      root: dir,
+      base: '/',
+    } as ResolvedConfig);
+
+    const html = '<!doctype html><html><head></head><body></body></html>';
+    const transformIndexHtml = plugin.transformIndexHtml;
+    if (transformIndexHtml == null) throw new Error('expected plugin.transformIndexHtml');
+    const handler =
+      typeof transformIndexHtml === 'function' ? transformIndexHtml : transformIndexHtml.handler;
+    const tags = await Promise.resolve(handler(html, {} as never));
+
+    expect(tags).toEqual([
+      {
+        tag: 'link',
+        attrs: { rel: 'stylesheet', href: '/typestyles.css' },
+        injectTo: 'head',
+      },
+    ]);
+  });
+
+  it('does not duplicate an existing stylesheet link in HTML', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'typestyles-vite-html-dup-'));
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(join(dir, 'src/typestyles-entry.ts'), "import 'typestyles';\n");
+
+    const mod = await import('./index');
+    const plugin = mod.default();
+    const config = viteHookFn(plugin.config);
+    await Promise.resolve(config?.({ root: dir }, { command: 'build', mode: 'production' }));
+    viteHookFn(plugin.configResolved)?.({
+      command: 'build',
+      root: dir,
+      base: '/',
+    } as ResolvedConfig);
+
+    const html =
+      '<!doctype html><html><head><link rel="stylesheet" href="/typestyles.css" /></head><body></body></html>';
+    const transformIndexHtml = plugin.transformIndexHtml;
+    if (transformIndexHtml == null) throw new Error('expected plugin.transformIndexHtml');
+    const handler =
+      typeof transformIndexHtml === 'function' ? transformIndexHtml : transformIndexHtml.handler;
+    const tags = await Promise.resolve(handler(html, {} as never));
+
+    expect(tags).toBeUndefined();
+  });
+
+  it('uses Vite base in the injected stylesheet href', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'typestyles-vite-html-base-'));
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(join(dir, 'src/typestyles-entry.ts'), "import 'typestyles';\n");
+
+    const mod = await import('./index');
+    const plugin = mod.default();
+    const config = viteHookFn(plugin.config);
+    await Promise.resolve(config?.({ root: dir }, { command: 'build', mode: 'production' }));
+    viteHookFn(plugin.configResolved)?.({
+      command: 'build',
+      root: dir,
+      base: '/my-app/',
+    } as ResolvedConfig);
+
+    const html = '<!doctype html><html><head></head><body></body></html>';
+    const transformIndexHtml = plugin.transformIndexHtml;
+    if (transformIndexHtml == null) throw new Error('expected plugin.transformIndexHtml');
+    const handler =
+      typeof transformIndexHtml === 'function' ? transformIndexHtml : transformIndexHtml.handler;
+    const tags = await Promise.resolve(handler(html, {} as never));
+
+    expect(tags).toEqual([
+      {
+        tag: 'link',
+        attrs: { rel: 'stylesheet', href: '/my-app/typestyles.css' },
+        injectTo: 'head',
+      },
+    ]);
   });
 });

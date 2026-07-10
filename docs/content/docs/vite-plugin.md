@@ -105,7 +105,7 @@ export default defineConfig({
 });
 ```
 
-Link the generated file from `index.html` (for example `<link rel="stylesheet" href="/typestyles.css" />`). In dev the file is not emitted yet; the link may 404 harmlessly while the runtime supplies the same rules. Production builds include the asset.
+Link the generated file from `index.html` only if you need a custom placement or filename — otherwise the plugin injects `<link rel="stylesheet" href="…">` into every HTML entry during dev and build (respecting `extract.fileName` and Vite `base`). In dev the middleware serves the same URL; production builds include the emitted asset.
 
 To force runtime-only everywhere (no extraction), set `mode: 'runtime'` even when `extract` is present. For dynamic values that cannot be extracted, see `mode: 'hybrid'` in [Zero-runtime extraction](/docs/zero-runtime).
 
