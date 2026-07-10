@@ -25,6 +25,14 @@ const { title, appearanceBootstrap, typestylesCssHref, canonicalUrl, markdownAlt
 {markdownAlternateUrl && (
   <link rel="alternate" type="text/markdown" href={markdownAlternateUrl} />
 )}
+<link rel="llms-txt" href="/llms.txt" type="text/plain" title="Documentation index for LLMs" />
+<link
+  rel="service-desc"
+  href="/.well-known/mcp.json"
+  type="application/json"
+  title="MCP server discovery"
+/>
+<link rel="service" href="/mcp" title="MCP server" />
 <title>{title}</title>
 <ClientRouter />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
