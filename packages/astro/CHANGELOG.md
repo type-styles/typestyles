@@ -1,5 +1,12 @@
 # @typestyles/astro
 
+## 0.3.5
+
+### Patch Changes
+
+- Updated dependencies [[`f68e5ab`](https://github.com/type-styles/typestyles/commit/f68e5ab6a67541ca90c9855143194b79cb743622)]:
+  - @typestyles/vite@0.4.4
+
 ## 0.3.4
 
 ### Patch Changes

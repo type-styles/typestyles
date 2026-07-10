@@ -1,5 +1,14 @@
 # @typestyles/vite
 
+## 0.4.4
+
+### Patch Changes
+
+- [#139](https://github.com/type-styles/typestyles/pull/139) [`f68e5ab`](https://github.com/type-styles/typestyles/commit/f68e5ab6a67541ca90c9855143194b79cb743622) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Auto-inject `<link rel="stylesheet">` for extracted `typestyles.css` into HTML entry points during dev and build, fixing silent unstyled production builds when the manual link step is skipped ([#133](https://github.com/type-styles/typestyles/issues/133)).
+
+- Updated dependencies []:
+  - @typestyles/build-runner@0.5.2
+
 ## 0.4.3
 
 ### Patch Changes
