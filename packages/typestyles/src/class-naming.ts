@@ -276,46 +276,6 @@ export function buildComponentClassName(
   return className;
 }
 
-/**
- * `mode: 'bem'` naming — see `specs/bem-variant-mode.md`. Pure string templates (BEM is always
- * readable, never hashed), with the same registry tracking `buildComponentClassName` does.
- */
-
-/** The `root` slot / single-component base class: the bare block, e.g. `button`, `my-ui-dialog`. */
-export function buildBemBlockClassName(cfg: ClassNamingConfig, namespace: string): string {
-  const className = `${semanticScopePrefix(cfg)}${namespace}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
-  return className;
-}
-
-/** A non-`root` slot: `${block}__${slot}`, e.g. `dialog__trigger`. */
-export function buildBemElementClassName(
-  cfg: ClassNamingConfig,
-  namespace: string,
-  slot: string,
-): string {
-  const className = `${semanticScopePrefix(cfg)}${namespace}__${slot}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
-  return className;
-}
-
-/**
- * A modifier on a given block or element class: `${blockOrElementClassName}--${option}`.
- * `blockOrElementClassName` is whatever `buildBemBlockClassName`/`buildBemElementClassName`
- * already returned for this component/slot — callers pass it through rather than recomputing it,
- * so this never re-derives the scope prefix.
- */
-export function buildBemModifierClassName(
-  cfg: ClassNamingConfig,
-  namespace: string,
-  blockOrElementClassName: string,
-  option: string,
-): string {
-  const className = `${blockOrElementClassName}--${option}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
-  return className;
-}
-
 /** Built-in preset used internally when `mode: 'bem'`. Reference implementation for `mode: 'template'` users. */
 function bemTemplate(ctx: ClassNameContext): string {
   const base = ctx.element

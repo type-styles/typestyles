@@ -2,9 +2,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   fileScopeId,
   mergeClassNaming,
-  buildBemBlockClassName,
-  buildBemElementClassName,
-  buildBemModifierClassName,
   resolveClassNameTemplate,
   buildTemplateClassName,
   type ClassNameTemplate,
@@ -259,33 +256,6 @@ describe('unscoped collision warning (dev)', () => {
   });
 });
 
-describe('BEM naming helpers', () => {
-  it('buildBemBlockClassName returns the bare namespace (no scope)', () => {
-    const cfg = mergeClassNaming({ mode: 'bem' });
-    expect(buildBemBlockClassName(cfg, 'button')).toBe('button');
-  });
-
-  it('buildBemBlockClassName prefixes the sanitized scopeId when set', () => {
-    const cfg = mergeClassNaming({ mode: 'bem', scopeId: 'My UI' });
-    expect(buildBemBlockClassName(cfg, 'button')).toBe('my-ui-button');
-  });
-
-  it('buildBemElementClassName appends __slot to the block name', () => {
-    const cfg = mergeClassNaming({ mode: 'bem' });
-    expect(buildBemElementClassName(cfg, 'dialog', 'trigger')).toBe('dialog__trigger');
-  });
-
-  it('buildBemModifierClassName appends --option to a given block/element class name', () => {
-    const cfg = mergeClassNaming({ mode: 'bem' });
-    const block = buildBemBlockClassName(cfg, 'button');
-    expect(buildBemModifierClassName(cfg, 'button', block, 'primary')).toBe('button--primary');
-    const element = buildBemElementClassName(cfg, 'dialog', 'trigger');
-    expect(buildBemModifierClassName(cfg, 'dialog', element, 'primary')).toBe(
-      'dialog__trigger--primary',
-    );
-  });
-});
-
 describe('generic classname template engine (buildTemplateClassName / resolveClassNameTemplate)', () => {
   it('resolveClassNameTemplate returns the built-in BEM preset for mode: bem', () => {
     const cfg = mergeClassNaming({ mode: 'bem' });
@@ -334,7 +304,7 @@ describe('generic classname template engine (buildTemplateClassName / resolveCla
     expect(resolveClassNameTemplate(cfg)).toBe(custom);
   });
 
-  it('buildTemplateClassName matches the old BEM builders exactly (block, element, modifier, scoped)', () => {
+  it('buildTemplateClassName matches BEM output exactly (block, element, modifier, scoped)', () => {
     const cfg = mergeClassNaming({ mode: 'bem', scopeId: 'My UI' });
     expect(
       buildTemplateClassName(cfg, {
@@ -343,7 +313,7 @@ describe('generic classname template engine (buildTemplateClassName / resolveCla
         dimension: undefined,
         modifier: undefined,
       }),
-    ).toBe(buildBemBlockClassName(mergeClassNaming({ mode: 'bem', scopeId: 'My UI' }), 'button'));
+    ).toBe('my-ui-button');
     expect(
       buildTemplateClassName(cfg, {
         namespace: 'dialog',
@@ -351,13 +321,7 @@ describe('generic classname template engine (buildTemplateClassName / resolveCla
         dimension: undefined,
         modifier: undefined,
       }),
-    ).toBe(
-      buildBemElementClassName(
-        mergeClassNaming({ mode: 'bem', scopeId: 'My UI' }),
-        'dialog',
-        'trigger',
-      ),
-    );
+    ).toBe('my-ui-dialog__trigger');
     expect(
       buildTemplateClassName(cfg, {
         namespace: 'button',

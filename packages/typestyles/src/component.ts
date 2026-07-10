@@ -23,9 +23,7 @@ import { applyLayerToRules, assertOwnLayer } from './layers';
 import { registeredNamespaces, warnUnscopedCollision } from './registry';
 import {
   emittedComponentClassPrefix,
-  buildBemBlockClassName,
-  buildBemElementClassName,
-  buildBemModifierClassName,
+  buildTemplateClassName,
   type ClassNamingConfig,
 } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
@@ -70,11 +68,13 @@ function devWarnInvalidDimensionOption(
 }
 
 /**
- * `mode: 'bem'` has no dimension namespace in its modifier classes, so two different dimensions
- * producing the same option string collide on the identical class name — warn rather than let one
- * silently override the other. `seenBy` is scoped per component (or per slot, for slot components).
+ * `mode: 'bem'`/`mode: 'template'` have no dimension namespace in their modifier classes by
+ * default, so two different dimensions producing the same option string can collide on the
+ * identical class name — warn rather than let one silently override the other. `seenBy` is
+ * scoped per component (or per slot, for slot components). Shared by both modes — not
+ * BEM-specific despite the historical name.
  */
-function devWarnBemModifierCollision(
+function devWarnTemplateClassCollision(
   scopeLabel: string,
   className: string,
   dimension: string,
@@ -84,9 +84,10 @@ function devWarnBemModifierCollision(
   const owner = seenBy.get(className);
   if (owner && owner !== dimension) {
     console.error(
-      `[typestyles] BEM modifier class "${className}" is produced by both dimension "${owner}" ` +
+      `[typestyles] Class "${className}" is produced by both dimension "${owner}" ` +
         `and dimension "${dimension}" in "${scopeLabel}" — one will silently override the ` +
-        `other's styles in the cascade. Choose non-colliding option names.`,
+        `other's styles in the cascade. Choose non-colliding option names, or use \`dimension\` ` +
+        `in your classNameTemplate to disambiguate.`,
     );
     return;
   }
@@ -308,8 +309,8 @@ export function createComponent(
   if (isMultiSlotConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
-    if (classNaming.mode === 'bem') {
-      return createBemMultiSlotComponent(
+    if (classNaming.mode === 'bem' || classNaming.mode === 'template') {
+      return createTemplateMultiSlotComponent(
         classNaming,
         namespace,
         resolved as MultiSlotConfig<readonly string[]>,
@@ -326,8 +327,8 @@ export function createComponent(
   if (isSlotWithVariantsConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
-    if (classNaming.mode === 'bem') {
-      return createBemSlotComponent(
+    if (classNaming.mode === 'bem' || classNaming.mode === 'template') {
+      return createTemplateSlotComponent(
         classNaming,
         namespace,
         resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
@@ -347,8 +348,8 @@ export function createComponent(
     if (classNaming.mode === 'attribute') {
       return createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
     }
-    if (classNaming.mode === 'bem') {
-      return createBemDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
+    if (classNaming.mode === 'bem' || classNaming.mode === 'template') {
+      return createTemplateDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
     }
     return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
   }
@@ -563,10 +564,10 @@ function createDimensionedComponent<V extends VariantDefinitions>(
 }
 
 // ---------------------------------------------------------------------------
-// Dimensioned variant component — bem mode (mode: 'bem'; see specs/bem-variant-mode.md)
+// Dimensioned variant component — template engine (mode: 'bem' | 'template'; see specs/classname-template-mode.md)
 // ---------------------------------------------------------------------------
 
-function createBemDimensionedComponent<V extends VariantDefinitions>(
+function createTemplateDimensionedComponent<V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: ComponentConfig<V>,
@@ -577,7 +578,12 @@ function createBemDimensionedComponent<V extends VariantDefinitions>(
   const rules: Array<{ key: string; css: string }> = [];
   const classMap: Record<string, string> = {};
 
-  const blockClassName = buildBemBlockClassName(classNaming, namespace);
+  const blockClassName = buildTemplateClassName(classNaming, {
+    namespace,
+    element: undefined,
+    dimension: undefined,
+    modifier: undefined,
+  });
   const hasBase = base != null;
   if (hasBase) {
     classMap['base'] = blockClassName;
@@ -594,13 +600,18 @@ function createBemDimensionedComponent<V extends VariantDefinitions>(
   for (const [dimension, options] of Object.entries(variants)) {
     for (const [option, properties] of Object.entries(options as Record<string, CSSProperties>)) {
       const key = `${dimension}-${option}`;
-      const modifierClassName = buildBemModifierClassName(
-        classNaming,
+      const modifierClassName = buildTemplateClassName(classNaming, {
         namespace,
-        blockClassName,
-        option,
+        element: undefined,
+        dimension,
+        modifier: option,
+      });
+      devWarnTemplateClassCollision(
+        namespace,
+        modifierClassName,
+        dimension,
+        seenModifierClassNames,
       );
-      devWarnBemModifierCollision(namespace, modifierClassName, dimension, seenModifierClassNames);
       variantClassByKey[key] = modifierClassName;
       classMap[key] = modifierClassName;
       mergeIntoSelectorKey(propertiesByModifierClassName, modifierClassName, properties);
@@ -948,16 +959,23 @@ function createMultiSlotComponent<Slots extends readonly string[]>(
 }
 
 // ---------------------------------------------------------------------------
-// Multi-slot component — bem mode (mode: 'bem'; see specs/bem-variant-mode.md)
+// Multi-slot component — template engine (mode: 'bem' | 'template'; see specs/classname-template-mode.md)
 // ---------------------------------------------------------------------------
 
-function bemSlotClassName(classNaming: ClassNamingConfig, namespace: string, slot: string): string {
-  return slot === 'root'
-    ? buildBemBlockClassName(classNaming, namespace)
-    : buildBemElementClassName(classNaming, namespace, slot);
+function templateSlotClassName(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  slot: string,
+): string {
+  return buildTemplateClassName(classNaming, {
+    namespace,
+    element: slot === 'root' ? undefined : slot,
+    dimension: undefined,
+    modifier: undefined,
+  });
 }
 
-function createBemMultiSlotComponent<Slots extends readonly string[]>(
+function createTemplateMultiSlotComponent<Slots extends readonly string[]>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: MultiSlotConfig<Slots>,
@@ -969,7 +987,7 @@ function createBemMultiSlotComponent<Slots extends readonly string[]>(
   const slotClassMap: Record<string, string> = {};
 
   for (const slot of slots as readonly string[]) {
-    const className = bemSlotClassName(classNaming, namespace, slot);
+    const className = templateSlotClassName(classNaming, namespace, slot);
     slotClassMap[slot] = className;
     const properties = (config as Record<string, CSSProperties | undefined>)[slot];
     if (properties) {
@@ -993,10 +1011,10 @@ function createBemMultiSlotComponent<Slots extends readonly string[]>(
 }
 
 // ---------------------------------------------------------------------------
-// Slot component — bem mode (mode: 'bem'; see specs/bem-variant-mode.md)
+// Slot component — template engine (mode: 'bem' | 'template'; see specs/classname-template-mode.md)
 // ---------------------------------------------------------------------------
 
-function createBemSlotComponent<
+function createTemplateSlotComponent<
   Slots extends readonly string[],
   V extends SlotVariantDefinitions<Slots[number]>,
 >(
@@ -1016,7 +1034,7 @@ function createBemSlotComponent<
   const rules: Array<{ key: string; css: string }> = [];
   const baseClassBySlot: Record<string, string> = {};
   for (const slot of slots as readonly string[]) {
-    const className = bemSlotClassName(classNaming, namespace, slot);
+    const className = templateSlotClassName(classNaming, namespace, slot);
     baseClassBySlot[slot] = className;
     const properties = (base as Record<string, CSSProperties>)[slot];
     if (properties) {
@@ -1036,18 +1054,18 @@ function createBemSlotComponent<
       for (const [slot, properties] of Object.entries(slotStyles)) {
         const slotClassName = baseClassBySlot[slot];
         if (!slotClassName) continue;
-        const modifierClassName = buildBemModifierClassName(
-          classNaming,
+        const modifierClassName = buildTemplateClassName(classNaming, {
           namespace,
-          slotClassName,
-          option,
-        );
+          element: slot === 'root' ? undefined : slot,
+          dimension,
+          modifier: option,
+        });
         let seenForSlot = seenModifierClassNamesBySlot.get(slot);
         if (!seenForSlot) {
           seenForSlot = new Map<string, string>();
           seenModifierClassNamesBySlot.set(slot, seenForSlot);
         }
-        devWarnBemModifierCollision(
+        devWarnTemplateClassCollision(
           `${namespace}__${slot}`,
           modifierClassName,
           dimension,
