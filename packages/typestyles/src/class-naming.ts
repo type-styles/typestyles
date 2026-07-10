@@ -18,8 +18,43 @@ import { trackEmittedClassName } from './registry';
  * - `bem` — dimensioned/slot `styles.component()` variants compile to BEM modifier classes
  *   (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix.
  *   See `specs/bem-variant-mode.md`. `styles.class()` and flat configs behave like `semantic`.
+ * - `template` — like `bem`, but the block/element/modifier class name is decided by a
+ *   user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention.
+ *   `mode: 'bem'` is itself implemented as a built-in preset of this same mechanism. See
+ *   `specs/classname-template-mode.md`. `styles.class()` and flat configs behave like `semantic`.
  */
-export type ClassNamingMode = 'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem';
+export type ClassNamingMode =
+  | 'semantic'
+  | 'hashed'
+  | 'compact'
+  | 'atomic'
+  | 'attribute'
+  | 'bem'
+  | 'template';
+
+/**
+ * Passed to `classNameTemplate` for every base/element/modifier class name a `mode: 'bem'` or
+ * `mode: 'template'` dimensioned/slot `styles.component()` call needs to emit. One call per
+ * class — `dimension`/`modifier` are both `undefined` when naming a base/block/element class
+ * itself, both set when naming a modifier class.
+ */
+export type ClassNameContext = {
+  /** Sanitized scope prefix from `scopeId` (already includes a trailing `-`), `''` when unscoped. */
+  scope: string;
+  /** `styles.component()` namespace, e.g. `'button'`. */
+  namespace: string;
+  /** Slot name for slot/multi-slot components (`'root'` is passed as `undefined`, matching BEM's root→block rule); `undefined` for non-slot components. */
+  element: string | undefined;
+  /** Variant dimension name, e.g. `'intent'`; `undefined` when naming the base/block/element class itself. */
+  dimension: string | undefined;
+  /** Variant option value, e.g. `'primary'`; `undefined` when naming the base/block/element class itself. */
+  modifier: string | undefined;
+};
+
+export type ClassNameTemplate = (ctx: ClassNameContext) => string;
+
+/** `buildTemplateClassName`'s caller supplies everything except `scope` — it's filled in from `cfg`. */
+export type TemplateClassNameInput = Omit<ClassNameContext, 'scope'>;
 
 export type ClassNamingConfig = {
   mode: ClassNamingMode;
@@ -44,6 +79,13 @@ export type ClassNamingConfig = {
    * Enables `{ base, md, lg }` shorthand on CSS property values.
    */
   breakpoints?: Record<string, string>;
+  /**
+   * Required when `mode: 'template'`. Decides the class name for every base/element and
+   * modifier class a dimensioned or slot `styles.component()` call emits. Not called for
+   * `styles.class()` or flat (non-dimensioned) configs — those stay semantic-style. See
+   * `ClassNameContext` and `specs/classname-template-mode.md`.
+   */
+  classNameTemplate?: ClassNameTemplate;
 };
 
 /** Default naming options used by `createStyles()` when no overrides are passed. */
@@ -130,8 +172,10 @@ function ownerKey(cfg: ClassNamingConfig, namespace: string): string {
 
 /**
  * The emitted class-name prefix shared by every class a `styles.component(namespace, …)`
- * call produces under this naming config (no leading dot). `null` in `compact`/`atomic` mode —
- * hash-only names have no per-namespace prefix; atomic mode also omits a shared variant prefix.
+ * call produces under this naming config (no leading dot). `null` in `compact`/`atomic`/
+ * `template` mode — hash-only names have no per-namespace prefix, and an arbitrary
+ * `classNameTemplate` function's output prefix isn't predictable without calling it; atomic
+ * mode also omits a shared variant prefix.
  */
 export function emittedComponentClassPrefix(
   cfg: ClassNamingConfig,
@@ -154,7 +198,12 @@ export function emittedComponentClassPrefix(
  * properties, which aren't available before they're computed.
  */
 export function emittedClassName(cfg: ClassNamingConfig, name: string): string | null {
-  if (cfg.mode === 'semantic' || cfg.mode === 'attribute' || cfg.mode === 'bem')
+  if (
+    cfg.mode === 'semantic' ||
+    cfg.mode === 'attribute' ||
+    cfg.mode === 'bem' ||
+    cfg.mode === 'template'
+  )
     return `${semanticScopePrefix(cfg)}${name}`;
   return null;
 }
@@ -165,7 +214,12 @@ export function buildSingleClassName(
   name: string,
   properties: CSSProperties,
 ): string {
-  if (cfg.mode === 'semantic' || cfg.mode === 'attribute' || cfg.mode === 'bem') {
+  if (
+    cfg.mode === 'semantic' ||
+    cfg.mode === 'attribute' ||
+    cfg.mode === 'bem' ||
+    cfg.mode === 'template'
+  ) {
     const className = `${semanticScopePrefix(cfg)}${name}`;
     trackEmittedClassName(className, ownerKey(cfg, name));
     return className;
@@ -196,7 +250,12 @@ export function buildComponentClassName(
   suffix: string,
   properties: CSSProperties,
 ): string {
-  if (cfg.mode === 'semantic' || cfg.mode === 'attribute' || cfg.mode === 'bem') {
+  if (
+    cfg.mode === 'semantic' ||
+    cfg.mode === 'attribute' ||
+    cfg.mode === 'bem' ||
+    cfg.mode === 'template'
+  ) {
     const className = `${semanticScopePrefix(cfg)}${namespace}-${suffix}`;
     trackEmittedClassName(className, ownerKey(cfg, namespace));
     return className;
@@ -217,42 +276,44 @@ export function buildComponentClassName(
   return className;
 }
 
-/**
- * `mode: 'bem'` naming — see `specs/bem-variant-mode.md`. Pure string templates (BEM is always
- * readable, never hashed), with the same registry tracking `buildComponentClassName` does.
- */
-
-/** The `root` slot / single-component base class: the bare block, e.g. `button`, `my-ui-dialog`. */
-export function buildBemBlockClassName(cfg: ClassNamingConfig, namespace: string): string {
-  const className = `${semanticScopePrefix(cfg)}${namespace}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
-  return className;
+/** Built-in preset used internally when `mode: 'bem'`. Reference implementation for `mode: 'template'` users. */
+function bemTemplate(ctx: ClassNameContext): string {
+  const base = ctx.element
+    ? `${ctx.scope}${ctx.namespace}__${ctx.element}`
+    : `${ctx.scope}${ctx.namespace}`;
+  return ctx.modifier ? `${base}--${ctx.modifier}` : base;
 }
 
-/** A non-`root` slot: `${block}__${slot}`, e.g. `dialog__trigger`. */
-export function buildBemElementClassName(
-  cfg: ClassNamingConfig,
-  namespace: string,
-  slot: string,
-): string {
-  const className = `${semanticScopePrefix(cfg)}${namespace}__${slot}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
-  return className;
+/** Resolves the effective template for `mode: 'bem'` (built-in) or `mode: 'template'` (user-supplied). */
+export function resolveClassNameTemplate(cfg: ClassNamingConfig): ClassNameTemplate {
+  if (cfg.mode === 'bem') return bemTemplate;
+  if (cfg.mode === 'template' && cfg.classNameTemplate) return cfg.classNameTemplate;
+  throw new Error(
+    `[typestyles] resolveClassNameTemplate called for mode "${cfg.mode}" — only "bem" and "template" build class names via a template.`,
+  );
 }
 
+const VALID_CLASS_NAME = /^-?[a-zA-Z_][a-zA-Z0-9_-]*$/;
+
 /**
- * A modifier on a given block or element class: `${blockOrElementClassName}--${option}`.
- * `blockOrElementClassName` is whatever `buildBemBlockClassName`/`buildBemElementClassName`
- * already returned for this component/slot — callers pass it through rather than recomputing it,
- * so this never re-derives the scope prefix.
+ * `mode: 'bem'` / `mode: 'template'` class-name builder — replaces the old `buildBemBlockClassName`/
+ * `buildBemElementClassName`/`buildBemModifierClassName` trio with one call per class. Resolves the
+ * effective template, calls it with a fully-populated `ClassNameContext`, validates the output is a
+ * legal CSS identifier in dev, and tracks it in the emitted-class registry like every other builder.
  */
-export function buildBemModifierClassName(
+export function buildTemplateClassName(
   cfg: ClassNamingConfig,
-  namespace: string,
-  blockOrElementClassName: string,
-  option: string,
+  input: TemplateClassNameInput,
 ): string {
-  const className = `${blockOrElementClassName}--${option}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
+  const ctx: ClassNameContext = { scope: semanticScopePrefix(cfg), ...input };
+  const template = resolveClassNameTemplate(cfg);
+  const className = template(ctx);
+  if (process.env.NODE_ENV !== 'production' && !VALID_CLASS_NAME.test(className)) {
+    throw new Error(
+      `[typestyles] classNameTemplate returned an invalid CSS class name "${className}" for context ` +
+        `${JSON.stringify(ctx)}. Class names must match ${VALID_CLASS_NAME}.`,
+    );
+  }
+  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace));
   return className;
 }

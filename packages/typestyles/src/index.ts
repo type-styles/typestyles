@@ -40,7 +40,12 @@ export type { SerializeStyleOptions } from './css';
 
 export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';
 
-export type { ClassNamingConfig, ClassNamingMode } from './class-naming';
+export type {
+  ClassNamingConfig,
+  ClassNamingMode,
+  ClassNameContext,
+  ClassNameTemplate,
+} from './class-naming';
 export {
   mergeClassNaming,
   defaultClassNamingConfig,

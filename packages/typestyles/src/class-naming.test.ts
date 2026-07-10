@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   fileScopeId,
   mergeClassNaming,
-  buildBemBlockClassName,
-  buildBemElementClassName,
-  buildBemModifierClassName,
+  resolveClassNameTemplate,
+  buildTemplateClassName,
+  type ClassNameTemplate,
 } from './class-naming';
 import { createStyles } from './styles';
 import { reset, flushSync } from './sheet';
@@ -256,29 +256,136 @@ describe('unscoped collision warning (dev)', () => {
   });
 });
 
-describe('BEM naming helpers', () => {
-  it('buildBemBlockClassName returns the bare namespace (no scope)', () => {
+describe('generic classname template engine (buildTemplateClassName / resolveClassNameTemplate)', () => {
+  it('resolveClassNameTemplate returns the built-in BEM preset for mode: bem', () => {
     const cfg = mergeClassNaming({ mode: 'bem' });
-    expect(buildBemBlockClassName(cfg, 'button')).toBe('button');
+    const template = resolveClassNameTemplate(cfg);
+    expect(
+      template({
+        scope: '',
+        namespace: 'button',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('button');
+    expect(
+      template({
+        scope: '',
+        namespace: 'button',
+        element: undefined,
+        dimension: 'variant',
+        modifier: 'primary',
+      }),
+    ).toBe('button--primary');
+    expect(
+      template({
+        scope: '',
+        namespace: 'dialog',
+        element: 'trigger',
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('dialog__trigger');
+    expect(
+      template({
+        scope: '',
+        namespace: 'dialog',
+        element: 'trigger',
+        dimension: 'variant',
+        modifier: 'primary',
+      }),
+    ).toBe('dialog__trigger--primary');
   });
 
-  it('buildBemBlockClassName prefixes the sanitized scopeId when set', () => {
+  it('resolveClassNameTemplate returns the user-supplied classNameTemplate for mode: template', () => {
+    const custom: ClassNameTemplate = (ctx) => `x-${ctx.namespace}`;
+    const cfg = mergeClassNaming({ mode: 'template', classNameTemplate: custom });
+    expect(resolveClassNameTemplate(cfg)).toBe(custom);
+  });
+
+  it('buildTemplateClassName matches BEM output exactly (block, element, modifier, scoped)', () => {
     const cfg = mergeClassNaming({ mode: 'bem', scopeId: 'My UI' });
-    expect(buildBemBlockClassName(cfg, 'button')).toBe('my-ui-button');
+    expect(
+      buildTemplateClassName(cfg, {
+        namespace: 'button',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('my-ui-button');
+    expect(
+      buildTemplateClassName(cfg, {
+        namespace: 'dialog',
+        element: 'trigger',
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('my-ui-dialog__trigger');
+    expect(
+      buildTemplateClassName(cfg, {
+        namespace: 'button',
+        element: undefined,
+        dimension: 'variant',
+        modifier: 'primary',
+      }),
+    ).toBe('my-ui-button--primary');
   });
 
-  it('buildBemElementClassName appends __slot to the block name', () => {
-    const cfg = mergeClassNaming({ mode: 'bem' });
-    expect(buildBemElementClassName(cfg, 'dialog', 'trigger')).toBe('dialog__trigger');
+  it('buildTemplateClassName calls the user template with a fully-populated ClassNameContext, including scope', () => {
+    const seen: unknown[] = [];
+    const cfg = mergeClassNaming({
+      mode: 'template',
+      scopeId: 'acme',
+      classNameTemplate: (ctx) => {
+        seen.push(ctx);
+        return 'ok';
+      },
+    });
+    buildTemplateClassName(cfg, {
+      namespace: 'button',
+      element: 'icon',
+      dimension: 'intent',
+      modifier: 'primary',
+    });
+    expect(seen).toEqual([
+      {
+        scope: 'acme-',
+        namespace: 'button',
+        element: 'icon',
+        dimension: 'intent',
+        modifier: 'primary',
+      },
+    ]);
   });
 
-  it('buildBemModifierClassName appends --option to a given block/element class name', () => {
-    const cfg = mergeClassNaming({ mode: 'bem' });
-    const block = buildBemBlockClassName(cfg, 'button');
-    expect(buildBemModifierClassName(cfg, 'button', block, 'primary')).toBe('button--primary');
-    const element = buildBemElementClassName(cfg, 'dialog', 'trigger');
-    expect(buildBemModifierClassName(cfg, 'dialog', element, 'primary')).toBe(
-      'dialog__trigger--primary',
-    );
+  it('throws in dev when the template returns an invalid CSS class name', () => {
+    const cfg = mergeClassNaming({
+      mode: 'template',
+      classNameTemplate: () => '1-not-a-valid-start',
+    });
+    expect(() =>
+      buildTemplateClassName(cfg, {
+        namespace: 'button',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toThrow(/invalid CSS class name/);
+  });
+
+  it('accepts template output starting with a hyphen (valid CSS identifier)', () => {
+    const cfg = mergeClassNaming({
+      mode: 'template',
+      classNameTemplate: () => '-webkit-style-button',
+    });
+    expect(() =>
+      buildTemplateClassName(cfg, {
+        namespace: 'button',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).not.toThrow();
   });
 });

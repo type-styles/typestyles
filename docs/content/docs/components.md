@@ -233,6 +233,80 @@ dialog({ size: 'lg' });
 
 Like [`mode: 'attribute'`](#attribute-driven-variants), `mode: 'bem'` is an instance-wide setting — no per-component override, and mutually exclusive with the other four `ClassNamingMode` values in one `createStyles()` instance. `styles.class()` and flat (non-dimensioned) `styles.component()` configs are unaffected by `mode: 'bem'` — they name exactly as they would under `semantic` mode.
 
+## Generic classname template
+
+`mode: 'bem'` is itself a preset of a more general mechanism: `mode: 'template'` lets you supply your own `classNameTemplate: (ctx) => string` function, so any block/element/modifier naming convention — SUIT CSS, a prefixed/ITCSS scheme, a house style — works without waiting for `typestyles` to ship a named mode for it.
+
+```ts
+const styles = createStyles({
+  mode: 'template',
+  classNameTemplate: ({ scope, namespace, element, dimension, modifier }) => {
+    const base = element ? `${scope}${namespace}__${element}` : `${scope}${namespace}`;
+    return modifier ? `${base}--${modifier}` : base;
+  },
+});
+```
+
+`classNameTemplate` is called once per emitted class for dimensioned and slot/multi-slot `styles.component()` configs — never for `styles.class()` or flat (non-dimensioned) configs, which stay `semantic`-style. It receives:
+
+- `scope` — the sanitized `scopeId` prefix (already includes a trailing `-`), `''` when unscoped.
+- `namespace` — the `styles.component()` name, e.g. `'button'`.
+- `element` — the slot name for slot/multi-slot components (`undefined` for the `root` slot or non-slot components).
+- `dimension` — the variant dimension name, `undefined` when naming a base/block/element class.
+- `modifier` — the variant option value, `undefined` when naming a base/block/element class.
+
+`classNameTemplate` is **required** when `mode: 'template'` — `createStyles` throws immediately without it.
+
+### SUIT CSS
+
+```ts
+const styles = createStyles({
+  mode: 'template',
+  classNameTemplate: ({ scope, namespace, element, modifier }) => {
+    const Block = `${scope}${namespace[0].toUpperCase()}${namespace.slice(1)}`;
+    if (element) return modifier ? `${Block}-${element}--${modifier}` : `${Block}-${element}`;
+    return modifier ? `${Block}--${modifier}` : Block;
+  },
+});
+
+const button = styles.component('button', {
+  base: { padding: '8px' },
+  variants: { intent: { primary: { color: '#0066ff' } } },
+});
+button.base; // "Button"
+button['intent-primary']; // "Button--primary"
+```
+
+### Prefixed / ITCSS convention
+
+```ts
+const styles = createStyles({
+  mode: 'template',
+  classNameTemplate: ({ scope, namespace, element, modifier }) => {
+    const base = element ? `c-${scope}${namespace}-${element}` : `c-${scope}${namespace}`;
+    return modifier ? `${base}--${modifier}` : base;
+  },
+});
+```
+
+### Avoiding BEM's collision problem
+
+`mode: 'bem'`'s modifier classes have no dimension namespace, so two dimensions sharing an option name collide (see the collision caveat above). A `classNameTemplate` can fold `dimension` into the class name to avoid this entirely:
+
+```ts
+const styles = createStyles({
+  mode: 'template',
+  classNameTemplate: ({ scope, namespace, element, dimension, modifier }) => {
+    const base = element ? `${scope}${namespace}__${element}` : `${scope}${namespace}`;
+    return modifier ? `${base}--${dimension}-${modifier}` : base;
+  },
+});
+// variant: { primary } and size: { primary } no longer collide:
+// "button--variant-primary" vs "button--size-primary"
+```
+
+Like `mode: 'bem'` and `mode: 'attribute'`, `mode: 'template'` is an instance-wide setting — no per-component override.
+
 ## Migration quick-start
 
 ### From CVA
