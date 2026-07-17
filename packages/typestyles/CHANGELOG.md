@@ -1,5 +1,27 @@
 # typestyles
 
+## 0.10.0
+
+### Minor Changes
+
+- [#141](https://github.com/type-styles/typestyles/pull/141) [`35e02a7`](https://github.com/type-styles/typestyles/commit/35e02a7f332be97fb116e39102998079f17d24dd) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Breaking: semantic component class names now use `block`, `block--dimension-option`,
+  and `block__slot` forms instead of hyphen semantic names. Compound variants now emit
+  chained modifier selectors instead of `*-compound-N` classes. Attribute mode now
+  kebab-cases `data-*` names and supports slots, returning per-slot
+  `{ className, attrs, props }` results.
+
+  Upgrade notes: regenerate public-classname snapshots; update hand-written CSS /
+  tests that targeted `*-base` or `*-compound-N`. Prefer distinct namespaces for
+  `styles.class` and `styles.component` when they would share a base class string —
+  dev builds warn on that collision. See docs migration guide (0.10 semantic naming).
+
+- [#143](https://github.com/type-styles/typestyles/pull/143) [`34d7fe2`](https://github.com/type-styles/typestyles/commit/34d7fe289eb24095e8573e1b94f2acf4dd3216cc) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `styles.override()` for recipe-shaped typed component restyling, backed by
+  non-enumerable `__tsMeta` on every `styles.component()` return and
+  `getComponentMeta()` for consumers. Supports semantic, bem, template, and
+  attribute naming modes with `selectorPrefix` + cascade `layer` options.
+
+  Raises the main-entry gzip budget to 26 KB for the new override runtime.
+
 ## 0.9.0
 
 ### Minor Changes
