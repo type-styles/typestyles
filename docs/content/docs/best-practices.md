@@ -587,7 +587,7 @@ import { useCardState } from './useCardState';
 
 ### Why scopeId matters
 
-In semantic mode (the default), `styles.component('button', …)` produces class names like `button-base`. If two packages — or two files in the same app — both register a `'button'` namespace without a `scopeId`, their CSS rules silently overwrite each other. TypeStyles warns about this in development, but the fix is simple: always set a `scopeId`.
+In semantic mode (the default), `styles.component('button', …)` produces class names like `button`. If two packages — or two files in the same app — both register a `'button'` namespace without a `scopeId`, their CSS rules silently overwrite each other. TypeStyles warns about this in development, but the fix is simple: always set a `scopeId`.
 
 ### For applications
 
@@ -602,7 +602,7 @@ export const { styles, tokens } = createTypeStyles({
 });
 ```
 
-Class names become `my-app-button-base` — unique across your dependency tree.
+Class names become `my-app-button` — unique across your dependency tree.
 
 ### For published packages
 
@@ -691,7 +691,7 @@ const textButton = styles.component('text-button', { ... });
 
 // Fix 2 (recommended) - use scopeId to isolate
 const { styles } = createTypeStyles({ scopeId: 'my-app' });
-const button = styles.component('button', { ... }); // "my-app-button-base"
+const button = styles.component('button', { ... }); // "my-app-button"
 ```
 
 ## Summary

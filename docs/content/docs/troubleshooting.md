@@ -21,7 +21,7 @@ Open DevTools and check that the element has the expected class:
 
 ```html
 <!-- Should see something like this -->
-<button class="button-base">Click me</button>
+<button class="button">Click me</button>
 ```
 
 **If no class is present:**
@@ -43,7 +43,7 @@ Styles are injected lazily. Open DevTools and look for a `<style>` tag with type
 ```html
 <head>
   <style id="typestyles">
-    .button-base {
+    .button {
       padding: 8px 16px;
     }
   </style>
@@ -332,7 +332,7 @@ Your styles are being overridden by other CSS:
 
 ```css
 /* Your typestyles class */
-.button-base {
+.button {
   color: blue;
 }
 
@@ -351,7 +351,7 @@ button {
      base: {
        color: 'blue',
        // Increase specificity
-       '&.button-base': {
+       '&.button': {
          color: 'blue',
        },
      },

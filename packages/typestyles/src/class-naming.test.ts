@@ -4,6 +4,7 @@ import {
   mergeClassNaming,
   resolveClassNameTemplate,
   buildTemplateClassName,
+  emittedComponentClassPrefix,
   type ClassNameTemplate,
 } from './class-naming';
 import { createStyles } from './styles';
@@ -33,8 +34,8 @@ describe('class naming modes', () => {
       base: { color: 'red' },
       primary: { backgroundColor: 'blue' },
     });
-    expect(button.base).toBe('btn-base');
-    expect(button.primary).toBe('btn-primary');
+    expect(button.base).toBe('btn');
+    expect(button.primary).toBe('btn--primary');
   });
 
   it('hashed mode yields stable prefixed class names for component()', () => {
@@ -140,9 +141,9 @@ describe('semantic mode with scopeId', () => {
       base: { color: 'red' },
       variants: { intent: { primary: { color: 'blue' } } },
     });
-    expect(button.base).toBe('my-ui-button-base');
-    expect(button['intent-primary']).toBe('my-ui-button-intent-primary');
-    expect(button({ intent: 'primary' })).toBe('my-ui-button-base my-ui-button-intent-primary');
+    expect(button.base).toBe('my-ui-button');
+    expect(button['intent-primary']).toBe('my-ui-button--intent-primary');
+    expect(button({ intent: 'primary' })).toBe('my-ui-button my-ui-button--intent-primary');
   });
 
   it('sanitizes package-style scope ids', () => {
@@ -179,13 +180,13 @@ describe('class name collision detection (dev)', () => {
   it('errors when two different definitions emit the same class string', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     // scope 'docs' + namespace 'button' and no scope + namespace 'docs-button'
-    // both emit "docs-button-base"
+    // both emit "docs-button"
     const scoped = createStyles({ scopeId: 'docs' });
     const unscoped = createStyles();
     scoped.component('button', { base: { color: 'red' } });
     unscoped.component('docs-button', { base: { color: 'blue' } });
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Class name collision'));
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('docs-button-base'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('docs-button'));
   });
 
   it('does not error when the same definition re-registers (HMR)', () => {
@@ -207,6 +208,15 @@ describe('class name collision detection (dev)', () => {
     const b = styles.hashClass({ color: 'red' });
     expect(a).toBe(b);
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('errors when styles.class and styles.component share an emitted base class', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const styles = createStyles();
+    styles.class('button', { color: 'red' });
+    styles.component('button', { base: { color: 'blue' } });
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Class name collision'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('button'));
   });
 });
 
@@ -253,6 +263,85 @@ describe('unscoped collision warning (dev)', () => {
       (args) => typeof args[0] === 'string' && args[0].includes("styles.component('tag'"),
     );
     expect(unscopedCalls).toHaveLength(1);
+  });
+});
+
+describe('SEMANTIC_TEMPLATE', () => {
+  it('emits block, dimensioned modifier, flat modifier, slots, scoped', () => {
+    const cfg = mergeClassNaming({ mode: 'semantic' });
+    const t = resolveClassNameTemplate(cfg);
+    expect(
+      t({
+        scope: '',
+        namespace: 'button',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('button');
+    expect(
+      t({
+        scope: '',
+        namespace: 'button',
+        element: undefined,
+        dimension: 'intent',
+        modifier: 'primary',
+      }),
+    ).toBe('button--intent-primary');
+    expect(
+      t({
+        scope: '',
+        namespace: 'card',
+        element: undefined,
+        dimension: undefined,
+        modifier: 'elevated',
+      }),
+    ).toBe('card--elevated');
+    expect(
+      t({
+        scope: '',
+        namespace: 'dialog',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('dialog');
+    expect(
+      t({
+        scope: '',
+        namespace: 'dialog',
+        element: 'content',
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('dialog__content');
+    expect(
+      t({ scope: '', namespace: 'dialog', element: 'content', dimension: 'size', modifier: 'lg' }),
+    ).toBe('dialog__content--size-lg');
+    expect(
+      t({
+        scope: 'var-ui-',
+        namespace: 'button',
+        element: undefined,
+        dimension: 'intent',
+        modifier: 'primary',
+      }),
+    ).toBe('var-ui-button--intent-primary');
+  });
+
+  it('emittedComponentClassPrefix for semantic/attribute is bare block', () => {
+    expect(emittedComponentClassPrefix(mergeClassNaming({ mode: 'semantic' }), 'button')).toBe(
+      'button',
+    );
+    expect(emittedComponentClassPrefix(mergeClassNaming({ mode: 'attribute' }), 'button')).toBe(
+      'button',
+    );
+    expect(
+      emittedComponentClassPrefix(
+        mergeClassNaming({ mode: 'semantic', scopeId: 'var-ui' }),
+        'button',
+      ),
+    ).toBe('var-ui-button');
   });
 });
 

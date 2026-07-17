@@ -58,7 +58,7 @@ Conceptual output:
   }
 }
 @layer components {
-  .button-base {
+  .button {
     padding: 8px 16px;
   }
 }

@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { invalidatePrefix, invalidateKeys } from './hmr';
 import { createStyles } from './styles';
 import { registeredNamespaces } from './registry';
-import { insertRule, flushSync, reset } from './sheet';
+import {
+  insertRule,
+  flushSync,
+  reset,
+  invalidateComponentNamespaceForDev,
+  invalidateClassNamespaceForDev,
+} from './sheet';
 
 describe('invalidatePrefix', () => {
   beforeEach(() => {
@@ -105,6 +111,41 @@ describe('invalidateKeys', () => {
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     expect(style.sheet?.cssRules.length).toBe(1);
+  });
+
+  it('invalidates semantic class family at boundaries without touching prefix siblings', () => {
+    insertRule('.button', '.button { color: red; }');
+    insertRule('.button--intent-primary', '.button--intent-primary { color: blue; }');
+    insertRule('.button__icon', '.button__icon { width: 1rem; }');
+    insertRule('.button[data-size="lg"]', '.button[data-size="lg"] { padding: 16px; }');
+    insertRule('.buttongroup', '.buttongroup { display: flex; }');
+    insertRule('.button-group', '.button-group { gap: 8px; }');
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    expect(style.sheet?.cssRules.length).toBe(6);
+
+    invalidateComponentNamespaceForDev('button', 'button');
+
+    const selectors = Array.from(style.sheet?.cssRules ?? []).map(
+      (r) => (r as CSSStyleRule).selectorText,
+    );
+    expect(selectors.sort()).toEqual(['.button-group', '.buttongroup']);
+  });
+
+  it('invalidates styles.class rules without dropping component modifiers', () => {
+    insertRule('.button', '.button { color: red; }');
+    insertRule('.button--intent-primary', '.button--intent-primary { color: blue; }');
+    insertRule('.button:hover', '.button:hover { opacity: 0.9; }');
+    insertRule('.button-group', '.button-group { gap: 8px; }');
+    flushSync();
+
+    invalidateClassNamespaceForDev('button');
+
+    const selectors = Array.from(
+      (document.getElementById('typestyles') as HTMLStyleElement).sheet?.cssRules ?? [],
+    ).map((r) => (r as CSSStyleRule).selectorText);
+    expect(selectors.sort()).toEqual(['.button--intent-primary', '.button-group']);
   });
 
   it('releases component namespace reservations so the same module can re-register (HMR)', () => {

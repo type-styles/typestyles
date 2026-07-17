@@ -26,7 +26,7 @@ describe('integration with typestyles', () => {
     const composed = styles.compose(base, atomClasses);
     const result = composed();
 
-    expect(result).toBe('base-base atoms-display-flex');
+    expect(result).toBe('base atoms-display-flex');
   });
 
   it('generates CSS that appears in getRegisteredCss()', () => {
@@ -71,6 +71,6 @@ describe('integration with typestyles', () => {
     const composed = styles.compose(layout, responsiveClasses);
     const result = composed();
 
-    expect(result).toBe('layout-base responsive-display-mobile-grid');
+    expect(result).toBe('layout responsive-display-mobile-grid');
   });
 });

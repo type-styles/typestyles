@@ -17,9 +17,9 @@ try {
     // (`example-ds` / `example-app`), matching how tokens are scoped.
     requiredCssSubstrings: [
       ':root { --example-ds-color-background-app:',
-      '.example-ds-button-base {',
+      '.example-ds-button {',
       '.theme-example-ds-default {',
-      '.example-ds-ds-layout-base {',
+      '.example-ds-ds-layout {',
       '.example-app-app-site-page {',
     ],
   });

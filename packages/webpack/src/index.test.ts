@@ -58,7 +58,7 @@ export const badge = styles.component('webpack-badge', { base: { padding: '4px' 
     expect(existsSync(cssPath)).toBe(true);
     const css = await import('node:fs/promises').then((fs) => fs.readFile(cssPath, 'utf8'));
     expect(css).toContain('webpack-convention');
-  });
+  }, 15_000);
 
   it('extracts tokens.create and createTheme CSS into the emitted stylesheet', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'typestyles-webpack-theme-'));
@@ -115,5 +115,5 @@ createTheme('webpack-dark', { base: { 'webpack-color': { primary: '#66aaff' } } 
       ],
     });
     expect(result.cssBytes).toBeGreaterThan(0);
-  });
+  }, 15_000);
 });

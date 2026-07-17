@@ -74,8 +74,8 @@ describe('real-world example', () => {
     const className = primaryButton();
 
     // Verify class names are generated
-    expect(className).toContain('button-base');
-    expect(className).toContain('button-intent-primary');
+    expect(className).toContain('button');
+    expect(className).toContain('button--intent-primary');
     expect(className).toContain('atoms-display-inline-flex');
     expect(className).toContain('atoms-alignItems-center');
     expect(className).toContain('atoms-gap-2');
@@ -84,7 +84,7 @@ describe('real-world example', () => {
 
     // Verify CSS is injected
     const css = getRegisteredCss();
-    expect(css).toContain('button-base');
+    expect(css).toContain('button');
     expect(css).toContain('border-radius: 0.375rem');
     expect(css).toContain('atoms-display-inline-flex');
     expect(css).toContain('display: inline-flex');

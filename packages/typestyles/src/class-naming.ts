@@ -6,18 +6,17 @@ import { trackEmittedClassName } from './registry';
  * How generated class names are formed for `styles.class`, `styles.component`,
  * and related APIs.
  *
- * - `semantic` — readable names like `button-base`, `button-intent-primary` (default).
- *   With `scopeId` set, names are prefixed with the sanitized scope: `my-ui-button-base`.
+ * - `semantic` — readable names like `button`, `button--intent-primary` (default).
+ *   With `scopeId` set, names are prefixed with the sanitized scope: `my-ui-button`.
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
  * - `compact` — hash-only names (shortest) for whole style objects; same collision properties as `hashed` when `scopeId` differs.
  * - `atomic` — one class per CSS declaration; identical declarations dedupe across the codebase.
  * - `attribute` — dimensioned `styles.component()` variants compile to `&[data-{dimension}="{option}"]`
  *   selectors under one base class instead of discrete classes; the call returns
- *   `{ className, attrs, props }`. See `specs/attribute-driven-variants.md`. Not supported for
- *   `slots` or flat configs — `styles.class()` and flat configs behave like `semantic`.
+ *   `{ className, attrs, props }`. See `specs/semantic-and-attribute-mode.md`.
  * - `bem` — dimensioned/slot `styles.component()` variants compile to BEM modifier classes
  *   (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix.
- *   See `specs/bem-variant-mode.md`. `styles.class()` and flat configs behave like `semantic`.
+ *   See `specs/classname-template-mode.md`. `styles.class()` and flat configs behave like `semantic`.
  * - `template` — like `bem`, but the block/element/modifier class name is decided by a
  *   user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention.
  *   `mode: 'bem'` is itself implemented as a built-in preset of this same mechanism. See
@@ -45,9 +44,9 @@ export type ClassNameContext = {
   namespace: string;
   /** Slot name for slot/multi-slot components (`'root'` is passed as `undefined`, matching BEM's root→block rule); `undefined` for non-slot components. */
   element: string | undefined;
-  /** Variant dimension name, e.g. `'intent'`; `undefined` when naming the base/block/element class itself. */
+  /** Variant dimension name, e.g. `'intent'`; `undefined` for flat semantic modifiers or when naming the base/block/element class itself. */
   dimension: string | undefined;
-  /** Variant option value, e.g. `'primary'`; `undefined` when naming the base/block/element class itself. */
+  /** Variant option value, e.g. `'primary'`; `undefined` when naming the base/block/element class itself. May be set with `dimension` undefined for flat semantic modifiers. */
   modifier: string | undefined;
 };
 
@@ -63,7 +62,7 @@ export type ClassNamingConfig = {
   /**
    * Package, app, or per-file id: same logical `styles.component` / `styles.class` name under different
    * scopes produces different classes — in `semantic` mode the sanitized scope is prefixed onto the
-   * class name (`my-ui-button-base`); in `hashed`/`compact`/`atomic` mode it is mixed into the hash. This matches
+   * class name (`my-ui-button`); in `hashed`/`compact`/`atomic` mode it is mixed into the hash. This matches
    * how `tokens.create` scopes custom property names. In development, re-registering the same
    * scope + component name (e.g. HMR) clears prior rules instead of throwing. Use
    * `fileScopeId(import.meta)` for file-local isolation (CSS Modules–style).
@@ -166,8 +165,8 @@ function semanticScopePrefix(cfg: ClassNamingConfig): string {
   return `${sanitizeClassSegment(cfg.scopeId)}-`;
 }
 
-function ownerKey(cfg: ClassNamingConfig, namespace: string): string {
-  return `${cfg.scopeId || 'default'}:${namespace}`;
+function ownerKey(cfg: ClassNamingConfig, namespace: string, kind: 'class' | 'component'): string {
+  return `${cfg.scopeId || 'default'}:${kind}:${namespace}`;
 }
 
 /**
@@ -181,13 +180,9 @@ export function emittedComponentClassPrefix(
   cfg: ClassNamingConfig,
   namespace: string,
 ): string | null {
-  // No trailing delimiter (BEM has none) — dev-mode HMR invalidation (sheet.ts) matches by
-  // substring, so this can over-match a sibling namespace that's a string-prefix of this one
-  // (e.g. invalidating "button" also touches "buttongroup"). Narrow, dev-only edge case; not
-  // worth a delimiter that would break real BEM output.
-  if (cfg.mode === 'bem') return `${semanticScopePrefix(cfg)}${namespace}`;
-  if (cfg.mode === 'semantic' || cfg.mode === 'attribute')
-    return `${semanticScopePrefix(cfg)}${namespace}-`;
+  // Bare block prefix — HMR matches the class family at boundaries (sheet.ts).
+  if (cfg.mode === 'bem' || cfg.mode === 'semantic' || cfg.mode === 'attribute')
+    return `${semanticScopePrefix(cfg)}${namespace}`;
   if (cfg.mode === 'hashed') return `${cfg.prefix}-${sanitizeClassSegment(namespace)}-`;
   return null;
 }
@@ -221,7 +216,7 @@ export function buildSingleClassName(
     cfg.mode === 'template'
   ) {
     const className = `${semanticScopePrefix(cfg)}${name}`;
-    trackEmittedClassName(className, ownerKey(cfg, name));
+    trackEmittedClassName(className, ownerKey(cfg, name, 'class'));
     return className;
   }
 
@@ -236,7 +231,7 @@ export function buildSingleClassName(
     cfg.mode === 'compact'
       ? `${cfg.prefix}-${h}`
       : `${cfg.prefix}-${sanitizeClassSegment(name)}-${h}`;
-  trackEmittedClassName(className, ownerKey(cfg, name));
+  trackEmittedClassName(className, ownerKey(cfg, name, 'class'));
   return className;
 }
 
@@ -257,7 +252,7 @@ export function buildComponentClassName(
     cfg.mode === 'template'
   ) {
     const className = `${semanticScopePrefix(cfg)}${namespace}-${suffix}`;
-    trackEmittedClassName(className, ownerKey(cfg, namespace));
+    trackEmittedClassName(className, ownerKey(cfg, namespace, 'component'));
     return className;
   }
 
@@ -272,7 +267,7 @@ export function buildComponentClassName(
     cfg.mode === 'compact'
       ? `${cfg.prefix}-${h}`
       : `${cfg.prefix}-${sanitizeClassSegment(namespace)}-${h}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
+  trackEmittedClassName(className, ownerKey(cfg, namespace, 'component'));
   return className;
 }
 
@@ -284,13 +279,20 @@ function bemTemplate(ctx: ClassNameContext): string {
   return ctx.modifier ? `${base}--${ctx.modifier}` : base;
 }
 
-/** Resolves the effective template for `mode: 'bem'` (built-in) or `mode: 'template'` (user-supplied). */
+/** Built-in preset for `mode: 'semantic'`. */
+function semanticTemplate(ctx: ClassNameContext): string {
+  const block = ctx.element
+    ? `${ctx.scope}${ctx.namespace}__${ctx.element}`
+    : `${ctx.scope}${ctx.namespace}`;
+  if (!ctx.modifier) return block;
+  return ctx.dimension ? `${block}--${ctx.dimension}-${ctx.modifier}` : `${block}--${ctx.modifier}`;
+}
+
 export function resolveClassNameTemplate(cfg: ClassNamingConfig): ClassNameTemplate {
+  if (cfg.mode === 'semantic') return semanticTemplate;
   if (cfg.mode === 'bem') return bemTemplate;
   if (cfg.mode === 'template' && cfg.classNameTemplate) return cfg.classNameTemplate;
-  throw new Error(
-    `[typestyles] resolveClassNameTemplate called for mode "${cfg.mode}" — only "bem" and "template" build class names via a template.`,
-  );
+  throw new Error(`[typestyles] resolveClassNameTemplate: unsupported mode "${cfg.mode}".`);
 }
 
 const VALID_CLASS_NAME = /^-?[a-zA-Z_][a-zA-Z0-9_-]*$/;
@@ -314,6 +316,21 @@ export function buildTemplateClassName(
         `${JSON.stringify(ctx)}. Class names must match ${VALID_CLASS_NAME}.`,
     );
   }
-  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace));
+  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace, 'component'));
+  return className;
+}
+
+/**
+ * Builds a class using the built-in semantic template regardless of `cfg.mode`.
+ * Attribute components use this for their stable block class without exposing
+ * attribute mode as a general template mode.
+ */
+export function buildSemanticTemplateClassName(
+  cfg: ClassNamingConfig,
+  input: TemplateClassNameInput,
+): string {
+  const ctx: ClassNameContext = { scope: semanticScopePrefix(cfg), ...input };
+  const className = semanticTemplate(ctx);
+  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace, 'component'));
   return className;
 }

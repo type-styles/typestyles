@@ -1,7 +1,7 @@
 /**
  * Compile-only fixtures (included in `tsc --noEmit`, not shipped in the bundle entry).
  * Verifies createStyles({ mode: 'attribute' }) narrows styles.component()'s return type and
- * rejects `slots` — see specs/attribute-driven-variants.md.
+ * supports per-slot attrs results.
  */
 import { createStyles } from './styles';
 
@@ -17,12 +17,13 @@ export function _attributeComponentReturnsAttrsResult() {
   return b.attrs;
 }
 
-export function _attributeComponentRejectsSlots() {
-  // @ts-expect-error — `slots` has no matching overload under mode: 'attribute'.
-  return attributeStyles.component('shape-dialog', {
-    slots: ['root', 'trigger'],
+export function _attributeComponentAcceptsSlots() {
+  const dialog = attributeStyles.component('shape-dialog', {
+    slots: ['root', 'trigger'] as const,
     base: { root: { display: 'grid' } },
+    variants: { size: { lg: { trigger: { fontSize: '16px' } } } },
   });
+  return dialog({ size: 'lg' }).trigger.attrs;
 }
 
 const bemStyles = createStyles({ mode: 'bem' });

@@ -52,15 +52,15 @@ describe('Button', () => {
     render(<Button>Click me</Button>);
     const button = screen.getByRole('button');
 
-    expect(button).toHaveClass('button-base');
+    expect(button).toHaveClass('button');
   });
 
   it('applies variant classes', () => {
     render(<Button variant="primary">Click me</Button>);
     const button = screen.getByRole('button');
 
-    expect(button).toHaveClass('button-base');
-    expect(button).toHaveClass('button-primary');
+    expect(button).toHaveClass('button');
+    expect(button).toHaveClass('button--primary');
   });
 
   it('applies multiple variants', () => {
@@ -71,9 +71,9 @@ describe('Button', () => {
     );
     const button = screen.getByRole('button');
 
-    expect(button).toHaveClass('button-base');
-    expect(button).toHaveClass('button-primary');
-    expect(button).toHaveClass('button-large');
+    expect(button).toHaveClass('button');
+    expect(button).toHaveClass('button--primary');
+    expect(button).toHaveClass('button--large');
   });
 });
 ```
@@ -104,16 +104,16 @@ it('applies loading state', () => {
   render(<Button isLoading>Click me</Button>);
   const button = screen.getByRole('button');
 
-  expect(button).toHaveClass('button-base');
-  expect(button).toHaveClass('button-loading');
+  expect(button).toHaveClass('button');
+  expect(button).toHaveClass('button--loading');
 });
 
 it('does not apply loading class when not loading', () => {
   render(<Button>Click me</Button>);
   const button = screen.getByRole('button');
 
-  expect(button).toHaveClass('button-base');
-  expect(button).not.toHaveClass('button-loading');
+  expect(button).toHaveClass('button');
+  expect(button).not.toHaveClass('button--loading');
 });
 ```
 
@@ -139,7 +139,7 @@ it('has loading styles', () => {
   const button = screen.getByRole('button');
 
   // Verify the class is applied (CSS testing is separate)
-  expect(button).toHaveClass('button-loading');
+  expect(button).toHaveClass('button--loading');
 });
 ```
 
@@ -151,7 +151,7 @@ If you want to ensure class names don't change unexpectedly, use snapshots:
 it('matches snapshot', () => {
   const { container } = render(<Button variant="primary">Click me</Button>);
   expect(container.firstChild).toMatchSnapshot();
-  // Snapshot: <button class="button-base button-primary">Click me</button>
+  // Snapshot: <button class="button button--primary">Click me</button>
 });
 ```
 
@@ -310,8 +310,8 @@ test('button has correct styles', async ({ page }) => {
   await expect(button).toHaveCSS('background-color', 'rgb(0, 102, 255)');
 
   // Check class names
-  await expect(button).toHaveClass(/button-base/);
-  await expect(button).toHaveClass(/button-primary/);
+  await expect(button).toHaveClass(/button/);
+  await expect(button).toHaveClass(/button--primary/);
 });
 
 test('button hover state', async ({ page }) => {
@@ -333,10 +333,7 @@ describe('Button', () => {
   it('has correct classes', () => {
     cy.visit('/button-demo');
 
-    cy.get('button')
-      .first()
-      .should('have.class', 'button-base')
-      .and('have.class', 'button-primary');
+    cy.get('button').first().should('have.class', 'button').and('have.class', 'button--primary');
   });
 
   it('has correct computed styles', () => {
@@ -365,10 +362,10 @@ describe('SSR', () => {
     const { html, css } = collectStyles(() => renderToString(<App />));
 
     // HTML should contain class names
-    expect(html).toContain('button-base');
+    expect(html).toContain('button');
 
     // CSS should contain the styles
-    expect(css).toContain('.button-base');
+    expect(css).toContain('.button');
     expect(css).toContain('padding');
   });
 
@@ -396,8 +393,8 @@ describe('Button styles', () => {
       primary: { color: 'blue' },
     });
 
-    expect(button()).toMatchInlineSnapshot(`"button-base"`);
-    expect(button({ primary: true })).toMatchInlineSnapshot(`"button-base button-primary"`);
+    expect(button()).toMatchInlineSnapshot(`"button"`);
+    expect(button({ primary: true })).toMatchInlineSnapshot(`"button button--primary"`);
   });
 });
 ```
@@ -412,10 +409,10 @@ export const styles = {
   component: (namespace: string, definitions: Record<string, unknown>) => {
     const keys = Object.keys(definitions);
     return (options?: Record<string, boolean>) => {
-      const parts = [`${namespace}-base`];
+      const parts = [namespace];
       if (options) {
         for (const [k, on] of Object.entries(options)) {
-          if (on && k !== 'base') parts.push(`${namespace}-${k}`);
+          if (on && k !== 'base') parts.push(`${namespace}--${k}`);
         }
       }
       return parts.join(' ');
@@ -476,16 +473,16 @@ describe('Card', () => {
     render(<Card elevated>Content</Card>);
     const card = screen.getByRole('article');
 
-    expect(card).toHaveClass('card-base');
-    expect(card).toHaveClass('card-elevated');
+    expect(card).toHaveClass('card');
+    expect(card).toHaveClass('card--elevated');
   });
 
   it('applies interactive variant', () => {
     render(<Card interactive>Content</Card>);
     const card = screen.getByRole('article');
 
-    expect(card).toHaveClass('card-base');
-    expect(card).toHaveClass('card-interactive');
+    expect(card).toHaveClass('card');
+    expect(card).toHaveClass('card--interactive');
   });
 
   it('can combine variants', () => {
@@ -496,9 +493,9 @@ describe('Card', () => {
     );
     const card = screen.getByRole('article');
 
-    expect(card).toHaveClass('card-base');
-    expect(card).toHaveClass('card-elevated');
-    expect(card).toHaveClass('card-interactive');
+    expect(card).toHaveClass('card');
+    expect(card).toHaveClass('card--elevated');
+    expect(card).toHaveClass('card--interactive');
   });
 
   it('matches snapshot', () => {

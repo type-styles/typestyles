@@ -871,7 +871,7 @@ See [Components — expose themeable properties as vars](/docs/components#expose
 ### Tier 2 — plain CSS against semantic class names
 
 For properties the author did not expose as vars, target the stable semantic class
-names from `styles.component()` (for example `button-base`, `button-intent-primary`).
+names from `styles.component()` (for example `button`, `button--intent-primary`).
 See [Class naming](/docs/class-naming) and the [public contract](#public-semantic-class-names).
 
 **Non-nested themes:** a descendant selector in a later cascade layer is enough:
@@ -890,7 +890,7 @@ const button = styles.component(
 );
 
 // In theme setup for `.theme-acme`:
-styles.class('.theme-acme .button-base', { borderRadius: '999px' }, { layer: 'overrides' });
+styles.class('.theme-acme .button', { borderRadius: '999px' }, { layer: 'overrides' });
 ```
 
 **Nested conflicting themes:** when two `.theme-*` regions nest and both override the
@@ -898,7 +898,7 @@ same component class, plain selectors tie on specificity and source order wins. 
 `styles.scope()` so the nearest scoping root wins:
 
 ```ts
-styles.scope({ root: '.theme-beta', to: '.theme-acme', layer: 'overrides' }, 'button-base', {
+styles.scope({ root: '.theme-beta', to: '.theme-acme', layer: 'overrides' }, 'button', {
   backgroundColor: 'rebeccapurple',
   '&:hover': { opacity: 0.9 },
 });
@@ -911,6 +911,34 @@ unchanged.
 **Browser support:** `@scope` ships in Chrome 118+, Firefox 128+, Safari 17.4+. Treat
 it as an opt-in escalation for nested conflicts; older browsers can keep Tier 2 plain
 selectors and accept the documented load-order caveat.
+
+### Attribute variants: use layers, not specificity
+
+Attribute variants intentionally use selectors such as
+`.button[data-intent="primary"]`, which are more specific than `.button`. When
+theming an attribute-mode design system, put recipe CSS and overrides in ordered
+cascade layers so override precedence is explicit:
+
+```ts
+const { styles } = createTypeStyles({
+  mode: 'attribute',
+  layers: ['tokens', 'components', 'overrides', 'utilities'] as const,
+  tokenLayer: 'tokens',
+});
+
+const button = styles.component(
+  'button',
+  { base: { borderRadius: '6px' } },
+  { layer: 'components' },
+);
+
+styles.scope({ root: '.theme-acme', layer: 'overrides' }, button.base, { borderRadius: '999px' });
+```
+
+Use `components` for recipe CSS, `overrides` for theme or consumer restyles, and
+`utilities` for per-instance intent. A later layer wins without a specificity
+escalation. The example targets only the stable base class; targeting a specific
+attribute variant remains ordinary CSS until the planned typed override API ships.
 
 ## Public semantic class names
 

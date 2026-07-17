@@ -167,21 +167,21 @@ describe('compose', () => {
     });
     const button = compose(base, primary);
 
-    expect(button()).toBe('base-base primary-base');
+    expect(button()).toBe('base primary');
   });
 
   it('composes functions with strings', () => {
     const base = createComponent(defaultClassNamingConfig, 'base2', { base: { padding: '8px' } });
     const composed = compose(base, 'custom-class');
 
-    expect(composed()).toBe('base2-base custom-class');
+    expect(composed()).toBe('base2 custom-class');
   });
 
   it('filters falsy values', () => {
     const base = createComponent(defaultClassNamingConfig, 'base3', { base: { padding: '8px' } });
     const composed = compose(base, false, null, undefined, 'valid');
 
-    expect(composed()).toBe('base3-base valid');
+    expect(composed()).toBe('base3 valid');
   });
 
   it('handles string-only composition', () => {
@@ -205,7 +205,7 @@ describe('compose', () => {
     const button = compose(size, intent);
 
     expect(button({ size: 'lg', intent: 'ghost' })).toBe(
-      'compose-size-size-lg compose-intent-intent-ghost',
+      'compose-size--size-lg compose-intent--intent-ghost',
     );
   });
 
@@ -318,13 +318,13 @@ describe('createStylesWithUtils', () => {
     });
 
     // Should be callable
-    expect(card()).toContain('util-comp-base');
+    expect(card()).toContain('util-comp');
 
     flushSync();
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     const rule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-comp-base',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-comp',
     ) as CSSStyleRule;
 
     expect(rule.style.getPropertyValue('padding-top')).toBe('12px');
@@ -348,14 +348,14 @@ describe('createStylesWithUtils', () => {
       };
     });
 
-    expect(box({ t: 'hi' })).toContain('util-fn-comp-base');
+    expect(box({ t: 'hi' })).toContain('util-fn-comp');
     flushSync();
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     const baseRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp-base',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp',
     ) as CSSStyleRule;
     const hiRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp-t-hi',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp--t-hi',
     ) as CSSStyleRule;
     expect(baseRule.style.getPropertyValue('padding-top')).toBe('8px');
     expect(hiRule.style.getPropertyValue('padding-top')).toBe('20px');
@@ -371,17 +371,17 @@ describe('createStylesWithUtils', () => {
       active: { marginX: 20 },
     });
 
-    expect(card()).toContain('util-flat-base');
-    expect(card({ active: true })).toContain('util-flat-active');
+    expect(card()).toContain('util-flat');
+    expect(card({ active: true })).toContain('util-flat--active');
 
     flushSync();
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     const baseRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat-base',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat',
     ) as CSSStyleRule;
     const activeRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat-active',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat--active',
     ) as CSSStyleRule;
 
     expect(baseRule.style.getPropertyValue('margin-left')).toBe('10px');
@@ -447,6 +447,45 @@ describe('createStylesWithUtils', () => {
 
     expect(rule.style.getPropertyValue('width')).toBe('30px');
     expect(rule.style.getPropertyValue('height')).toBe('30px');
+  });
+});
+
+describe('styles.class and styles.component coexistence', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('does not wipe component modifiers when registering a same-named class second', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const styles = createStyles();
+    styles.component('button', {
+      base: { color: 'blue' },
+      variants: { intent: { primary: { fontWeight: 700 } } },
+    });
+    styles.class('button', { color: 'red', padding: '4px' });
+
+    const css = getRegisteredCss();
+    expect(css).toContain('.button--intent-primary');
+    expect(css).toMatch(/\.button\s*\{[^}]*color:\s*blue/);
+    expect(css).not.toMatch(/\.button\s*\{[^}]*padding:\s*4px/);
+  });
+
+  it('does not wipe class CSS when registering a same-named component second', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const styles = createStyles();
+    styles.class('button', { color: 'red', padding: '4px' });
+    styles.component('button', {
+      base: { color: 'blue' },
+      variants: { intent: { primary: { fontWeight: 700 } } },
+    });
+
+    const css = getRegisteredCss();
+    expect(css).toContain('padding: 4px');
+    expect(css).toContain('.button--intent-primary');
+    expect(css).toMatch(/\.button\s*\{[^}]*color:\s*red/);
   });
 });
 

@@ -14,7 +14,7 @@ This guide covers the setup that prevents that.
 
 The default `styles` and `tokens` exports use an empty `scopeId`. In semantic
 mode (the default), `styles.component('button', …)` emits class names like
-`button-base`. If a consumer installs two packages that both define a `'button'`
+`button`. If a consumer installs two packages that both define a `'button'`
 namespace, the later import wins — no error, no warning, just broken styles.
 
 Even in `hashed` mode the hash is derived from the namespace and declarations.
@@ -60,14 +60,14 @@ export const button = styles.component('button', {
 });
 ```
 
-Class names will look like `ts-button-1a2b3c` instead of `button-base` — unique
+Class names will look like `ts-button-1a2b3c` instead of `button` — unique
 to your package by construction.
 
 ### Why `hashed` mode?
 
 | Mode       | Output                                      | Collision risk                                                                                                |
 | ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `semantic` | `acme-ui-button-base`                       | Low with `scopeId`, but still human-readable names that _could_ overlap if two packages choose the same scope |
+| `semantic` | `acme-ui-button`                            | Low with `scopeId`, but still human-readable names that _could_ overlap if two packages choose the same scope |
 | `hashed`   | `ts-button-1a2b3c`                          | Hash includes `scopeId` — collision requires identical scope, namespace, and declarations                     |
 | `compact`  | `ts-1a2b3c`                                 | Same hash safety as `hashed`, shortest output                                                                 |
 | `atomic`   | One class per declaration, deduped globally | Safe; declarations dedupe intentionally                                                                       |

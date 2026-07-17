@@ -69,7 +69,7 @@ export { lib };
       await import(`${pathToFileURL(entryFile).href}?runtime=${Date.now()}`);
       flushSync();
       const runtimeCss = getRegisteredCss();
-      expect(runtimeCss).toContain('.fixture-tree-shake-button-base');
+      expect(runtimeCss).toContain('.fixture-tree-shake-button');
 
       reset();
       const buildCss = await runTypestylesBuild({
@@ -77,7 +77,7 @@ export { lib };
         modules: [moduleForBuild],
       });
 
-      expect(buildCss).toContain('.fixture-tree-shake-button-base');
+      expect(buildCss).toContain('.fixture-tree-shake-button');
       expect(buildCss).toBe(runtimeCss);
     } finally {
       reset();
@@ -137,7 +137,7 @@ globalThis.__typestylesTreeShakeBareFixtureEntryMarker = true;
       await import(`${pathToFileURL(entryFile).href}?runtime=${Date.now()}`);
       flushSync();
       const runtimeCss = getRegisteredCss();
-      expect(runtimeCss).toContain('.fixture-tree-shake-bare-button-base');
+      expect(runtimeCss).toContain('.fixture-tree-shake-bare-button');
 
       reset();
       const buildCss = await runTypestylesBuild({
@@ -145,7 +145,7 @@ globalThis.__typestylesTreeShakeBareFixtureEntryMarker = true;
         modules: [moduleForBuild],
       });
 
-      expect(buildCss).toContain('.fixture-tree-shake-bare-button-base');
+      expect(buildCss).toContain('.fixture-tree-shake-bare-button');
       expect(buildCss).toBe(runtimeCss);
     } finally {
       reset();

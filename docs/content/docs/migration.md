@@ -7,6 +7,35 @@ Switching to typestyles from other styling solutions is straightforward. This gu
 
 If you are adopting the variant API, start with [Components](/docs/components).
 
+## Upgrading to 0.10 (semantic + attribute naming)
+
+`0.10` changes the default `mode: 'semantic'` class grammar and finishes `mode: 'attribute'`.
+This is a pre-1.0 breaking change for **emitted class strings** and for hand-written CSS /
+snapshots that targeted the old names.
+
+| Shape          | Before (`≤0.9`)                   | After (`0.10`)                                                         |
+| -------------- | --------------------------------- | ---------------------------------------------------------------------- |
+| Component base | `button-base`                     | `button`                                                               |
+| Variant        | `button-intent-primary`           | `button--intent-primary`                                               |
+| Slot           | `dialog-content`                  | `dialog__content`                                                      |
+| Flat modifier  | `card-elevated`                   | `card--elevated`                                                       |
+| Compound       | `button-compound-0` (extra class) | chained `.button--intent-primary.button--size-lg` (no synthetic class) |
+
+Attribute mode changes:
+
+- Variant dimensions become kebab-case `data-*` attributes (`fontWeight` → `data-font-weight`).
+- Slots are supported; each slot returns `{ className, attrs, props }`.
+- Flat configs still return class strings (`card`, `card--elevated`).
+
+**Checklist**
+
+1. Regenerate `@typestyles/cli` public-classname snapshots and update ESLint fixtures.
+2. Search tests / e2e selectors for `-base`, `-compound-`, and old hyphen slot names.
+3. Update any hand-written CSS that targeted the old public classes.
+4. Prefer distinct namespaces for `styles.class` vs `styles.component` when they would share a base string — both emit `button` for `'button'`, and the sheet keeps only the first base rule.
+
+See [Class naming](/docs/class-naming) and [Attribute-driven variants](/docs/components#attribute-driven-variants).
+
 ## From Panda CSS
 
 Panda and typestyles share many concepts (component variants, tokens, utilities), so migration is mostly API shape changes rather than a full styling rewrite.
@@ -444,7 +473,7 @@ button({ size: 'lg' }); // base + primary + lg
 
 1. CVA returns composed class strings from existing class tokens; typestyles generates and injects CSS from style objects.
 2. CVA `class` in `compoundVariants` becomes typestyles `style`.
-3. You can keep readable deterministic class output (`button-intent-primary`, etc.).
+3. You can keep readable deterministic class output (`button--intent-primary`, etc.).
 4. The return is both callable AND destructurable (CVA-style).
 
 ## From Stitches variants
@@ -910,7 +939,7 @@ Don't migrate everything at once. Pick one component or one page and convert it.
 
 ### 2. Keep the same names
 
-If you have `.button-primary` in CSS, create a `button` component with a `primary` variant. This makes the migration easier to follow.
+If you have `.button--primary` in CSS, create a `button` component with a `primary` variant. This makes the migration easier to follow.
 
 ### 3. Use tokens early
 
@@ -923,18 +952,18 @@ In your tests, you may need to update selectors:
 **Before:**
 
 ```ts
-expect(screen.getByRole('button')).toHaveClass('button-primary');
+expect(screen.getByRole('button')).toHaveClass('button--primary');
 ```
 
 **After:**
 
 ```ts
-expect(screen.getByRole('button')).toHaveClass('button-base', 'button-intent-primary');
+expect(screen.getByRole('button')).toHaveClass('button', 'button--intent-primary');
 ```
 
 ### 5. DevTools familiarity
 
-Your generated class names will be human-readable (`button-intent-primary`), so DevTools inspection stays familiar -- actually more readable than hashed class names from other CSS-in-JS libraries.
+Your generated class names will be human-readable (`button--intent-primary`), so DevTools inspection stays familiar -- actually more readable than hashed class names from other CSS-in-JS libraries.
 
 ### 6. Bundle size check
 

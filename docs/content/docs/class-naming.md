@@ -3,7 +3,7 @@ title: Class naming
 description: Per-instance semantic, hashed, or atomic class names via createStyles; scoped tokens via createTokens
 ---
 
-By default, typestyles emits **readable semantic** class names: `button-base`, `card-elevated`, `button-intent-primary`. You can switch to **hashed**, **compact** (hash-only whole-object), or **atomic** (one class per declaration) names for smaller strings, deduped CSS, or closer parity with CSS-in-JS tools that minify class names. Three more modes target `styles.component()` variants specifically: **attribute** (data-attribute selectors instead of discrete classes), **bem** (BEM modifier classes), and **template** (a user-supplied naming function — BEM is a built-in preset of it).
+By default, typestyles emits **readable semantic** class names using a BEM-readable grammar: `button`, `button--intent-primary`, and `dialog__content`. You can switch to **hashed**, **compact** (hash-only whole-object), or **atomic** (one class per declaration) names for smaller strings, deduped CSS, or closer parity with CSS-in-JS tools that minify class names. Three more modes target `styles.component()` variants specifically: **attribute** (data-attribute selectors instead of discrete classes), **bem** (BEM modifier classes), and **template** (a user-supplied naming function — BEM is a built-in preset of it).
 
 Naming applies to:
 
@@ -67,22 +67,36 @@ Returns the CSS custom property namespace segment used for `tokens.create` when 
 
 ### `semantic` (default)
 
-Human-readable, stable names derived from the namespace and variant segment:
+Human-readable, stable names use a block/element/modifier grammar. Variant dimensions
+are retained in modifiers so equal option values from different dimensions never collide:
 
-- `styles.class('card', { … })` → `card`
-- `styles.component('button', { … })` → `button-base`, `button-intent-primary`, etc.
-- Components with `slots` → `{namespace}-{slot}`, `{namespace}-{slot}-{dimension}-{option}`, etc.
+| Shape                         | Example                                                    |
+| ----------------------------- | ---------------------------------------------------------- |
+| `styles.class('card', { … })` | `card`                                                     |
+| Component base                | `button`                                                   |
+| Variant                       | `button--intent-primary`                                   |
+| Compound                      | chained `.button--intent-primary.button--size-lg` selector |
+| Root slot                     | `dialog`                                                   |
+| Named slot                    | `dialog__content`                                          |
+| Slot variant                  | `dialog__content--size-lg`                                 |
+| Flat base / modifier          | `card`, `card--elevated`                                   |
+
+`styles.class('button')` and the base class from `styles.component('button', …)`
+now intentionally use the same string. Give unrelated definitions distinct namespaces
+or a `scopeId`. In development, typestyles logs a **class name collision** error when
+both APIs emit the same string (their CSS still share one sheet key — first registration
+wins). Do not rely on both definitions contributing different base styles under one name.
 
 With **`scopeId`** set, the sanitized scope is prefixed onto every class name — the same way `tokens.create` scopes custom property names:
 
-- `createStyles({ scopeId: 'my-ui' })` + `styles.component('button', { … })` → `my-ui-button-base`
+- `createStyles({ scopeId: 'my-ui' })` + `styles.component('button', { … })` → `my-ui-button`, `my-ui-button--intent-primary`
 - `createStyles({ scopeId: '@acme/ds' })` + `styles.class('card', { … })` → `acme-ds-card`
 
 This keeps semantic names readable while making isolation real: two packages can both register `styles.component('button', …)` without their CSS rules overwriting each other. In development, typestyles also logs an error if two different definitions ever emit the same class string (cross-scope collisions, or hash collisions in `hashed`/`compact` mode).
 
 ### `hashed`
 
-Deterministic names of the form **`{prefix}-{namespace-slug}-{hash}`**. The hash is computed from (when set) `scopeId`, the namespace, a variant segment (e.g. `base`, `intent-primary`, `root-compound-0`), and the serialized style object for that rule. Identical definitions produce identical class strings.
+Deterministic names of the form **`{prefix}-{namespace-slug}-{hash}`**. The hash is computed from (when set) `scopeId`, the namespace, a variant segment (e.g. `base`, `intent-primary`, or a compound segment in hashed mode), and the serialized style object for that rule. Identical definitions produce identical class strings.
 
 Use this when you want shorter, scoped names while still recognizing the namespace in DevTools.
 
@@ -108,15 +122,26 @@ Before P2.10, `atomic` meant hash-only **whole-object** classes (no namespace sl
 
 ### `attribute`
 
-Dimensioned `styles.component()` variants compile to `&[data-{dimension}="{option}"]` selectors under one base class instead of discrete classes; the call returns `{ className, attrs, props }` for spreading the resolved `data-*` attributes onto the element. Not supported for `slots` or flat configs — `styles.class()` and flat configs behave like `semantic`. See [Attribute-driven variants](/docs/components#attribute-driven-variants).
+Dimensioned `styles.component()` variants compile to `&[data-{dimension}="{option}"]`
+selectors under one stable semantic base class instead of discrete classes. Attribute
+names are kebab-cased: `fontWeight` becomes `data-font-weight` in CSS, `attrs`, and
+`props`. The call returns `{ className, attrs, props }` for spreading the resolved
+attributes onto the element.
+
+Slots are supported: a slot recipe returns one attrs result per slot, each with its
+semantic class (`dialog`, `dialog__content`, and so on) and the same active variant
+attributes. Spread the result for the element you render, for example
+`<div {...dialog({ size: 'lg' }).content.props} />`. Flat configs retain their plain
+string API and use semantic `card` / `card--elevated` names. See
+[Attribute-driven variants](/docs/components#attribute-driven-variants).
 
 ### `bem`
 
-Dimensioned/slot `styles.component()` variants compile to BEM modifier classes (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix. `styles.class()` and flat configs behave like `semantic`. See [BEM variant naming](/docs/components#bem-variant-naming).
+Dimensioned/slot `styles.component()` variants compile to BEM modifier classes (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix. `styles.class()` remains a bare class. Flat configs retain their historical hyphen names under this opt-in mode. See [BEM variant naming](/docs/components#bem-variant-naming).
 
 ### `template`
 
-Like `bem`, but the block/element/modifier class name is decided by a user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention — `mode: 'bem'` is itself a built-in preset of this same mechanism. `ctx` is a **`ClassNameContext`** (`scope`, `namespace`, `element`, `dimension`, `modifier`). Useful for SUIT CSS, prefixed/ITCSS conventions, or avoiding BEM's dimension-collision problem. `styles.class()` and flat configs behave like `semantic`. See [Generic classname template](/docs/components#generic-classname-template).
+Like `bem`, but the block/element/modifier class name is decided by a user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention — `mode: 'bem'` is itself a built-in preset of this same mechanism. `ctx` is a **`ClassNameContext`** (`scope`, `namespace`, `element`, `dimension`, `modifier`). Useful for SUIT CSS, prefixed/ITCSS conventions, or avoiding BEM's dimension-collision problem. `styles.class()` remains a bare class and flat configs retain their historical hyphen names. See [Generic classname template](/docs/components#generic-classname-template).
 
 ## `styles.hashClass`
 
@@ -124,7 +149,7 @@ Like `bem`, but the block/element/modifier class name is decided by a user-suppl
 
 ## Monorepos and `scopeId`
 
-Two packages might both use `styles.component('button', …)`. Give each package its own **`createStyles({ scopeId: '…' })`**: in **`semantic`** mode the scope is prefixed onto the class name (`pkg-a-button-base` vs `pkg-b-button-base`); in **`hashed`**, **`compact`**, or **`atomic`** mode the scope is mixed into the hash so identical style objects in different packages do not map to the same class string.
+Two packages might both use `styles.component('button', …)`. Give each package its own **`createStyles({ scopeId: '…' })`**: in **`semantic`** mode the scope is prefixed onto the class name (`pkg-a-button` vs `pkg-b-button`); in **`hashed`**, **`compact`**, or **`atomic`** mode the scope is mixed into the hash so identical style objects in different packages do not map to the same class string.
 
 For tokens, use **`createTokens({ scopeId })`** per package so `--color-*` and `.theme-*` rules do not overwrite each other on `:root` or clash by name.
 

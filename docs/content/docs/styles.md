@@ -49,15 +49,15 @@ The returned object is both **callable** and **destructurable**:
 
 ```ts
 // Call as a function -- base styles are always auto-applied:
-card(); // "card-base" (flat variants are opt-in via the call or `defaultVariants`)
+card(); // "card" (flat variants are opt-in via the call or `defaultVariants`)
 
 // Destructure for direct class access:
 const { base, elevated } = card;
-// base => "card-base"
-// elevated => "card-elevated"
+// base => "card"
+// elevated => "card--elevated"
 ```
 
-Class names are deterministic: `card-base`, `card-elevated`.
+Class names are deterministic: `card`, `card--elevated`.
 
 To use **hashed** or **hash-only** class strings instead (for example in a design system package), see [Class naming](/docs/class-naming).
 

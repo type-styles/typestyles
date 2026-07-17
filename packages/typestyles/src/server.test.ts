@@ -21,11 +21,11 @@ describe('collectStyles', () => {
       createComponent(defaultClassNamingConfig, 'ssr-btn', {
         base: { color: 'red' },
       });
-      return '<button class="ssr-btn-base">Click</button>';
+      return '<button class="ssr-btn">Click</button>';
     });
 
-    expect(html).toBe('<button class="ssr-btn-base">Click</button>');
-    expect(css).toContain('.ssr-btn-base');
+    expect(html).toBe('<button class="ssr-btn">Click</button>');
+    expect(css).toContain('.ssr-btn');
     expect(css).toContain('color: red');
   });
 
@@ -49,7 +49,7 @@ describe('collectStyles', () => {
     });
 
     expect(css).toContain('--ssr-theme-bg');
-    expect(css).toContain('.ssr-card-root');
+    expect(css).toContain('.ssr-card--root');
   });
 
   it('supports async render functions', async () => {
@@ -62,7 +62,7 @@ describe('collectStyles', () => {
     });
 
     expect(html).toBe('<button>async</button>');
-    expect(css).toContain('.async-btn-base');
+    expect(css).toContain('.async-btn');
     expect(css).toContain('color: green');
   });
 

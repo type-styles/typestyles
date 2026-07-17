@@ -531,7 +531,7 @@ export type ComponentConfigContext = {
  * The full config object passed to styles.component() with dimensioned variants. How `variants`
  * compiles (discrete classes, `&[data-x="y"]` attributes, or BEM modifier classes) is selected by
  * `createStyles({ mode })`, not by anything in this config — see {@link ComponentAttrsReturn} and
- * `specs/attribute-driven-variants.md` / `specs/bem-variant-mode.md`.
+ * `specs/semantic-and-attribute-mode.md` / `specs/classname-template-mode.md`.
  */
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
@@ -612,6 +612,12 @@ export type ComponentAttrsReturn<V extends VariantDefinitions> = {
   /** The base class string. */
   readonly base: string;
 };
+
+/** Attribute-mode return for slot recipes, with attrs repeated on each declared slot. */
+export type SlotAttrsReturn<
+  Slots extends readonly string[],
+  V extends SlotVariantDefinitions<Slots[number]>,
+> = (selections?: ComponentSelections<V>) => Record<Slots[number], ComponentAttrsResult>;
 
 /**
  * The CVA-style return for flat variants.

@@ -19,9 +19,12 @@ function isDev(): boolean {
  * Track an emitted class name and warn when the same class string is produced
  * by two different style definitions. Development-only; no-op in production.
  *
- * The owner key identifies the logical definition (`scope:namespace` for
- * `styles.class` / `styles.component`, payload-derived for `styles.hashClass`)
- * so HMR re-registrations of the same definition are not flagged.
+ * The owner key identifies the logical definition (`scope:class:name` /
+ * `scope:component:namespace` for `styles.class` / `styles.component`,
+ * payload-derived for `styles.hashClass`) so HMR re-registrations of the same
+ * definition are not flagged — while `styles.class('button')` and
+ * `styles.component('button')` (which share an emitted string under semantic
+ * naming) still surface as a collision.
  */
 export function trackEmittedClassName(className: string, ownerKey: string): void {
   if (!isDev()) return;
@@ -71,11 +74,13 @@ export function warnUnscopedCollision(namespace: string, apiName: string): void 
 const COLON = ':';
 
 /**
- * Drop reserved `scopeId:namespace` keys so a module can re-register after HMR.
- * `namespace` is the first argument to `styles.component()` / `styles.class()` (not the scope).
+ * Drop reserved `scope:class:name` / `scope:component:namespace` keys so a module can
+ * re-register after HMR. `namespaces` are the first arguments to `styles.component()` /
+ * `styles.class()` (not the scope). Pass `kind` to release only one API's reservations.
  */
 export function releaseReservedNamespacesForComponentOrClassNames(
   namespaces: readonly string[],
+  kind?: 'class' | 'component',
 ): void {
   if (namespaces.length === 0) return;
   const wanted = new Set(namespaces);
@@ -83,9 +88,24 @@ export function releaseReservedNamespacesForComponentOrClassNames(
   for (const key of registeredNamespaces) {
     const i = key.indexOf(COLON);
     if (i === -1) continue;
-    if (wanted.has(key.slice(i + 1))) {
-      toRemove.push(key);
+    const rest = key.slice(i + 1);
+    const classPrefix = 'class:';
+    const componentPrefix = 'component:';
+    let name: string | undefined;
+    let keyKind: 'class' | 'component' | undefined;
+    if (rest.startsWith(classPrefix)) {
+      name = rest.slice(classPrefix.length);
+      keyKind = 'class';
+    } else if (rest.startsWith(componentPrefix)) {
+      name = rest.slice(componentPrefix.length);
+      keyKind = 'component';
+    } else {
+      // Legacy `scope:namespace` keys (tests / older HMR paths).
+      name = rest;
     }
+    if (name === undefined || !wanted.has(name)) continue;
+    if (kind && keyKind && keyKind !== kind) continue;
+    toRemove.push(key);
   }
   for (const key of toRemove) {
     registeredNamespaces.delete(key);
