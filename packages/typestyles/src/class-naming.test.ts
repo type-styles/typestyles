@@ -141,9 +141,9 @@ describe('semantic mode with scopeId', () => {
       base: { color: 'red' },
       variants: { intent: { primary: { color: 'blue' } } },
     });
-    expect(button.base).toBe('my-ui-button-base');
-    expect(button['intent-primary']).toBe('my-ui-button-intent-primary');
-    expect(button({ intent: 'primary' })).toBe('my-ui-button-base my-ui-button-intent-primary');
+    expect(button.base).toBe('my-ui-button');
+    expect(button['intent-primary']).toBe('my-ui-button--intent-primary');
+    expect(button({ intent: 'primary' })).toBe('my-ui-button my-ui-button--intent-primary');
   });
 
   it('sanitizes package-style scope ids', () => {

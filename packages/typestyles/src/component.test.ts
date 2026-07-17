@@ -68,7 +68,7 @@ describe('createComponent — dimensioned variants', () => {
         intent: { primary: { color: 'blue' } },
       },
     });
-    expect(btn.base).toBe('btn-base');
+    expect(btn.base).toBe('btn');
   });
 
   it('is destructurable — variant properties return individual class strings', () => {
@@ -86,10 +86,10 @@ describe('createComponent — dimensioned variants', () => {
       },
     });
 
-    expect(btn['intent-primary']).toBe('btn-intent-primary');
-    expect(btn['intent-ghost']).toBe('btn-intent-ghost');
-    expect(btn['size-sm']).toBe('btn-size-sm');
-    expect(btn['size-lg']).toBe('btn-size-lg');
+    expect(btn['intent-primary']).toBe('btn--intent-primary');
+    expect(btn['intent-ghost']).toBe('btn--intent-ghost');
+    expect(btn['size-sm']).toBe('btn--size-sm');
+    expect(btn['size-lg']).toBe('btn--size-lg');
   });
 
   it('supports Object.keys() for enumeration', () => {
@@ -111,7 +111,7 @@ describe('createComponent — dimensioned variants', () => {
         intent: { primary: { color: 'blue' } },
       },
     });
-    expect(btn({ intent: 'primary' })).toBe('btn-nobase-intent-primary');
+    expect(btn({ intent: 'primary' })).toBe('btn-nobase--intent-primary');
   });
 
   it('applies variant classes from selections', () => {
@@ -129,10 +129,8 @@ describe('createComponent — dimensioned variants', () => {
       },
     });
 
-    expect(btn({ intent: 'primary', size: 'sm' })).toBe(
-      'vbtn-base vbtn-intent-primary vbtn-size-sm',
-    );
-    expect(btn({ intent: 'ghost', size: 'lg' })).toBe('vbtn-base vbtn-intent-ghost vbtn-size-lg');
+    expect(btn({ intent: 'primary', size: 'sm' })).toBe('vbtn vbtn--intent-primary vbtn--size-sm');
+    expect(btn({ intent: 'ghost', size: 'lg' })).toBe('vbtn vbtn--intent-ghost vbtn--size-lg');
   });
 
   it('applies defaultVariants when selection is omitted', () => {
@@ -151,9 +149,9 @@ describe('createComponent — dimensioned variants', () => {
       defaultVariants: { intent: 'primary', size: 'sm' },
     });
 
-    expect(btn()).toBe('dbtn-base dbtn-intent-primary dbtn-size-sm');
-    expect(btn({})).toBe('dbtn-base dbtn-intent-primary dbtn-size-sm');
-    expect(btn({ size: 'lg' })).toBe('dbtn-base dbtn-intent-primary dbtn-size-lg');
+    expect(btn()).toBe('dbtn dbtn--intent-primary dbtn--size-sm');
+    expect(btn({})).toBe('dbtn dbtn--intent-primary dbtn--size-sm');
+    expect(btn({ size: 'lg' })).toBe('dbtn dbtn--intent-primary dbtn--size-lg');
   });
 
   it('explicit selection overrides defaultVariants', () => {
@@ -167,7 +165,7 @@ describe('createComponent — dimensioned variants', () => {
       defaultVariants: { intent: 'primary' },
     });
 
-    expect(btn({ intent: 'ghost' })).toBe('obtn-intent-ghost');
+    expect(btn({ intent: 'ghost' })).toBe('obtn--intent-ghost');
   });
 
   it('applies compound variant class when all keys match', () => {
@@ -192,14 +190,9 @@ describe('createComponent — dimensioned variants', () => {
       defaultVariants: { intent: 'primary', size: 'sm' },
     });
 
-    const noCompound = btn();
-    expect(noCompound).not.toContain('cbtn-compound-0');
-
     const withCompound = btn({ intent: 'primary', size: 'lg' });
-    expect(withCompound).toContain('cbtn-compound-0');
-    expect(withCompound).toContain('cbtn-base');
-    expect(withCompound).toContain('cbtn-intent-primary');
-    expect(withCompound).toContain('cbtn-size-lg');
+    expect(withCompound).toBe('cbtn cbtn--intent-primary cbtn--size-lg');
+    expect(withCompound).not.toContain('compound-0');
   });
 
   it('does not apply compound variant when only partial match', () => {
@@ -222,8 +215,8 @@ describe('createComponent — dimensioned variants', () => {
       ],
     });
 
-    expect(btn({ intent: 'primary', size: 'sm' })).not.toContain('pbtn-compound-0');
-    expect(btn({ intent: 'ghost', size: 'lg' })).not.toContain('pbtn-compound-0');
+    expect(btn({ intent: 'primary', size: 'sm' })).not.toContain('compound-0');
+    expect(btn({ intent: 'ghost', size: 'lg' })).not.toContain('compound-0');
   });
 
   it('injects CSS for base and variants into the stylesheet', () => {
@@ -236,8 +229,8 @@ describe('createComponent — dimensioned variants', () => {
 
     flushSync();
     const css = getRegisteredCss();
-    expect(css).toContain('.style-test-base');
-    expect(css).toContain('.style-test-intent-primary');
+    expect(css).toContain('.style-test');
+    expect(css).toContain('.style-test--intent-primary');
   });
 
   it('injects CSS for compound variants', () => {
@@ -253,7 +246,7 @@ describe('createComponent — dimensioned variants', () => {
 
     flushSync();
     const css = getRegisteredCss();
-    expect(css).toContain('.cv-test-compound-0');
+    expect(css).toContain('.cv-test--intent-primary.cv-test--size-lg');
   });
 
   it('matches compound variants with array values', () => {
@@ -277,9 +270,11 @@ describe('createComponent — dimensioned variants', () => {
       ],
     });
 
-    expect(btn({ intent: 'primary', size: 'lg' })).toContain('arrbtn-compound-0');
-    expect(btn({ intent: 'secondary', size: 'lg' })).toContain('arrbtn-compound-0');
-    expect(btn({ intent: 'ghost', size: 'lg' })).not.toContain('arrbtn-compound-0');
+    expect(btn({ intent: 'primary', size: 'lg' })).toBe('arrbtn--intent-primary arrbtn--size-lg');
+    expect(btn({ intent: 'secondary', size: 'lg' })).toBe(
+      'arrbtn--intent-secondary arrbtn--size-lg',
+    );
+    expect(btn({ intent: 'ghost', size: 'lg' })).not.toContain('compound-0');
   });
 
   it('supports boolean variant keys in selections and defaults', () => {
@@ -293,9 +288,25 @@ describe('createComponent — dimensioned variants', () => {
       defaultVariants: { outlined: false },
     });
 
-    expect(btn()).toBe('boolbtn-outlined-false');
-    expect(btn({ outlined: true })).toBe('boolbtn-outlined-true');
-    expect(btn({ outlined: false })).toBe('boolbtn-outlined-false');
+    expect(btn()).toBe('boolbtn--outlined-false');
+    expect(btn({ outlined: true })).toBe('boolbtn--outlined-true');
+    expect(btn({ outlined: false })).toBe('boolbtn--outlined-false');
+  });
+
+  it('names identical options by dimension without a collision warning', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const btn = createComponent(defaultClassNamingConfig, 'distinctdims', {
+      variants: {
+        intent: { primary: { color: 'blue' } },
+        tone: { primary: { backgroundColor: 'navy' } },
+      },
+    });
+
+    expect(btn({ intent: 'primary', tone: 'primary' })).toBe(
+      'distinctdims--intent-primary distinctdims--tone-primary',
+    );
+    expect(err).not.toHaveBeenCalled();
+    err.mockRestore();
   });
 
   it('logs console.error in dev for unknown variant option value', () => {
@@ -457,13 +468,13 @@ describe('createComponent with slots', () => {
     });
 
     const defaults = tabs();
-    expect(defaults.root).toBe('tabs-root');
-    expect(defaults.trigger).toBe('tabs-trigger tabs-trigger-size-sm');
-    expect(defaults.content).toBe('tabs-content-size-sm');
+    expect(defaults.root).toBe('tabs');
+    expect(defaults.trigger).toBe('tabs__trigger tabs__trigger--size-sm');
+    expect(defaults.content).toBe('tabs__content tabs__content--size-sm');
 
     const large = tabs({ size: 'lg' });
-    expect(large.trigger).toBe('tabs-trigger tabs-trigger-size-lg');
-    expect(large.content).toBe('tabs-content-size-lg');
+    expect(large.trigger).toBe('tabs__trigger tabs__trigger--size-lg');
+    expect(large.content).toBe('tabs__content tabs__content--size-lg');
   });
 
   it('applies slot compound variants to targeted slots', () => {
@@ -476,7 +487,7 @@ describe('createComponent with slots', () => {
         },
         size: {
           sm: { content: { padding: '8px' } },
-          lg: { content: { padding: '12px' } },
+          lg: { trigger: {}, content: { padding: '12px' } },
         },
       },
       compoundVariants: [
@@ -488,12 +499,12 @@ describe('createComponent with slots', () => {
       defaultVariants: { intent: 'primary', size: 'sm' },
     });
 
-    const noMatch = tabs();
-    expect(noMatch.trigger).not.toContain('tabs-cv-trigger-compound-0');
-
     const withMatch = tabs({ size: 'lg' });
-    expect(withMatch.trigger).toContain('tabs-cv-trigger-compound-0');
-    expect(withMatch.content).not.toContain('tabs-cv-content-compound-0');
+    expect(withMatch.trigger).toBe(
+      'tabs-cv__trigger tabs-cv__trigger--intent-primary tabs-cv__trigger--size-lg',
+    );
+    expect(withMatch.trigger).not.toContain('compound-0');
+    expect(withMatch.content).toBe('tabs-cv__content tabs-cv__content--size-lg');
   });
 
   it('injects per-slot CSS class rules', () => {
@@ -506,21 +517,26 @@ describe('createComponent with slots', () => {
         intent: {
           primary: { trigger: { color: 'blue' } },
         },
+        size: {
+          lg: { trigger: { fontSize: '16px' } },
+        },
       },
       compoundVariants: [
         {
-          variants: { intent: 'primary' },
+          variants: { intent: 'primary', size: 'lg' },
           style: { trigger: { fontWeight: 600 } },
         },
       ],
-      defaultVariants: { intent: 'primary' },
+      defaultVariants: { intent: 'primary', size: 'lg' },
     });
 
     flushSync();
     const css = getRegisteredCss();
-    expect(css).toContain('.tabs-css-root');
-    expect(css).toContain('.tabs-css-trigger-intent-primary');
-    expect(css).toContain('.tabs-css-trigger-compound-0');
+    expect(css).toContain('.tabs-css');
+    expect(css).toContain('.tabs-css__trigger--intent-primary');
+    expect(css).toContain(
+      '.tabs-css__trigger--intent-primary.tabs-css__trigger--size-lg { font-weight: 600; }',
+    );
   });
 });
 
@@ -556,9 +572,9 @@ describe('createComponent — multi-slot (no variants)', () => {
     });
     expect(typeof checkbox).toBe('function');
     const classes = checkbox();
-    expect(classes.root).toBe('checkbox-root');
-    expect(classes.box).toBe('checkbox-box');
-    expect(classes.label).toBe('checkbox-label');
+    expect(classes.root).toBe('checkbox');
+    expect(classes.box).toBe('checkbox__box');
+    expect(classes.label).toBe('checkbox__label');
   });
 
   it('is destructurable — each slot returns its class string', () => {
@@ -568,8 +584,8 @@ describe('createComponent — multi-slot (no variants)', () => {
       box: { width: '20px' },
     });
 
-    expect(checkbox.root).toBe('chk-root');
-    expect(checkbox.box).toBe('chk-box');
+    expect(checkbox.root).toBe('chk');
+    expect(checkbox.box).toBe('chk__box');
   });
 
   it('supports optional slots with no styles', () => {
@@ -580,9 +596,9 @@ describe('createComponent — multi-slot (no variants)', () => {
     });
 
     const classes = dialog();
-    expect(classes.overlay).toBe('dialog-overlay');
-    expect(classes.modal).toBe('dialog-modal');
-    expect(classes.content).toBe('');
+    expect(classes.overlay).toBe('dialog__overlay');
+    expect(classes.modal).toBe('dialog__modal');
+    expect(classes.content).toBe('dialog__content');
   });
 
   it('supports Object.keys() for enumeration', () => {
@@ -607,8 +623,8 @@ describe('createComponent — multi-slot (no variants)', () => {
 
     flushSync();
     const css = getRegisteredCss();
-    expect(css).toContain('.mscss-root');
-    expect(css).toContain('.mscss-box');
+    expect(css).toContain('.mscss');
+    expect(css).toContain('.mscss__box');
   });
 });
 
@@ -643,8 +659,8 @@ describe('createComponent — function config & internal vars', () => {
       };
     });
 
-    expect(badge()).toBe('cb-badge-base cb-badge-tone-neutral');
-    expect(badge({ tone: 'danger' })).toBe('cb-badge-base cb-badge-tone-danger');
+    expect(badge()).toBe('cb-badge cb-badge--tone-neutral');
+    expect(badge({ tone: 'danger' })).toBe('cb-badge cb-badge--tone-danger');
 
     flushSync();
     const css = getRegisteredCss();
@@ -721,8 +737,8 @@ describe('createComponent — function config & internal vars', () => {
     });
 
     const classes = ui();
-    expect(classes.root).toBe('fn-slot-root');
-    expect(classes.item).toBe('fn-slot-item');
+    expect(classes.root).toBe('fn-slot');
+    expect(classes.item).toBe('fn-slot__item');
     flushSync();
     expect(getRegisteredCss()).toContain('gap: var(--fn-slot-g)');
   });

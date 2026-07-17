@@ -309,7 +309,11 @@ export function createComponent(
   if (isMultiSlotConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
-    if (classNaming.mode === 'bem' || classNaming.mode === 'template') {
+    if (
+      classNaming.mode === 'bem' ||
+      classNaming.mode === 'semantic' ||
+      classNaming.mode === 'template'
+    ) {
       return createTemplateMultiSlotComponent(
         classNaming,
         namespace,
@@ -327,7 +331,11 @@ export function createComponent(
   if (isSlotWithVariantsConfig(resolved)) {
     assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
-    if (classNaming.mode === 'bem' || classNaming.mode === 'template') {
+    if (
+      classNaming.mode === 'bem' ||
+      classNaming.mode === 'semantic' ||
+      classNaming.mode === 'template'
+    ) {
       return createTemplateSlotComponent(
         classNaming,
         namespace,
@@ -348,7 +356,11 @@ export function createComponent(
     if (classNaming.mode === 'attribute') {
       return createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
     }
-    if (classNaming.mode === 'bem' || classNaming.mode === 'template') {
+    if (
+      classNaming.mode === 'bem' ||
+      classNaming.mode === 'semantic' ||
+      classNaming.mode === 'template'
+    ) {
       return createTemplateDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
     }
     return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
