@@ -92,17 +92,17 @@ const SEMANTIC_TEMPLATE: ClassNameTemplate = (ctx) => {
 
 Emitted examples (`scopeId: ''`):
 
-| Shape                    | Before                                  | After                                                 |
-| ------------------------ | --------------------------------------- | ----------------------------------------------------- |
-| Base                     | `button-base`                           | `button`                                              |
-| Variant                  | `button-intent-primary`                 | `button--intent-primary`                              |
-| Compound (chained)       | `.button-intent-primary.button-size-lg` | `.button--intent-primary.button--size-lg`             |
-| Slot root                | `dialog-root`                           | `dialog` (`root` → `element: undefined`, same as BEM) |
-| Slot element             | `dialog-content`                        | `dialog__content`                                     |
-| Slot + variant           | `dialog-content-size-lg`                | `dialog__content--size-lg`                            |
-| Flat base                | `card-base`                             | `card`                                                |
-| Flat variant             | `card-elevated`                         | `card--elevated`                                      |
-| With `scopeId: 'var-ui'` | `var-ui-button-base`                    | `var-ui-button`, `var-ui-button--intent-primary`      |
+| Shape                    | Before                                | After                                                 |
+| ------------------------ | ------------------------------------- | ----------------------------------------------------- |
+| Base                     | `button-base`                         | `button`                                              |
+| Variant                  | `button-intent-primary`               | `button--intent-primary`                              |
+| Compound                 | `button-compound-0` (synthetic class) | chained `.button--intent-primary.button--size-lg`     |
+| Slot root                | `dialog-root`                         | `dialog` (`root` → `element: undefined`, same as BEM) |
+| Slot element             | `dialog-content`                      | `dialog__content`                                     |
+| Slot + variant           | `dialog-content-size-lg`              | `dialog__content--size-lg`                            |
+| Flat base                | `card-base`                           | `card`                                                |
+| Flat variant             | `card-elevated`                       | `card--elevated`                                      |
+| With `scopeId: 'var-ui'` | `var-ui-button-base`                  | `var-ui-button`, `var-ui-button--intent-primary`      |
 
 Rules:
 
@@ -117,7 +117,20 @@ Rules:
   `dimension: undefined`: the `base` key is the block and each other key is a
   modifier (`card`, `card--elevated`).
 - **`styles.class()`** keeps today's behavior: `${scope}${name}` with no
-  template call.
+  template call. Note this means `styles.class('button')` and a dimensioned
+  `styles.component('button')` base now resolve to the same string `button`;
+  the existing unscoped-collision registry warning applies, and the migration
+  guide calls this out.
+- **Compound variants change strategy.** Today's default semantic emits a
+  synthetic `namespace-compound-N` class per compound entry and appends it at
+  runtime (`component.ts`, `classNamesAndRulesForProperties(..., 'compound-N')`;
+  `component.test.ts` asserts `…-compound-0` in the class list). The template
+  path instead emits a **chained modifier selector**
+  (`.button--intent-primary.button--size-lg`) with no synthetic class and no
+  runtime append — the browser resolves it once both modifier classes are
+  present, matching `mode: 'bem'`. This is a behavior change (runtime class
+  lists and public CSS), not a rename; snapshots and any CSS/tests referencing
+  `*-compound-N` must migrate.
 
 ### Internal routing
 
@@ -138,13 +151,22 @@ use `createTemplateDimensionedComponent` /
 `createTemplateMultiSlotComponent` (today's bem/template path), instead of
 the hyphen `buildComponentClassName` path.
 
-`mode: 'attribute'` uses the same semantic template for its base, flat, and
-slot class names. `mode: 'bem'` and `mode: 'template'` flat-component output
-stays unchanged; this avoids expanding those opt-in modes beyond their current
-public contract.
+`mode: 'attribute'` uses the same `SEMANTIC_TEMPLATE` for its base, flat, and
+slot class names, via a shared helper rather than through
+`resolveClassNameTemplate` alone (attribute mode is not one of the two template
+modes that function resolves). The attribute path always emits the block class
+even when `base` is empty or omitted, so the returned `className` /
+`ComponentAttrsResult` is never blank. `mode: 'bem'` and `mode: 'template'`
+flat-component output stays unchanged; this avoids expanding those opt-in modes
+beyond their current public contract.
 
 `buildComponentClassName` remains for hashed/compact/atomic and for the
 unchanged BEM/template flat paths.
+
+`emittedComponentClassPrefix` moves both `semantic` and `attribute` from the
+trailing-`-` prefix (`${scope}${namespace}-`) to the bare block form
+(`${scope}${namespace}`, like BEM) so HMR invalidation targets the right rule
+family.
 
 `ClassNameContext` must allow `modifier` to be present while `dimension` is
 undefined for a flat semantic modifier. Existing BEM/template calls continue
@@ -162,12 +184,22 @@ family exists.
 ### Breaking change policy
 
 - Pre-1.0 minor bump (`0.9` → `0.10`).
-- Changelog: table of before/after; note that public classname snapshots and
-  any hand-written CSS targeting old names must update.
+- Changelog: table of before/after; note **three** breaks — changed class
+  strings, changed compound strategy (no more `*-compound-N`), and kebab-cased
+  `data-*` names — plus the newly supported attribute slots. Public classname
+  snapshots and any hand-written CSS targeting old names must update.
 - No long-lived `legacy-semantic` mode — var-ui and in-repo examples migrate
   in the same release train. External consumers on 0.x update or pin.
-- Snapshot lint fixtures (`@typestyles/eslint-plugin`, CLI
-  `snapshot-classnames`) regenerate under the new strings.
+- CLI `snapshot-classnames` needs a **formula rewrite, not just fixture
+  regen**: `semanticClassName` / `collectSuffixesFromConfig`
+  (`packages/cli/src/snapshot-classnames.ts`) build `${ns}-${suffix}` names
+  (including `base` and `compound-N`) and hyphen slot suffixes; they must emit
+  the template's block/`__element`/`--modifier` grammar and drop compound
+  entries from the public snapshot. `StylesBindingConfig.mode` also only knows
+  `semantic|hashed|compact|atomic`, silently treating `bem`/`attribute`/
+  `template` as semantic — align it while here. Regenerate the
+  `@typestyles/eslint-plugin` fixtures (`button-base`,
+  `button-intent-primary`, …) after the formula change.
 - Add a `minor` Changesets entry for `typestyles`. Do not edit package
   versions or publish from the feature PR; release automation produces 0.10.
 
@@ -311,8 +343,16 @@ of markup tree, and matches class-mode's "modifier classes ride on the
 element they style."
 
 **Type-level:** lift the slots exclusion from the attribute-mode
-`styles.component` overloads. Flat configs remain semantic-like (no attrs
-API), but adopt the new semantic flat class strings.
+`styles.component` overloads. Add slot overloads to `AttributeComponentFn`
+(and the layered variant) returning `Record<Slots[number],
+ComponentAttrsResult>` for slot-with-variants and `Record<Slots[number],
+string>` for multi-slot-without-variants; name a `SlotAttrsReturn` type for
+the former. Mirror the new overloads on the `createTypeStyles({ mode:
+'attribute' })` surface (`create-type-styles.ts`). Flip
+`component-mode-shapes.typecheck.ts` from `@ts-expect-error` (slots rejected)
+to accepting slots. Remove the `assertSlotsSupportedForMode` attribute
+rejection. Flat configs remain semantic-like (no attrs API), but adopt the new
+semantic flat class strings.
 
 **Utilities:** update the `withUtils` component-config transform to recurse
 through slot base, variant, and compound style maps. Attribute slot overloads
@@ -370,6 +410,11 @@ Rules of thumb for authors:
    beats overrides).
 4. Do **not** escalate specificity to win overrides when layers are on.
 
+`styles.scope(…, button.base, …)` restyles only the base class, not a
+`[data-…]` variant state. Variant-level overrides need hand-written attribute
+selectors or the future `styles.override()` / `__meta` API — B.4's layer
+guidance covers base-class overrides only.
+
 Nested conflicting theme regions remain the existing `@scope` /
 `styles.scope()` proximity story (see `specs/component-override-contract.md`)
 — this spec does not re-solve that.
@@ -423,6 +468,22 @@ Flat component keys are also unchanged (`card.base`, `card.elevated`); their
 values migrate from `card-base` / `card-elevated` to `card` /
 `card--elevated`.
 
+Compound variants no longer produce a `*-compound-N` class in the runtime
+class list — the CSS is a chained modifier selector. Remove any snapshot or
+assertion that expects a synthetic compound class string.
+
+### In-repo call sites to migrate (same PR)
+
+- `packages/build-runner` extraction/tree-shaking fixtures asserting
+  `…-button-base`.
+- Docs demos and homepage hard-coding old strings
+  (`docs/src/demos/getting-started-button.ts`, `docs/src/pages/index.astro`).
+- `docs/netlify/functions/mcp-content.json` (regenerated from docs).
+- JSDoc links to the deleted `attribute-driven-variants.md` /
+  `bem-variant-mode.md` specs in `class-naming.ts`, `component.ts`,
+  `types.ts`, `styles.ts`, and `specs/classname-template-mode.md`.
+- `IMPROVEMENTS.md` — add a P6 (or follow-on P5) checklist item for this work.
+
 ### Attribute mode
 
 - Spread `result.props` (or merge `attrs`) as today.
@@ -453,6 +514,11 @@ After publishing the engine release:
   `scopeId`.
 - Component snapshots: dimensioned + slot + multi-slot + compound under
   `mode: 'semantic'` (replace hyphen expectations).
+- Compound behavior change: `component.test.ts` no longer expects a
+  `*-compound-N` class in the runtime class list; CSS asserts a chained
+  modifier selector.
+- Bundle budget: confirm `scripts/check-bundle-size.mjs` still passes after
+  template routing + attribute slot paths.
 - Flat component snapshots: `card` + `card--elevated` under semantic and
   attribute; BEM/template flat snapshots unchanged.
 - Collision: `intent: { primary }` + `tone: { primary }` emit _distinct_
