@@ -431,14 +431,23 @@ export interface ComponentAttrsResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Styles for a single variant option (or slot variant block).
- * Union with a permissive record so **`[v.name]: value`** from {@link ComponentInternalVarRef}
- * (custom properties) infers as `{ [key: string]: … }` and still matches — that shape is not
- * assignable to {@link CSSProperties} alone, which would otherwise reject the dimensioned overload
- * and fall through to unrelated `component` overloads. **`Record<string, unknown>`** also covers
- * objects that mix custom-property keys with nested selector blocks like `'&:hover'`.
+ * Styles for a single variant option (or slot / override style block).
+ *
+ * Mapped csstype properties keep **CSS key IntelliSense** (`borderRadius`, `display`, …). An open
+ * string index still accepts **`[v.name]: value`** from {@link ComponentInternalVarRef}, literal
+ * custom properties (`--foo`), and nested selectors / at-rules (`&:hover`, `@media`, …) — without a
+ * `CSSProperties | Record<string, unknown>` union that weakens completions when the type is
+ * reconstructed in downstream theme helpers.
  */
-export type VariantOptionStyle = CSSProperties | Record<string, unknown>;
+export type VariantOptionStyle = {
+  [K in keyof CSS.Properties<CSSValue>]?: CSS.Properties<CSSValue>[K];
+} & {
+  [key: string]:
+    | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
+    | VariantOptionStyle
+    | CSSValue
+    | undefined;
+};
 
 /**
  * A map of variant dimensions to their options (each option is {@link VariantOptionStyle}).
