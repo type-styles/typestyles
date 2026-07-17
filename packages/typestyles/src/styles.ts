@@ -4,6 +4,7 @@ import type {
   StyleUtils,
   VariantDefinitions,
   ComponentAttrsReturn,
+  SlotAttrsReturn,
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,
@@ -652,9 +653,8 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
 };
 
 // ---------------------------------------------------------------------------
-// mode: 'attribute' — dimensioned styles.component() returns { className, attrs, props }.
-// No slots overload exists on any of these — passing `slots` is a compile error under a
-// mode: 'attribute' instance. See specs/attribute-driven-variants.md.
+// mode: 'attribute' — dimensioned components return { className, attrs, props }; slot recipes
+// return that result for every declared slot. See specs/semantic-and-attribute-mode.md.
 // ---------------------------------------------------------------------------
 
 export type AttributeComponentFn = {
@@ -666,6 +666,14 @@ export type AttributeComponentFn = {
     namespace: string,
     config: FlatComponentConfigInput<K>,
   ): FlatComponentReturn<K>;
+  <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
+    namespace: string,
+    config: SlotComponentConfigInput<Slots, V>,
+  ): SlotAttrsReturn<Slots, V>;
+  <const Slots extends readonly string[]>(
+    namespace: string,
+    config: MultiSlotConfigInput<Slots>,
+  ): MultiSlotReturn<Slots>;
 };
 
 export type LayeredAttributeComponentFn<L extends string> = {
@@ -679,6 +687,16 @@ export type LayeredAttributeComponentFn<L extends string> = {
     config: FlatComponentConfigInput<K>,
     options: LayerOption<L>,
   ): FlatComponentReturn<K>;
+  <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
+    namespace: string,
+    config: SlotComponentConfigInput<Slots, V>,
+    options: LayerOption<L>,
+  ): SlotAttrsReturn<Slots, V>;
+  <const Slots extends readonly string[]>(
+    namespace: string,
+    config: MultiSlotConfigInput<Slots>,
+    options: LayerOption<L>,
+  ): MultiSlotReturn<Slots>;
 };
 
 export type AttributeStylesApi = Omit<StylesApi, 'component' | 'withUtils'> & {
@@ -834,16 +852,33 @@ function makeTransformComponentConfigWithUtils<U extends StyleUtils>(
     raw: Record<string, unknown>,
   ): Record<string, unknown> {
     const transformed: Record<string, unknown> = {};
+    const hasSlots = Array.isArray(raw.slots);
+    const transformSlotStyles = (
+      slotStyles: Record<string, unknown>,
+    ): Record<string, CSSProperties> =>
+      Object.fromEntries(
+        Object.entries(slotStyles).map(([slot, properties]) => [
+          slot,
+          apply(properties as CSSPropertiesWithUtils<U>),
+        ]),
+      );
 
     for (const [key, value] of Object.entries(raw)) {
       if (key === 'base' && value && typeof value === 'object') {
-        transformed[key] = apply(value as CSSPropertiesWithUtils<U>);
+        transformed[key] = hasSlots
+          ? transformSlotStyles(value as Record<string, unknown>)
+          : apply(value as CSSPropertiesWithUtils<U>);
       } else if (key === 'variants' && value && typeof value === 'object') {
-        const variants: Record<string, Record<string, CSSProperties>> = {};
+        const variants: Record<
+          string,
+          Record<string, CSSProperties | Record<string, CSSProperties>>
+        > = {};
         for (const [dim, options] of Object.entries(value as Record<string, unknown>)) {
           variants[dim] = {};
           for (const [opt, props] of Object.entries(options as Record<string, unknown>)) {
-            variants[dim][opt] = apply(props as CSSPropertiesWithUtils<U>);
+            variants[dim][opt] = hasSlots
+              ? transformSlotStyles(props as Record<string, unknown>)
+              : apply(props as CSSPropertiesWithUtils<U>);
           }
         }
         transformed[key] = variants;
@@ -851,7 +886,9 @@ function makeTransformComponentConfigWithUtils<U extends StyleUtils>(
         transformed[key] = value.map(
           (cv: { variants: Record<string, unknown>; style: CSSPropertiesWithUtils<U> }) => ({
             ...cv,
-            style: apply(cv.style),
+            style: hasSlots
+              ? transformSlotStyles(cv.style as Record<string, unknown>)
+              : apply(cv.style),
           }),
         );
       } else if (

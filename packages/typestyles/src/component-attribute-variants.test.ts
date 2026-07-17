@@ -155,35 +155,90 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
     err.mockRestore();
   });
 
-  it('throws when a slots config is passed under mode: "attribute"', () => {
-    expect(() =>
-      createComponent(attributeMode, 'slotbtn', {
-        slots: ['root', 'trigger'],
-        base: { root: { display: 'grid' } },
-      } as never),
-    ).toThrow(/does not support|not supported/i);
-  });
-
-  it('does not spuriously claim the namespace when a slots config is rejected under mode: "attribute"', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    expect(() =>
-      createComponent(attributeMode, 'retrynamespace', {
-        slots: ['root', 'trigger'],
-        base: { root: { display: 'grid' } },
-      } as never),
-    ).toThrow();
-
-    createComponent(attributeMode, 'retrynamespace', {
-      base: { padding: '8px' },
-      variants: { variant: { primary: { color: 'blue' } } },
+  it('returns attrs results for every slot and compiles slot-local selectors', () => {
+    const dialog = createComponent(attributeMode, 'dialog', {
+      slots: ['root', 'trigger', 'content'] as const,
+      base: {
+        root: { display: 'grid' },
+        trigger: { cursor: 'pointer' },
+        content: { padding: '8px' },
+      },
+      variants: {
+        size: {
+          sm: { content: { padding: '4px' } },
+          lg: { content: { padding: '16px' }, trigger: { fontSize: '16px' } },
+        },
+      },
+      compoundVariants: [
+        {
+          variants: { size: ['sm', 'lg'] },
+          style: { content: { fontWeight: 700 } },
+        },
+      ],
+      defaultVariants: { size: 'sm' },
     });
 
-    const collisionCalls = warn.mock.calls.filter(
-      (args) => typeof args[0] === 'string' && args[0].includes('registered more than once'),
+    const result = dialog({ size: 'lg' });
+    expect(result.root).toMatchObject({
+      className: 'dialog',
+      attrs: { 'data-size': 'lg' },
+      props: { className: 'dialog', 'data-size': 'lg' },
+    });
+    expect(result.trigger.className).toBe('dialog__trigger');
+    expect(result.content.className).toBe('dialog__content');
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.dialog__content[data-size="lg"] { padding: 16px; }');
+    expect(css).toContain('.dialog__trigger[data-size="lg"] { font-size: 16px; }');
+    expect(css).toContain(
+      '.dialog__content:is([data-size="sm"], [data-size="lg"]) { font-weight: 700; }',
     );
-    expect(collisionCalls).toHaveLength(0);
-    warn.mockRestore();
+  });
+
+  it('returns a string slot map without variants', () => {
+    const dialog = createComponent(attributeMode, 'plain-dialog', {
+      slots: ['root', 'content'] as const,
+      root: { display: 'grid' },
+      content: { padding: '8px' },
+    });
+
+    expect(dialog()).toEqual({ root: 'plain-dialog', content: 'plain-dialog__content' });
+    expect(dialog.root).toBe('plain-dialog');
+  });
+
+  it('expands utilities in slot base, variant, and compound styles', () => {
+    const styles = createStyles({
+      mode: 'attribute',
+      utils: {
+        insetX: (value: string | number) => ({ paddingLeft: value, paddingRight: value }),
+      },
+    });
+    styles.component('utility-dialog', {
+      slots: ['root', 'content'] as const,
+      base: { content: { insetX: '4px' } },
+      variants: {
+        size: { lg: { content: { insetX: '8px' } } },
+        tone: { emphasis: {} },
+      },
+      compoundVariants: [
+        {
+          variants: { size: 'lg', tone: 'emphasis' },
+          style: { content: { insetX: '12px' } },
+        },
+      ],
+    });
+
+    flushSync();
+    expect(getRegisteredCss()).toContain(
+      '.utility-dialog__content { padding-left: 4px; padding-right: 4px; }',
+    );
+    expect(getRegisteredCss()).toContain(
+      '.utility-dialog__content[data-size="lg"] { padding-left: 8px; padding-right: 8px; }',
+    );
+    expect(getRegisteredCss()).toContain(
+      '.utility-dialog__content[data-size="lg"][data-tone="emphasis"] { padding-left: 12px; padding-right: 12px; }',
+    );
   });
 
   describe('CSS emission', () => {

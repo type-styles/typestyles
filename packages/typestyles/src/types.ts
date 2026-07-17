@@ -613,6 +613,12 @@ export type ComponentAttrsReturn<V extends VariantDefinitions> = {
   readonly base: string;
 };
 
+/** Attribute-mode return for slot recipes, with attrs repeated on each declared slot. */
+export type SlotAttrsReturn<
+  Slots extends readonly string[],
+  V extends SlotVariantDefinitions<Slots[number]>,
+> = (selections?: ComponentSelections<V>) => Record<Slots[number], ComponentAttrsResult>;
+
 /**
  * The CVA-style return for flat variants.
  * Callable as a function, destructurable as an object.

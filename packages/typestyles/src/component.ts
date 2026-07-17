@@ -17,6 +17,7 @@ import type {
   MultiSlotConfig,
   MultiSlotConfigInput,
   MultiSlotReturn,
+  SlotAttrsReturn,
 } from './types';
 import { insertRules, invalidateComponentNamespaceForDev } from './sheet';
 import { applyLayerToRules, assertOwnLayer } from './layers';
@@ -255,9 +256,8 @@ function resolveComponentConfig(
  * String(b)     // "button-base"
  * ```
  *
- * Only the plain dimensioned config shape is supported — not `slots` or flat configs. See
- * `specs/attribute-driven-variants.md`. For BEM modifier classes instead, see
- * `createStyles({ mode: 'bem' })` (`specs/bem-variant-mode.md`).
+ * Slot recipes return an attrs result for every declared slot; flat configs continue to return
+ * plain class strings. See `specs/semantic-and-attribute-mode.md`.
  */
 export function createComponent<const V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
@@ -308,11 +308,11 @@ export function createComponent(
 
   const resolved = resolveComponentConfig(classNaming, namespace, config);
   if (isMultiSlotConfig(resolved)) {
-    assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
     if (
       classNaming.mode === 'bem' ||
       classNaming.mode === 'semantic' ||
+      classNaming.mode === 'attribute' ||
       classNaming.mode === 'template'
     ) {
       return createTemplateMultiSlotComponent(
@@ -330,8 +330,15 @@ export function createComponent(
     );
   }
   if (isSlotWithVariantsConfig(resolved)) {
-    assertSlotsSupportedForMode(classNaming, namespace);
     claimComponentNamespace(classNaming, namespace);
+    if (classNaming.mode === 'attribute') {
+      return createAttributeSlotComponent(
+        classNaming,
+        namespace,
+        resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
+        layer,
+      );
+    }
     if (
       classNaming.mode === 'bem' ||
       classNaming.mode === 'semantic' ||
@@ -381,21 +388,6 @@ export function createComponent(
     resolved as FlatComponentConfig<string>,
     layer,
   );
-}
-
-/**
- * `slots` (multi-slot and slot-with-variants configs) is not supported under
- * `createStyles({ mode: 'attribute' })` — excluded at the type level (no `slots`-accepting
- * overload exists on that instance's `styles.component()`, see `styles.ts`), and re-checked here
- * as a runtime backstop for callers who bypass the types (`as any`, plain JS). See
- * `specs/attribute-driven-variants.md`'s "Explicitly out of scope."
- */
-function assertSlotsSupportedForMode(classNaming: ClassNamingConfig, namespace: string): void {
-  if (classNaming.mode === 'attribute') {
-    throw new Error(
-      `[typestyles] \`slots\` is not supported with \`createStyles({ mode: 'attribute' })\` — namespace "${namespace}". See specs/attribute-driven-variants.md.`,
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -897,6 +889,126 @@ function createComponentAttrsResult(
   };
 }
 
+function createAttributeSlotComponent<
+  Slots extends readonly string[],
+  V extends SlotVariantDefinitions<Slots[number]>,
+>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: SlotComponentConfig<Slots, V>,
+  layer?: string,
+): SlotAttrsReturn<Slots, V> {
+  const {
+    slots,
+    base = {},
+    variants = {} as V,
+    compoundVariants = [],
+    defaultVariants = {},
+  } = config;
+  warnKebabAttributeCollisions(namespace, Object.keys(variants));
+
+  const baseClassBySlot: Record<string, string> = {};
+  const mergedStylesBySlot: Record<string, Record<string, unknown>> = {};
+  for (const slot of slots as readonly string[]) {
+    baseClassBySlot[slot] = buildSemanticTemplateClassName(classNaming, {
+      namespace,
+      element: slot === 'root' ? undefined : slot,
+      dimension: undefined,
+      modifier: undefined,
+    });
+    mergedStylesBySlot[slot] = {
+      ...((base as Record<string, CSSProperties>)[slot] ?? {}),
+    };
+  }
+
+  for (const [dimension, options] of Object.entries(variants)) {
+    const optionMap = options as Record<string, Record<string, CSSProperties>>;
+    const optionKeys = Object.keys(optionMap);
+    for (const [option, slotStyles] of Object.entries(optionMap)) {
+      const selectorKey = `&${attributeSelectorFor(dimension, option, optionKeys)}`;
+      for (const [slot, properties] of Object.entries(slotStyles)) {
+        if (mergedStylesBySlot[slot] && properties && Object.keys(properties).length > 0) {
+          mergeIntoSelectorKey(mergedStylesBySlot[slot], selectorKey, properties);
+        }
+      }
+    }
+  }
+
+  (
+    compoundVariants as Array<{
+      variants: Record<string, unknown>;
+      style: Record<string, CSSProperties>;
+    }>
+  ).forEach((cv) => {
+    const selectorSuffix = Object.entries(cv.variants)
+      .map(([dimension, expected]) => {
+        const optionMap = (variants as Record<string, Record<string, CSSProperties>>)[dimension];
+        if (!optionMap) return '';
+        const optionKeys = Object.keys(optionMap);
+        const values = Array.isArray(expected) ? expected : [expected];
+        const selectors = values
+          .map((value) => normalizeSelection(value, optionMap))
+          .filter((selected): selected is string => selected != null)
+          .map((selected) => attributeSelectorFor(dimension, selected, optionKeys));
+        if (selectors.length === 0) return '';
+        return selectors.length === 1 ? selectors[0] : `:is(${selectors.join(', ')})`;
+      })
+      .join('');
+
+    if (!selectorSuffix) return;
+    for (const [slot, properties] of Object.entries(cv.style)) {
+      if (mergedStylesBySlot[slot]) {
+        mergeIntoSelectorKey(mergedStylesBySlot[slot], `&${selectorSuffix}`, properties);
+      }
+    }
+  });
+
+  const rules: Array<{ key: string; css: string }> = [];
+  for (const slot of slots as readonly string[]) {
+    rules.push(
+      ...serializeStyle(`.${baseClassBySlot[slot]}`, mergedStylesBySlot[slot] as CSSProperties, {
+        breakpoints: classNaming.breakpoints,
+      }),
+    );
+  }
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
+
+  return ((selections: Record<string, unknown> = {}) => {
+    devWarnUnknownVariantDimensions(namespace, selections, variants as Record<string, unknown>);
+
+    const attrs: Record<string, string> = {};
+    for (const [dimension, options] of Object.entries(variants)) {
+      const optionMap = options as Record<string, CSSProperties>;
+      const optionKeys = Object.keys(optionMap);
+      const explicit = selections[dimension];
+      const fallback = (defaultVariants as Record<string, unknown>)[dimension];
+      const effective = explicit ?? fallback;
+      const selected = normalizeSelection(effective, optionMap);
+
+      devWarnInvalidDimensionOption(
+        namespace,
+        dimension,
+        effective,
+        selected,
+        optionMap as Record<string, unknown>,
+      );
+      if (selected == null) continue;
+      if (isBooleanOptionKeys(optionKeys)) {
+        if (selected === 'true') attrs[toDataAttributeName(dimension)] = '';
+      } else {
+        attrs[toDataAttributeName(dimension)] = selected;
+      }
+    }
+
+    return Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [
+        slot,
+        createComponentAttrsResult(baseClassBySlot[slot], attrs),
+      ]),
+    ) as Record<Slots[number], ComponentAttrsResult>;
+  }) as SlotAttrsReturn<Slots, V>;
+}
+
 // ---------------------------------------------------------------------------
 // Flat variant component
 // ---------------------------------------------------------------------------
@@ -1088,12 +1200,15 @@ function templateSlotClassName(
   namespace: string,
   slot: string,
 ): string {
-  return buildTemplateClassName(classNaming, {
+  const input = {
     namespace,
     element: slot === 'root' ? undefined : slot,
     dimension: undefined,
     modifier: undefined,
-  });
+  };
+  return classNaming.mode === 'attribute'
+    ? buildSemanticTemplateClassName(classNaming, input)
+    : buildTemplateClassName(classNaming, input);
 }
 
 function createTemplateMultiSlotComponent<Slots extends readonly string[]>(
