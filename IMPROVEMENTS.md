@@ -390,4 +390,10 @@ in var-ui's own roadmap, not here.
     (`scopeId`, `scope`, `namespace`, `path`, `segments`); segment-preserving
     `flattenTokenPaths`; theme/`tokens.use()`/`@property` wired through the same
     path→name registry. Spec: `specs/token-name-template.md`.
+- [x] **Semantic naming and attribute-mode design-system parity**
+  - Shipped: semantic components now use readable `block`, `block--dimension-option`,
+    and `block__slot` names; compounds use chained selectors. Attribute mode now uses
+    kebab-cased `data-*` names and supports slot recipes with per-slot attrs results.
+    Cascade-layer guidance documents the recommended `components` / `overrides` pairing.
+    Spec: `specs/semantic-and-attribute-mode.md`.
 - 1.0 stability policy and criteria

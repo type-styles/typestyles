@@ -45,8 +45,8 @@ const badge = styles.component('badge', {
   ],
 });
 
-badge({ tone: 'success', size: 'lg' }); // includes "badge-compound-0"
-badge({ tone: 'danger', size: 'lg' }); // does not include compound class
+badge({ tone: 'success', size: 'lg' }); // "badge badge--tone-success badge--size-lg"
+badge({ tone: 'danger', size: 'lg' }); // no matching compound rule
 ```
 
 `compoundVariants` supports:
@@ -72,8 +72,8 @@ const input = styles.component('input', {
   },
 });
 
-input(); // "input-base input-invalid-false"
-input({ invalid: true }); // "input-base input-invalid-true"
+input(); // "input input--invalid-false"
+input({ invalid: true }); // "input input--invalid-true"
 ```
 
 ## Multipart `slots`
@@ -125,7 +125,11 @@ const accordionTrigger = styles.component('accordion-trigger', {
 
 ## Attribute-driven variants
 
-Some design systems want variant state expressed as `data-*` attributes on the DOM (Radix/shadcn-style: one stable class, `data-variant`/`data-size` legible in the markup) rather than as discrete classes. Set `mode: 'attribute'` on `createStyles`/`createTypeStyles` and every dimensioned `styles.component()` call from that instance compiles each `variants` option to a `&[data-{dimension}="{option}"]` selector scoped under the single `base` class, instead of its own class:
+Some design systems want variant state expressed as `data-*` attributes on the DOM
+(Radix/shadcn-style: one stable class, `data-variant`/`data-size` legible in the
+markup) rather than as discrete classes. Set `mode: 'attribute'` on
+`createStyles`/`createTypeStyles`; every dimensioned component then compiles each
+option to a selector on its single semantic base class:
 
 ```ts
 const styles = createStyles({ mode: 'attribute' });
@@ -146,15 +150,16 @@ const button = styles.component('button', {
 });
 
 const b = button({ variant: 'primary', size: 'small' });
-b.className; // "button-base"
+b.className; // "button"
 b.attrs; // { 'data-variant': 'primary', 'data-size': 'small' }
-b.props; // { className: 'button-base', 'data-variant': 'primary', 'data-size': 'small' }
+b.props; // { className: 'button', 'data-variant': 'primary', 'data-size': 'small' }
 
 <button {...b.props}>...</button>;
-// <button class="button-base" data-variant="primary" data-size="small">
+// <button class="button" data-variant="primary" data-size="small">
 ```
 
-`String(b)` / template-literal coercion and `cx(b, 'extra')` still return `"button-base"`, same as a plain class string.
+`String(b)` / template-literal coercion and `cx(b, 'extra')` still return `"button"`,
+same as a plain class string.
 
 Boolean dimensions (option keys exactly `{ true, false }`) are presence-based rather than value-matched: `true` compiles to `&[data-disabled]` and sets `data-disabled` with an empty value; `false` compiles to `&:not([data-disabled])` and omits the attribute entirely.
 
@@ -167,15 +172,46 @@ variants: {
 },
 ```
 
-`compoundVariants` still work — each condition compiles to a single combined attribute selector (`.button-base[data-variant="primary"][data-size="large"]`) with no extra compound class and no runtime matching; an array of allowed values for one dimension (`{ tone: ['success', 'warning'], size: 'lg' }`) compiles to a `:is(...)` group ANDed with the rest of the condition.
+`compoundVariants` still work — each condition compiles to a single combined attribute
+selector (`.button[data-variant="primary"][data-size="large"]`) with no extra compound
+class and no runtime matching; an array of allowed values for one dimension
+(`{ tone: ['success', 'warning'], size: 'lg' }`) compiles to a `:is(...)` group ANDed
+with the rest of the condition.
 
 `mode` is an instance-wide setting on `createStyles`/`createTypeStyles`, like `semantic`/`hashed`/`compact`/`atomic` — there is no per-component override. A design system that wants both attribute-based and class-based (or BEM-based) components creates two instances.
 
 **Trade-offs:**
 
-- No per-option class hooks — `button['variant-primary']` doesn't exist in attribute mode, since there's no discrete class to expose. `button.base` still exposes the single base class.
-- Only the plain dimensioned config (`base` / `variants` / `compoundVariants` / `defaultVariants`) supports `mode: 'attribute'` — not `slots` and not the flat (non-dimensioned) config shape. Passing `slots` under a `mode: 'attribute'` instance is a compile-time error. See ["BEM variant naming"](#bem-variant-naming) below for multi-part components.
-- Attribute names are the dimension name verbatim (`data-{dimension}`), not kebab-cased. This matters only for multi-word camelCase dimension names (e.g. a dimension named `fontWeight` renders as `data-fontweight` in the DOM, since HTML lowercases attribute names on write) — it won't round-trip through `element.dataset.fontWeight`, which expects the kebab form `data-font-weight`. Single-word dimension names (`variant`, `size`, `tone`, `intent`) are unaffected.
+- No per-option class hooks — `button['variant-primary']` doesn't exist in attribute
+  mode, since there is no discrete class to expose. `button.base` exposes the stable
+  base class.
+- Attribute slot recipes are supported. Each declared slot receives a
+  `{ className, attrs, props }` result, so spread that slot's `.props` on the matching
+  element. A multi-slot config without variants still returns its ordinary string map.
+- Attribute names are kebab-cased. For example, `fontWeight` becomes
+  `data-font-weight`, which also round-trips through `element.dataset.fontWeight`.
+
+### Attribute slots
+
+```ts
+const dialog = styles.component('dialog', {
+  slots: ['root', 'content'],
+  base: { root: { display: 'grid' }, content: { padding: '8px' } },
+  variants: {
+    size: {
+      lg: { content: { padding: '16px' } },
+    },
+  },
+});
+
+const d = dialog({ size: 'lg' });
+// d.root.props    -> { className: 'dialog', 'data-size': 'lg' }
+// d.content.props -> { className: 'dialog__content', 'data-size': 'lg' }
+```
+
+Attributes go on every declared slot. TypeStyles cannot assume one slot is a
+descendant of another, so it emits each slot's selector locally rather than inventing
+a descendant selector.
 
 ## BEM variant naming
 
@@ -231,7 +267,10 @@ dialog({ size: 'lg' });
 
 **The collision caveat:** BEM has no dimension namespace, so two _different_ dimensions producing the same option string collide on the identical class name (e.g. `intent: 'primary'` and `theme: 'primary'` both want `button--primary`). This is inherent to BEM, not a typestyles limitation — `styles.component()` warns in dev when it happens, rather than silently letting one CSS rule clobber the other in the cascade. Choose non-colliding option names across a component's dimensions.
 
-Like [`mode: 'attribute'`](#attribute-driven-variants), `mode: 'bem'` is an instance-wide setting — no per-component override, and mutually exclusive with the other four `ClassNamingMode` values in one `createStyles()` instance. `styles.class()` and flat (non-dimensioned) `styles.component()` configs are unaffected by `mode: 'bem'` — they name exactly as they would under `semantic` mode.
+Like [`mode: 'attribute'`](#attribute-driven-variants), `mode: 'bem'` is an
+instance-wide setting — no per-component override. `styles.class()` is unaffected;
+flat (non-dimensioned) `styles.component()` configs retain their historical hyphen
+names under `bem`, rather than the semantic `card` / `card--elevated` grammar.
 
 ## Generic classname template
 
@@ -247,7 +286,9 @@ const styles = createStyles({
 });
 ```
 
-`classNameTemplate` is called once per emitted class for dimensioned and slot/multi-slot `styles.component()` configs — never for `styles.class()` or flat (non-dimensioned) configs, which stay `semantic`-style. It receives:
+`classNameTemplate` is called once per emitted class for dimensioned and slot/multi-slot
+`styles.component()` configs — never for `styles.class()` or flat (non-dimensioned)
+configs, which retain their historical hyphen naming in template mode. It receives:
 
 - `scope` — the sanitized `scopeId` prefix (already includes a trailing `-`), `''` when unscoped.
 - `namespace` — the `styles.component()` name, e.g. `'button'`.
@@ -430,7 +471,7 @@ const stylesWithMedia = createStyles({
 
 ## Public class name stability
 
-Semantic class names (`button-base`, `button-intent-primary`, …) are public API for
+Semantic class names (`button`, `button--intent-primary`, …) are public API for
 consumers theming your package. Do not rename namespaces or variant keys without a
 major semver bump. Opt into snapshot + ESLint guardrails described in
 [Publishing Packages — guard public class names](/docs/publishing-packages#guard-public-class-names).

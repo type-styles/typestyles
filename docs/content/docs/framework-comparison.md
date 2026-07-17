@@ -21,7 +21,7 @@ Each subsection below is one decision axis. Lists use normal body typography—*
 
 ### Typical DOM classes
 
-- **TypeStyles** — Readable names (`button-intent-primary`); scoped `--scope-token-*`.
+- **TypeStyles** — Readable names (`button--intent-primary`); scoped `--scope-token-*`.
 - **StyleX** — Atomic, hashed.
 - **Panda CSS** — Utilities / recipes from your preset.
 - **vanilla-extract** — Usually hashed / scoped.
@@ -267,7 +267,7 @@ TypeStyles theme surfaces also carry a general condition engine—`tokens.when` 
 
 ### Component overrides: plain CSS vs. a config DSL
 
-- **TypeStyles** — [`styles.component`](/docs/components) emits **semantic, deterministic class names** (`button-intent-primary`). A consumer restyling a component writes ordinary CSS targeting that class—any property, any selector, any stylesheet—and [cascade layers](/docs/cascade-layers) keep override order predictable.
+- **TypeStyles** — [`styles.component`](/docs/components) emits **semantic, deterministic class names** (`button--intent-primary`). A consumer restyling a component writes ordinary CSS targeting that class—any property, any selector, any stylesheet—and [cascade layers](/docs/cascade-layers) keep override order predictable.
 - **StyleX / Astryx** — Hashed atomic classes can't be targeted from outside the compiler, so Astryx exposes overrides through an **`@scope` + data-attribute configuration DSL**: you can override what the DSL anticipates, in the shapes it anticipates.
 
 ### Animatable typed tokens: `@property` vs. unsupported

@@ -88,7 +88,7 @@ Note: `typestyles` should be a peer dependency so consuming apps can control the
 
 ## Scope isolation
 
-Published packages **must** use a `scopeId` to prevent class name collisions with consumer code or other libraries. Without one, `styles.component('button', …)` produces `button-base` in both your library and the consuming app — their CSS rules silently overwrite each other.
+Published packages **must** use a `scopeId` to prevent class name collisions with consumer code or other libraries. Without one, `styles.component('button', …)` produces `button` in both your library and the consuming app — their CSS rules silently overwrite each other.
 
 ```ts
 // src/styles.ts
@@ -99,7 +99,7 @@ export const { styles, tokens } = createTypeStyles({
 });
 ```
 
-Now all class names are prefixed (`myorg-ui-library-button-base`) and all token custom properties are namespaced (`--myorg-ui-library-color-primary`). See [Best Practices — Scope isolation](/docs/best-practices#scope-isolation) for more options.
+Now all class names are prefixed (`myorg-ui-library-button`) and all token custom properties are namespaced (`--myorg-ui-library-color-primary`). See [Best Practices — Scope isolation](/docs/best-practices#scope-isolation) for more options.
 
 ## Token system
 

@@ -444,7 +444,7 @@ button({ size: 'lg' }); // base + primary + lg
 
 1. CVA returns composed class strings from existing class tokens; typestyles generates and injects CSS from style objects.
 2. CVA `class` in `compoundVariants` becomes typestyles `style`.
-3. You can keep readable deterministic class output (`button-intent-primary`, etc.).
+3. You can keep readable deterministic class output (`button--intent-primary`, etc.).
 4. The return is both callable AND destructurable (CVA-style).
 
 ## From Stitches variants
@@ -910,7 +910,7 @@ Don't migrate everything at once. Pick one component or one page and convert it.
 
 ### 2. Keep the same names
 
-If you have `.button-primary` in CSS, create a `button` component with a `primary` variant. This makes the migration easier to follow.
+If you have `.button--primary` in CSS, create a `button` component with a `primary` variant. This makes the migration easier to follow.
 
 ### 3. Use tokens early
 
@@ -923,18 +923,18 @@ In your tests, you may need to update selectors:
 **Before:**
 
 ```ts
-expect(screen.getByRole('button')).toHaveClass('button-primary');
+expect(screen.getByRole('button')).toHaveClass('button--primary');
 ```
 
 **After:**
 
 ```ts
-expect(screen.getByRole('button')).toHaveClass('button-base', 'button-intent-primary');
+expect(screen.getByRole('button')).toHaveClass('button', 'button--intent-primary');
 ```
 
 ### 5. DevTools familiarity
 
-Your generated class names will be human-readable (`button-intent-primary`), so DevTools inspection stays familiar -- actually more readable than hashed class names from other CSS-in-JS libraries.
+Your generated class names will be human-readable (`button--intent-primary`), so DevTools inspection stays familiar -- actually more readable than hashed class names from other CSS-in-JS libraries.
 
 ### 6. Bundle size check
 

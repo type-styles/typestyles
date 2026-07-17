@@ -641,16 +641,16 @@ const button = styles.component('button', {
 **Generated CSS:**
 
 ```css
-.button-base {
+.button {
   padding: 8px;
 }
 
-.button-base:hover {
+.button:hover {
   background-color: blue;
 }
 
 @media (min-width: 768px) {
-  .button-base {
+  .button {
     padding: 12px;
   }
 }

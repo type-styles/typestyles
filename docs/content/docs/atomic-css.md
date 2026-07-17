@@ -291,7 +291,7 @@ const card = styles.component('card', {
 const flexCard = styles.compose(card, atoms({ display: 'flex', gap: 2, padding: 3 }));
 
 flexCard();
-// "card-base atom-display-flex atom-gap-2 atom-padding-3"
+// "card atom-display-flex atom-gap-2 atom-padding-3"
 ```
 
 ## Real-World Example

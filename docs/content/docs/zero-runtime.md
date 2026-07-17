@@ -290,7 +290,7 @@ verifyTypestylesBuild({
   manifestFile: 'app/typestyles.manifest.json',
   minBytes: 500,
   // App-specific: class names / token vars you expect from the entry graph
-  requiredCssSubstrings: ['.my-scope-button-base {', ':root { --my-scope-color-primary:'],
+  requiredCssSubstrings: ['.my-scope-button {', ':root { --my-scope-color-primary:'],
 });
 ```
 

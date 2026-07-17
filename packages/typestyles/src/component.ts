@@ -232,9 +232,10 @@ function resolveComponentConfig(
  */
 /**
  * Attribute-driven variants — `createStyles({ mode: 'attribute' })` compiles each `variants`
- * option to a `&[data-{dimension}="{option}"]` selector scoped under the single `base` class
- * instead of a discrete class. Boolean dimensions (`{ true, false }` option keys) are
- * presence-based: `true` → `&[data-{dimension}]`, `false` → `&:not([data-{dimension}])`.
+ * option to a kebab-cased `&[data-{dimension}="{option}"]` selector scoped under the
+ * single semantic base class instead of a discrete class. Boolean dimensions
+ * (`{ true, false }` option keys) are presence-based: `true` → `&[data-{dimension}]`,
+ * `false` → `&:not([data-{dimension}])`.
  *
  * ```ts
  * const styles = createStyles({ mode: 'attribute' });

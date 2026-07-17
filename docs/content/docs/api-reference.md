@@ -197,7 +197,7 @@ const button = styles.component('button', {
   defaultVariants: { intent: 'primary' },
 });
 
-button(); // "button-base button-intent-primary"
+button(); // "button button--intent-primary"
 button({ intent: 'primary' }); // same
 const { base } = button; // destructure class strings
 ```
