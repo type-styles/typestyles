@@ -1,5 +1,12 @@
 # typestyles-vue-example
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies [[`08cab3b`](https://github.com/type-styles/typestyles/commit/08cab3b2f44503a5ee7390c2cd218f272c9c0f22)]:
+  - typestyles@0.11.0
+
 ## 0.0.6
 
 ### Patch Changes
