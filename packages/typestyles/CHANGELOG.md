@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.11.1
+
+### Patch Changes
+
+- [#147](https://github.com/type-styles/typestyles/pull/147) [`2364f0f`](https://github.com/type-styles/typestyles/commit/2364f0f014d3c256d92d6099e2c3f966c1b384c9) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Tighten `VariantOptionStyle` for CSS IntelliSense while keeping custom-property assignability
+
 ## 0.11.0
 
 ### Minor Changes
