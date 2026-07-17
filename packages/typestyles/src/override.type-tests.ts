@@ -123,3 +123,50 @@ styles.override(multi, {
   base: { root: { gap: '4px' } },
   variants: { tone: { danger: { root: { color: 'red' } } } },
 });
+
+// Custom-property keys + nested selectors remain assignable (Issue #146)
+const themed = styles.component('ov-type-vars', (ctx) => {
+  const ink = ctx.var('ink');
+  return {
+    base: { color: 'black' },
+    variants: {
+      intent: {
+        danger: { [ink.name]: '#900', color: 'red', '&:hover': { opacity: 0.9 } },
+        primary: { borderRadius: '8px', display: 'flex' },
+      },
+    },
+  };
+});
+
+styles.override(themed, {
+  base: { borderRadius: '4px', '--theme-pad': '8px' },
+  variants: {
+    intent: {
+      primary: { textTransform: 'uppercase', '&:focus-visible': { outline: '2px solid' } },
+    },
+  },
+});
+
+// Layered callback recipes must keep the dimensioned overload (not fall through to flat)
+const layeredVars = createStyles({
+  layers: ['components', 'overrides'] as const,
+});
+const layeredThemed = layeredVars.component(
+  'ov-type-layer-vars',
+  (ctx) => {
+    const ink = ctx.var('ink');
+    return {
+      base: { color: 'black' },
+      variants: {
+        intent: {
+          danger: { [ink.name]: '#900', '&:hover': { opacity: 0.9 } },
+          primary: { color: 'blue' },
+        },
+      },
+    };
+  },
+  { layer: 'components' },
+);
+layeredThemed({ intent: 'primary' });
+// @ts-expect-error — unknown option
+layeredThemed({ intent: 'nope' });
