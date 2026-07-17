@@ -45,9 +45,9 @@ export type ClassNameContext = {
   namespace: string;
   /** Slot name for slot/multi-slot components (`'root'` is passed as `undefined`, matching BEM's root→block rule); `undefined` for non-slot components. */
   element: string | undefined;
-  /** Variant dimension name, e.g. `'intent'`; `undefined` when naming the base/block/element class itself. */
+  /** Variant dimension name, e.g. `'intent'`; `undefined` for flat semantic modifiers or when naming the base/block/element class itself. */
   dimension: string | undefined;
-  /** Variant option value, e.g. `'primary'`; `undefined` when naming the base/block/element class itself. */
+  /** Variant option value, e.g. `'primary'`; `undefined` when naming the base/block/element class itself. May be set with `dimension` undefined for flat semantic modifiers. */
   modifier: string | undefined;
 };
 
@@ -181,13 +181,9 @@ export function emittedComponentClassPrefix(
   cfg: ClassNamingConfig,
   namespace: string,
 ): string | null {
-  // No trailing delimiter (BEM has none) — dev-mode HMR invalidation (sheet.ts) matches by
-  // substring, so this can over-match a sibling namespace that's a string-prefix of this one
-  // (e.g. invalidating "button" also touches "buttongroup"). Narrow, dev-only edge case; not
-  // worth a delimiter that would break real BEM output.
-  if (cfg.mode === 'bem') return `${semanticScopePrefix(cfg)}${namespace}`;
-  if (cfg.mode === 'semantic' || cfg.mode === 'attribute')
-    return `${semanticScopePrefix(cfg)}${namespace}-`;
+  // Bare block prefix — HMR matches the class family at boundaries (sheet.ts).
+  if (cfg.mode === 'bem' || cfg.mode === 'semantic' || cfg.mode === 'attribute')
+    return `${semanticScopePrefix(cfg)}${namespace}`;
   if (cfg.mode === 'hashed') return `${cfg.prefix}-${sanitizeClassSegment(namespace)}-`;
   return null;
 }
@@ -284,13 +280,20 @@ function bemTemplate(ctx: ClassNameContext): string {
   return ctx.modifier ? `${base}--${ctx.modifier}` : base;
 }
 
-/** Resolves the effective template for `mode: 'bem'` (built-in) or `mode: 'template'` (user-supplied). */
+/** Built-in preset for `mode: 'semantic'`. */
+function semanticTemplate(ctx: ClassNameContext): string {
+  const block = ctx.element
+    ? `${ctx.scope}${ctx.namespace}__${ctx.element}`
+    : `${ctx.scope}${ctx.namespace}`;
+  if (!ctx.modifier) return block;
+  return ctx.dimension ? `${block}--${ctx.dimension}-${ctx.modifier}` : `${block}--${ctx.modifier}`;
+}
+
 export function resolveClassNameTemplate(cfg: ClassNamingConfig): ClassNameTemplate {
+  if (cfg.mode === 'semantic') return semanticTemplate;
   if (cfg.mode === 'bem') return bemTemplate;
   if (cfg.mode === 'template' && cfg.classNameTemplate) return cfg.classNameTemplate;
-  throw new Error(
-    `[typestyles] resolveClassNameTemplate called for mode "${cfg.mode}" — only "bem" and "template" build class names via a template.`,
-  );
+  throw new Error(`[typestyles] resolveClassNameTemplate: unsupported mode "${cfg.mode}".`);
 }
 
 const VALID_CLASS_NAME = /^-?[a-zA-Z_][a-zA-Z0-9_-]*$/;

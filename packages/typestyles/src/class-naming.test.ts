@@ -4,6 +4,7 @@ import {
   mergeClassNaming,
   resolveClassNameTemplate,
   buildTemplateClassName,
+  emittedComponentClassPrefix,
   type ClassNameTemplate,
 } from './class-naming';
 import { createStyles } from './styles';
@@ -253,6 +254,85 @@ describe('unscoped collision warning (dev)', () => {
       (args) => typeof args[0] === 'string' && args[0].includes("styles.component('tag'"),
     );
     expect(unscopedCalls).toHaveLength(1);
+  });
+});
+
+describe('SEMANTIC_TEMPLATE', () => {
+  it('emits block, dimensioned modifier, flat modifier, slots, scoped', () => {
+    const cfg = mergeClassNaming({ mode: 'semantic' });
+    const t = resolveClassNameTemplate(cfg);
+    expect(
+      t({
+        scope: '',
+        namespace: 'button',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('button');
+    expect(
+      t({
+        scope: '',
+        namespace: 'button',
+        element: undefined,
+        dimension: 'intent',
+        modifier: 'primary',
+      }),
+    ).toBe('button--intent-primary');
+    expect(
+      t({
+        scope: '',
+        namespace: 'card',
+        element: undefined,
+        dimension: undefined,
+        modifier: 'elevated',
+      }),
+    ).toBe('card--elevated');
+    expect(
+      t({
+        scope: '',
+        namespace: 'dialog',
+        element: undefined,
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('dialog');
+    expect(
+      t({
+        scope: '',
+        namespace: 'dialog',
+        element: 'content',
+        dimension: undefined,
+        modifier: undefined,
+      }),
+    ).toBe('dialog__content');
+    expect(
+      t({ scope: '', namespace: 'dialog', element: 'content', dimension: 'size', modifier: 'lg' }),
+    ).toBe('dialog__content--size-lg');
+    expect(
+      t({
+        scope: 'var-ui-',
+        namespace: 'button',
+        element: undefined,
+        dimension: 'intent',
+        modifier: 'primary',
+      }),
+    ).toBe('var-ui-button--intent-primary');
+  });
+
+  it('emittedComponentClassPrefix for semantic/attribute is bare block', () => {
+    expect(emittedComponentClassPrefix(mergeClassNaming({ mode: 'semantic' }), 'button')).toBe(
+      'button',
+    );
+    expect(emittedComponentClassPrefix(mergeClassNaming({ mode: 'attribute' }), 'button')).toBe(
+      'button',
+    );
+    expect(
+      emittedComponentClassPrefix(
+        mergeClassNaming({ mode: 'semantic', scopeId: 'var-ui' }),
+        'button',
+      ),
+    ).toBe('var-ui-button');
   });
 });
 

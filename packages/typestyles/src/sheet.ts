@@ -555,6 +555,41 @@ export function invalidateKeys(keys: string[], prefixes: string[]): void {
   }
 }
 
+/** Whether a selector key belongs to a component class family at boundaries. */
+function matchesComponentClassFamily(selectorKey: string, blockPrefix: string): boolean {
+  const needle = `.${blockPrefix}`;
+  for (let i = 0, f = selectorKey.indexOf(needle); f !== -1; f = selectorKey.indexOf(needle, i)) {
+    const a = f + needle.length;
+    const n = selectorKey[a];
+    if (
+      n === undefined ||
+      (n === '-' && selectorKey[a + 1] === '-') ||
+      (n === '_' && selectorKey[a + 1] === '_') ||
+      n === '[' ||
+      n === ':' ||
+      n === ' ' ||
+      n === '{' ||
+      !/[a-zA-Z0-9]/.test(n)
+    )
+      return true;
+    i = a + 1;
+  }
+  return false;
+}
+
+function ruleMatchesComponentClassFamily(rule: CSSRule, blockPrefix: string): boolean {
+  if ('selectorText' in rule) {
+    return matchesComponentClassFamily((rule as CSSStyleRule).selectorText, blockPrefix);
+  }
+  if ('cssRules' in rule) {
+    const inner = (rule as CSSGroupingRule).cssRules;
+    for (let i = 0; i < inner.length; i++) {
+      if (ruleMatchesComponentClassFamily(inner[i], blockPrefix)) return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Drop every rule key tied to a `styles.component('namespace', …)` registration, including
  * `@layer`-wrapped keys (`layer:….:.namespace-…`), and release reserved namespace entries.
@@ -564,15 +599,30 @@ export function invalidateComponentNamespaceForDev(
   namespace: string,
   emittedClassPrefix?: string,
 ): void {
-  const selectorInfix = `.${emittedClassPrefix ?? `${namespace}-`}`;
+  const blockPrefix = emittedClassPrefix ?? `${namespace}-`;
+  const trailingHyphenFamily = blockPrefix.endsWith('-');
+  const selectorInfix = `.${blockPrefix}`;
   const state = getSheetState();
   const keysToDrop: string[] = [];
   for (const k of state.insertedRules) {
-    if (k.includes(selectorInfix)) {
+    if (trailingHyphenFamily) {
+      if (k.includes(selectorInfix)) keysToDrop.push(k);
+    } else if (matchesComponentClassFamily(k, blockPrefix)) {
       keysToDrop.push(k);
     }
   }
-  invalidateKeys(keysToDrop, [selectorInfix]);
+  if (trailingHyphenFamily) {
+    invalidateKeys(keysToDrop, [selectorInfix]);
+  } else {
+    invalidateKeys(keysToDrop, []);
+    releaseReservedNamespacesForComponentOrClassNames([namespace]);
+    if (isBrowser && styleElement?.sheet) {
+      const sheet = styleElement.sheet;
+      for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+        if (ruleMatchesComponentClassFamily(sheet.cssRules[i], blockPrefix)) sheet.deleteRule(i);
+      }
+    }
+  }
 }
 
 /**
