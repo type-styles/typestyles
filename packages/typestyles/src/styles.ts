@@ -37,6 +37,7 @@ import { decomposeAtomicStyle, classNamesAndRulesForProperties } from './atomic-
 import { createComponent } from './component';
 import { createScope, type ScopeOptions } from './scope';
 import { createOverride, type OverrideFn, type OverrideOptions } from './override';
+import { getComponentMeta } from './component-meta';
 import { createStylesPropertyFn } from './registered-property';
 import {
   container as containerQuery,
@@ -312,7 +313,7 @@ export type StylesApi = {
   /**
    * Recipe-shaped component restyling from `__tsMeta`. Call on the same `styles`
    * instance that created the component. Prefer `{ layer: 'overrides' }` when layers
-   * are configured.
+   * are configured; if omitted and an `"overrides"` layer exists, that name is used.
    */
   override: OverrideFn;
 };
@@ -806,13 +807,16 @@ export function createStylesWithUtils<U extends StyleUtils>(
     compose,
     scope: (opts, className, overrides) =>
       createScope(classNaming, opts, className, apply(overrides)),
-    override: ((component: object, config: unknown, options?: OverrideOptions) =>
-      createOverride(
+    override: ((component: object, config: unknown, options?: OverrideOptions) => {
+      const meta = getComponentMeta(component);
+      const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
+      return createOverride(
         classNaming,
         component,
-        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply),
+        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply, hasSlots),
         options,
-      )) as OverrideFn,
+      );
+    }) as OverrideFn,
   };
 }
 
@@ -870,13 +874,16 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     compose,
     scope: (opts, className, overrides) =>
       createScope(classNaming, opts, className, apply(overrides)),
-    override: ((componentObj: object, config: unknown, options?: OverrideOptions) =>
-      createOverride(
+    override: ((componentObj: object, config: unknown, options?: OverrideOptions) => {
+      const meta = getComponentMeta(componentObj);
+      const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
+      return createOverride(
         classNaming,
         componentObj,
-        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply),
+        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply, hasSlots),
         options,
-      )) as OverrideFn,
+      );
+    }) as OverrideFn,
   };
 }
 
@@ -946,55 +953,44 @@ function makeTransformComponentConfigWithUtils<U extends StyleUtils>(
 function transformOverrideConfigWithUtils<U extends StyleUtils>(
   raw: Record<string, unknown>,
   apply: (properties: CSSPropertiesWithUtils<U>) => CSSProperties,
+  hasSlots: boolean,
 ): Record<string, unknown> {
   const transformed: Record<string, unknown> = {};
-  const applyMaybeSlotMap = (value: unknown): unknown => {
+  // Mirror `makeTransformComponentConfigWithUtils`: slot recipes are Partial<Record<slot, styles>>,
+  // so utils must expand per slot. Use component meta (`hasSlots`) — do not guess from CSS keys.
+  const transformSlotStyles = (
+    slotStyles: Record<string, unknown>,
+  ): Record<string, CSSProperties> =>
+    Object.fromEntries(
+      Object.entries(slotStyles).map(([slot, properties]) => [
+        slot,
+        apply(properties as CSSPropertiesWithUtils<U>),
+      ]),
+    );
+
+  const applyLeafOrSlotMap = (value: unknown): unknown => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
     const record = value as Record<string, unknown>;
-    const values = Object.values(record);
-    const looksLikeSlotMap =
-      values.length > 0 && values.every((v) => v && typeof v === 'object' && !Array.isArray(v));
-    // Heuristic: slot maps are Partial<Record<slot, styles>>; dimensioned option maps
-    // are the same shape. Prefer applying leaf CSS when nested values look like style
-    // objects (have CSS-ish keys or nested selectors), otherwise apply the object itself.
-    // For override configs we mirror recipe transform: if any nested value looks like
-    // another map of style objects (slot map), apply per-slot; else apply as styles.
-    if (looksLikeSlotMap) {
-      const first = values[0] as Record<string, unknown>;
-      const firstLooksLikeStyles =
-        'color' in first ||
-        'display' in first ||
-        'padding' in first ||
-        Object.keys(first).some((k) => k.startsWith('&') || k.startsWith('@'));
-      if (firstLooksLikeStyles) {
-        return Object.fromEntries(
-          Object.entries(record).map(([slot, props]) => [
-            slot,
-            apply(props as CSSPropertiesWithUtils<U>),
-          ]),
-        );
-      }
-    }
-    return apply(record as CSSPropertiesWithUtils<U>);
+    return hasSlots ? transformSlotStyles(record) : apply(record as CSSPropertiesWithUtils<U>);
   };
 
   for (const [key, value] of Object.entries(raw)) {
     if (key === 'base' && value && typeof value === 'object') {
-      transformed[key] = applyMaybeSlotMap(value);
+      transformed[key] = applyLeafOrSlotMap(value);
     } else if (key === 'variants' && value && typeof value === 'object') {
       const variants: Record<string, Record<string, unknown>> = {};
       for (const [dim, options] of Object.entries(value as Record<string, unknown>)) {
         if (!options || typeof options !== 'object') continue;
         variants[dim] = {};
         for (const [opt, props] of Object.entries(options as Record<string, unknown>)) {
-          variants[dim][opt] = applyMaybeSlotMap(props);
+          variants[dim][opt] = applyLeafOrSlotMap(props);
         }
       }
       transformed[key] = variants;
     } else if (key === 'compoundVariants' && Array.isArray(value)) {
       transformed[key] = value.map((cv: { variants: unknown; style: unknown }) => ({
         ...cv,
-        style: applyMaybeSlotMap(cv.style),
+        style: applyLeafOrSlotMap(cv.style),
       }));
     } else if (key !== 'vars' && value && typeof value === 'object' && !Array.isArray(value)) {
       // Flat override keys (elevated, compact, …)

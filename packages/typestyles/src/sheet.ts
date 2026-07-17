@@ -599,9 +599,28 @@ function ruleMatchesComponentClassFamily(rule: CSSRule, blockPrefix: string): bo
 }
 
 /**
+ * `styles.override()` keys are `override:…` (or `layer:…:override:…` when layered).
+ * Component HMR must not drop them — theme modules own those rules and are not
+ * re-executed when the recipe module hot-reloads.
+ */
+function isOverrideRuleKey(key: string): boolean {
+  return key.includes('override:');
+}
+
+function ruleCssOwnedByOverride(state: SheetState, rule: CSSRule): boolean {
+  const text = rule.cssText;
+  for (const [key, css] of state.ruleCssByKey) {
+    if (!isOverrideRuleKey(key)) continue;
+    if (css === text || css.includes(text)) return true;
+  }
+  return false;
+}
+
+/**
  * Drop every rule key tied to a `styles.component('namespace', …)` registration, including
  * `@layer`-wrapped keys (`layer:….:.namespace-…`), and release reserved namespace entries.
  * Used for Vite HMR and for dev recovery when a module re-runs before `hot.dispose`.
+ * Preserves `styles.override()` rules that target the same class family.
  */
 export function invalidateComponentNamespaceForDev(
   namespace: string,
@@ -613,6 +632,7 @@ export function invalidateComponentNamespaceForDev(
   const state = getSheetState();
   const keysToDrop: string[] = [];
   for (const k of state.insertedRules) {
+    if (isOverrideRuleKey(k)) continue;
     if (trailingHyphenFamily) {
       if (k.includes(selectorInfix)) keysToDrop.push(k);
     } else if (matchesComponentClassFamily(k, blockPrefix)) {
@@ -620,14 +640,28 @@ export function invalidateComponentNamespaceForDev(
     }
   }
   if (trailingHyphenFamily) {
-    invalidateKeys(keysToDrop, [selectorInfix]);
+    // Prefer exact keys over a selector-infix prefix so `override:` rules that
+    // share the class family are not swept away by `invalidateKeys` prefixes.
+    invalidateKeys(keysToDrop, []);
+    if (isBrowser && styleElement?.sheet) {
+      const sheet = styleElement.sheet;
+      for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+        const rule = sheet.cssRules[i];
+        if (!ruleMatchesPrefix(rule, selectorInfix)) continue;
+        if (ruleCssOwnedByOverride(state, rule)) continue;
+        sheet.deleteRule(i);
+      }
+    }
   } else {
     invalidateKeys(keysToDrop, []);
     releaseReservedNamespacesForComponentOrClassNames([namespace], 'component');
     if (isBrowser && styleElement?.sheet) {
       const sheet = styleElement.sheet;
       for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-        if (ruleMatchesComponentClassFamily(sheet.cssRules[i], blockPrefix)) sheet.deleteRule(i);
+        const rule = sheet.cssRules[i];
+        if (!ruleMatchesComponentClassFamily(rule, blockPrefix)) continue;
+        if (ruleCssOwnedByOverride(state, rule)) continue;
+        sheet.deleteRule(i);
       }
     }
   }

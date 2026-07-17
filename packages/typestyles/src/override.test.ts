@@ -279,29 +279,187 @@ describe('styles.override() + __tsMeta', () => {
       expect(css).toContain('.ov-flat-emit--elevated {');
       expect(css).toContain('box-shadow: none');
     });
+
+    it('emits bem-mode variant and compound selectors', () => {
+      const styles = createStyles({ mode: 'bem' });
+      const button = styles.component('ov-bem-btn', {
+        base: { borderRadius: '6px' },
+        variants: {
+          intent: {
+            primary: { backgroundColor: 'blue' },
+            ghost: { backgroundColor: 'transparent' },
+          },
+          size: { sm: { fontSize: '12px' }, lg: { fontSize: '16px' } },
+        },
+      });
+
+      styles.override(button, {
+        base: { borderRadius: '999px' },
+        variants: { intent: { primary: { textTransform: 'uppercase' } } },
+        compoundVariants: [
+          {
+            variants: { intent: 'primary', size: 'lg' },
+            style: { letterSpacing: '0.05em' },
+          },
+          {
+            variants: { intent: ['primary', 'ghost'], size: 'lg' },
+            style: { fontWeight: 700 },
+          },
+        ],
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('.ov-bem-btn {');
+      expect(css).toContain('border-radius: 999px');
+      expect(css).toContain('.ov-bem-btn--primary {');
+      expect(css).toContain('text-transform: uppercase');
+      expect(css).toContain('.ov-bem-btn--primary.ov-bem-btn--lg {');
+      expect(css).toContain('letter-spacing: 0.05em');
+      expect(css).toContain(':is(.ov-bem-btn--primary, .ov-bem-btn--ghost).ov-bem-btn--lg');
+      expect(css).toContain('font-weight: 700');
+    });
+
+    it('emits template-mode dimensioned, flat, and slot overrides', () => {
+      const styles = createStyles({
+        mode: 'template',
+        classNameTemplate: ({ scope, namespace, element, modifier }) => {
+          const base = element ? `${scope}${namespace}__${element}` : `${scope}${namespace}`;
+          return modifier ? `${base}--${modifier}` : base;
+        },
+      });
+
+      const button = styles.component('ov-tpl-btn', {
+        base: { display: 'inline-flex' },
+        variants: {
+          intent: { primary: { color: 'blue' } },
+          size: { lg: { fontSize: '16px' } },
+        },
+      });
+      styles.override(button, {
+        variants: { intent: { primary: { textTransform: 'uppercase' } } },
+        compoundVariants: [
+          {
+            variants: { intent: 'primary', size: 'lg' },
+            style: { fontWeight: 700 },
+          },
+        ],
+      });
+      flushSync();
+      let css = getRegisteredCss();
+      expect(css).toContain('.ov-tpl-btn--primary {');
+      expect(css).toContain('text-transform: uppercase');
+      expect(css).toContain('.ov-tpl-btn--primary.ov-tpl-btn--lg {');
+      expect(css).toContain('font-weight: 700');
+
+      reset();
+      registeredNamespaces.clear();
+
+      const card = styles.component('ov-tpl-flat', {
+        base: { padding: '8px' },
+        elevated: { boxShadow: '0 1px 2px black' },
+      });
+      styles.override(card, {
+        base: { padding: '16px' },
+        elevated: { boxShadow: 'none' },
+      });
+      flushSync();
+      css = getRegisteredCss();
+      // Flat recipes under template mode follow semantic class naming.
+      expect(css).toContain('.ov-tpl-flat-base {');
+      expect(css).toContain('padding: 16px');
+      expect(css).toContain('.ov-tpl-flat-elevated {');
+      expect(css).toContain('box-shadow: none');
+
+      reset();
+      registeredNamespaces.clear();
+
+      const alert = styles.component('ov-tpl-slot', {
+        slots: ['root', 'icon'] as const,
+        base: { root: { display: 'flex' }, icon: { width: '16px' } },
+        variants: {
+          tone: {
+            danger: { root: { color: 'red' }, icon: { opacity: 1 } },
+          },
+        },
+      });
+      styles.override(alert, {
+        base: { root: { gap: '8px' } },
+        variants: { tone: { danger: { icon: { scale: '1.2' } } } },
+        compoundVariants: [
+          {
+            variants: { tone: 'danger' },
+            style: { root: { outline: '1px solid red' } },
+          },
+        ],
+      });
+      flushSync();
+      css = getRegisteredCss();
+      expect(css).toContain('.ov-tpl-slot {');
+      expect(css).toContain('gap: 8px');
+      expect(css).toContain('.ov-tpl-slot__icon--danger {');
+      expect(css).toContain('scale: 1.2');
+      expect(css).toContain('.ov-tpl-slot--danger {');
+      expect(css).toContain('outline: 1px solid red');
+    });
+
+    it('expands utils on slot override leaves (not slot names as CSS keys)', () => {
+      const styles = createStyles({
+        utils: {
+          marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),
+        },
+      });
+      const alert = styles.component('ov-util-slot', {
+        slots: ['root', 'icon'] as const,
+        base: { root: { display: 'flex' }, icon: { width: '16px' } },
+        variants: {
+          tone: {
+            danger: { root: { color: 'red' }, icon: { opacity: 1 } },
+          },
+        },
+      });
+
+      styles.override(alert, {
+        base: { root: { marginX: 12 }, icon: { gap: '4px' } },
+        variants: { tone: { danger: { icon: { marginX: 4 } } } },
+        compoundVariants: [
+          {
+            variants: { tone: 'danger' },
+            style: { root: { marginX: 8 } },
+          },
+        ],
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).not.toContain('root:');
+      expect(css).not.toContain('icon:');
+      expect(css).toContain('.ov-util-slot {');
+      expect(css).toContain('margin-left: 12px');
+      expect(css).toContain('margin-right: 12px');
+      expect(css).toContain('.ov-util-slot__icon {');
+      expect(css).toContain('gap: 4px');
+      expect(css).toContain('.ov-util-slot__icon--tone-danger {');
+      expect(css).toContain('margin-left: 4px');
+      expect(css).toContain('.ov-util-slot--tone-danger {');
+      expect(css).toContain('margin-left: 8px');
+    });
   });
 
   describe('dev warnings', () => {
-    it('warns on missing meta, unknown keys, unsupported mode, and layered without layer', () => {
+    it('warns on missing meta, unknown keys, and unsupported mode', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      const styles = createStyles({
-        layers: ['components', 'overrides'] as const,
+      const styles = createStyles();
+      const button = styles.component('ov-warn-btn', {
+        base: { color: 'black' },
+        variants: { intent: { primary: { color: 'blue' } } },
       });
-      const button = styles.component(
-        'ov-warn-btn',
-        {
-          base: { color: 'black' },
-          variants: { intent: { primary: { color: 'blue' } } },
-        },
-        { layer: 'components' },
-      );
 
       styles.override(button, {
         // @ts-expect-error — unknown dimension for runtime warn test
         variants: { nope: { primary: { color: 'red' } } },
       });
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining('should pass `{ layer: … }`'));
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('Unknown variant dimension "nope"'),
       );
@@ -318,6 +476,91 @@ describe('styles.override() + __tsMeta', () => {
         expect.stringContaining('does not support naming mode "hashed"'),
       );
 
+      warn.mockRestore();
+    });
+
+    it('skips compound overrides with unknown selections instead of emitting partial selectors', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const styles = createStyles();
+      const button = styles.component('ov-compound-warn', {
+        base: { display: 'flex' },
+        variants: {
+          intent: { primary: { color: 'blue' } },
+          size: { lg: { fontSize: '16px' } },
+        },
+      });
+
+      styles.override(button, {
+        compoundVariants: [
+          {
+            // @ts-expect-error — unknown option for runtime warn test
+            variants: { intent: 'primary', size: 'xl' },
+            style: { fontWeight: 700 },
+          },
+        ],
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).not.toContain('font-weight: 700');
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Unknown variant option "size.xl"'),
+      );
+      warn.mockRestore();
+    });
+
+    it('defaults omitted layer to "overrides" when that layer exists', () => {
+      const styles = createStyles({
+        layers: ['components', 'overrides', 'utilities'] as const,
+      });
+      const button = styles.component(
+        'ov-default-layer',
+        { base: { color: 'black' } },
+        { layer: 'components' },
+      );
+      styles.override(button, { base: { color: 'red' } });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toMatch(/@layer overrides \{[\s\S]*\.ov-default-layer \{/);
+      expect(css).toContain('color: red');
+    });
+
+    it('throws when layered without "overrides" and no explicit layer', () => {
+      const styles = createStyles({
+        layers: ['components', 'theme'] as const,
+      });
+      const button = styles.component(
+        'ov-require-layer',
+        { base: { color: 'black' } },
+        { layer: 'components' },
+      );
+      expect(() => styles.override(button, { base: { color: 'red' } })).toThrow(
+        /requires `\{ layer:/,
+      );
+    });
+
+    it('warns and skips base override when meta.base is empty', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const styles = createStyles();
+      // Flat recipes may omit `base`; meta.base is then "".
+      const card = styles.component('ov-nobase-flat', {
+        elevated: { boxShadow: '0 1px 2px black' },
+      });
+      expect(getComponentMeta(card)?.kind === 'flat' && getComponentMeta(card)?.base).toBe('');
+
+      styles.override(card, {
+        base: { color: 'red' },
+        elevated: { boxShadow: 'none' },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).not.toMatch(/(^|\n)\. \{/);
+      expect(css).not.toContain('color: red');
+      expect(css).toContain('.ov-nobase-flat--elevated {');
+      expect(css).toContain('box-shadow: none');
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('meta.base is empty'));
       warn.mockRestore();
     });
 

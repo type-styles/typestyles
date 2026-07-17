@@ -167,6 +167,37 @@ function joinCompoundFragments(fragments: string[]): string {
   return `:is(${fragments.join(', ')})`;
 }
 
+/**
+ * Validate every compound selection against `__tsMeta` before emission.
+ * Returns false (and warns) when any dimension/option is unknown so we never
+ * emit a silently narrower selector (e.g. intent-only instead of intent+size).
+ */
+function validateCompoundSelections(
+  variants: VariantSelectorMap,
+  selections: Record<string, unknown>,
+): boolean {
+  let ok = true;
+  for (const [dimension, expected] of Object.entries(selections)) {
+    const optionMap = variants[dimension];
+    if (!optionMap) {
+      warnDev(`Unknown variant dimension "${dimension}" in styles.override() compoundVariants.`);
+      ok = false;
+      continue;
+    }
+    const values = Array.isArray(expected) ? expected : [expected];
+    for (const value of values) {
+      const key = normalizeOptionKey(value);
+      if (key == null || optionMap[key] == null) {
+        warnDev(
+          `Unknown variant option "${dimension}.${String(value)}" in styles.override() compoundVariants.`,
+        );
+        ok = false;
+      }
+    }
+  }
+  return ok;
+}
+
 function classCompoundSelector(
   variants: VariantSelectorMap,
   selections: Record<string, unknown>,
@@ -185,6 +216,7 @@ function attributeCompoundSelector(
   variants: VariantSelectorMap,
   selections: Record<string, unknown>,
 ): string {
+  if (!baseClass) return '';
   const suffix = Object.entries(selections)
     .map(([dimension, expected]) => {
       const optionMap = variants[dimension];
@@ -204,6 +236,32 @@ function warnDev(message: string): void {
   console.warn(`[typestyles] ${message}`);
 }
 
+/**
+ * Resolve the cascade layer for an override emission.
+ * When the instance has layers and callers omit `layer`, default to `"overrides"`
+ * if that name exists — avoiding unlayered CSS that beats the entire stack
+ * (including `utilities`). Custom layer stacks without `"overrides"` must pass
+ * `{ layer }` explicitly.
+ */
+function resolveOverrideLayer(
+  classNaming: ClassNamingConfig,
+  options: OverrideOptions | undefined,
+): string | undefined {
+  if (options?.layer != null && options.layer !== '') {
+    return options.layer;
+  }
+  const stack = classNaming.cascadeLayers;
+  if (!stack) return undefined;
+  if (stack.ownOrder.includes('overrides')) {
+    return 'overrides';
+  }
+  throw new Error(
+    '[typestyles] `styles.override(…)` on a layered styles instance requires `{ layer: … }` ' +
+      '(or include an `"overrides"` layer in `createStyles({ layers })` to default). ' +
+      `Expected one of: ${stack.ownOrder.map((l) => `"${l}"`).join(', ')}.`,
+  );
+}
+
 function resolveVariantSelector(
   meta: DimensionedComponentMeta,
   dimension: string,
@@ -211,7 +269,10 @@ function resolveVariantSelector(
 ): string | null {
   const frag = meta.variants[dimension]?.[option];
   if (frag == null) return null;
-  if (isAttributeMode(meta)) return `.${meta.base}${frag}`;
+  if (isAttributeMode(meta)) {
+    if (!meta.base) return null;
+    return `.${meta.base}${frag}`;
+  }
   return `.${frag}`;
 }
 
@@ -236,7 +297,13 @@ function emitDimensionedOverride(
   options: OverrideOptions | undefined,
 ): void {
   if (config.base) {
-    emitStyledSelector(classNaming, `.${meta.base}`, config.base, options);
+    if (!meta.base) {
+      warnDev(
+        'styles.override() `base` requires a component with a base class (meta.base is empty).',
+      );
+    } else {
+      emitStyledSelector(classNaming, `.${meta.base}`, config.base, options);
+    }
   }
 
   if (config.variants) {
@@ -260,13 +327,11 @@ function emitDimensionedOverride(
 
   if (config.compoundVariants) {
     for (const cv of config.compoundVariants) {
+      const selections = cv.variants as Record<string, unknown>;
+      if (!validateCompoundSelections(meta.variants, selections)) continue;
       const selector = isAttributeMode(meta)
-        ? attributeCompoundSelector(
-            meta.base,
-            meta.variants,
-            cv.variants as Record<string, unknown>,
-          )
-        : classCompoundSelector(meta.variants, cv.variants as Record<string, unknown>);
+        ? attributeCompoundSelector(meta.base, meta.variants, selections)
+        : classCompoundSelector(meta.variants, selections);
       if (!selector) continue;
       emitStyledSelector(classNaming, selector, cv.style, options);
     }
@@ -280,7 +345,13 @@ function emitFlatOverride(
   options: OverrideOptions | undefined,
 ): void {
   if (config.base) {
-    emitStyledSelector(classNaming, `.${meta.base}`, config.base, options);
+    if (!meta.base) {
+      warnDev(
+        'styles.override() `base` requires a component with a base class (meta.base is empty).',
+      );
+    } else {
+      emitStyledSelector(classNaming, `.${meta.base}`, config.base, options);
+    }
   }
 
   for (const [key, style] of Object.entries(config)) {
@@ -353,6 +424,7 @@ function emitSlotOverride(
 
   if (config.compoundVariants) {
     for (const cv of config.compoundVariants) {
+      const selections = cv.variants as Record<string, unknown>;
       for (const [slot, style] of Object.entries(cv.style ?? {})) {
         if (!style) continue;
         const slotVariants = meta.variants[slot];
@@ -361,13 +433,10 @@ function emitSlotOverride(
           warnDev(`Unknown slot "${slot}" in styles.override() compoundVariants.`);
           continue;
         }
+        if (!validateCompoundSelections(slotVariants, selections)) continue;
         const selector = isAttributeMode(meta)
-          ? attributeCompoundSelector(
-              baseClass,
-              slotVariants,
-              cv.variants as Record<string, unknown>,
-            )
-          : classCompoundSelector(slotVariants, cv.variants as Record<string, unknown>);
+          ? attributeCompoundSelector(baseClass, slotVariants, selections)
+          : classCompoundSelector(slotVariants, selections);
         if (!selector) continue;
         emitStyledSelector(classNaming, selector, style, options);
       }
@@ -398,11 +467,9 @@ export function createOverride(
     return;
   }
 
-  if (classNaming.cascadeLayers && (options?.layer == null || options.layer === '')) {
-    warnDev(
-      'styles.override() on a layered styles instance should pass `{ layer: … }` (e.g. "overrides") so overrides beat recipe CSS.',
-    );
-  }
+  const layer = resolveOverrideLayer(classNaming, options);
+  const resolvedOptions: OverrideOptions | undefined =
+    layer != null ? { ...options, layer } : options;
 
   switch (meta.kind) {
     case 'dimensioned':
@@ -410,18 +477,18 @@ export function createOverride(
         classNaming,
         meta,
         config as OverrideConfig<VariantDefinitions>,
-        options,
+        resolvedOptions,
       );
       break;
     case 'flat':
-      emitFlatOverride(classNaming, meta, config as FlatOverrideConfig<string>, options);
+      emitFlatOverride(classNaming, meta, config as FlatOverrideConfig<string>, resolvedOptions);
       break;
     case 'multi-slot':
       emitMultiSlotOverride(
         classNaming,
         meta,
         config as MultiSlotOverrideConfig<readonly string[]>,
-        options,
+        resolvedOptions,
       );
       break;
     case 'slot':
@@ -429,7 +496,7 @@ export function createOverride(
         classNaming,
         meta,
         config as SlotOverrideConfig<readonly string[], SlotVariantDefinitions<string>>,
-        options,
+        resolvedOptions,
       );
       break;
   }

@@ -914,7 +914,9 @@ styles.override(
 Works for semantic, bem, template, and attribute naming modes (and flat / slot /
 multi-slot recipe shapes). Attribute mode emits selectors like
 `.button[data-intent="primary"]`; put overrides in a later cascade layer so they
-beat recipe CSS without fighting specificity.
+beat recipe CSS without fighting specificity. When `createStyles({ layers })`
+includes an `"overrides"` layer, omitting `{ layer }` defaults to that name —
+custom stacks without `"overrides"` must pass `{ layer }` explicitly.
 
 `getComponentMeta(component)` reads the public `__tsMeta` blob (namespace, kind,
 naming mode, base class(es), per-option selector fragments). Renaming anything in
@@ -1002,8 +1004,9 @@ styles.scope({ root: '.theme-acme', layer: 'overrides' }, button.base, { borderR
 
 Use `components` for recipe CSS, `overrides` for theme or consumer restyles, and
 `utilities` for per-instance intent. A later layer wins without a specificity
-escalation. The example targets only the stable base class; targeting a specific
-attribute variant remains ordinary CSS until the planned typed override API ships.
+escalation. Prefer `styles.override()` for recipe-shaped restyles (including
+attribute variants); plain CSS / `styles.scope()` remain fine when you only need
+a base-class or ad-hoc selector.
 
 ## Public semantic class names
 

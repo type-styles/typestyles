@@ -391,11 +391,13 @@ variants → compounds) + conjunction specificity give the natural ordering.
 
 **Dev guidance when layers are configured:**
 
-- `layer` remains optional (matches `styles.scope`) so simple apps stay
-  unlayered.
-- If the instance has `cascadeLayers` and `options.layer` is omitted, **dev
-  warn** that theme/app overrides should pass a later layer (e.g.
-  `'overrides'`) — attribute-mode variant overrides especially need this.
+- If `options.layer` is omitted and the stack includes `"overrides"`,
+  `styles.override` **defaults to that layer** so callers cannot accidentally
+  emit unlayered CSS that beats the entire `@layer` stack (including
+  `utilities`).
+- If the stack has layers but no `"overrides"` name, **`layer` is required** —
+  omit it and `styles.override` throws (same class of footgun as emitting
+  unlayered).
 - If `layer` is set but the instance has no `layers`, **throw** (same error
   shape as `styles.scope`).
 
@@ -433,7 +435,8 @@ In development, warn (do not throw) on:
 - unknown dimension / option / slot / flat key vs `__tsMeta`
 - missing `__tsMeta`
 - unsupported `namingMode` (atomic / hashed / compact in v1)
-- layered instance with no `options.layer` (see Design point 3)
+- layered instance with no `options.layer` and no `"overrides"` layer in the
+  stack (throws; when `"overrides"` exists it is the default)
 
 Emit only the valid entries.
 

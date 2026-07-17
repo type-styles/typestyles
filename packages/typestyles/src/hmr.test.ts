@@ -8,6 +8,7 @@ import {
   reset,
   invalidateComponentNamespaceForDev,
   invalidateClassNamespaceForDev,
+  getRegisteredCss,
 } from './sheet';
 
 describe('invalidatePrefix', () => {
@@ -131,6 +132,31 @@ describe('invalidateKeys', () => {
       (r) => (r as CSSStyleRule).selectorText,
     );
     expect(selectors.sort()).toEqual(['.button-group', '.buttongroup']);
+  });
+
+  it('preserves styles.override rules when a component namespace is invalidated', () => {
+    const styles = createStyles();
+    const button = styles.component('hmr-ov-btn', {
+      base: { color: 'black' },
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
+    styles.override(button, {
+      base: { borderRadius: '999px' },
+      variants: { intent: { primary: { textTransform: 'uppercase' } } },
+    });
+    flushSync();
+
+    invalidateComponentNamespaceForDev('hmr-ov-btn', 'hmr-ov-btn');
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('border-radius: 999px');
+    expect(css).toContain('text-transform: uppercase');
+    expect(css).toContain('.hmr-ov-btn {');
+    expect(css).toContain('.hmr-ov-btn--intent-primary {');
+    // Recipe rules were dropped; only override CSS remains for those selectors.
+    expect(css).not.toContain('color: black');
+    expect(css).not.toContain('color: blue');
   });
 
   it('invalidates styles.class rules without dropping component modifiers', () => {
