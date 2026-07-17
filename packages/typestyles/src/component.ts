@@ -771,6 +771,52 @@ function mergeIntoSelectorKey(
   target[key] = existing ? { ...existing, ...properties } : { ...properties };
 }
 
+function attributeCompoundSelectorSuffix(
+  variants: Record<string, Record<string, CSSProperties>>,
+  selections: Record<string, unknown>,
+): string {
+  return Object.entries(selections)
+    .map(([dimension, expected]) => {
+      const optionMap = variants[dimension];
+      if (!optionMap) return '';
+      const optionKeys = Object.keys(optionMap);
+      const values = Array.isArray(expected) ? expected : [expected];
+      const selectors = values
+        .map((value) => normalizeSelection(value, optionMap))
+        .filter((selected): selected is string => selected != null)
+        .map((selected) => attributeSelectorFor(dimension, selected, optionKeys));
+      if (selectors.length === 0) return '';
+      return selectors.length === 1 ? selectors[0] : `:is(${selectors.join(', ')})`;
+    })
+    .join('');
+}
+
+function resolveAttributeAttrs(
+  namespace: string,
+  variants: Record<string, Record<string, CSSProperties>>,
+  defaultVariants: Record<string, unknown>,
+  selections: Record<string, unknown>,
+): Record<string, string> {
+  devWarnUnknownVariantDimensions(namespace, selections, variants);
+
+  const attrs: Record<string, string> = {};
+  for (const [dimension, optionMap] of Object.entries(variants)) {
+    const optionKeys = Object.keys(optionMap);
+    const effective = selections[dimension] ?? defaultVariants[dimension];
+    const selected = normalizeSelection(effective, optionMap);
+
+    devWarnInvalidDimensionOption(namespace, dimension, effective, selected, optionMap);
+    if (selected == null) continue;
+    if (isBooleanOptionKeys(optionKeys)) {
+      if (selected === 'true') attrs[toDataAttributeName(dimension)] = '';
+    } else {
+      attrs[toDataAttributeName(dimension)] = selected;
+    }
+  }
+
+  return attrs;
+}
+
 function createAttributeDimensionedComponent<V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
@@ -798,20 +844,10 @@ function createAttributeDimensionedComponent<V extends VariantDefinitions>(
 
   (compoundVariants as Array<{ variants: Record<string, unknown>; style: CSSProperties }>).forEach(
     (cv) => {
-      const selectorSuffix = Object.entries(cv.variants)
-        .map(([dimension, expected]) => {
-          const optionMap = (variants as Record<string, Record<string, CSSProperties>>)[dimension];
-          if (!optionMap) return '';
-          const optionKeys = Object.keys(optionMap);
-          const values = Array.isArray(expected) ? expected : [expected];
-          const selectors = values
-            .map((value) => normalizeSelection(value, optionMap))
-            .filter((selected): selected is string => selected != null)
-            .map((selected) => attributeSelectorFor(dimension, selected, optionKeys));
-          if (selectors.length === 0) return '';
-          return selectors.length === 1 ? selectors[0] : `:is(${selectors.join(', ')})`;
-        })
-        .join('');
+      const selectorSuffix = attributeCompoundSelectorSuffix(
+        variants as Record<string, Record<string, CSSProperties>>,
+        cv.variants,
+      );
 
       if (!selectorSuffix) return;
       mergeIntoSelectorKey(mergedBase, `&${selectorSuffix}`, cv.style);
@@ -834,35 +870,15 @@ function createAttributeDimensionedComponent<V extends VariantDefinitions>(
   insertRules(finalizeComponentRules(classNaming, layer, rules));
 
   const selectorFn = (selections: Record<string, unknown> = {}): ComponentAttrsResult => {
-    devWarnUnknownVariantDimensions(namespace, selections, variants as Record<string, unknown>);
-
-    const attrs: Record<string, string> = {};
-    for (const [dimension, options] of Object.entries(variants)) {
-      const optionMap = options as Record<string, CSSProperties>;
-      const optionKeys = Object.keys(optionMap);
-      const explicit = selections[dimension];
-      const fallback = (defaultVariants as Record<string, unknown>)[dimension];
-      const effective = explicit ?? fallback;
-      const selected = normalizeSelection(effective, optionMap);
-
-      devWarnInvalidDimensionOption(
+    return createComponentAttrsResult(
+      baseClassName,
+      resolveAttributeAttrs(
         namespace,
-        dimension,
-        effective,
-        selected,
-        optionMap as Record<string, unknown>,
-      );
-
-      if (selected == null) continue;
-
-      if (isBooleanOptionKeys(optionKeys)) {
-        if (selected === 'true') attrs[toDataAttributeName(dimension)] = '';
-      } else {
-        attrs[toDataAttributeName(dimension)] = selected;
-      }
-    }
-
-    return createComponentAttrsResult(baseClassName, attrs);
+        variants as Record<string, Record<string, CSSProperties>>,
+        defaultVariants as Record<string, unknown>,
+        selections,
+      ),
+    );
   };
 
   return makeCallableObject(
@@ -940,20 +956,10 @@ function createAttributeSlotComponent<
       style: Record<string, CSSProperties>;
     }>
   ).forEach((cv) => {
-    const selectorSuffix = Object.entries(cv.variants)
-      .map(([dimension, expected]) => {
-        const optionMap = (variants as Record<string, Record<string, CSSProperties>>)[dimension];
-        if (!optionMap) return '';
-        const optionKeys = Object.keys(optionMap);
-        const values = Array.isArray(expected) ? expected : [expected];
-        const selectors = values
-          .map((value) => normalizeSelection(value, optionMap))
-          .filter((selected): selected is string => selected != null)
-          .map((selected) => attributeSelectorFor(dimension, selected, optionKeys));
-        if (selectors.length === 0) return '';
-        return selectors.length === 1 ? selectors[0] : `:is(${selectors.join(', ')})`;
-      })
-      .join('');
+    const selectorSuffix = attributeCompoundSelectorSuffix(
+      variants as Record<string, Record<string, CSSProperties>>,
+      cv.variants,
+    );
 
     if (!selectorSuffix) return;
     for (const [slot, properties] of Object.entries(cv.style)) {
@@ -974,31 +980,12 @@ function createAttributeSlotComponent<
   insertRules(finalizeComponentRules(classNaming, layer, rules));
 
   return ((selections: Record<string, unknown> = {}) => {
-    devWarnUnknownVariantDimensions(namespace, selections, variants as Record<string, unknown>);
-
-    const attrs: Record<string, string> = {};
-    for (const [dimension, options] of Object.entries(variants)) {
-      const optionMap = options as Record<string, CSSProperties>;
-      const optionKeys = Object.keys(optionMap);
-      const explicit = selections[dimension];
-      const fallback = (defaultVariants as Record<string, unknown>)[dimension];
-      const effective = explicit ?? fallback;
-      const selected = normalizeSelection(effective, optionMap);
-
-      devWarnInvalidDimensionOption(
-        namespace,
-        dimension,
-        effective,
-        selected,
-        optionMap as Record<string, unknown>,
-      );
-      if (selected == null) continue;
-      if (isBooleanOptionKeys(optionKeys)) {
-        if (selected === 'true') attrs[toDataAttributeName(dimension)] = '';
-      } else {
-        attrs[toDataAttributeName(dimension)] = selected;
-      }
-    }
+    const attrs = resolveAttributeAttrs(
+      namespace,
+      variants as Record<string, Record<string, CSSProperties>>,
+      defaultVariants as Record<string, unknown>,
+      selections,
+    );
 
     return Object.fromEntries(
       (slots as readonly string[]).map((slot) => [
