@@ -36,6 +36,7 @@ import {
 import { decomposeAtomicStyle, classNamesAndRulesForProperties } from './atomic-decompose';
 import { createComponent } from './component';
 import { createScope, type ScopeOptions } from './scope';
+import { createOverride, type OverrideFn, type OverrideOptions } from './override';
 import { createStylesPropertyFn } from './registered-property';
 import {
   container as containerQuery,
@@ -308,6 +309,12 @@ export type StylesApi = {
    * Prefer component-scoped CSS custom properties (Tier 1) when possible; see theming docs.
    */
   scope: (opts: ScopeOptions, className: string, overrides: CSSProperties) => void;
+  /**
+   * Recipe-shaped component restyling from `__tsMeta`. Call on the same `styles`
+   * instance that created the component. Prefer `{ layer: 'overrides' }` when layers
+   * are configured.
+   */
+  override: OverrideFn;
 };
 
 /** Options argument for styles when `createStyles({ layers })` is used. */
@@ -380,13 +387,14 @@ export type LayeredComponentFnWithUtils<L extends string> = {
 
 export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = Omit<
   StylesWithUtilsApi<U>,
-  'class' | 'hashClass' | 'component' | 'scope'
+  'class' | 'hashClass' | 'component' | 'scope' | 'override'
 > & {
   scope: (
     opts: ScopeOptions & { layer?: L },
     className: string,
     overrides: CSSPropertiesWithUtils<U>,
   ) => void;
+  override: OverrideFn;
   class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<L>) => string;
   hashClass: (
     properties: CSSPropertiesWithUtils<U>,
@@ -398,9 +406,10 @@ export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = 
 
 export type StylesApiWithLayers<L extends string> = Omit<
   StylesApi,
-  'class' | 'hashClass' | 'component' | 'withUtils' | 'scope'
+  'class' | 'hashClass' | 'component' | 'withUtils' | 'scope' | 'override'
 > & {
   scope: (opts: ScopeOptions & { layer?: L }, className: string, overrides: CSSProperties) => void;
+  override: OverrideFn;
   class: (name: string, properties: CSSProperties, options: LayerOption<L>) => string;
   hashClass: (properties: CSSProperties, options: LayerOption<L> & { label?: string }) => string;
   component: LayeredComponentFn<L>;
@@ -569,6 +578,13 @@ function buildStylesRuntimeApi(
   const property = createStylesPropertyFn(classNaming);
   const scope = (opts: ScopeOptions, className: string, overrides: CSSProperties) =>
     createScope(classNaming, opts, className, overrides);
+  const override = ((component: object, config: unknown, options?: OverrideOptions) =>
+    createOverride(
+      classNaming,
+      component,
+      config as Record<string, unknown>,
+      options,
+    )) as OverrideFn;
 
   if (layered) {
     return {
@@ -592,6 +608,7 @@ function buildStylesRuntimeApi(
       withUtils: (utils) => createStylesWithUtilsLayered(utils, classNaming),
       compose,
       scope,
+      override,
       // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
     } as StylesApiWithLayers<string>;
   }
@@ -619,6 +636,7 @@ function buildStylesRuntimeApi(
     withUtils: (utils) => createStylesWithUtils(utils, classNaming),
     compose,
     scope,
+    override,
     // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
   } as StylesApi;
 }
@@ -652,6 +670,7 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   };
   compose: typeof compose;
   scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) => void;
+  override: OverrideFn;
 };
 
 // ---------------------------------------------------------------------------
@@ -787,6 +806,13 @@ export function createStylesWithUtils<U extends StyleUtils>(
     compose,
     scope: (opts, className, overrides) =>
       createScope(classNaming, opts, className, apply(overrides)),
+    override: ((component: object, config: unknown, options?: OverrideOptions) =>
+      createOverride(
+        classNaming,
+        component,
+        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply),
+        options,
+      )) as OverrideFn,
   };
 }
 
@@ -844,6 +870,13 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     compose,
     scope: (opts, className, overrides) =>
       createScope(classNaming, opts, className, apply(overrides)),
+    override: ((componentObj: object, config: unknown, options?: OverrideOptions) =>
+      createOverride(
+        classNaming,
+        componentObj,
+        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply),
+        options,
+      )) as OverrideFn,
   };
 }
 
@@ -908,6 +941,70 @@ function makeTransformComponentConfigWithUtils<U extends StyleUtils>(
 
     return transformed;
   };
+}
+
+function transformOverrideConfigWithUtils<U extends StyleUtils>(
+  raw: Record<string, unknown>,
+  apply: (properties: CSSPropertiesWithUtils<U>) => CSSProperties,
+): Record<string, unknown> {
+  const transformed: Record<string, unknown> = {};
+  const applyMaybeSlotMap = (value: unknown): unknown => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+    const record = value as Record<string, unknown>;
+    const values = Object.values(record);
+    const looksLikeSlotMap =
+      values.length > 0 && values.every((v) => v && typeof v === 'object' && !Array.isArray(v));
+    // Heuristic: slot maps are Partial<Record<slot, styles>>; dimensioned option maps
+    // are the same shape. Prefer applying leaf CSS when nested values look like style
+    // objects (have CSS-ish keys or nested selectors), otherwise apply the object itself.
+    // For override configs we mirror recipe transform: if any nested value looks like
+    // another map of style objects (slot map), apply per-slot; else apply as styles.
+    if (looksLikeSlotMap) {
+      const first = values[0] as Record<string, unknown>;
+      const firstLooksLikeStyles =
+        'color' in first ||
+        'display' in first ||
+        'padding' in first ||
+        Object.keys(first).some((k) => k.startsWith('&') || k.startsWith('@'));
+      if (firstLooksLikeStyles) {
+        return Object.fromEntries(
+          Object.entries(record).map(([slot, props]) => [
+            slot,
+            apply(props as CSSPropertiesWithUtils<U>),
+          ]),
+        );
+      }
+    }
+    return apply(record as CSSPropertiesWithUtils<U>);
+  };
+
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === 'base' && value && typeof value === 'object') {
+      transformed[key] = applyMaybeSlotMap(value);
+    } else if (key === 'variants' && value && typeof value === 'object') {
+      const variants: Record<string, Record<string, unknown>> = {};
+      for (const [dim, options] of Object.entries(value as Record<string, unknown>)) {
+        if (!options || typeof options !== 'object') continue;
+        variants[dim] = {};
+        for (const [opt, props] of Object.entries(options as Record<string, unknown>)) {
+          variants[dim][opt] = applyMaybeSlotMap(props);
+        }
+      }
+      transformed[key] = variants;
+    } else if (key === 'compoundVariants' && Array.isArray(value)) {
+      transformed[key] = value.map((cv: { variants: unknown; style: unknown }) => ({
+        ...cv,
+        style: applyMaybeSlotMap(cv.style),
+      }));
+    } else if (key !== 'vars' && value && typeof value === 'object' && !Array.isArray(value)) {
+      // Flat override keys (elevated, compact, …)
+      transformed[key] = apply(value as CSSPropertiesWithUtils<U>);
+    } else {
+      transformed[key] = value;
+    }
+  }
+
+  return transformed;
 }
 
 function expandStyleWithUtils<U extends StyleUtils>(

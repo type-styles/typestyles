@@ -32,6 +32,13 @@ import { classNamesAndRulesForProperties } from './atomic-decompose';
 import { serializeStyle } from './css';
 import { createComponentConfigContextPair } from './component-config-context';
 import { attachComposeMeta } from './compose-meta';
+import {
+  attachComponentMeta,
+  buildClassVariantSelectorMap,
+  firstClassToken,
+  type SlotVariantSelectorMap,
+  type VariantSelectorMap,
+} from './component-meta';
 
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
@@ -573,14 +580,19 @@ function createDimensionedComponent<V extends VariantDefinitions>(
   ) as ComponentReturn<V>;
 
   attachComposeMeta(result, Object.keys(variants));
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'dimensioned',
+    namingMode: classNaming.mode,
+    base: firstClassToken(baseClassName ?? ''),
+    variants: buildClassVariantSelectorMap(
+      variants as Record<string, Record<string, unknown>>,
+      (dimension, option) => variantClassByKey[`${dimension}-${option}`] ?? '',
+    ),
+  });
 
   return result;
 }
-
-// ---------------------------------------------------------------------------
-// Dimensioned variant component — template engine (mode: 'bem' | 'template'; see specs/classname-template-mode.md)
-// ---------------------------------------------------------------------------
-
 function createTemplateDimensionedComponent<V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
@@ -708,6 +720,16 @@ function createTemplateDimensionedComponent<V extends VariantDefinitions>(
   ) as ComponentReturn<V>;
 
   attachComposeMeta(result, Object.keys(variants));
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'dimensioned',
+    namingMode: classNaming.mode,
+    base: blockClassName,
+    variants: buildClassVariantSelectorMap(
+      variants as Record<string, Record<string, unknown>>,
+      (dimension, option) => variantClassByKey[`${dimension}-${option}`] ?? '',
+    ),
+  });
 
   return result;
 }
@@ -760,6 +782,47 @@ function attributeSelectorFor(
     return option === 'true' ? `[${attrName}]` : `:not([${attrName}])`;
   }
   return `[${attrName}="${option}"]`;
+}
+
+function buildAttributeVariantSelectorMap(
+  variants: Record<string, Record<string, unknown>>,
+): VariantSelectorMap {
+  const map: VariantSelectorMap = {};
+  for (const [dimension, options] of Object.entries(variants)) {
+    const optionKeys = Object.keys(options);
+    const optionMap: { [option: string]: string } = {};
+    for (const option of optionKeys) {
+      optionMap[option] = attributeSelectorFor(dimension, option, optionKeys);
+    }
+    map[dimension] = optionMap;
+  }
+  return map;
+}
+
+function buildSlotAttributeVariantSelectorMap(
+  slots: readonly string[],
+  variants: Record<string, Record<string, unknown>>,
+): SlotVariantSelectorMap {
+  const map: SlotVariantSelectorMap = {};
+  const shared = buildAttributeVariantSelectorMap(variants);
+  for (const slot of slots) {
+    map[slot] = shared;
+  }
+  return map;
+}
+
+function buildSlotClassVariantSelectorMap(
+  slots: readonly string[],
+  variants: Record<string, Record<string, unknown>>,
+  classForOption: (slot: string, dimension: string, option: string) => string,
+): SlotVariantSelectorMap {
+  const map: SlotVariantSelectorMap = {};
+  for (const slot of slots) {
+    map[slot] = buildClassVariantSelectorMap(variants, (dimension, option) =>
+      classForOption(slot, dimension, option),
+    );
+  }
+  return map;
 }
 
 /** Merge `properties` into `target[key]`, combining with any prior properties at that selector. */
@@ -882,10 +945,20 @@ function createAttributeDimensionedComponent<V extends VariantDefinitions>(
     );
   };
 
-  return makeCallableObject(
+  const result = makeCallableObject(
     (...args: unknown[]) => selectorFn(args[0] as Record<string, unknown> | undefined),
     { base: baseClassName },
   ) as ComponentAttrsReturn<V>;
+
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'dimensioned',
+    namingMode: classNaming.mode,
+    base: baseClassName,
+    variants: buildAttributeVariantSelectorMap(variants as Record<string, Record<string, unknown>>),
+  });
+
+  return result;
 }
 
 function createComponentAttrsResult(
@@ -980,7 +1053,7 @@ function createAttributeSlotComponent<
   }
   insertRules(finalizeComponentRules(classNaming, layer, rules));
 
-  return ((selections: Record<string, unknown> = {}) => {
+  const result = ((selections: Record<string, unknown> = {}) => {
     const attrs = resolveAttributeAttrs(
       namespace,
       variants as Record<string, Record<string, CSSProperties>>,
@@ -995,6 +1068,20 @@ function createAttributeSlotComponent<
       ]),
     ) as Record<Slots[number], ComponentAttrsResult>;
   }) as SlotAttrsReturn<Slots, V>;
+
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'slot',
+    namingMode: classNaming.mode,
+    slots: slots as readonly string[],
+    base: { ...baseClassBySlot },
+    variants: buildSlotAttributeVariantSelectorMap(
+      slots as readonly string[],
+      variants as Record<string, Record<string, unknown>>,
+    ),
+  });
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -1071,6 +1158,15 @@ function createSemanticFlatComponent<K extends string>(
   ) as FlatComponentReturn<K>;
 
   attachComposeMeta(result, variantKeys);
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'flat',
+    namingMode: classNaming.mode,
+    base: firstClassToken(classMap['base'] ?? ''),
+    variants: Object.fromEntries(
+      variantKeys.map((key) => [key, firstClassToken(classMap[key] ?? '')]),
+    ),
+  });
 
   return result;
 }
@@ -1130,6 +1226,15 @@ function createFlatComponent<K extends string>(
   ) as FlatComponentReturn<K>;
 
   attachComposeMeta(result, variantKeys);
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'flat',
+    namingMode: classNaming.mode,
+    base: firstClassToken(classMap['base'] ?? ''),
+    variants: Object.fromEntries(
+      variantKeys.map((key) => [key, firstClassToken(classMap[key] ?? '')]),
+    ),
+  });
 
   return result;
 }
@@ -1176,7 +1281,17 @@ function createMultiSlotComponent<Slots extends readonly string[]>(
     return result;
   };
 
-  return makeMultiSlotObject(selectorFn, slotClassMap) as MultiSlotReturn<Slots>;
+  const result = makeMultiSlotObject(selectorFn, slotClassMap) as MultiSlotReturn<Slots>;
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'multi-slot',
+    namingMode: classNaming.mode,
+    slots: slots as readonly string[],
+    base: Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [slot, firstClassToken(slotClassMap[slot] ?? '')]),
+    ),
+  });
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -1231,7 +1346,17 @@ function createTemplateMultiSlotComponent<Slots extends readonly string[]>(
     return result;
   };
 
-  return makeMultiSlotObject(selectorFn, slotClassMap) as MultiSlotReturn<Slots>;
+  const result = makeMultiSlotObject(selectorFn, slotClassMap) as MultiSlotReturn<Slots>;
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'multi-slot',
+    namingMode: classNaming.mode,
+    slots: slots as readonly string[],
+    base: Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [slot, firstClassToken(slotClassMap[slot] ?? '')]),
+    ),
+  });
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -1342,7 +1467,7 @@ function createTemplateSlotComponent<
 
   insertRules(finalizeComponentRules(classNaming, layer, rules));
 
-  return ((selections: Record<string, unknown> = {}) => {
+  const result = ((selections: Record<string, unknown> = {}) => {
     const classes = Object.fromEntries(
       (slots as readonly string[]).map((slot) => [slot, [baseClassBySlot[slot]] as string[]]),
     ) as Record<string, string[]>;
@@ -1378,6 +1503,26 @@ function createTemplateSlotComponent<
       (slots as readonly string[]).map((slot) => [slot, classes[slot].join(' ')]),
     ) as Record<Slots[number], string>;
   }) as SlotComponentFunction<Slots, V>;
+
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'slot',
+    namingMode: classNaming.mode,
+    slots: slots as readonly string[],
+    base: Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [
+        slot,
+        firstClassToken(baseClassBySlot[slot] ?? ''),
+      ]),
+    ),
+    variants: buildSlotClassVariantSelectorMap(
+      slots as readonly string[],
+      variants as Record<string, Record<string, unknown>>,
+      (slot, dimension, option) => variantClassByKey[`${slot}-${dimension}-${option}`] ?? '',
+    ),
+  });
+
+  return result;
 }
 
 function makeMultiSlotObject(
@@ -1480,7 +1625,7 @@ function createSlotComponent<
 
   insertRules(finalizeComponentRules(classNaming, layer, rules));
 
-  return ((selections: Record<string, unknown> = {}) => {
+  const result = ((selections: Record<string, unknown> = {}) => {
     const classes = Object.fromEntries(
       (slots as readonly string[]).map((slot) => [slot, [] as string[]]),
     ) as Record<string, string[]>;
@@ -1551,6 +1696,26 @@ function createSlotComponent<
       (slots as readonly string[]).map((slot) => [slot, classes[slot].join(' ')]),
     ) as Record<Slots[number], string>;
   }) as SlotComponentFunction<Slots, V>;
+
+  attachComponentMeta(result, {
+    namespace,
+    kind: 'slot',
+    namingMode: classNaming.mode,
+    slots: slots as readonly string[],
+    base: Object.fromEntries(
+      (slots as readonly string[]).map((slot) => [
+        slot,
+        firstClassToken(baseClassBySlot[slot] ?? ''),
+      ]),
+    ),
+    variants: buildSlotClassVariantSelectorMap(
+      slots as readonly string[],
+      variants as Record<string, Record<string, unknown>>,
+      (slot, dimension, option) => variantClassByKey[`${slot}-${dimension}-${option}`] ?? '',
+    ),
+  });
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
