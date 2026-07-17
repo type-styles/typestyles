@@ -64,7 +64,6 @@ export type {
   FlatOverrideConfig,
   OverrideFn,
 } from './override';
-export { createOverride } from './override';
 
 export type {
   ComponentMeta,
@@ -121,6 +120,8 @@ export type {
   KeyframeStops,
   VariantDefinitions,
   VariantOptionStyle,
+  VariantOptionKey,
+  CompoundSelectionValue,
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,

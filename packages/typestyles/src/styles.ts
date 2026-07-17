@@ -311,9 +311,10 @@ export type StylesApi = {
    */
   scope: (opts: ScopeOptions, className: string, overrides: CSSProperties) => void;
   /**
-   * Recipe-shaped component restyling from `__tsMeta`. Call on the same `styles`
-   * instance that created the component. Prefer `{ layer: 'overrides' }` when layers
-   * are configured; if omitted and an `"overrides"` layer exists, that name is used.
+   * Recipe-shaped component restyling from `__tsMeta`. Call on the **same** `styles`
+   * instance that created the component — cross-instance calls are unsupported and
+   * may emit into the wrong sheet. Prefer `{ layer: 'overrides' }` when layers are
+   * configured; if omitted and an `"overrides"` layer exists, that name is used.
    */
   override: OverrideFn;
 };
@@ -395,7 +396,7 @@ export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = 
     className: string,
     overrides: CSSPropertiesWithUtils<U>,
   ) => void;
-  override: OverrideFn;
+  override: OverrideFn<L>;
   class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<L>) => string;
   hashClass: (
     properties: CSSPropertiesWithUtils<U>,
@@ -410,7 +411,7 @@ export type StylesApiWithLayers<L extends string> = Omit<
   'class' | 'hashClass' | 'component' | 'withUtils' | 'scope' | 'override'
 > & {
   scope: (opts: ScopeOptions & { layer?: L }, className: string, overrides: CSSProperties) => void;
-  override: OverrideFn;
+  override: OverrideFn<L>;
   class: (name: string, properties: CSSProperties, options: LayerOption<L>) => string;
   hashClass: (properties: CSSProperties, options: LayerOption<L> & { label?: string }) => string;
   component: LayeredComponentFn<L>;
@@ -579,7 +580,7 @@ function buildStylesRuntimeApi(
   const property = createStylesPropertyFn(classNaming);
   const scope = (opts: ScopeOptions, className: string, overrides: CSSProperties) =>
     createScope(classNaming, opts, className, overrides);
-  const override = ((component: object, config: unknown, options?: OverrideOptions) =>
+  const override = ((component: object, config: unknown, options?: OverrideOptions<string>) =>
     createOverride(
       classNaming,
       component,
@@ -807,7 +808,7 @@ export function createStylesWithUtils<U extends StyleUtils>(
     compose,
     scope: (opts, className, overrides) =>
       createScope(classNaming, opts, className, apply(overrides)),
-    override: ((component: object, config: unknown, options?: OverrideOptions) => {
+    override: ((component: object, config: unknown, options?: OverrideOptions<string>) => {
       const meta = getComponentMeta(component);
       const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
       return createOverride(
@@ -874,7 +875,7 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     compose,
     scope: (opts, className, overrides) =>
       createScope(classNaming, opts, className, apply(overrides)),
-    override: ((componentObj: object, config: unknown, options?: OverrideOptions) => {
+    override: ((componentObj: object, config: unknown, options?: OverrideOptions<string>) => {
       const meta = getComponentMeta(componentObj);
       const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
       return createOverride(

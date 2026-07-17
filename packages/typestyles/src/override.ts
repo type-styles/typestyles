@@ -11,9 +11,11 @@ import {
 import { serializeStyle } from './css';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { insertRules } from './sheet';
+import { joinSelectorAlternatives } from './compound-selector';
 import type {
   ComponentAttrsReturn,
   ComponentReturn,
+  CompoundSelectionValue,
   CSSProperties,
   FlatComponentReturn,
   MultiSlotReturn,
@@ -21,12 +23,13 @@ import type {
   SlotComponentFunction,
   SlotVariantDefinitions,
   VariantDefinitions,
+  VariantOptionKey,
   VariantOptionStyle,
 } from './types';
 
 const SUPPORTED_OVERRIDE_MODES = new Set(['semantic', 'bem', 'template', 'attribute']);
 
-export type OverrideOptions = {
+export type OverrideOptions<L extends string = string> = {
   /**
    * Selector prefix inserted before the component selector, e.g. `.theme-acme`.
    * Emits `.theme-acme .button--intent-primary { … }` (descendant combinator).
@@ -34,16 +37,14 @@ export type OverrideOptions = {
    */
   selectorPrefix?: string;
   /** Cascade layer name; must be on the instance's `layers` stack when set. */
-  layer?: string;
+  layer?: L;
 };
-
-type CompoundSelectionValue = string | boolean | readonly (string | boolean)[];
 
 export type OverrideConfig<V extends VariantDefinitions> = {
   base?: VariantOptionStyle;
   variants?: { [K in keyof V]?: { [O in keyof V[K]]?: VariantOptionStyle } };
   compoundVariants?: Array<{
-    variants: { [K in keyof V]?: CompoundSelectionValue };
+    variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
     style: VariantOptionStyle;
   }>;
   /** Reserved for phase 2 — typed component vars. */
@@ -61,13 +62,16 @@ export type SlotOverrideConfig<
     };
   };
   compoundVariants?: Array<{
-    variants: { [K in keyof V]?: CompoundSelectionValue };
+    variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
     style: Partial<Record<Slots[number], VariantOptionStyle>>;
   }>;
 };
 
 export type MultiSlotOverrideConfig<Slots extends readonly string[]> = {
   base?: Partial<Record<Slots[number], VariantOptionStyle>>;
+  /** Multi-slot recipes have no variants — forbidden so excess keys type-error. */
+  variants?: never;
+  compoundVariants?: never;
 };
 
 export type FlatOverrideConfig<K extends string> = {
@@ -94,7 +98,7 @@ function prefixSelector(selector: string, selectorPrefix?: string): string {
 }
 
 function overrideRuleKey(
-  options: OverrideOptions | undefined,
+  options: OverrideOptions<string> | undefined,
   selector: string,
   ruleKey: string,
 ): string {
@@ -107,7 +111,7 @@ function emitStyledSelector(
   classNaming: ClassNamingConfig,
   selector: string,
   styles: VariantOptionStyle,
-  options: OverrideOptions | undefined,
+  options: OverrideOptions<string> | undefined,
 ): void {
   const prefixed = prefixSelector(selector, options?.selectorPrefix);
   const serialized = serializeStyle(prefixed, styles as CSSProperties, {
@@ -160,13 +164,6 @@ function attributeFragmentsForDimension(
     .filter(Boolean);
 }
 
-function joinCompoundFragments(fragments: string[]): string {
-  if (fragments.length === 0) return '';
-  const first = fragments[0];
-  if (fragments.length === 1 && first != null) return first;
-  return `:is(${fragments.join(', ')})`;
-}
-
 /**
  * Validate every compound selection against `__tsMeta` before emission.
  * Returns false (and warns) when any dimension/option is unknown so we never
@@ -206,7 +203,7 @@ function classCompoundSelector(
     .map(([dimension, expected]) => {
       const optionMap = variants[dimension];
       if (!optionMap) return '';
-      return joinCompoundFragments(classFragmentsForDimension(optionMap, expected));
+      return joinSelectorAlternatives(classFragmentsForDimension(optionMap, expected));
     })
     .join('');
 }
@@ -221,7 +218,7 @@ function attributeCompoundSelector(
     .map(([dimension, expected]) => {
       const optionMap = variants[dimension];
       if (!optionMap) return '';
-      return joinCompoundFragments(attributeFragmentsForDimension(optionMap, expected));
+      return joinSelectorAlternatives(attributeFragmentsForDimension(optionMap, expected));
     })
     .join('');
   return `.${baseClass}${suffix}`;
@@ -245,7 +242,7 @@ function warnDev(message: string): void {
  */
 function resolveOverrideLayer(
   classNaming: ClassNamingConfig,
-  options: OverrideOptions | undefined,
+  options: OverrideOptions<string> | undefined,
 ): string | undefined {
   if (options?.layer != null && options.layer !== '') {
     return options.layer;
@@ -294,7 +291,7 @@ function emitDimensionedOverride(
   classNaming: ClassNamingConfig,
   meta: DimensionedComponentMeta,
   config: OverrideConfig<VariantDefinitions>,
-  options: OverrideOptions | undefined,
+  options: OverrideOptions<string> | undefined,
 ): void {
   if (config.base) {
     if (!meta.base) {
@@ -342,7 +339,7 @@ function emitFlatOverride(
   classNaming: ClassNamingConfig,
   meta: FlatComponentMeta,
   config: FlatOverrideConfig<string>,
-  options: OverrideOptions | undefined,
+  options: OverrideOptions<string> | undefined,
 ): void {
   if (config.base) {
     if (!meta.base) {
@@ -368,7 +365,7 @@ function emitMultiSlotOverride(
   classNaming: ClassNamingConfig,
   meta: MultiSlotComponentMeta,
   config: MultiSlotOverrideConfig<readonly string[]>,
-  options: OverrideOptions | undefined,
+  options: OverrideOptions<string> | undefined,
 ): void {
   if (!config.base) return;
   for (const [slot, style] of Object.entries(config.base)) {
@@ -390,7 +387,7 @@ function emitSlotOverride(
   classNaming: ClassNamingConfig,
   meta: SlotComponentMeta,
   config: SlotOverrideConfig<readonly string[], SlotVariantDefinitions<string>>,
-  options: OverrideOptions | undefined,
+  options: OverrideOptions<string> | undefined,
 ): void {
   if (config.base) {
     for (const [slot, style] of Object.entries(config.base)) {
@@ -446,13 +443,14 @@ function emitSlotOverride(
 
 /**
  * Emit recipe-shaped component overrides from `__tsMeta`.
- * Call on the same `styles` instance that created the component.
+ * Call on the same `styles` instance that created the component — cross-instance
+ * calls (component from `stylesA`, `stylesB.override(…)`) are unsupported.
  */
 export function createOverride(
   classNaming: ClassNamingConfig,
   component: object,
   config: AnyOverrideConfig,
-  options?: OverrideOptions,
+  options?: OverrideOptions<string>,
 ): void {
   const meta = getComponentMeta(component);
   if (!meta) {
@@ -468,7 +466,7 @@ export function createOverride(
   }
 
   const layer = resolveOverrideLayer(classNaming, options);
-  const resolvedOptions: OverrideOptions | undefined =
+  const resolvedOptions: OverrideOptions<string> | undefined =
     layer != null ? { ...options, layer } : options;
 
   switch (meta.kind) {
@@ -503,25 +501,29 @@ export function createOverride(
 }
 
 /** Overload surface mirrored on `styles.override`. */
-export type OverrideFn = {
+export type OverrideFn<L extends string = string> = {
   <const V extends VariantDefinitions>(
     component: ComponentReturn<V> | ComponentAttrsReturn<V>,
-    config: OverrideConfig<V>,
-    options?: OverrideOptions,
+    config: OverrideConfig<NoInfer<V>>,
+    options?: OverrideOptions<L>,
   ): void;
   <const K extends string>(
     component: FlatComponentReturn<K>,
-    config: FlatOverrideConfig<K>,
-    options?: OverrideOptions,
+    config: FlatOverrideConfig<NoInfer<K>>,
+    options?: OverrideOptions<L>,
   ): void;
-  <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
-    component: SlotComponentFunction<Slots, V> | SlotAttrsReturn<Slots, V>,
-    config: SlotOverrideConfig<Slots, V>,
-    options?: OverrideOptions,
-  ): void;
+  /** Multi-slot before slot-with-variants so branded multi returns do not widen `V`. */
   <const Slots extends readonly string[]>(
     component: MultiSlotReturn<Slots>,
     config: MultiSlotOverrideConfig<Slots>,
-    options?: OverrideOptions,
+    options?: OverrideOptions<L>,
+  ): void;
+  <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
+    component: (SlotComponentFunction<Slots, V> | SlotAttrsReturn<Slots, V>) & {
+      /** Reject branded multi-slot returns so invalid configs do not fall through here. */
+      __tsMultiSlot?: never;
+    },
+    config: SlotOverrideConfig<NoInfer<Slots>, NoInfer<V>>,
+    options?: OverrideOptions<L>,
   ): void;
 };

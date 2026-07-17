@@ -21,6 +21,7 @@ import type {
 } from './types';
 import { insertRules, invalidateComponentNamespaceForDev } from './sheet';
 import { applyLayerToRules, assertOwnLayer } from './layers';
+import { joinSelectorAlternatives } from './compound-selector';
 import { registeredNamespaces, warnUnscopedCollision } from './registry';
 import {
   emittedComponentClassPrefix,
@@ -849,8 +850,7 @@ function attributeCompoundSelectorSuffix(
         .map((value) => normalizeSelection(value, optionMap))
         .filter((selected): selected is string => selected != null)
         .map((selected) => attributeSelectorFor(dimension, selected, optionKeys));
-      if (selectors.length === 0) return '';
-      return selectors.length === 1 ? selectors[0] : `:is(${selectors.join(', ')})`;
+      return joinSelectorAlternatives(selectors);
     })
     .join('');
 }
@@ -1542,6 +1542,14 @@ function makeMultiSlotObject(
       ]),
     ),
   );
+
+  // Non-enumerable brand for OverrideFn overload discrimination (see MultiSlotReturn).
+  Object.defineProperty(fn, '__tsMultiSlot', {
+    value: true,
+    enumerable: false,
+    writable: false,
+    configurable: true,
+  });
 
   return fn;
 }

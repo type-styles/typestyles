@@ -225,8 +225,10 @@ the package's versioning rules — the same promise as the classname snapshot
 lint, now with a structured surface. Snapshot tooling may later emit from
 meta instead of scraping destructurable keys; not required for v1.
 
-Export `getComponentMeta` (and the `ComponentMeta` types) from the main
-`typestyles` entry alongside other public helpers.
+Export `getComponentMeta` (and the `ComponentMeta` / `Override*` types) from the
+main `typestyles` entry alongside other public helpers. `createOverride` is
+**internal** — not a public export; call `styles.override` on the creating
+instance.
 
 ---
 
@@ -241,7 +243,7 @@ function override(
   options?: OverrideOptions,
 ): void;
 
-type OverrideOptions = {
+type OverrideOptions<L extends string = string> = {
   /**
    * Selector prefix inserted before the component selector, e.g. `.theme-acme`.
    * Emits `.theme-acme .button--intent-primary { … }` (descendant combinator).
@@ -250,12 +252,13 @@ type OverrideOptions = {
    */
   selectorPrefix?: string;
   /** Cascade layer name; must be on the instance's `layers` stack when set. */
-  layer?: string;
+  layer?: L;
 };
 ```
 
 When the styles instance is created with `layers`, type `layer` as
 `L` from that stack (same pattern as layered `styles.scope` / `styles.class`).
+`OverrideFn<L>` threads that constraint through `styles.override`.
 
 ### Override config shapes
 
@@ -426,7 +429,8 @@ enforce the binding by architecture: var-ui's single shared
 `styles.override` directly are already on the creating instance.
 
 Cross-instance misuse (component from `stylesA`, `stylesB.override(…)`) is
-unsupported — document only.
+unsupported — document prominently in theming docs and the `styles.override`
+JSDoc. Design systems must wrap the creating instance (var-ui pattern).
 
 ### Runtime validation (JS / typos)
 
@@ -475,7 +479,10 @@ parameters and in `__tsMeta`. Reserve the `vars` key in `OverrideConfig` as
   attribute dimensioned + attribute slot); shape snapshots per kind × naming
   mode (semantic, bem, template, attribute).
 - **Type tests:** inference for dimensioned, attribute return, slot, flat,
-  multi-slot; unknown keys fail to typecheck.
+  multi-slot; unknown keys fail to typecheck — enforced via
+  `src/override.type-tests.ts` in `pnpm typecheck` (not only `@ts-expect-error`
+  inside excluded `*.test.ts` files). Compound option values use
+  `CompoundSelectionValue<VariantOptionKey<V, K>>` like recipe compounds.
 - **Emission snapshots:** base / variant / compound / slot; with and without
   `selectorPrefix`; with and without `layer`.
 - **Compound arrays:** `:is(...)` emission matches recipe compounds

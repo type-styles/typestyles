@@ -444,6 +444,91 @@ describe('styles.override() + __tsMeta', () => {
       expect(css).toContain('.ov-util-slot--tone-danger {');
       expect(css).toContain('margin-left: 8px');
     });
+
+    it('overrides multi-slot recipes per slot', () => {
+      const styles = createStyles();
+      const card = styles.component('ov-multi-emit', {
+        slots: ['root', 'title', 'body'] as const,
+        root: { display: 'grid' },
+        title: { fontWeight: 600 },
+        body: { color: 'gray' },
+      });
+
+      expect(getComponentMeta(card)?.kind).toBe('multi-slot');
+
+      styles.override(card, {
+        base: {
+          root: { gap: '12px' },
+          title: { fontSize: '18px' },
+        },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('.ov-multi-emit {');
+      expect(css).toContain('gap: 12px');
+      expect(css).toContain('.ov-multi-emit__title {');
+      expect(css).toContain('font-size: 18px');
+    });
+
+    it('emits boolean attribute compounds and nested selectors', () => {
+      const styles = createStyles({ mode: 'attribute' });
+      const button = styles.component('ov-bool-attr', {
+        base: { display: 'inline-flex' },
+        variants: {
+          intent: { primary: { color: 'blue' } },
+          disabled: { true: { opacity: 0.5 }, false: { opacity: 1 } },
+        },
+      });
+
+      styles.override(button, {
+        base: { '&:hover': { textDecoration: 'underline' } },
+        variants: { disabled: { true: { cursor: 'not-allowed' } } },
+        compoundVariants: [
+          {
+            variants: { intent: 'primary', disabled: true },
+            style: { outline: 'none' },
+          },
+        ],
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('.ov-bool-attr:hover {');
+      expect(css).toContain('text-decoration: underline');
+      expect(css).toContain('.ov-bool-attr[data-disabled] {');
+      expect(css).toContain('cursor: not-allowed');
+      expect(css).toContain('.ov-bool-attr[data-intent="primary"][data-disabled] {');
+      expect(css).toContain('outline: none');
+    });
+
+    it('emits semantic boolean compounds and nested &:hover', () => {
+      const styles = createStyles();
+      const button = styles.component('ov-bool-sem', {
+        base: { display: 'inline-flex' },
+        variants: {
+          intent: { primary: { color: 'blue' } },
+          disabled: { true: { opacity: 0.5 }, false: { opacity: 1 } },
+        },
+      });
+
+      styles.override(button, {
+        base: { '&:focus-visible': { outline: '2px solid blue' } },
+        compoundVariants: [
+          {
+            variants: { intent: 'primary', disabled: true },
+            style: { pointerEvents: 'none' },
+          },
+        ],
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('.ov-bool-sem:focus-visible {');
+      expect(css).toContain('outline: 2px solid blue');
+      expect(css).toContain('.ov-bool-sem--intent-primary.ov-bool-sem--disabled-true {');
+      expect(css).toContain('pointer-events: none');
+    });
   });
 
   describe('dev warnings', () => {
@@ -457,8 +542,8 @@ describe('styles.override() + __tsMeta', () => {
       });
 
       styles.override(button, {
-        // @ts-expect-error — unknown dimension for runtime warn test
-        variants: { nope: { primary: { color: 'red' } } },
+        // Intentional unknown dimension — runtime warn path (compile-time covered in override.type-tests.ts)
+        variants: { nope: { primary: { color: 'red' } } } as never,
       });
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('Unknown variant dimension "nope"'),
@@ -493,8 +578,8 @@ describe('styles.override() + __tsMeta', () => {
       styles.override(button, {
         compoundVariants: [
           {
-            // @ts-expect-error — unknown option for runtime warn test
-            variants: { intent: 'primary', size: 'xl' },
+            // Intentional unknown option — runtime warn path (compile-time covered in override.type-tests.ts)
+            variants: { intent: 'primary', size: 'xl' as 'lg' },
             style: { fontWeight: 700 },
           },
         ],
@@ -574,7 +659,9 @@ describe('styles.override() + __tsMeta', () => {
   });
 
   describe('typing', () => {
-    it('accepts valid override keys and rejects unknown ones at compile time', () => {
+    it('documents that compile-time checks live in override.type-tests.ts', () => {
+      // Runtime smoke: valid calls still work. Negative cases are enforced by
+      // `pnpm typecheck` via src/override.type-tests.ts (@ts-expect-error).
       const styles = createStyles();
       const button = styles.component('ov-types-btn', {
         base: { color: 'black' },
@@ -586,21 +673,14 @@ describe('styles.override() + __tsMeta', () => {
       styles.override(button, {
         base: { color: 'red' },
         variants: { intent: { primary: { textTransform: 'uppercase' } } },
-      });
-
-      styles.override(button, {
-        // @ts-expect-error — unknown dimension
-        variants: { missing: { primary: { color: 'red' } } },
-      });
-
-      styles.override(button, {
-        variants: {
-          intent: {
-            // @ts-expect-error — unknown option
-            xl: { color: 'red' },
+        compoundVariants: [
+          {
+            variants: { intent: 'ghost' },
+            style: { fontWeight: 700 },
           },
-        },
+        ],
       });
+      expect(button.base).toBe('ov-types-btn');
     });
   });
 });

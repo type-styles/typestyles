@@ -868,6 +868,9 @@ nested-theme proximity.
 return with the same shape as the recipe — variant keys autocomplete from the
 recipe type, and you never pass class names. Call it on the **same** `styles`
 instance that created the component (design systems typically wrap this).
+Cross-instance calls — a component from `stylesA` passed to `stylesB.override` —
+are unsupported: emission uses **this** instance's sheet, breakpoints, and layer
+stack, so selectors may land in the wrong CSS.
 
 ```ts
 import { createStyles } from 'typestyles';
