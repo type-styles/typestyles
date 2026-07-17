@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.11.0
+
+### Minor Changes
+
+- [#144](https://github.com/type-styles/typestyles/pull/144) [`08cab3b`](https://github.com/type-styles/typestyles/commit/08cab3b2f44503a5ee7390c2cd218f272c9c0f22) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add SlotAttrsReturn type
+
 ## 0.10.0
 
 ### Minor Changes
