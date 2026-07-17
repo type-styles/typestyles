@@ -131,6 +131,7 @@ export type {
   ComponentReturn,
   ComponentAttrsReturn,
   ComponentAttrsResult,
+  SlotAttrsReturn,
   ComponentVarDefinitions,
   ComponentVarDescriptor,
   ComponentVarNode,
