@@ -519,22 +519,23 @@ parameters and in `__tsMeta`. Reserve the `vars` key in `OverrideConfig` as
 
 ## Explicit decisions (locked)
 
-| Topic                     | Decision                                                                                                          |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Metadata key              | Non-enumerable `__tsMeta` (+ `getComponentMeta`); not enumerable `__meta`                                         |
-| Meta shape                | Discriminated union on `kind` (dimensioned / flat / slot / multi-slot)                                            |
-| Options naming            | `selectorPrefix` + `layer` — not `scope` (avoids `@scope` confusion)                                              |
-| Compound overrides        | Conjunction of option selectors; arrays → `:is(...)` like recipe compounds; no new public classes                 |
-| Attribute / slots         | Selectors local to the slot element; no invented descendant trees                                                 |
-| Nested theme proximity    | Document footgun; use vars or `styles.scope`; no `@scope` in override v1                                          |
-| Same-instance binding     | Document-only; design systems wrap the creating instance (var-ui pattern); no runtime check                       |
-| Layer optional            | Optional like `scope`; dev warn if instance has layers and `layer` omitted; throw if `layer` set without `layers` |
-| Emission order            | base → variants → compounds                                                                                       |
-| Style block type          | `VariantOptionStyle` (same as recipes), not strict `CSSProperties`                                                |
-| `selectorPrefix` format   | Unconstrained string; callers own validity (no dev validation in v1)                                              |
-| Atomic / hashed / compact | Unsupported in override v1 (dev warn + skip)                                                                      |
-| New variant options       | Out of scope                                                                                                      |
-| Typed `vars` in override  | Phase 2; reserve the name                                                                                         |
+| Topic                     | Decision                                                                                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Metadata key              | Non-enumerable `__tsMeta` (+ `getComponentMeta`); not enumerable `__meta`                                                                                                                       |
+| Meta shape                | Discriminated union on `kind` (dimensioned / flat / slot / multi-slot)                                                                                                                          |
+| Options naming            | `selectorPrefix` + `layer` — not `scope` (avoids `@scope` confusion)                                                                                                                            |
+| Compound overrides        | Conjunction of option selectors; arrays → `:is(...)` like recipe compounds; no new public classes                                                                                               |
+| Attribute / slots         | Selectors local to the slot element; no invented descendant trees                                                                                                                               |
+| Nested theme proximity    | Document footgun; use vars or `styles.scope`; no `@scope` in override v1                                                                                                                        |
+| Same-instance binding     | Document-only; design systems wrap the creating instance (var-ui pattern); no runtime check                                                                                                     |
+| Override HMR              | Vite injects `createOverrideHmrSlot` for `styles.override` / `createDesignTheme` / `overrideComponent`; dispose drops tracked `override:` keys; dev re-insert replaces conflicting override CSS |
+| Layer optional            | Optional like `scope`; dev warn if instance has layers and `layer` omitted; throw if `layer` set without `layers`                                                                               |
+| Emission order            | base → variants → compounds                                                                                                                                                                     |
+| Style block type          | `VariantOptionStyle` (same as recipes), not strict `CSSProperties`                                                                                                                              |
+| `selectorPrefix` format   | Unconstrained string; callers own validity (no dev validation in v1)                                                                                                                            |
+| Atomic / hashed / compact | Unsupported in override v1 (dev warn + skip)                                                                                                                                                    |
+| New variant options       | Out of scope                                                                                                                                                                                    |
+| Typed `vars` in override  | Phase 2; reserve the name                                                                                                                                                                       |
 
 ---
 

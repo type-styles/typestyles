@@ -273,6 +273,25 @@ styles.component('docs-sidebar', { base: { color: 'red' } });`;
     expect(result.code).toContain('.docs-sidebar-');
   });
 
+  it('injects override HMR for createDesignTheme sugar without styles.override in source', async () => {
+    const mod = await import('./index');
+    const plugin = mod.default();
+    viteHookFn(plugin.configResolved)?.({ command: 'serve' } as ResolvedConfig);
+    const code = `import { createDesignTheme } from '@var-ui/core';
+export const acme = createDesignTheme({
+  name: 'acme',
+  components: (t) => ({ button: { base: { borderRadius: t.radius.lg } } }),
+});`;
+    const transform = viteHookFn(plugin.transform);
+    if (transform == null) throw new Error('expected plugin.transform');
+    const result = await transform.call({ warn: () => {} } as never, code, '/src/theme-acme.ts');
+    expect(result).not.toBeNull();
+    if (result == null) throw new Error('expected transform result');
+    expect(result.code).toContain('createOverrideHmrSlot');
+    expect(result.code).toContain('__tsOvHmr.activate()');
+    expect(result.code).toContain('__tsOvHmr.dispose()');
+  });
+
   it('errors when the same style namespace is used in another module', async () => {
     const mod = await import('./index');
     const plugin = mod.default();

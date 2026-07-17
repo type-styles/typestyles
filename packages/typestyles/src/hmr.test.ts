@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { invalidatePrefix, invalidateKeys } from './hmr';
+import { invalidatePrefix, invalidateKeys, createOverrideHmrSlot } from './hmr';
 import { createStyles } from './styles';
 import { registeredNamespaces } from './registry';
 import {
@@ -157,6 +157,53 @@ describe('invalidateKeys', () => {
     // Recipe rules were dropped; only override CSS remains for those selectors.
     expect(css).not.toContain('color: black');
     expect(css).not.toContain('color: blue');
+  });
+
+  it('updates styles.override CSS when the same keys are re-registered with new values', () => {
+    const styles = createStyles();
+    const button = styles.component('hmr-ov-replace', {
+      base: { color: 'black' },
+    });
+    styles.override(button, { base: { borderRadius: '4px' } });
+    flushSync();
+    expect(getRegisteredCss()).toContain('border-radius: 4px');
+
+    styles.override(button, { base: { borderRadius: '999px' } });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('border-radius: 999px');
+    expect(css).not.toContain('border-radius: 4px');
+  });
+
+  it('dispose of an override HMR slot drops tracked override rules (theme module HMR)', () => {
+    const styles = createStyles();
+    const button = styles.component('hmr-ov-slot', {
+      base: { color: 'black' },
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
+
+    const slot = createOverrideHmrSlot();
+    slot.activate();
+    styles.override(
+      button,
+      { base: { borderRadius: '999px' }, variants: { intent: { primary: { fontWeight: 700 } } } },
+      { selectorPrefix: '.theme-acme' },
+    );
+    slot.deactivate();
+    flushSync();
+
+    expect(getRegisteredCss()).toContain('.theme-acme .hmr-ov-slot');
+    expect(getRegisteredCss()).toContain('border-radius: 999px');
+
+    slot.dispose();
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).not.toContain('border-radius: 999px');
+    expect(css).not.toContain('font-weight: 700');
+    // Recipe CSS from styles.component is untouched.
+    expect(css).toContain('color: black');
+    expect(css).toContain('color: blue');
   });
 
   it('invalidates styles.class rules without dropping component modifiers', () => {

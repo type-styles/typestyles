@@ -199,7 +199,10 @@ function classCompoundSelector(
   variants: VariantSelectorMap,
   selections: Record<string, unknown>,
 ): string {
-  return Object.entries(selections)
+  const entries = Object.entries(selections);
+  // Empty compound → no selector (do not emit a bare/base rule).
+  if (entries.length === 0) return '';
+  return entries
     .map(([dimension, expected]) => {
       const optionMap = variants[dimension];
       if (!optionMap) return '';
@@ -214,13 +217,17 @@ function attributeCompoundSelector(
   selections: Record<string, unknown>,
 ): string {
   if (!baseClass) return '';
-  const suffix = Object.entries(selections)
+  const entries = Object.entries(selections);
+  // Empty compound must not collapse to `.base` (unlike class mode which yields '').
+  if (entries.length === 0) return '';
+  const suffix = entries
     .map(([dimension, expected]) => {
       const optionMap = variants[dimension];
       if (!optionMap) return '';
       return joinSelectorAlternatives(attributeFragmentsForDimension(optionMap, expected));
     })
     .join('');
+  if (!suffix) return '';
   return `.${baseClass}${suffix}`;
 }
 

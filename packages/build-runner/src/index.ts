@@ -1,6 +1,7 @@
 export { DEFAULT_EXTRACT_MODULE_CANDIDATES, discoverDefaultExtractModules } from './discover';
 export {
   extractNamespaces,
+  moduleNeedsOverrideHmr,
   reportDuplicateNamespaces,
   TYPESTYLES_IMPORT_RE,
   type DuplicateNamespaceReporter,

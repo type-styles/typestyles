@@ -6,7 +6,20 @@ const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_STYLE_RE = /global\.style\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_FONT_FACE_RE = /global\.fontFace\(\s*['"]([^'"]+)['"]/g;
 
+/** APIs that register `styles.override` rules (directly or via design-system sugar). */
+const OVERRIDE_HMR_API_RE =
+  /\bstyles\.override\s*\(|\bcreateDesignTheme\s*\(|\boverrideComponent\s*\(/;
+
 export const TYPESTYLES_IMPORT_RE = /(?:from\s+|import\s+|require\s*\(\s*)['"]typestyles['"]/;
+
+/**
+ * True when this module may register `styles.override` rules and needs Vite HMR
+ * dispose tracking — including Var UI sugar (`createDesignTheme` / `overrideComponent`)
+ * that never spells `styles.override` in source.
+ */
+export function moduleNeedsOverrideHmr(code: string): boolean {
+  return OVERRIDE_HMR_API_RE.test(code);
+}
 
 /**
  * Extract namespace information from source code for invalidation and duplicate checks.

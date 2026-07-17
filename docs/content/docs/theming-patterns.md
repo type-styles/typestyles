@@ -872,6 +872,11 @@ Cross-instance calls — a component from `stylesA` passed to `stylesB.override`
 are unsupported: emission uses **this** instance's sheet, breakpoints, and layer
 stack, so selectors may land in the wrong CSS.
 
+With `@typestyles/vite` in serve mode, modules that call `styles.override` (or
+design-system sugar like `createDesignTheme` / `overrideComponent`) get HMR
+dispose tracking so theme edits update override CSS without a full reload.
+Recipe HMR still preserves override rules — theme modules own those registrations.
+
 ```ts
 import { createStyles } from 'typestyles';
 

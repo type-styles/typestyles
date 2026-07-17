@@ -594,6 +594,28 @@ describe('styles.override() + __tsMeta', () => {
       warn.mockRestore();
     });
 
+    it('skips empty compound selections instead of emitting a bare attribute base selector', () => {
+      const styles = createStyles({ mode: 'attribute' });
+      const button = styles.component('ov-empty-compound', {
+        base: { display: 'flex' },
+        variants: { intent: { primary: { color: 'blue' } } },
+      });
+
+      styles.override(button, {
+        compoundVariants: [
+          {
+            variants: {} as { intent: 'primary' },
+            style: { outline: '2px solid red' },
+          },
+        ],
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).not.toContain('outline: 2px solid red');
+      expect(css).not.toMatch(/\.ov-empty-compound \{[^}]*outline/);
+    });
+
     it('defaults omitted layer to "overrides" when that layer exists', () => {
       const styles = createStyles({
         layers: ['components', 'overrides', 'utilities'] as const,
