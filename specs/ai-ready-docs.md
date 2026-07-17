@@ -123,7 +123,9 @@ changelog index, and the MCP endpoint.
   `api-reference.md` split into heading-keyed sections, extracted code
   examples, and changelog entries. The function imports this JSON at bundle
   time, so it makes zero runtime fetches and is always in lockstep with the
-  deployed site.
+  deployed site. The file under `docs/netlify/functions/` is **gitignored**
+  and written by Astro build (`generateMcpContentIntegration`) or
+  `pnpm --filter docs generate:mcp-content` / vitest globalSetup.
 
 ### 2.2 Tools
 

@@ -478,7 +478,8 @@ assertion that expects a synthetic compound class string.
   `…-button-base`.
 - Docs demos and homepage hard-coding old strings
   (`docs/src/demos/getting-started-button.ts`, `docs/src/pages/index.astro`).
-- `docs/netlify/functions/mcp-content.json` (regenerated from docs).
+- Docs sources under `docs/content/docs/` (MCP bundle is generated at docs
+  build time — `docs/netlify/functions/mcp-content.json` is gitignored).
 - JSDoc links to the deleted `attribute-driven-variants.md` /
   `bem-variant-mode.md` specs in `class-naming.ts`, `component.ts`,
   `types.ts`, `styles.ts`, and `specs/classname-template-mode.md`.
