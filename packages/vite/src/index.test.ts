@@ -292,6 +292,102 @@ export const acme = createDesignTheme({
     expect(result.code).toContain('__tsOvHmr.dispose()');
   });
 
+  it('injects override HMR for renamed createDesignTheme imports', async () => {
+    const mod = await import('./index');
+    const plugin = mod.default();
+    viteHookFn(plugin.configResolved)?.({ command: 'serve' } as ResolvedConfig);
+    const code = `import { createDesignTheme as cdt } from '@var-ui/core';
+export const acme = cdt({
+  name: 'acme',
+  components: () => ({ button: { base: { borderRadius: '999px' } } }),
+});`;
+    const transform = viteHookFn(plugin.transform);
+    if (transform == null) throw new Error('expected plugin.transform');
+    const result = await transform.call({ warn: () => {} } as never, code, '/src/theme-renamed.ts');
+    expect(result).not.toBeNull();
+    if (result == null) throw new Error('expected transform result');
+    expect(result.code).toContain('createOverrideHmrSlot');
+    expect(result.code).toContain('__tsOvHmr.dispose()');
+  });
+
+  it('theme-file HMR loop: transform injects slot, dispose + re-exec replaces override CSS', async () => {
+    const { createStyles, flushSync, getRegisteredCss, reset } = await import('typestyles');
+    const { createOverrideHmrSlot } = await import('typestyles/hmr');
+    const mod = await import('./index');
+    const plugin = mod.default();
+    viteHookFn(plugin.configResolved)?.({ command: 'serve' } as ResolvedConfig);
+
+    // App theme file spells sugar only (aliased) — never `styles.override`.
+    const themeSource = `import { createDesignTheme as cdt } from '@var-ui/core';
+export const acme = cdt({
+  name: 'acme',
+  components: () => ({ button: { base: { borderRadius: '4px' } } }),
+});`;
+    const transform = viteHookFn(plugin.transform);
+    if (transform == null) throw new Error('expected plugin.transform');
+    const transformed = await transform.call(
+      { warn: () => {} } as never,
+      themeSource,
+      '/src/theme-hmr-loop.ts',
+    );
+    expect(transformed).not.toBeNull();
+    if (transformed == null) throw new Error('expected transform result');
+    expect(transformed.code).toMatch(/__tsOvHmr\.activate\(\)/);
+    expect(transformed.code).toMatch(/__tsOvHmr\.deactivate\(\)/);
+    expect(transformed.code).toMatch(/__tsOvHmr\.dispose\(\)/);
+
+    // Simulate what the injected bootstrap + createDesignTheme({ components }) do at runtime.
+    reset();
+    const styles = createStyles({
+      mode: 'attribute',
+      layers: ['components', 'overrides'] as const,
+    });
+    const button = styles.component(
+      'vite-hmr-btn',
+      {
+        base: { color: 'black' },
+        variants: { intent: { primary: { color: 'blue' } } },
+      },
+      { layer: 'components' },
+    );
+
+    const slot = createOverrideHmrSlot();
+    slot.activate();
+    styles.override(
+      button,
+      { base: { borderRadius: '4px' }, variants: { intent: { primary: { fontWeight: 700 } } } },
+      { selectorPrefix: '.theme-acme', layer: 'overrides' },
+    );
+    slot.deactivate();
+    flushSync();
+    expect(getRegisteredCss()).toContain('border-radius: 4px');
+    expect(getRegisteredCss()).toContain('.theme-acme .vite-hmr-btn[data-intent="primary"]');
+
+    // Vite hot.dispose → module re-eval with updated theme values.
+    slot.dispose();
+    const slot2 = createOverrideHmrSlot();
+    slot2.activate();
+    styles.override(
+      button,
+      {
+        base: { borderRadius: '999px' },
+        variants: { intent: { primary: { textTransform: 'uppercase' } } },
+      },
+      { selectorPrefix: '.theme-acme', layer: 'overrides' },
+    );
+    slot2.deactivate();
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('border-radius: 999px');
+    expect(css).not.toContain('border-radius: 4px');
+    expect(css).toContain('text-transform: uppercase');
+    expect(css).not.toContain('font-weight: 700');
+    // Recipe CSS from the shared styles instance is untouched.
+    expect(css).toContain('color: black');
+    expect(css).toContain('color: blue');
+  });
+
   it('errors when the same style namespace is used in another module', async () => {
     const mod = await import('./index');
     const plugin = mod.default();

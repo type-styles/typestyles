@@ -257,8 +257,9 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
       // app's `typestyles` singleton, so the registry never clears.
       //
       // Override HMR: theme modules often only call `createDesignTheme({ components })` /
-      // `styles.override` — no static namespace strings. Runtime slots attribute `override:` keys
-      // to the module so dispose drops them (and re-exec can re-register / replace).
+      // `styles.override` — no static namespace strings. Detection follows import bindings
+      // (including `createDesignTheme as cdt` / `import * as Core`). Runtime slots attribute
+      // `override:` keys to the module so dispose drops them (and re-exec can re-register).
       const keysJSON = JSON.stringify(keys);
       const prefixesJSON = JSON.stringify(prefixes);
       const hmrImports = overrideHmr

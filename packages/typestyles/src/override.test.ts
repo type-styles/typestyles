@@ -261,6 +261,73 @@ describe('styles.override() + __tsMeta', () => {
       expect(css).toContain('scale: 1.2');
     });
 
+    it('emits attribute-mode slot base, variant, and compound with selectorPrefix + layer', () => {
+      const styles = createStyles({
+        mode: 'attribute',
+        layers: ['components', 'overrides', 'utilities'] as const,
+      });
+      const alert = styles.component(
+        'ov-attr-slot',
+        {
+          slots: ['root', 'icon'] as const,
+          base: { root: { display: 'flex' }, icon: { width: '16px' } },
+          variants: {
+            tone: {
+              danger: { root: { color: 'red' }, icon: { opacity: 1 } },
+              info: { root: { color: 'blue' }, icon: { opacity: 1 } },
+            },
+            size: {
+              lg: { root: { gap: '12px' }, icon: { width: '24px' } },
+            },
+          },
+        },
+        { layer: 'components' },
+      );
+
+      const meta = getComponentMeta(alert);
+      expect(meta).toMatchObject({
+        kind: 'slot',
+        namingMode: 'attribute',
+        base: { root: 'ov-attr-slot', icon: 'ov-attr-slot__icon' },
+      });
+      if (meta?.kind === 'slot') {
+        expect(meta.variants.icon.tone.danger).toBe('[data-tone="danger"]');
+      }
+
+      styles.override(
+        alert,
+        {
+          base: { root: { borderStyle: 'dashed' } },
+          variants: { tone: { danger: { icon: { scale: '1.2' } } } },
+          compoundVariants: [
+            {
+              variants: { tone: 'danger', size: 'lg' },
+              style: { root: { outline: '2px solid red' } },
+            },
+            {
+              variants: { tone: ['danger', 'info'], size: 'lg' },
+              style: { icon: { opacity: 0.8 } },
+            },
+          ],
+        },
+        { selectorPrefix: '.theme-acme', layer: 'overrides' },
+      );
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('@layer components, overrides, utilities;');
+      expect(css).toMatch(
+        /@layer overrides \{[\s\S]*\.theme-acme \.ov-attr-slot \{[\s\S]*border-style: dashed/,
+      );
+      expect(css).toContain('.theme-acme .ov-attr-slot__icon[data-tone="danger"]');
+      expect(css).toContain('scale: 1.2');
+      expect(css).toContain('.theme-acme .ov-attr-slot[data-tone="danger"][data-size="lg"]');
+      expect(css).toContain('outline: 2px solid red');
+      expect(css).toContain(
+        '.theme-acme .ov-attr-slot__icon:is([data-tone="danger"], [data-tone="info"])[data-size="lg"]',
+      );
+    });
+
     it('overrides flat variants', () => {
       const styles = createStyles();
       const card = styles.component('ov-flat-emit', {

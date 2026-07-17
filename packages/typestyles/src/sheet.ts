@@ -314,13 +314,10 @@ function trackOverrideRuleKey(key: string): void {
   if (activeOverrideHmrKeys) activeOverrideHmrKeys.add(key);
 }
 
-function shouldReplaceOverrideOnConflict(): boolean {
-  if (typeof process === 'undefined') return true;
-  return process.env.NODE_ENV !== 'production';
-}
-
 /**
- * Replace an existing override rule in the virtual sheet + CSSOM (dev HMR / re-exec).
+ * Replace an existing override rule in the virtual sheet + CSSOM (HMR / re-exec).
+ * Always upserts — theme modules re-register the same keys with new CSS, and first-wins
+ * would leave stale override styles after edits (including production preview builds).
  */
 function upsertOverrideRule(
   state: SheetState,
@@ -343,9 +340,38 @@ function upsertOverrideRule(
   }
 }
 
+/** Collapse whitespace so stored CSS and browser/jsdom `cssText` can compare exactly. */
+function normalizeCssForMatch(css: string): string {
+  return css.replace(/\s+/g, ' ').trim();
+}
+
 /**
- * Drop live CSSOM rules whose text matches a just-invalidated registration.
- * Exact `cssText` match first; also matches `@layer` wrappers that contain the rule.
+ * Unwrap a single `@layer name { … }` registration to its inner rule text.
+ * Layered inserts are one style rule per `@layer` block — not multi-rule bags.
+ */
+function unwrapSingleLayerBlock(css: string): string | null {
+  const match = css.match(/^@layer\s+[\w-]+\s*\{\s*([\s\S]*?)\s*\}\s*$/);
+  return match?.[1]?.trim() ? match[1].trim() : null;
+}
+
+/**
+ * True when a live CSSOM rule is exactly one of the registered CSS strings.
+ * No substring `includes` — those false-positive across attribute selectors and
+ * shared declaration blocks (recipe vs override with the same props).
+ */
+function cssRegistrationMatchesRule(registeredCss: string, rule: CSSRule): boolean {
+  const ruleText = normalizeCssForMatch(rule.cssText);
+  const registered = normalizeCssForMatch(registeredCss);
+  if (ruleText === registered) return true;
+
+  const inner = unwrapSingleLayerBlock(registeredCss);
+  if (inner != null && ruleText === normalizeCssForMatch(inner)) return true;
+
+  return false;
+}
+
+/**
+ * Drop live CSSOM rules whose text exactly matches a just-invalidated registration.
  */
 function removeCssomRulesMatching(removedCss: ReadonlySet<string>): void {
   if (!isBrowser || removedCss.size === 0) return;
@@ -353,24 +379,16 @@ function removeCssomRulesMatching(removedCss: ReadonlySet<string>): void {
   if (!el?.sheet) return;
   const sheet = el.sheet;
   for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    if (ruleMatchesRemovedCss(sheet.cssRules[i], removedCss)) {
-      sheet.deleteRule(i);
+    const rule = sheet.cssRules[i];
+    let shouldRemove = false;
+    for (const css of removedCss) {
+      if (cssRegistrationMatchesRule(css, rule)) {
+        shouldRemove = true;
+        break;
+      }
     }
+    if (shouldRemove) sheet.deleteRule(i);
   }
-}
-
-function ruleMatchesRemovedCss(rule: CSSRule, removedCss: ReadonlySet<string>): boolean {
-  const text = rule.cssText;
-  for (const css of removedCss) {
-    if (text === css || text.includes(css) || css.includes(text)) return true;
-  }
-  if ('cssRules' in rule) {
-    const inner = (rule as CSSGroupingRule).cssRules;
-    for (let i = 0; i < inner.length; i++) {
-      if (ruleMatchesRemovedCss(inner[i], removedCss)) return true;
-    }
-  }
-  return false;
 }
 
 /**
@@ -400,7 +418,7 @@ export function insertRule(key: string, css: string): void {
   if (state.insertedRules.has(key)) {
     const prev = state.ruleCssByKey.get(key);
     if (prev != null && prev !== css) {
-      if (isOverrideRuleKey(key) && shouldReplaceOverrideOnConflict()) {
+      if (isOverrideRuleKey(key)) {
         upsertOverrideRule(state, key, prev, css);
         notifyRegisteredCssChanged();
         scheduleFlush();
@@ -431,7 +449,7 @@ export function insertRules(rules: Array<{ key: string; css: string }>): void {
     if (state.insertedRules.has(key)) {
       const prev = state.ruleCssByKey.get(key);
       if (prev != null && prev !== css) {
-        if (isOverrideRuleKey(key) && shouldReplaceOverrideOnConflict()) {
+        if (isOverrideRuleKey(key)) {
           upsertOverrideRule(state, key, prev, css);
           registered = true;
           if (!RUNTIME_DISABLED || state.ssrBuffer) added = true;
@@ -740,10 +758,9 @@ function isOverrideRuleKey(key: string): boolean {
 }
 
 function ruleCssOwnedByOverride(state: SheetState, rule: CSSRule): boolean {
-  const text = rule.cssText;
   for (const [key, css] of state.ruleCssByKey) {
     if (!isOverrideRuleKey(key)) continue;
-    if (css === text || css.includes(text)) return true;
+    if (cssRegistrationMatchesRule(css, rule)) return true;
   }
   return false;
 }

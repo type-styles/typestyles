@@ -28,4 +28,37 @@ describe('moduleNeedsOverrideHmr', () => {
     expect(moduleNeedsOverrideHmr('overrideComponent(button, { base: {} });')).toBe(true);
     expect(moduleNeedsOverrideHmr("styles.component('button', { base: {} });")).toBe(false);
   });
+
+  it('detects renamed createDesignTheme / overrideComponent imports', () => {
+    expect(
+      moduleNeedsOverrideHmr(`
+        import { createDesignTheme as cdt } from '@var-ui/core';
+        export const acme = cdt({ name: 'acme', components: () => ({}) });
+      `),
+    ).toBe(true);
+
+    expect(
+      moduleNeedsOverrideHmr(`
+        import { overrideComponent as restyle } from '@var-ui/core';
+        restyle(button, { base: { borderRadius: '999px' } });
+      `),
+    ).toBe(true);
+
+    expect(
+      moduleNeedsOverrideHmr(`
+        import * as Core from '@var-ui/core';
+        export const acme = Core.createDesignTheme({ name: 'acme' });
+      `),
+    ).toBe(true);
+  });
+
+  it('ignores createDesignTheme mentioned only in comments', () => {
+    expect(
+      moduleNeedsOverrideHmr(`
+        // createDesignTheme({ name: 'docs-only' })
+        import { styles } from 'typestyles';
+        styles.component('button', { base: { color: 'red' } });
+      `),
+    ).toBe(false);
+  });
 });

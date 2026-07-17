@@ -873,9 +873,11 @@ are unsupported: emission uses **this** instance's sheet, breakpoints, and layer
 stack, so selectors may land in the wrong CSS.
 
 With `@typestyles/vite` in serve mode, modules that call `styles.override` (or
-design-system sugar like `createDesignTheme` / `overrideComponent`) get HMR
-dispose tracking so theme edits update override CSS without a full reload.
-Recipe HMR still preserves override rules — theme modules own those registrations.
+design-system sugar like `createDesignTheme` / `overrideComponent`, including
+renamed imports such as `createDesignTheme as cdt`) get HMR dispose tracking so
+theme edits update override CSS without a full reload. Re-registering the same
+override keys always replaces the previous CSS. Recipe HMR still preserves
+override rules — theme modules own those registrations.
 
 ```ts
 import { createStyles } from 'typestyles';
