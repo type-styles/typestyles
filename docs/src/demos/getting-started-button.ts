@@ -12,7 +12,7 @@ export const demoVariants = [
   {
     id: 'primary',
     label: 'Primary',
-    className: 'app-button-base app-button-intent-primary',
+    className: 'app-button app-button--intent-primary',
     usageCode: `<button type="button" className={button({ intent: 'primary' })}>
   Example button
 </button>`,
@@ -21,7 +21,7 @@ export const demoVariants = [
   {
     id: 'ghost',
     label: 'Ghost',
-    className: 'app-button-base app-button-intent-ghost',
+    className: 'app-button app-button--intent-ghost',
     usageCode: `<button type="button" className={button({ intent: 'ghost' })}>
   Example button
 </button>`,

@@ -38,7 +38,7 @@ export type PublicClassNamesSnapshot = {
 };
 
 export type StylesBindingConfig = {
-  mode: 'semantic' | 'hashed' | 'compact' | 'atomic';
+  mode: 'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem' | 'template';
   scopeId: string;
 };
 
@@ -70,10 +70,14 @@ export function semanticClassName(
   namespace: string,
   suffix?: string,
 ): string | null {
-  if (config.mode !== 'semantic') return null;
+  if (config.mode === 'hashed' || config.mode === 'compact' || config.mode === 'atomic') {
+    return null;
+  }
   const prefix = semanticScopePrefix(config.scopeId);
-  if (suffix === undefined) return `${prefix}${namespace}`;
-  return `${prefix}${namespace}-${suffix}`;
+  if (suffix === undefined || suffix === 'base') return `${prefix}${namespace}`;
+  if (config.mode === 'attribute') return `${prefix}${namespace}`;
+  if (config.mode === 'bem') return `${prefix}${namespace}--${suffix}`;
+  return `${prefix}${namespace}--${suffix}`;
 }
 
 function getStaticObjectKey(name: ts.PropertyName): string | null {
@@ -138,8 +142,17 @@ function hasObjectKey(obj: ts.ObjectLiteralExpression, key: string): boolean {
   });
 }
 
-function collectSuffixesFromConfig(obj: ts.ObjectLiteralExpression): string[] {
-  const suffixes: string[] = [];
+type ComponentClassNamePart = {
+  suffix?: string;
+  element?: string;
+  dimension?: string;
+  modifier?: string;
+};
+
+function collectClassNamePartsFromConfig(
+  obj: ts.ObjectLiteralExpression,
+): ComponentClassNamePart[] {
+  const parts: ComponentClassNamePart[] = [];
 
   const hasVariants = hasObjectKey(obj, 'variants');
   const hasCompound = hasObjectKey(obj, 'compoundVariants');
@@ -159,7 +172,7 @@ function collectSuffixesFromConfig(obj: ts.ObjectLiteralExpression): string[] {
       for (const slotProp of baseObj.initializer.properties) {
         if (!ts.isPropertyAssignment(slotProp)) continue;
         const slot = getStaticObjectKey(slotProp.name);
-        if (slot) suffixes.push(slot);
+        if (slot) parts.push({ element: slot === 'root' ? undefined : slot });
       }
     }
 
@@ -193,42 +206,19 @@ function collectSuffixesFromConfig(obj: ts.ObjectLiteralExpression): string[] {
           for (const slotProp of optProp.initializer.properties) {
             if (!ts.isPropertyAssignment(slotProp)) continue;
             const slot = getStaticObjectKey(slotProp.name);
-            if (slot) suffixes.push(`${slot}-${dimension}-${option}`);
+            if (slot) {
+              parts.push({
+                element: slot === 'root' ? undefined : slot,
+                dimension,
+                modifier: option,
+              });
+            }
           }
         }
       }
     }
 
-    const compoundProp = obj.properties.find((prop) => {
-      if (!ts.isPropertyAssignment(prop)) return false;
-      return getStaticObjectKey(prop.name) === 'compoundVariants';
-    });
-    if (
-      compoundProp &&
-      ts.isPropertyAssignment(compoundProp) &&
-      ts.isArrayLiteralExpression(compoundProp.initializer)
-    ) {
-      compoundProp.initializer.elements.forEach((element, index) => {
-        if (!element || !ts.isObjectLiteralExpression(element)) return;
-        const styleProp = element.properties.find((prop) => {
-          if (!ts.isPropertyAssignment(prop)) return false;
-          return getStaticObjectKey(prop.name) === 'style';
-        });
-        if (
-          styleProp &&
-          ts.isPropertyAssignment(styleProp) &&
-          ts.isObjectLiteralExpression(styleProp.initializer)
-        ) {
-          for (const slotProp of styleProp.initializer.properties) {
-            if (!ts.isPropertyAssignment(slotProp)) continue;
-            const slot = getStaticObjectKey(slotProp.name);
-            if (slot) suffixes.push(`${slot}-compound-${index}`);
-          }
-        }
-      });
-    }
-
-    return suffixes;
+    return parts;
   }
 
   if (hasSlots && !hasVariants && !hasCompound && !hasDefaults) {
@@ -243,7 +233,7 @@ function collectSuffixesFromConfig(obj: ts.ObjectLiteralExpression): string[] {
     ) {
       for (const element of slotsProp.initializer.elements) {
         if (element && ts.isStringLiteral(element)) {
-          suffixes.push(element.text);
+          parts.push({ element: element.text === 'root' ? undefined : element.text });
         }
       }
     }
@@ -251,13 +241,13 @@ function collectSuffixesFromConfig(obj: ts.ObjectLiteralExpression): string[] {
       if (!ts.isPropertyAssignment(prop)) continue;
       const key = getStaticObjectKey(prop.name);
       if (!key || key === 'slots') continue;
-      suffixes.push(key);
+      parts.push({ element: key === 'root' ? undefined : key });
     }
-    return suffixes;
+    return parts;
   }
 
   if (hasVariants || hasCompound || hasDefaults) {
-    if (hasObjectKey(obj, 'base')) suffixes.push('base');
+    parts.push({});
 
     const variantsProp = obj.properties.find((prop) => {
       if (!ts.isPropertyAssignment(prop)) return false;
@@ -280,36 +270,42 @@ function collectSuffixesFromConfig(obj: ts.ObjectLiteralExpression): string[] {
         for (const optProp of dimProp.initializer.properties) {
           if (!ts.isPropertyAssignment(optProp)) continue;
           const option = getStaticObjectKey(optProp.name);
-          if (option) suffixes.push(`${dimension}-${option}`);
+          if (option) parts.push({ dimension, modifier: option });
         }
       }
     }
 
-    const compoundProp = obj.properties.find((prop) => {
-      if (!ts.isPropertyAssignment(prop)) return false;
-      return getStaticObjectKey(prop.name) === 'compoundVariants';
-    });
-    if (
-      compoundProp &&
-      ts.isPropertyAssignment(compoundProp) &&
-      ts.isArrayLiteralExpression(compoundProp.initializer)
-    ) {
-      compoundProp.initializer.elements.forEach((_, index) => {
-        suffixes.push(`compound-${index}`);
-      });
-    }
-
-    return suffixes;
+    return parts;
   }
 
   for (const prop of obj.properties) {
     if (!ts.isPropertyAssignment(prop)) continue;
     const key = getStaticObjectKey(prop.name);
     if (!key || RESERVED_COMPONENT_KEYS.has(key)) continue;
-    suffixes.push(key);
+    if (key === 'base') {
+      parts.push({});
+    } else {
+      parts.push({ modifier: key });
+    }
   }
 
-  return suffixes;
+  return parts;
+}
+
+function componentClassName(
+  config: StylesBindingConfig,
+  namespace: string,
+  part: ComponentClassNamePart,
+): string | null {
+  if (config.mode === 'hashed' || config.mode === 'compact' || config.mode === 'atomic') {
+    return null;
+  }
+
+  const prefix = semanticScopePrefix(config.scopeId);
+  const block = `${prefix}${namespace}${part.element ? `__${part.element}` : ''}`;
+  if (!part.modifier || config.mode === 'attribute') return block;
+  if (config.mode === 'bem') return `${block}--${part.modifier}`;
+  return `${block}--${part.dimension ? `${part.dimension}-` : ''}${part.modifier}`;
 }
 
 function parseCreateStylesConfig(init: ts.Expression): StylesBindingConfig {
@@ -323,7 +319,15 @@ function parseCreateStylesConfig(init: ts.Expression): StylesBindingConfig {
   if (!ts.isObjectLiteralExpression(expr)) return config;
 
   const mode = literalFromProperty(expr, 'mode');
-  if (mode === 'semantic' || mode === 'hashed' || mode === 'compact' || mode === 'atomic') {
+  if (
+    mode === 'semantic' ||
+    mode === 'hashed' ||
+    mode === 'compact' ||
+    mode === 'atomic' ||
+    mode === 'attribute' ||
+    mode === 'bem' ||
+    mode === 'template'
+  ) {
     config.mode = mode;
   }
   const scopeId = literalFromProperty(expr, 'scopeId');
@@ -472,15 +476,17 @@ function collectCallsFromSourceFile(
           }
         } else {
           const configObj = objectExpressionFromConfigArg(node.arguments[1]);
-          const suffixes = configObj ? collectSuffixesFromConfig(configObj) : ['base'];
-          for (const suffix of suffixes) {
-            const className = semanticClassName(config, namespace, suffix);
+          const parts = configObj ? collectClassNamePartsFromConfig(configObj) : [{}];
+          for (const part of parts) {
+            const className = componentClassName(config, namespace, part);
             if (className) {
               entries.push({
                 className,
                 kind: 'component',
                 namespace,
-                suffix,
+                suffix: part.modifier
+                  ? `${part.element ? `${part.element}-` : ''}${part.dimension ? `${part.dimension}-` : ''}${part.modifier}`
+                  : (part.element ?? 'base'),
                 file: relativePath,
                 line,
               });

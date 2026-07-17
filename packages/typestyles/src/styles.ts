@@ -212,7 +212,7 @@ import {
  * const primary = styles.component('primary', { base: { color: 'blue' } });
  * const button = styles.compose(base, primary);
  *
- * button(); // "base-base primary-base"
+ * button(); // "base primary"
  * ```
  */
 export function compose<const S extends readonly ComposeSelectorInput[]>(

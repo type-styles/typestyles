@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "classNames": ["button-base", "button-intent-primary", "button-intent-ghost"],
+  "classNames": ["button", "button--intent-primary", "button--intent-ghost"],
   "entries": [
     {
-      "className": "button-base",
+      "className": "button",
       "kind": "component",
       "namespace": "button",
       "suffix": "base",
@@ -11,7 +11,7 @@
       "line": 1
     },
     {
-      "className": "button-intent-primary",
+      "className": "button--intent-primary",
       "kind": "component",
       "namespace": "button",
       "suffix": "intent-primary",
@@ -19,7 +19,7 @@
       "line": 1
     },
     {
-      "className": "button-intent-ghost",
+      "className": "button--intent-ghost",
       "kind": "component",
       "namespace": "button",
       "suffix": "intent-ghost",

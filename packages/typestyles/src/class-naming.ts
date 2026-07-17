@@ -6,18 +6,17 @@ import { trackEmittedClassName } from './registry';
  * How generated class names are formed for `styles.class`, `styles.component`,
  * and related APIs.
  *
- * - `semantic` — readable names like `button-base`, `button-intent-primary` (default).
- *   With `scopeId` set, names are prefixed with the sanitized scope: `my-ui-button-base`.
+ * - `semantic` — readable names like `button`, `button--intent-primary` (default).
+ *   With `scopeId` set, names are prefixed with the sanitized scope: `my-ui-button`.
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
  * - `compact` — hash-only names (shortest) for whole style objects; same collision properties as `hashed` when `scopeId` differs.
  * - `atomic` — one class per CSS declaration; identical declarations dedupe across the codebase.
  * - `attribute` — dimensioned `styles.component()` variants compile to `&[data-{dimension}="{option}"]`
  *   selectors under one base class instead of discrete classes; the call returns
- *   `{ className, attrs, props }`. See `specs/attribute-driven-variants.md`. Not supported for
- *   `slots` or flat configs — `styles.class()` and flat configs behave like `semantic`.
+ *   `{ className, attrs, props }`. See `specs/semantic-and-attribute-mode.md`.
  * - `bem` — dimensioned/slot `styles.component()` variants compile to BEM modifier classes
  *   (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix.
- *   See `specs/bem-variant-mode.md`. `styles.class()` and flat configs behave like `semantic`.
+ *   See `specs/classname-template-mode.md`. `styles.class()` and flat configs behave like `semantic`.
  * - `template` — like `bem`, but the block/element/modifier class name is decided by a
  *   user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention.
  *   `mode: 'bem'` is itself implemented as a built-in preset of this same mechanism. See
@@ -63,7 +62,7 @@ export type ClassNamingConfig = {
   /**
    * Package, app, or per-file id: same logical `styles.component` / `styles.class` name under different
    * scopes produces different classes — in `semantic` mode the sanitized scope is prefixed onto the
-   * class name (`my-ui-button-base`); in `hashed`/`compact`/`atomic` mode it is mixed into the hash. This matches
+   * class name (`my-ui-button`); in `hashed`/`compact`/`atomic` mode it is mixed into the hash. This matches
    * how `tokens.create` scopes custom property names. In development, re-registering the same
    * scope + component name (e.g. HMR) clears prior rules instead of throwing. Use
    * `fileScopeId(import.meta)` for file-local isolation (CSS Modules–style).

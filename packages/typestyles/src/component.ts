@@ -186,8 +186,8 @@ function resolveComponentConfig(
  * });
  *
  * // Function call — base always included, defaults applied
- * button()                                    // "button-base button-intent-primary button-size-sm"
- * button({ intent: 'ghost' })                 // "button-base button-intent-ghost button-size-sm"
+ * button()                                    // "button button--intent-primary button--size-sm"
+ * button({ intent: 'ghost' })                 // "button button--intent-ghost button--size-sm"
  * button({ intent: 'primary', size: 'lg' })   // includes compound class
  *
  * // Destructure individual class strings
@@ -250,10 +250,10 @@ function resolveComponentConfig(
  * });
  *
  * const b = button({ variant: 'primary' });
- * b.className   // "button-base"
+ * b.className   // "button"
  * b.attrs       // { 'data-variant': 'primary' }
- * b.props       // { className: 'button-base', 'data-variant': 'primary' }
- * String(b)     // "button-base"
+ * b.props       // { className: 'button', 'data-variant': 'primary' }
+ * String(b)     // "button"
  * ```
  *
  * Slot recipes return an attrs result for every declared slot; flat configs continue to return
@@ -713,7 +713,7 @@ function createTemplateDimensionedComponent<V extends VariantDefinitions>(
 
 // ---------------------------------------------------------------------------
 // Dimensioned variant component — attribute mode
-// (mode: 'attribute'; see specs/attribute-driven-variants.md)
+// (mode: 'attribute'; see specs/semantic-and-attribute-mode.md)
 // ---------------------------------------------------------------------------
 
 /**

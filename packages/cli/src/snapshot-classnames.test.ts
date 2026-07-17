@@ -10,12 +10,17 @@ import {
 
 describe('snapshot-classnames', () => {
   it('computes semantic class names from component configs', () => {
-    expect(semanticClassName({ mode: 'semantic', scopeId: '' }, 'button', 'base')).toBe(
-      'button-base',
-    );
+    expect(semanticClassName({ mode: 'semantic', scopeId: '' }, 'button', 'base')).toBe('button');
     expect(
       semanticClassName({ mode: 'semantic', scopeId: '@acme/ui' }, 'button', 'intent-primary'),
-    ).toBe('acme-ui-button-intent-primary');
+    ).toBe('acme-ui-button--intent-primary');
+    expect(semanticClassName({ mode: 'semantic', scopeId: '' }, 'button')).toBe('button');
+    expect(semanticClassName({ mode: 'bem', scopeId: '' }, 'button', 'primary')).toBe(
+      'button--primary',
+    );
+    expect(semanticClassName({ mode: 'attribute', scopeId: '' }, 'button', 'primary')).toBe(
+      'button',
+    );
     expect(semanticClassName({ mode: 'hashed', scopeId: '' }, 'button', 'base')).toBeNull();
   });
 
@@ -40,8 +45,8 @@ describe('snapshot-classnames', () => {
       include: ['src/runtime.ts', 'src/components/button.ts'],
     });
     const snapshot = buildSnapshot(entries);
-    expect(snapshot.classNames).toContain('example-ds-button-base');
-    expect(snapshot.classNames.some((name) => name.startsWith('example-ds-button-intent-'))).toBe(
+    expect(snapshot.classNames).toContain('example-ds-button');
+    expect(snapshot.classNames.some((name) => name.startsWith('example-ds-button--intent-'))).toBe(
       true,
     );
   });

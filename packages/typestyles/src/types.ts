@@ -531,7 +531,7 @@ export type ComponentConfigContext = {
  * The full config object passed to styles.component() with dimensioned variants. How `variants`
  * compiles (discrete classes, `&[data-x="y"]` attributes, or BEM modifier classes) is selected by
  * `createStyles({ mode })`, not by anything in this config — see {@link ComponentAttrsReturn} and
- * `specs/attribute-driven-variants.md` / `specs/bem-variant-mode.md`.
+ * `specs/semantic-and-attribute-mode.md` / `specs/classname-template-mode.md`.
  */
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
