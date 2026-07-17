@@ -263,11 +263,12 @@ When the styles instance is created with `layers`, type `layer` as
 ### Override config shapes
 
 Mirror recipe authoring, but style positions are {@link VariantOptionStyle}
-(same as recipe option blocks — mapped CSS properties plus an open string index for
-custom properties / nested selectors),
+(same as recipe option blocks — mapped CSS properties with `CSSValue`-tolerant values plus an open
+string index for custom properties / nested selectors),
 not strict `CSSProperties` alone. That keeps `[v.name]` / `--*` custom-property
 keys and mixed nested-selector objects assignable the same way recipes are.
-No `defaultVariants`. No new option keys in v1.
+`CSSValue` on known props also keeps widened CSS keywords assignable when mixed with token
+`string`s (see Issue #149). No `defaultVariants`. No new option keys in v1.
 
 Style blocks go through the same `serializeStyle` path as `styles.scope` /
 `styles.component` (cast at the boundary, same as `component.ts` today) —

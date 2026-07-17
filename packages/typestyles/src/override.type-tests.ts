@@ -3,6 +3,7 @@
  * (unlike `*.test.ts`). Failures here fail `pnpm typecheck`.
  */
 import { createStyles } from './styles';
+import type { VariantOptionStyle } from './types';
 
 const styles = createStyles();
 const button = styles.component('ov-type-btn', {
@@ -170,3 +171,24 @@ const layeredThemed = layeredVars.component(
 layeredThemed({ intent: 'primary' });
 // @ts-expect-error — unknown option
 layeredThemed({ intent: 'nope' });
+
+// Widened CSS keywords + token strings remain assignable (Issue #149)
+declare const gapToken: string;
+const widenedLeaf = { flexWrap: 'wrap', columnGap: gapToken };
+const widenedOk: VariantOptionStyle = widenedLeaf;
+
+function makeWidenedSlotConfig() {
+  return {
+    slots: ['root'] as const,
+    base: { root: { display: 'flex' as const } },
+    variants: {
+      size: { md: { root: { flexWrap: 'wrap', columnGap: gapToken } } },
+    },
+  };
+}
+const widenedRecipe = styles.component('ov-type-widen', makeWidenedSlotConfig());
+widenedRecipe({ size: 'md' });
+// @ts-expect-error — unknown option (must stay on slot-with-variants overload, not multi-slot)
+widenedRecipe({ size: 'nope' });
+
+void widenedOk;

@@ -433,14 +433,19 @@ export interface ComponentAttrsResult {
 /**
  * Styles for a single variant option (or slot / override style block).
  *
- * Mapped csstype properties keep **CSS key IntelliSense** (`borderRadius`, `display`, …). An open
- * string index still accepts **`[v.name]: value`** from {@link ComponentInternalVarRef}, literal
- * custom properties (`--foo`), and nested selectors / at-rules (`&:hover`, `@media`, …) — without a
- * `CSSProperties | Record<string, unknown>` union that weakens completions when the type is
- * reconstructed in downstream theme helpers.
+ * Mapped csstype properties keep **CSS key IntelliSense** (`borderRadius`, `display`, …). Values
+ * also accept {@link CSSValue} so unconstrained inference that widens keywords to `string` (e.g.
+ * `{ flexWrap: 'wrap', columnGap: tokenString }`) stays assignable — otherwise sibling token
+ * `string`s widen `'wrap'` → `string`, which is not assignable to csstype unions like `FlexWrap`
+ * and can make `styles.component` fall through to the wrong overload (Issue #149). An open string
+ * index still accepts **`[v.name]: value`** from {@link ComponentInternalVarRef}, literal custom
+ * properties (`--foo`), and nested selectors / at-rules (`&:hover`, `@media`, …) — without a
+ * `CSSProperties | Record<string, unknown>` union that weakens key completions when the type is
+ * reconstructed in downstream theme helpers. Unknown string keys remain intentionally permissive
+ * (typos included).
  */
 export type VariantOptionStyle = {
-  [K in keyof CSS.Properties<CSSValue>]?: CSS.Properties<CSSValue>[K];
+  [K in keyof CSS.Properties<CSSValue>]?: CSS.Properties<CSSValue>[K] | CSSValue;
 } & {
   [key: string]:
     | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
@@ -658,6 +663,16 @@ export type FlatComponentReturn<K extends string> = {
 
 export type MultiSlotConfig<Slots extends readonly string[]> = {
   slots: Slots;
+  /**
+   * Forbidden recipe keys — same idea as {@link FlatComponentConfig}. Without these, a
+   * slot-with-variants config that fails {@link VariantOptionStyle} assignability (e.g. widened
+   * CSS keywords) can fall through to this overload on non-fresh objects and type as multi-slot
+   * while silently dropping `variants` (Issue #149).
+   */
+  base?: never;
+  variants?: never;
+  defaultVariants?: never;
+  compoundVariants?: never;
 } & Partial<Record<Slots[number], CSSProperties>>;
 
 /**
