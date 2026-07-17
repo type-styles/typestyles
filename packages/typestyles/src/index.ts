@@ -56,6 +56,27 @@ export {
 export type { ScopeOptions } from './scope';
 export { createScope } from './scope';
 
+export type {
+  OverrideOptions,
+  OverrideConfig,
+  SlotOverrideConfig,
+  MultiSlotOverrideConfig,
+  FlatOverrideConfig,
+  OverrideFn,
+} from './override';
+
+export type {
+  ComponentMeta,
+  ComponentMetaBase,
+  DimensionedComponentMeta,
+  FlatComponentMeta,
+  SlotComponentMeta,
+  MultiSlotComponentMeta,
+  VariantSelectorMap,
+  SlotVariantSelectorMap,
+} from './component-meta';
+export { getComponentMeta } from './component-meta';
+
 export { createStyles, createTokens, createTypeStyles, createGlobal };
 
 export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';
@@ -99,6 +120,8 @@ export type {
   KeyframeStops,
   VariantDefinitions,
   VariantOptionStyle,
+  VariantOptionKey,
+  CompoundSelectionValue,
   ComponentConfig,
   ComponentConfigContext,
   ComponentConfigInput,

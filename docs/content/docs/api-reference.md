@@ -24,11 +24,15 @@ per package or micro-frontend for isolation.
 - `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create a utility-aware styles API (prefer `createStyles({ utils })` for a single instance)
+- `styles.scope(opts, className, overrides)`: Proximity-correct overrides via CSS `@scope` (nested themes)
+- `styles.override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta` (see [Theming patterns](/docs/theming-patterns#typed-component-overrides))
 - `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
 
 **Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `atRuleBlock`, `has`, `is`, `where`.
 
-**Related types:** `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
+**Helpers:** `getComponentMeta(component)` — read public component metadata attached by `styles.component()`.
+
+**Related types:** `OverrideConfig`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
 
 ### `createStyles(options?)`
 

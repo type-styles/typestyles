@@ -451,14 +451,23 @@ export type SlotVariantDefinitions<S extends string> = Record<
 >;
 
 type VariantDimensions = Record<string, Record<string, unknown>>;
-type VariantOptionKey<V extends VariantDimensions, K extends keyof V> = Extract<keyof V[K], string>;
+
+/** Option name union for a single variant dimension (string keys only). */
+export type VariantOptionKey<V extends VariantDimensions, K extends keyof V> = Extract<
+  keyof V[K],
+  string
+>;
 
 type VariantSelectionValue<OptionKey extends string> =
   | OptionKey
   | (Extract<OptionKey, 'true'> extends never ? never : true)
   | (Extract<OptionKey, 'false'> extends never ? never : false);
 
-type CompoundSelectionValue<OptionKey extends string> =
+/**
+ * Compound / override selection for one dimension: a single option, a boolean
+ * when the dimension is `true`/`false`, or a readonly OR-list of those.
+ */
+export type CompoundSelectionValue<OptionKey extends string> =
   | VariantSelectionValue<OptionKey>
   | readonly VariantSelectionValue<OptionKey>[];
 
@@ -642,8 +651,14 @@ export type MultiSlotConfig<Slots extends readonly string[]> = {
   slots: Slots;
 } & Partial<Record<Slots[number], CSSProperties>>;
 
+/**
+ * Multi-slot recipe return. The `__tsMultiSlot` brand keeps `OverrideFn` from
+ * matching these against the slot-with-variants overload (which would infer a
+ * wide `V` and accept bogus `variants` keys).
+ */
 export type MultiSlotReturn<Slots extends readonly string[]> = {
   (): Record<Slots[number], string>;
+  readonly __tsMultiSlot: true;
 } & {
   readonly [K in Slots[number]]: string;
 };

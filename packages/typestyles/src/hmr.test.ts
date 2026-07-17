@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { invalidatePrefix, invalidateKeys } from './hmr';
+import { invalidatePrefix, invalidateKeys, createOverrideHmrSlot } from './hmr';
 import { createStyles } from './styles';
 import { registeredNamespaces } from './registry';
 import {
@@ -8,6 +8,7 @@ import {
   reset,
   invalidateComponentNamespaceForDev,
   invalidateClassNamespaceForDev,
+  getRegisteredCss,
 } from './sheet';
 
 describe('invalidatePrefix', () => {
@@ -131,6 +132,140 @@ describe('invalidateKeys', () => {
       (r) => (r as CSSStyleRule).selectorText,
     );
     expect(selectors.sort()).toEqual(['.button-group', '.buttongroup']);
+  });
+
+  it('preserves styles.override rules when a component namespace is invalidated', () => {
+    const styles = createStyles();
+    const button = styles.component('hmr-ov-btn', {
+      base: { color: 'black' },
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
+    styles.override(button, {
+      base: { borderRadius: '999px' },
+      variants: { intent: { primary: { textTransform: 'uppercase' } } },
+    });
+    flushSync();
+
+    invalidateComponentNamespaceForDev('hmr-ov-btn', 'hmr-ov-btn');
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('border-radius: 999px');
+    expect(css).toContain('text-transform: uppercase');
+    expect(css).toContain('.hmr-ov-btn {');
+    expect(css).toContain('.hmr-ov-btn--intent-primary {');
+    // Recipe rules were dropped; only override CSS remains for those selectors.
+    expect(css).not.toContain('color: black');
+    expect(css).not.toContain('color: blue');
+  });
+
+  it('updates styles.override CSS when the same keys are re-registered with new values', () => {
+    const styles = createStyles();
+    const button = styles.component('hmr-ov-replace', {
+      base: { color: 'black' },
+    });
+    styles.override(button, { base: { borderRadius: '4px' } });
+    flushSync();
+    expect(getRegisteredCss()).toContain('border-radius: 4px');
+
+    styles.override(button, { base: { borderRadius: '999px' } });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('border-radius: 999px');
+    expect(css).not.toContain('border-radius: 4px');
+  });
+
+  it('upserts conflicting override rules even when NODE_ENV is production', () => {
+    const prev = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const styles = createStyles();
+      const button = styles.component('hmr-ov-prod', {
+        base: { color: 'black' },
+      });
+      styles.override(button, { base: { borderRadius: '4px' } });
+      flushSync();
+      styles.override(button, { base: { borderRadius: '999px' } });
+      flushSync();
+      const css = getRegisteredCss();
+      expect(css).toContain('border-radius: 999px');
+      expect(css).not.toContain('border-radius: 4px');
+    } finally {
+      process.env.NODE_ENV = prev;
+    }
+  });
+
+  it('dispose does not drop sibling override rules that share attribute substrings', () => {
+    const styles = createStyles({ mode: 'attribute' });
+    const button = styles.component('hmr-ov-attr', {
+      base: { color: 'black' },
+      variants: {
+        intent: { primary: { color: 'blue' }, ghost: { color: 'gray' } },
+      },
+    });
+
+    const themeA = createOverrideHmrSlot();
+    themeA.activate();
+    styles.override(
+      button,
+      { variants: { intent: { primary: { textTransform: 'uppercase' } } } },
+      { selectorPrefix: '.theme-a' },
+    );
+    themeA.deactivate();
+
+    const themeB = createOverrideHmrSlot();
+    themeB.activate();
+    styles.override(
+      button,
+      { variants: { intent: { primary: { fontWeight: 700 } } } },
+      { selectorPrefix: '.theme-b' },
+    );
+    themeB.deactivate();
+    flushSync();
+
+    expect(getRegisteredCss()).toContain('.theme-a .hmr-ov-attr[data-intent="primary"]');
+    expect(getRegisteredCss()).toContain('.theme-b .hmr-ov-attr[data-intent="primary"]');
+
+    themeA.dispose();
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).not.toContain('text-transform: uppercase');
+    expect(css).toContain('.theme-b .hmr-ov-attr[data-intent="primary"]');
+    expect(css).toContain('font-weight: 700');
+    // Recipe CSS remains.
+    expect(css).toContain('color: black');
+  });
+
+  it('dispose of an override HMR slot drops tracked override rules (theme module HMR)', () => {
+    const styles = createStyles();
+    const button = styles.component('hmr-ov-slot', {
+      base: { color: 'black' },
+      variants: { intent: { primary: { color: 'blue' } } },
+    });
+
+    const slot = createOverrideHmrSlot();
+    slot.activate();
+    styles.override(
+      button,
+      { base: { borderRadius: '999px' }, variants: { intent: { primary: { fontWeight: 700 } } } },
+      { selectorPrefix: '.theme-acme' },
+    );
+    slot.deactivate();
+    flushSync();
+
+    expect(getRegisteredCss()).toContain('.theme-acme .hmr-ov-slot');
+    expect(getRegisteredCss()).toContain('border-radius: 999px');
+
+    slot.dispose();
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).not.toContain('border-radius: 999px');
+    expect(css).not.toContain('font-weight: 700');
+    // Recipe CSS from styles.component is untouched.
+    expect(css).toContain('color: black');
+    expect(css).toContain('color: blue');
   });
 
   it('invalidates styles.class rules without dropping component modifiers', () => {

@@ -275,13 +275,155 @@ function prependFallbackRule(css: string): void {
 }
 
 /**
+ * Active HMR slot for `styles.override()` keys (set by Vite-injected `createOverrideHmrSlot`).
+ * Module eval is synchronous, so one active slot is enough to attribute keys to the
+ * theme / app module that registered them — including via `createDesignTheme` sugar.
+ */
+let activeOverrideHmrKeys: Set<string> | null = null;
+
+export type OverrideHmrSlot = {
+  /** Begin attributing subsequently inserted `override:` keys to this module. */
+  activate(): void;
+  /** Stop attributing (end of module body). */
+  deactivate(): void;
+  /** Drop every override key this module registered (Vite `import.meta.hot.dispose`). */
+  dispose(): void;
+};
+
+/**
+ * Create a per-module override HMR slot. Vite injects activate / deactivate / dispose
+ * around modules that call `styles.override`, `createDesignTheme`, or `overrideComponent`.
+ */
+export function createOverrideHmrSlot(): OverrideHmrSlot {
+  const keys = new Set<string>();
+  return {
+    activate() {
+      activeOverrideHmrKeys = keys;
+    },
+    deactivate() {
+      if (activeOverrideHmrKeys === keys) activeOverrideHmrKeys = null;
+    },
+    dispose() {
+      invalidateOverrideRuleKeys([...keys]);
+      keys.clear();
+    },
+  };
+}
+
+function trackOverrideRuleKey(key: string): void {
+  if (activeOverrideHmrKeys) activeOverrideHmrKeys.add(key);
+}
+
+/**
+ * Replace an existing override rule in the virtual sheet + CSSOM (HMR / re-exec).
+ * Always upserts — theme modules re-register the same keys with new CSS, and first-wins
+ * would leave stale override styles after edits (including production preview builds).
+ */
+function upsertOverrideRule(
+  state: SheetState,
+  key: string,
+  previousCss: string,
+  css: string,
+): void {
+  const removedCss = new Set<string>([previousCss]);
+  state.insertedRules.delete(key);
+  state.ruleCssByKey.delete(key);
+  pruneRemovedCss(state, removedCss);
+  removeCssomRulesMatching(removedCss);
+
+  state.insertedRules.add(key);
+  state.ruleCssByKey.set(key, css);
+  state.allRules.push(css);
+  trackOverrideRuleKey(key);
+  if (!RUNTIME_DISABLED || state.ssrBuffer) {
+    state.pendingRules.push(css);
+  }
+}
+
+/** Collapse whitespace so stored CSS and browser/jsdom `cssText` can compare exactly. */
+function normalizeCssForMatch(css: string): string {
+  return css.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Unwrap a single `@layer name { … }` registration to its inner rule text.
+ * Layered inserts are one style rule per `@layer` block — not multi-rule bags.
+ */
+function unwrapSingleLayerBlock(css: string): string | null {
+  const match = css.match(/^@layer\s+[\w-]+\s*\{\s*([\s\S]*?)\s*\}\s*$/);
+  return match?.[1]?.trim() ? match[1].trim() : null;
+}
+
+/**
+ * True when a live CSSOM rule is exactly one of the registered CSS strings.
+ * No substring `includes` — those false-positive across attribute selectors and
+ * shared declaration blocks (recipe vs override with the same props).
+ */
+function cssRegistrationMatchesRule(registeredCss: string, rule: CSSRule): boolean {
+  const ruleText = normalizeCssForMatch(rule.cssText);
+  const registered = normalizeCssForMatch(registeredCss);
+  if (ruleText === registered) return true;
+
+  const inner = unwrapSingleLayerBlock(registeredCss);
+  if (inner != null && ruleText === normalizeCssForMatch(inner)) return true;
+
+  return false;
+}
+
+/**
+ * Drop live CSSOM rules whose text exactly matches a just-invalidated registration.
+ */
+function removeCssomRulesMatching(removedCss: ReadonlySet<string>): void {
+  if (!isBrowser || removedCss.size === 0) return;
+  const el = styleElement;
+  if (!el?.sheet) return;
+  const sheet = el.sheet;
+  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+    const rule = sheet.cssRules[i];
+    let shouldRemove = false;
+    for (const css of removedCss) {
+      if (cssRegistrationMatchesRule(css, rule)) {
+        shouldRemove = true;
+        break;
+      }
+    }
+    if (shouldRemove) sheet.deleteRule(i);
+  }
+}
+
+/**
+ * Invalidate exact override rule keys (virtual sheet + CSSOM).
+ * Used by override HMR slots — keys may be `override:…` or `layer:…:override:…`.
+ */
+export function invalidateOverrideRuleKeys(keys: readonly string[]): void {
+  if (keys.length === 0) return;
+  const state = getSheetState();
+  const removedCss = new Set<string>();
+  for (const key of keys) {
+    const css = state.ruleCssByKey.get(key);
+    if (css != null) removedCss.add(css);
+    state.insertedRules.delete(key);
+    state.ruleCssByKey.delete(key);
+  }
+  pruneRemovedCss(state, removedCss);
+  removeCssomRulesMatching(removedCss);
+}
+
+/**
  * Insert a CSS rule. Deduplicates by rule key.
  */
 export function insertRule(key: string, css: string): void {
   const state = getSheetState();
+  if (isOverrideRuleKey(key)) trackOverrideRuleKey(key);
   if (state.insertedRules.has(key)) {
     const prev = state.ruleCssByKey.get(key);
     if (prev != null && prev !== css) {
+      if (isOverrideRuleKey(key)) {
+        upsertOverrideRule(state, key, prev, css);
+        notifyRegisteredCssChanged();
+        scheduleFlush();
+        return;
+      }
       warnIfDuplicateRuleKeyConflict(key, prev, css);
     }
     return;
@@ -303,9 +445,16 @@ export function insertRules(rules: Array<{ key: string; css: string }>): void {
   let added = false;
   let registered = false;
   for (const { key, css } of rules) {
+    if (isOverrideRuleKey(key)) trackOverrideRuleKey(key);
     if (state.insertedRules.has(key)) {
       const prev = state.ruleCssByKey.get(key);
       if (prev != null && prev !== css) {
+        if (isOverrideRuleKey(key)) {
+          upsertOverrideRule(state, key, prev, css);
+          registered = true;
+          if (!RUNTIME_DISABLED || state.ssrBuffer) added = true;
+          continue;
+        }
         warnIfDuplicateRuleKeyConflict(key, prev, css);
       }
       continue;
@@ -413,6 +562,7 @@ export function subscribeRegisteredCss(listener: () => void): () => void {
  * Reset all state (useful for testing).
  */
 export function reset(): void {
+  activeOverrideHmrKeys = null;
   resetSheetState(getGlobalSheetState());
   const active = getSheetState();
   if (active !== getGlobalSheetState()) {
@@ -599,9 +749,27 @@ function ruleMatchesComponentClassFamily(rule: CSSRule, blockPrefix: string): bo
 }
 
 /**
+ * `styles.override()` keys are `override:…` (or `layer:…:override:…` when layered).
+ * Component HMR must not drop them — theme modules own those rules and are not
+ * re-executed when the recipe module hot-reloads.
+ */
+function isOverrideRuleKey(key: string): boolean {
+  return key.includes('override:');
+}
+
+function ruleCssOwnedByOverride(state: SheetState, rule: CSSRule): boolean {
+  for (const [key, css] of state.ruleCssByKey) {
+    if (!isOverrideRuleKey(key)) continue;
+    if (cssRegistrationMatchesRule(css, rule)) return true;
+  }
+  return false;
+}
+
+/**
  * Drop every rule key tied to a `styles.component('namespace', …)` registration, including
  * `@layer`-wrapped keys (`layer:….:.namespace-…`), and release reserved namespace entries.
  * Used for Vite HMR and for dev recovery when a module re-runs before `hot.dispose`.
+ * Preserves `styles.override()` rules that target the same class family.
  */
 export function invalidateComponentNamespaceForDev(
   namespace: string,
@@ -613,6 +781,7 @@ export function invalidateComponentNamespaceForDev(
   const state = getSheetState();
   const keysToDrop: string[] = [];
   for (const k of state.insertedRules) {
+    if (isOverrideRuleKey(k)) continue;
     if (trailingHyphenFamily) {
       if (k.includes(selectorInfix)) keysToDrop.push(k);
     } else if (matchesComponentClassFamily(k, blockPrefix)) {
@@ -620,14 +789,28 @@ export function invalidateComponentNamespaceForDev(
     }
   }
   if (trailingHyphenFamily) {
-    invalidateKeys(keysToDrop, [selectorInfix]);
+    // Prefer exact keys over a selector-infix prefix so `override:` rules that
+    // share the class family are not swept away by `invalidateKeys` prefixes.
+    invalidateKeys(keysToDrop, []);
+    if (isBrowser && styleElement?.sheet) {
+      const sheet = styleElement.sheet;
+      for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+        const rule = sheet.cssRules[i];
+        if (!ruleMatchesPrefix(rule, selectorInfix)) continue;
+        if (ruleCssOwnedByOverride(state, rule)) continue;
+        sheet.deleteRule(i);
+      }
+    }
   } else {
     invalidateKeys(keysToDrop, []);
     releaseReservedNamespacesForComponentOrClassNames([namespace], 'component');
     if (isBrowser && styleElement?.sheet) {
       const sheet = styleElement.sheet;
       for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-        if (ruleMatchesComponentClassFamily(sheet.cssRules[i], blockPrefix)) sheet.deleteRule(i);
+        const rule = sheet.cssRules[i];
+        if (!ruleMatchesComponentClassFamily(rule, blockPrefix)) continue;
+        if (ruleCssOwnedByOverride(state, rule)) continue;
+        sheet.deleteRule(i);
       }
     }
   }

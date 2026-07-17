@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
 
-/** Copies prerendered `mcp-content.json` beside the Netlify MCP function at build time. */
+/** Copies prerendered `mcp-content.json` beside the Netlify MCP function at build time.
+ * The destination is gitignored — Netlify packages functions after `astro build`. */
 export function generateMcpContentIntegration(): AstroIntegration {
   return {
     name: 'generate-mcp-content',

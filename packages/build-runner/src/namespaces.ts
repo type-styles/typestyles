@@ -6,7 +6,78 @@ const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_STYLE_RE = /global\.style\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_FONT_FACE_RE = /global\.fontFace\(\s*['"]([^'"]+)['"]/g;
 
+/** Canonical sugar / API names that register `styles.override` rules. */
+const OVERRIDE_HMR_EXPORT_NAMES = new Set(['createDesignTheme', 'overrideComponent']);
+
 export const TYPESTYLES_IMPORT_RE = /(?:from\s+|import\s+|require\s*\(\s*)['"]typestyles['"]/;
+
+/**
+ * Strip block + line comments so HMR detection ignores documented examples
+ * (`// createDesignTheme({…})`) without treating them as live calls.
+ */
+function stripCommentsForHmrScan(code: string): string {
+  return code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+/**
+ * Local binding names that may call override-registering APIs, including
+ * `import { createDesignTheme as cdt }` renames and `import * as Core` namespaces.
+ */
+function collectOverrideHmrCallTargets(code: string): {
+  locals: Set<string>;
+  namespaces: Set<string>;
+} {
+  const locals = new Set<string>(OVERRIDE_HMR_EXPORT_NAMES);
+  const namespaces = new Set<string>();
+
+  for (const match of code.matchAll(/import\s*{([^}]+)}\s*from\s*['"][^'"]+['"]/g)) {
+    for (const rawPart of match[1].split(',')) {
+      const part = rawPart.trim();
+      if (!part || part.startsWith('type ')) continue;
+      const asMatch = part.match(/^(\w+)\s+as\s+(\w+)$/);
+      if (asMatch) {
+        if (OVERRIDE_HMR_EXPORT_NAMES.has(asMatch[1])) {
+          locals.add(asMatch[2]);
+        }
+        continue;
+      }
+      const name = part.match(/^(\w+)$/)?.[1];
+      if (name && OVERRIDE_HMR_EXPORT_NAMES.has(name)) {
+        locals.add(name);
+      }
+    }
+  }
+
+  for (const match of code.matchAll(/import\s*\*\s*as\s+(\w+)\s*from\s*['"][^'"]+['"]/g)) {
+    namespaces.add(match[1]);
+  }
+
+  return { locals, namespaces };
+}
+
+/**
+ * True when this module may register `styles.override` rules and needs Vite HMR
+ * dispose tracking — including Var UI sugar (`createDesignTheme` / `overrideComponent`)
+ * that never spells `styles.override` in source.
+ *
+ * Detects renamed imports (`createDesignTheme as cdt`) and namespace imports
+ * (`Core.createDesignTheme(`), not only the canonical identifier spelling.
+ */
+export function moduleNeedsOverrideHmr(code: string): boolean {
+  const scan = stripCommentsForHmrScan(code);
+  if (/\bstyles\.override\s*\(/.test(scan)) return true;
+
+  const { locals, namespaces } = collectOverrideHmrCallTargets(scan);
+  for (const name of locals) {
+    if (new RegExp(`\\b${name}\\s*\\(`).test(scan)) return true;
+  }
+  for (const ns of namespaces) {
+    if (new RegExp(`\\b${ns}\\.(?:createDesignTheme|overrideComponent)\\s*\\(`).test(scan)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Extract namespace information from source code for invalidation and duplicate checks.

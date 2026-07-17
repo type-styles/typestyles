@@ -856,8 +856,84 @@ app.get('/', (req, res) => {
 
 ## Component overrides (two-tier model)
 
-When a theme needs to change how a component looks beyond token overrides, there are
-two tiers — pick the lightest option that fits.
+When a theme needs to change how a component looks beyond token overrides, pick the
+lightest option that fits. For recipe-shaped bulk restyling (base / variants /
+compounds) without writing class names, use [`styles.override()`](#typed-component-overrides)
+first; fall back to Tier 1 vars or Tier 2 CSS when you need a single property or
+nested-theme proximity.
+
+### Typed component overrides
+
+`styles.override(component, config, options?)` restyles a `styles.component()`
+return with the same shape as the recipe — variant keys autocomplete from the
+recipe type, and you never pass class names. Call it on the **same** `styles`
+instance that created the component (design systems typically wrap this).
+Cross-instance calls — a component from `stylesA` passed to `stylesB.override` —
+are unsupported: emission uses **this** instance's sheet, breakpoints, and layer
+stack, so selectors may land in the wrong CSS.
+
+With `@typestyles/vite` in serve mode, modules that call `styles.override` (or
+design-system sugar like `createDesignTheme` / `overrideComponent`, including
+renamed imports such as `createDesignTheme as cdt`) get HMR dispose tracking so
+theme edits update override CSS without a full reload. Re-registering the same
+override keys always replaces the previous CSS. Recipe HMR still preserves
+override rules — theme modules own those registrations.
+
+```ts
+import { createStyles } from 'typestyles';
+
+const styles = createStyles({
+  layers: ['components', 'overrides'] as const,
+});
+
+const button = styles.component(
+  'button',
+  {
+    base: { borderRadius: '6px' },
+    variants: {
+      intent: {
+        primary: { backgroundColor: 'blue' },
+        ghost: { backgroundColor: 'transparent' },
+      },
+      size: { sm: { fontSize: '12px' }, lg: { fontSize: '16px' } },
+    },
+  },
+  { layer: 'components' },
+);
+
+// App-global
+styles.override(
+  button,
+  {
+    base: { borderRadius: '999px' },
+    variants: {
+      intent: { primary: { textTransform: 'uppercase' } },
+    },
+  },
+  { layer: 'overrides' },
+);
+
+// Theme-scoped (descendant prefix — not CSS `@scope`)
+styles.override(
+  button,
+  { base: { boxShadow: 'none' } },
+  { selectorPrefix: '.theme-acme', layer: 'overrides' },
+);
+```
+
+Works for semantic, bem, template, and attribute naming modes (and flat / slot /
+multi-slot recipe shapes). Attribute mode emits selectors like
+`.button[data-intent="primary"]`; put overrides in a later cascade layer so they
+beat recipe CSS without fighting specificity. When `createStyles({ layers })`
+includes an `"overrides"` layer, omitting `{ layer }` defaults to that name —
+custom stacks without `"overrides"` must pass `{ layer }` explicitly.
+
+`getComponentMeta(component)` reads the public `__tsMeta` blob (namespace, kind,
+naming mode, base class(es), per-option selector fragments). Renaming anything in
+that metadata is a breaking change — same contract as public class names.
+
+For nested conflicting theme regions, `selectorPrefix` has the same proximity
+footgun as plain descendant CSS — use Tier 1 vars or [`styles.scope()`](#tier-2--plain-css-against-semantic-class-names).
 
 ### Tier 1 — component-scoped CSS custom properties (preferred)
 
@@ -933,18 +1009,20 @@ const button = styles.component(
 );
 
 styles.scope({ root: '.theme-acme', layer: 'overrides' }, button.base, { borderRadius: '999px' });
+// Prefer styles.override(button, { base: { borderRadius: '999px' } }, { selectorPrefix: '.theme-acme', layer: 'overrides' })
 ```
 
 Use `components` for recipe CSS, `overrides` for theme or consumer restyles, and
 `utilities` for per-instance intent. A later layer wins without a specificity
-escalation. The example targets only the stable base class; targeting a specific
-attribute variant remains ordinary CSS until the planned typed override API ships.
+escalation. Prefer `styles.override()` for recipe-shaped restyles (including
+attribute variants); plain CSS / `styles.scope()` remain fine when you only need
+a base-class or ad-hoc selector.
 
 ## Public semantic class names
 
 In **`semantic` naming mode** (the default), every class emitted by
 `styles.component()` / `styles.class()` is a **public, semver-guarded surface**.
-Consumers may target those names in plain CSS, `styles.scope()`, or any other CSS
+Consumers may target those names in plain CSS, `styles.scope()`, `styles.override()`, or any other CSS
 tooling. Renaming a namespace or variant key is a **breaking change** — TypeScript will
 not catch a renamed string literal, so publishable design systems should opt into the
 [`@typestyles/no-removed-public-classname`](/docs/publishing-packages#guard-public-class-names)

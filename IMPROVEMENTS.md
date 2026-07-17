@@ -396,4 +396,8 @@ in var-ui's own roadmap, not here.
     kebab-cased `data-*` names and supports slot recipes with per-slot attrs results.
     Cascade-layer guidance documents the recommended `components` / `overrides` pairing.
     Spec: `specs/semantic-and-attribute-mode.md`.
+- [ ] **`styles.override()` + `__tsMeta` component metadata**
+  - Recipe-shaped typed component overrides (`base` / `variants` / `compoundVariants`)
+    inferred from the component return; mode-aware emission via non-enumerable
+    `__tsMeta` + `getComponentMeta`. Spec: `specs/styles-override-meta.md`.
 - 1.0 stability policy and criteria

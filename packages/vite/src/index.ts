@@ -2,6 +2,7 @@ import { resolve as resolvePath } from 'node:path';
 import type { Plugin, ResolvedConfig, UserConfig } from 'vite';
 import {
   extractNamespaces,
+  moduleNeedsOverrideHmr,
   reportDuplicateNamespaces,
   resolveExtractMode,
   resolveExtractModules,
@@ -100,6 +101,7 @@ export function htmlLinksTypestylesCss(html: string, cssHref: string, fileName: 
 }
 
 export { extractNamespaces };
+export { moduleNeedsOverrideHmr } from '@typestyles/build-runner';
 
 /**
  * Vite plugin for typestyles HMR support.
@@ -232,16 +234,19 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
       if (id.includes('node_modules')) return null;
 
       const { keys, prefixes } = extractNamespaces(code);
+      const overrideHmr = moduleNeedsOverrideHmr(code);
 
       // Nothing to invalidate (no typestyles registration calls in this file)
-      if (keys.length === 0 && prefixes.length === 0) return null;
+      if (keys.length === 0 && prefixes.length === 0 && !overrideHmr) return null;
 
       // Duplicate namespace detection (build error — not a warning)
-      if (warnDuplicates) {
+      if (warnDuplicates && prefixes.length > 0) {
         reportDuplicateNamespaces(moduleNamespaces, id, prefixes, this);
       }
 
-      moduleNamespaces.set(id, { keys, prefixes });
+      if (keys.length > 0 || prefixes.length > 0) {
+        moduleNamespaces.set(id, { keys, prefixes });
+      }
 
       if (!isServe) {
         return null;
@@ -250,20 +255,38 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
       // Dev-only: synchronous dispose must run invalidateKeys before the updated module re-executes.
       // A dynamic import().then(...) registers dispose too late and can load a different chunk than the
       // app's `typestyles` singleton, so the registry never clears.
+      //
+      // Override HMR: theme modules often only call `createDesignTheme({ components })` /
+      // `styles.override` — no static namespace strings. Detection follows import bindings
+      // (including `createDesignTheme as cdt` / `import * as Core`). Runtime slots attribute
+      // `override:` keys to the module so dispose drops them (and re-exec can re-register).
       const keysJSON = JSON.stringify(keys);
       const prefixesJSON = JSON.stringify(prefixes);
-
-      const hmrImport = `import { invalidateKeys as __typestylesInvalidateKeys } from 'typestyles/hmr';\n`;
-      const hmrCode = `
+      const hmrImports = overrideHmr
+        ? `import { invalidateKeys as __typestylesInvalidateKeys, createOverrideHmrSlot as __tsCreateOvHmr } from 'typestyles/hmr';\n`
+        : `import { invalidateKeys as __typestylesInvalidateKeys } from 'typestyles/hmr';\n`;
+      const overrideBootstrap = overrideHmr
+        ? `const __tsOvHmr = __tsCreateOvHmr();\n__tsOvHmr.activate();\n`
+        : '';
+      const overrideTeardown = overrideHmr ? `\n__tsOvHmr.deactivate();\n` : '';
+      const disposeBody = [
+        keys.length > 0 || prefixes.length > 0
+          ? `__typestylesInvalidateKeys(${keysJSON}, ${prefixesJSON});`
+          : null,
+        overrideHmr ? `__tsOvHmr.dispose();` : null,
+      ]
+        .filter(Boolean)
+        .join('\n    ');
+      const hmrCode = `${overrideTeardown}
 if (import.meta.hot) {
   import.meta.hot.accept();
   import.meta.hot.dispose(() => {
-    __typestylesInvalidateKeys(${keysJSON}, ${prefixesJSON});
+    ${disposeBody}
   });
 }`;
 
       return {
-        code: hmrImport + code + hmrCode,
+        code: hmrImports + overrideBootstrap + code + hmrCode,
         map: null,
       };
     },
