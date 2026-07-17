@@ -397,7 +397,9 @@ export function createComponent(
 
 function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: string): string {
   const scope = classNaming.scopeId || 'default';
-  return `${scope}:${namespace}`;
+  // Distinct from `scope:class:…` so `styles.class('button')` and
+  // `styles.component('button')` do not trigger each other's HMR invalidation.
+  return `${scope}:component:${namespace}`;
 }
 
 /**
@@ -405,9 +407,7 @@ function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: stri
  * detection.
  *
  * Called once per dispatch branch in `createComponent`, after `resolveComponentConfig()` has
- * resolved the config shape and after any applicable mode-support guard (e.g.
- * `assertSlotsSupportedForMode`) has had a chance to throw. This ordering means a rejected call
- * (e.g. `slots` under `mode: 'attribute'`) never claims the namespace.
+ * resolved the config shape. Rejected calls (invalid config) never reach this helper.
  *
  * In **development**, a second registration for the same scope + namespace clears prior sheet
  * keys and registry state (same as `typestyles/hmr` invalidation). Some bundlers (notably Astro)

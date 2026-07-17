@@ -110,6 +110,8 @@ c.trigger;
 c.content;
 ```
 
+For **class-based** modes (`semantic` / `bem` / `template`), a `compoundVariants` entry whose `style` targets a slot only includes dimensions that actually emitted a modifier class for that slot. If a dimension option never styles the slot, that constraint is omitted from the chained selector and the compound can apply more broadly than the `variants` object suggests. Give every compounded dimension a style on that slot, or prefer `mode: 'attribute'` (attrs land on every slot).
+
 ## Data and ARIA selectors
 
 `styles.component` supports all CSS selectors:

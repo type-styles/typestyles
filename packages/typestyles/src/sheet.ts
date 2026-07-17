@@ -623,7 +623,7 @@ export function invalidateComponentNamespaceForDev(
     invalidateKeys(keysToDrop, [selectorInfix]);
   } else {
     invalidateKeys(keysToDrop, []);
-    releaseReservedNamespacesForComponentOrClassNames([namespace]);
+    releaseReservedNamespacesForComponentOrClassNames([namespace], 'component');
     if (isBrowser && styleElement?.sheet) {
       const sheet = styleElement.sheet;
       for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
@@ -634,11 +634,56 @@ export function invalidateComponentNamespaceForDev(
 }
 
 /**
+ * True when `selectorKey` references the exact class `className` (`.name`, `.name[…]`,
+ * `.name:…`, etc.), but not BEM modifiers/elements (`.name--…`, `.name__…`) or sibling
+ * identifiers that share a string prefix (`.name-group`, `.namegroup`).
+ *
+ * Used by `styles.class` HMR invalidation so re-registering `styles.class('button')` does
+ * not drop `styles.component('button')` modifier rules.
+ */
+function matchesExactEmittedClass(selectorKey: string, className: string): boolean {
+  const needle = `.${className}`;
+  for (let i = 0, f = selectorKey.indexOf(needle); f !== -1; f = selectorKey.indexOf(needle, i)) {
+    const a = f + needle.length;
+    const n = selectorKey[a];
+    if (
+      n === undefined ||
+      n === '[' ||
+      n === ':' ||
+      n === ' ' ||
+      n === '{' ||
+      n === '.' ||
+      n === ','
+    ) {
+      return true;
+    }
+    i = a + 1;
+  }
+  return false;
+}
+
+function ruleMatchesExactEmittedClass(rule: CSSRule, className: string): boolean {
+  if ('selectorText' in rule) {
+    return matchesExactEmittedClass((rule as CSSStyleRule).selectorText, className);
+  }
+  if ('cssRules' in rule) {
+    const inner = (rule as CSSGroupingRule).cssRules;
+    for (let i = 0; i < inner.length; i++) {
+      if (ruleMatchesExactEmittedClass(inner[i], className)) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Drop every rule key tied to a `styles.class('name', …)` registration — the base selector plus
- * any pseudo/nested/at-rule-wrapped variants — and release the reserved namespace entry. Used for
- * Vite HMR and for dev recovery when a module re-runs before `hot.dispose`, including
- * multi-environment SSR setups (e.g. the Vite Environment API, or RSC frameworks like Waku) that
- * re-evaluate the same source module once per environment within a single process.
+ * any pseudo/nested/at-rule-wrapped variants. Used for Vite HMR and for dev recovery when a
+ * module re-runs before `hot.dispose`, including multi-environment SSR setups (e.g. the Vite
+ * Environment API, or RSC frameworks like Waku) that re-evaluate the same source module once
+ * per environment within a single process.
+ *
+ * Matching is exact-class (not the component class family), so `styles.class('button')` HMR
+ * does not invalidate `button--*` / `button__*` component rules.
  *
  * No-op when `emittedClassName` is `undefined` (hashed/compact/atomic modes derive the class name
  * from the serialized properties, so there's no reliable selector to invalidate ahead of time —
@@ -646,15 +691,22 @@ export function invalidateComponentNamespaceForDev(
  */
 export function invalidateClassNamespaceForDev(emittedClassName?: string): void {
   if (!emittedClassName) return;
-  const selectorInfix = `.${emittedClassName}`;
   const state = getSheetState();
   const keysToDrop: string[] = [];
   for (const k of state.insertedRules) {
-    if (k.includes(selectorInfix)) {
+    if (matchesExactEmittedClass(k, emittedClassName)) {
       keysToDrop.push(k);
     }
   }
-  invalidateKeys(keysToDrop, [selectorInfix]);
+  invalidateKeys(keysToDrop, []);
+  if (isBrowser && styleElement?.sheet) {
+    const sheet = styleElement.sheet;
+    for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+      if (ruleMatchesExactEmittedClass(sheet.cssRules[i], emittedClassName)) {
+        sheet.deleteRule(i);
+      }
+    }
+  }
 }
 
 function ruleMatchesPrefix(rule: CSSRule, prefix: string): boolean {

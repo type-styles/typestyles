@@ -426,7 +426,7 @@ docs should treat layers as required for theming, not optional polish.
 
 ## Relationship to typed overrides
 
-Full design: [`styles-override-meta.md`](./styles-override-meta.md). This
+Full design: `specs/styles-override-meta.md` (separate follow-on). This
 spec is a prerequisite and constrains that API:
 
 - `__meta` must record **selector fragments**, not only class names —

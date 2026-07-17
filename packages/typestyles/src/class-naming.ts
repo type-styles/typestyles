@@ -165,8 +165,8 @@ function semanticScopePrefix(cfg: ClassNamingConfig): string {
   return `${sanitizeClassSegment(cfg.scopeId)}-`;
 }
 
-function ownerKey(cfg: ClassNamingConfig, namespace: string): string {
-  return `${cfg.scopeId || 'default'}:${namespace}`;
+function ownerKey(cfg: ClassNamingConfig, namespace: string, kind: 'class' | 'component'): string {
+  return `${cfg.scopeId || 'default'}:${kind}:${namespace}`;
 }
 
 /**
@@ -216,7 +216,7 @@ export function buildSingleClassName(
     cfg.mode === 'template'
   ) {
     const className = `${semanticScopePrefix(cfg)}${name}`;
-    trackEmittedClassName(className, ownerKey(cfg, name));
+    trackEmittedClassName(className, ownerKey(cfg, name, 'class'));
     return className;
   }
 
@@ -231,7 +231,7 @@ export function buildSingleClassName(
     cfg.mode === 'compact'
       ? `${cfg.prefix}-${h}`
       : `${cfg.prefix}-${sanitizeClassSegment(name)}-${h}`;
-  trackEmittedClassName(className, ownerKey(cfg, name));
+  trackEmittedClassName(className, ownerKey(cfg, name, 'class'));
   return className;
 }
 
@@ -252,7 +252,7 @@ export function buildComponentClassName(
     cfg.mode === 'template'
   ) {
     const className = `${semanticScopePrefix(cfg)}${namespace}-${suffix}`;
-    trackEmittedClassName(className, ownerKey(cfg, namespace));
+    trackEmittedClassName(className, ownerKey(cfg, namespace, 'component'));
     return className;
   }
 
@@ -267,7 +267,7 @@ export function buildComponentClassName(
     cfg.mode === 'compact'
       ? `${cfg.prefix}-${h}`
       : `${cfg.prefix}-${sanitizeClassSegment(namespace)}-${h}`;
-  trackEmittedClassName(className, ownerKey(cfg, namespace));
+  trackEmittedClassName(className, ownerKey(cfg, namespace, 'component'));
   return className;
 }
 
@@ -316,7 +316,7 @@ export function buildTemplateClassName(
         `${JSON.stringify(ctx)}. Class names must match ${VALID_CLASS_NAME}.`,
     );
   }
-  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace));
+  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace, 'component'));
   return className;
 }
 
@@ -331,6 +331,6 @@ export function buildSemanticTemplateClassName(
 ): string {
   const ctx: ClassNameContext = { scope: semanticScopePrefix(cfg), ...input };
   const className = semanticTemplate(ctx);
-  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace));
+  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace, 'component'));
   return className;
 }

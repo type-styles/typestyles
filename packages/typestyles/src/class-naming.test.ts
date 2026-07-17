@@ -209,6 +209,15 @@ describe('class name collision detection (dev)', () => {
     expect(a).toBe(b);
     expect(errorSpy).not.toHaveBeenCalled();
   });
+
+  it('errors when styles.class and styles.component share an emitted base class', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const styles = createStyles();
+    styles.class('button', { color: 'red' });
+    styles.component('button', { base: { color: 'blue' } });
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Class name collision'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('button'));
+  });
 });
 
 describe('unscoped collision warning (dev)', () => {

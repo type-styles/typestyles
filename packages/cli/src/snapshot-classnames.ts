@@ -70,11 +70,18 @@ export function semanticClassName(
   namespace: string,
   suffix?: string,
 ): string | null {
-  if (config.mode === 'hashed' || config.mode === 'compact' || config.mode === 'atomic') {
+  if (
+    config.mode === 'hashed' ||
+    config.mode === 'compact' ||
+    config.mode === 'atomic' ||
+    config.mode === 'template'
+  ) {
     return null;
   }
   const prefix = semanticScopePrefix(config.scopeId);
   if (suffix === undefined || suffix === 'base') return `${prefix}${namespace}`;
+  // Dimensioned attribute variants are data-* only; the helper cannot tell flat
+  // modifiers from option names — prefer `componentClassName` / collect for that.
   if (config.mode === 'attribute') return `${prefix}${namespace}`;
   if (config.mode === 'bem') return `${prefix}${namespace}--${suffix}`;
   return `${prefix}${namespace}--${suffix}`;
@@ -281,12 +288,13 @@ function collectClassNamePartsFromConfig(
   for (const prop of obj.properties) {
     if (!ts.isPropertyAssignment(prop)) continue;
     const key = getStaticObjectKey(prop.name);
-    if (!key || RESERVED_COMPONENT_KEYS.has(key)) continue;
+    if (!key) continue;
     if (key === 'base') {
       parts.push({});
-    } else {
-      parts.push({ modifier: key });
+      continue;
     }
+    if (RESERVED_COMPONENT_KEYS.has(key)) continue;
+    parts.push({ modifier: key });
   }
 
   return parts;
@@ -297,13 +305,21 @@ function componentClassName(
   namespace: string,
   part: ComponentClassNamePart,
 ): string | null {
-  if (config.mode === 'hashed' || config.mode === 'compact' || config.mode === 'atomic') {
+  if (
+    config.mode === 'hashed' ||
+    config.mode === 'compact' ||
+    config.mode === 'atomic' ||
+    config.mode === 'template'
+  ) {
     return null;
   }
 
   const prefix = semanticScopePrefix(config.scopeId);
   const block = `${prefix}${namespace}${part.element ? `__${part.element}` : ''}`;
-  if (!part.modifier || config.mode === 'attribute') return block;
+  if (!part.modifier) return block;
+  // Dimensioned attribute variants compile to data-* attrs (no public class).
+  // Flat attribute modifiers still emit `block--modifier` classes.
+  if (config.mode === 'attribute' && part.dimension) return block;
   if (config.mode === 'bem') return `${block}--${part.modifier}`;
   return `${block}--${part.dimension ? `${part.dimension}-` : ''}${part.modifier}`;
 }

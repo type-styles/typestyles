@@ -450,6 +450,45 @@ describe('createStylesWithUtils', () => {
   });
 });
 
+describe('styles.class and styles.component coexistence', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('does not wipe component modifiers when registering a same-named class second', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const styles = createStyles();
+    styles.component('button', {
+      base: { color: 'blue' },
+      variants: { intent: { primary: { fontWeight: 700 } } },
+    });
+    styles.class('button', { color: 'red', padding: '4px' });
+
+    const css = getRegisteredCss();
+    expect(css).toContain('.button--intent-primary');
+    expect(css).toMatch(/\.button\s*\{[^}]*color:\s*blue/);
+    expect(css).not.toMatch(/\.button\s*\{[^}]*padding:\s*4px/);
+  });
+
+  it('does not wipe class CSS when registering a same-named component second', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const styles = createStyles();
+    styles.class('button', { color: 'red', padding: '4px' });
+    styles.component('button', {
+      base: { color: 'blue' },
+      variants: { intent: { primary: { fontWeight: 700 } } },
+    });
+
+    const css = getRegisteredCss();
+    expect(css).toContain('padding: 4px');
+    expect(css).toContain('.button--intent-primary');
+    expect(css).toMatch(/\.button\s*\{[^}]*color:\s*red/);
+  });
+});
+
 describe('styles.property', () => {
   beforeEach(() => {
     reset();

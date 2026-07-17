@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { invalidatePrefix, invalidateKeys } from './hmr';
 import { createStyles } from './styles';
 import { registeredNamespaces } from './registry';
-import { insertRule, flushSync, reset, invalidateComponentNamespaceForDev } from './sheet';
+import {
+  insertRule,
+  flushSync,
+  reset,
+  invalidateComponentNamespaceForDev,
+  invalidateClassNamespaceForDev,
+} from './sheet';
 
 describe('invalidatePrefix', () => {
   beforeEach(() => {
@@ -125,6 +131,21 @@ describe('invalidateKeys', () => {
       (r) => (r as CSSStyleRule).selectorText,
     );
     expect(selectors.sort()).toEqual(['.button-group', '.buttongroup']);
+  });
+
+  it('invalidates styles.class rules without dropping component modifiers', () => {
+    insertRule('.button', '.button { color: red; }');
+    insertRule('.button--intent-primary', '.button--intent-primary { color: blue; }');
+    insertRule('.button:hover', '.button:hover { opacity: 0.9; }');
+    insertRule('.button-group', '.button-group { gap: 8px; }');
+    flushSync();
+
+    invalidateClassNamespaceForDev('button');
+
+    const selectors = Array.from(
+      (document.getElementById('typestyles') as HTMLStyleElement).sheet?.cssRules ?? [],
+    ).map((r) => (r as CSSStyleRule).selectorText);
+    expect(selectors.sort()).toEqual(['.button--intent-primary', '.button-group']);
   });
 
   it('releases component namespace reservations so the same module can re-register (HMR)', () => {

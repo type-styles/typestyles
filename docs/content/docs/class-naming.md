@@ -83,7 +83,9 @@ are retained in modifiers so equal option values from different dimensions never
 
 `styles.class('button')` and the base class from `styles.component('button', …)`
 now intentionally use the same string. Give unrelated definitions distinct namespaces
-or a `scopeId`; the development collision warning catches duplicate emitted classes.
+or a `scopeId`. In development, typestyles logs a **class name collision** error when
+both APIs emit the same string (their CSS still share one sheet key — first registration
+wins). Do not rely on both definitions contributing different base styles under one name.
 
 With **`scopeId`** set, the sanitized scope is prefixed onto every class name — the same way `tokens.create` scopes custom property names:
 
@@ -94,7 +96,7 @@ This keeps semantic names readable while making isolation real: two packages can
 
 ### `hashed`
 
-Deterministic names of the form **`{prefix}-{namespace-slug}-{hash}`**. The hash is computed from (when set) `scopeId`, the namespace, a variant segment (e.g. `base`, `intent-primary`, `root-compound-0`), and the serialized style object for that rule. Identical definitions produce identical class strings.
+Deterministic names of the form **`{prefix}-{namespace-slug}-{hash}`**. The hash is computed from (when set) `scopeId`, the namespace, a variant segment (e.g. `base`, `intent-primary`, or a compound segment in hashed mode), and the serialized style object for that rule. Identical definitions produce identical class strings.
 
 Use this when you want shorter, scoped names while still recognizing the namespace in DevTools.
 

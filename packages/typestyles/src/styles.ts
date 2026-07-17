@@ -64,7 +64,9 @@ import { resolveBreakpoints, type BreakpointsConfig } from './breakpoints';
  */
 function registryKeyForClass(classNaming: ClassNamingConfig, name: string): string {
   const scope = classNaming.scopeId || 'default';
-  return `${scope}:${name}`;
+  // Distinct from `scope:component:…` so `styles.class('button')` and
+  // `styles.component('button')` do not trigger each other's HMR invalidation.
+  return `${scope}:class:${name}`;
 }
 
 /**
