@@ -167,21 +167,21 @@ describe('compose', () => {
     });
     const button = compose(base, primary);
 
-    expect(button()).toBe('base-base primary-base');
+    expect(button()).toBe('base primary');
   });
 
   it('composes functions with strings', () => {
     const base = createComponent(defaultClassNamingConfig, 'base2', { base: { padding: '8px' } });
     const composed = compose(base, 'custom-class');
 
-    expect(composed()).toBe('base2-base custom-class');
+    expect(composed()).toBe('base2 custom-class');
   });
 
   it('filters falsy values', () => {
     const base = createComponent(defaultClassNamingConfig, 'base3', { base: { padding: '8px' } });
     const composed = compose(base, false, null, undefined, 'valid');
 
-    expect(composed()).toBe('base3-base valid');
+    expect(composed()).toBe('base3 valid');
   });
 
   it('handles string-only composition', () => {
@@ -205,7 +205,7 @@ describe('compose', () => {
     const button = compose(size, intent);
 
     expect(button({ size: 'lg', intent: 'ghost' })).toBe(
-      'compose-size-size-lg compose-intent-intent-ghost',
+      'compose-size--size-lg compose-intent--intent-ghost',
     );
   });
 
@@ -318,13 +318,13 @@ describe('createStylesWithUtils', () => {
     });
 
     // Should be callable
-    expect(card()).toContain('util-comp-base');
+    expect(card()).toContain('util-comp');
 
     flushSync();
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     const rule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-comp-base',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-comp',
     ) as CSSStyleRule;
 
     expect(rule.style.getPropertyValue('padding-top')).toBe('12px');
@@ -348,14 +348,14 @@ describe('createStylesWithUtils', () => {
       };
     });
 
-    expect(box({ t: 'hi' })).toContain('util-fn-comp-base');
+    expect(box({ t: 'hi' })).toContain('util-fn-comp');
     flushSync();
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     const baseRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp-base',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp',
     ) as CSSStyleRule;
     const hiRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp-t-hi',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-fn-comp--t-hi',
     ) as CSSStyleRule;
     expect(baseRule.style.getPropertyValue('padding-top')).toBe('8px');
     expect(hiRule.style.getPropertyValue('padding-top')).toBe('20px');

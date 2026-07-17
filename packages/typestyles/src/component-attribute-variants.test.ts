@@ -27,7 +27,7 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
       base: { padding: '8px' },
       variants: { variant: { primary: { color: 'blue' } } },
     });
-    expect(btn.base).toBe('noopt-base');
+    expect(btn.base).toBe('noopt');
     expect(Object.keys(btn)).toEqual(['base']);
   });
 
@@ -43,9 +43,9 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
     });
 
     const b = btn({ variant: 'primary' });
-    expect(b.className).toBe('sbtn-base');
+    expect(b.className).toBe('sbtn');
     expect(b.attrs).toEqual({ 'data-variant': 'primary' });
-    expect(b.props).toEqual({ className: 'sbtn-base', 'data-variant': 'primary' });
+    expect(b.props).toEqual({ className: 'sbtn', 'data-variant': 'primary' });
   });
 
   it('resolves className, attrs, and props for multiple dimensions', () => {
@@ -64,10 +64,10 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
     });
 
     const b = btn({ variant: 'primary', size: 'small' });
-    expect(b.className).toBe('mbtn-base');
+    expect(b.className).toBe('mbtn');
     expect(b.attrs).toEqual({ 'data-variant': 'primary', 'data-size': 'small' });
     expect(b.props).toEqual({
-      className: 'mbtn-base',
+      className: 'mbtn',
       'data-variant': 'primary',
       'data-size': 'small',
     });
@@ -113,8 +113,8 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
     });
 
     const b = btn({ variant: 'primary' });
-    expect(String(b)).toBe('strbtn-base');
-    expect(`${b}`).toBe('strbtn-base');
+    expect(String(b)).toBe('strbtn');
+    expect(`${b}`).toBe('strbtn');
   });
 
   it('interops with cx()', () => {
@@ -124,7 +124,7 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
     });
 
     const b = btn({ variant: 'primary' });
-    expect(cx(b, 'extra')).toBe('cxbtn-base extra');
+    expect(cx(b, 'extra')).toBe('cxbtn extra');
   });
 
   it('logs console.error in dev for unknown variant dimension', () => {
@@ -200,11 +200,9 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
 
       flushSync();
       const css = getRegisteredCss();
-      expect(css).toContain('.css-basic-base { padding: 8px; }');
-      expect(css).toContain('.css-basic-base[data-variant="primary"] { background-color: blue; }');
-      expect(css).toContain(
-        '.css-basic-base[data-variant="secondary"] { background-color: gray; }',
-      );
+      expect(css).toContain('.css-basic { padding: 8px; }');
+      expect(css).toContain('.css-basic[data-variant="primary"] { background-color: blue; }');
+      expect(css).toContain('.css-basic[data-variant="secondary"] { background-color: gray; }');
       expect(css).not.toContain('.css-basic-variant-primary');
     });
 
@@ -220,8 +218,8 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
 
       flushSync();
       const css = getRegisteredCss();
-      expect(css).toContain('.css-bool-base[data-disabled] { opacity: 0.5; }');
-      expect(css).toContain('.css-bool-base:not([data-disabled]) { opacity: 1; }');
+      expect(css).toContain('.css-bool[data-disabled] { opacity: 0.5; }');
+      expect(css).toContain('.css-bool:not([data-disabled]) { opacity: 1; }');
     });
 
     it('skips CSS emission entirely for an empty option style block', () => {
@@ -263,7 +261,7 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
       flushSync();
       const css = getRegisteredCss();
       expect(css).toContain(
-        '.css-compound-base[data-variant="primary"][data-size="large"] { font-weight: 700; }',
+        '.css-compound[data-variant="primary"][data-size="large"] { font-weight: 700; }',
       );
       expect(css).not.toContain('compound-0');
     });
@@ -291,9 +289,60 @@ describe('createComponent — attribute-mode dimensioned variants', () => {
       flushSync();
       const css = getRegisteredCss();
       expect(css).toContain(
-        '.css-compound-arr-base:is([data-tone="success"], [data-tone="warning"])[data-size="lg"] { text-transform: uppercase; }',
+        '.css-compound-arr:is([data-tone="success"], [data-tone="warning"])[data-size="lg"] { text-transform: uppercase; }',
       );
     });
+
+    it('kebab-cases camelCase dimension names in selectors, attrs, and props', () => {
+      const btn = createComponent(attributeMode, 'fontbtn', {
+        variants: { fontWeight: { bold: { fontWeight: 700 } } },
+      });
+
+      expect(btn({ fontWeight: 'bold' }).attrs).toEqual({ 'data-font-weight': 'bold' });
+      expect(btn({ fontWeight: 'bold' }).props).toEqual({
+        className: 'fontbtn',
+        'data-font-weight': 'bold',
+      });
+
+      flushSync();
+      expect(getRegisteredCss()).toContain(
+        '.fontbtn[data-font-weight="bold"] { font-weight: 700; }',
+      );
+    });
+
+    it('uses kebab-cased presence selectors for camelCase boolean dimensions', () => {
+      const btn = createComponent(attributeMode, 'camelbool', {
+        variants: { isDisabled: { true: { opacity: 0.5 }, false: { opacity: 1 } } },
+      });
+
+      expect(btn({ isDisabled: true }).attrs).toEqual({ 'data-is-disabled': '' });
+      flushSync();
+      expect(getRegisteredCss()).toContain('.camelbool[data-is-disabled] { opacity: 0.5; }');
+      expect(getRegisteredCss()).toContain('.camelbool:not([data-is-disabled]) { opacity: 1; }');
+    });
+  });
+
+  it('always emits the semantic block class when base is omitted', () => {
+    const btn = createComponent(attributeMode, 'nobase', {
+      variants: { variant: { primary: { color: 'blue' } } },
+    });
+
+    expect(btn({ variant: 'primary' }).className).toBe('nobase');
+  });
+
+  it('warns when dimensions collide after kebab-casing', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    createComponent(attributeMode, 'collision', {
+      variants: {
+        fontWeight: { regular: { fontWeight: 400 } },
+        'font-weight': { bold: { fontWeight: 700 } },
+      },
+    });
+
+    expect(err).toHaveBeenCalledWith(
+      '[typestyles] Dimensions "fontWeight" and "font-weight" both map to "data-font-weight" in "collision".',
+    );
+    err.mockRestore();
   });
 });
 
@@ -321,6 +370,6 @@ describe('createStyles({ mode: "attribute" })', () => {
       variants: { variant: { primary: { color: 'blue' } } },
     });
 
-    expect(btn({ variant: 'primary' })).toBe('ds-c-plainbtn-base ds-c-plainbtn-variant-primary');
+    expect(btn({ variant: 'primary' })).toBe('ds-c-plainbtn ds-c-plainbtn--variant-primary');
   });
 });

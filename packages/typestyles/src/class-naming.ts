@@ -320,3 +320,18 @@ export function buildTemplateClassName(
   trackEmittedClassName(className, ownerKey(cfg, ctx.namespace));
   return className;
 }
+
+/**
+ * Builds a class using the built-in semantic template regardless of `cfg.mode`.
+ * Attribute components use this for their stable block class without exposing
+ * attribute mode as a general template mode.
+ */
+export function buildSemanticTemplateClassName(
+  cfg: ClassNamingConfig,
+  input: TemplateClassNameInput,
+): string {
+  const ctx: ClassNameContext = { scope: semanticScopePrefix(cfg), ...input };
+  const className = semanticTemplate(ctx);
+  trackEmittedClassName(className, ownerKey(cfg, ctx.namespace));
+  return className;
+}

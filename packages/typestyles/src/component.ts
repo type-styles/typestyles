@@ -23,8 +23,8 @@ import { applyLayerToRules, assertOwnLayer } from './layers';
 import { registeredNamespaces, warnUnscopedCollision } from './registry';
 import {
   emittedComponentClassPrefix,
+  buildSemanticTemplateClassName,
   buildTemplateClassName,
-  mergeClassNaming,
   type ClassNamingConfig,
 } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
@@ -733,13 +733,36 @@ function isBooleanOptionKeys(optionKeys: readonly string[]): boolean {
   return optionKeys.length === 2 && optionKeys.includes('true') && optionKeys.includes('false');
 }
 
+function toDataAttributeName(dimension: string): string {
+  const kebab = dimension
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/_/g, '-')
+    .toLowerCase();
+  return `data-${kebab}`;
+}
+
+function warnKebabAttributeCollisions(namespace: string, dimensions: string[]): void {
+  if (process.env.NODE_ENV === 'production') return;
+  const seen = new Map<string, string>();
+  for (const dimension of dimensions) {
+    const attributeName = toDataAttributeName(dimension);
+    const previousDimension = seen.get(attributeName);
+    if (previousDimension && previousDimension !== dimension) {
+      console.error(
+        `[typestyles] Dimensions "${previousDimension}" and "${dimension}" both map to "${attributeName}" in "${namespace}".`,
+      );
+    }
+    seen.set(attributeName, dimension);
+  }
+}
+
 /** `&[data-{dimension}="{option}"]`, or the boolean presence-selector form. */
 function attributeSelectorFor(
   dimension: string,
   option: string,
   optionKeys: readonly string[],
 ): string {
-  const attrName = `data-${dimension}`;
+  const attrName = toDataAttributeName(dimension);
   if (isBooleanOptionKeys(optionKeys)) {
     return option === 'true' ? `[${attrName}]` : `:not([${attrName}])`;
   }
@@ -763,6 +786,7 @@ function createAttributeDimensionedComponent<V extends VariantDefinitions>(
   layer?: string,
 ): ComponentAttrsReturn<V> {
   const { base, variants = {} as V, compoundVariants = [], defaultVariants = {} } = config;
+  warnKebabAttributeCollisions(namespace, Object.keys(variants));
 
   // Fold each variant option's style into `base` as a synthetic `&[data-x="y"]` nested-selector
   // key, then run it through the same base-emission path every other component shape uses — this
@@ -803,15 +827,17 @@ function createAttributeDimensionedComponent<V extends VariantDefinitions>(
   );
 
   const rules: Array<{ key: string; css: string }> = [];
-  const emitted = classNamesAndRulesForProperties(
-    classNaming,
-    mergedBase as CSSProperties,
+  const baseClassName = buildSemanticTemplateClassName(classNaming, {
     namespace,
-    'base',
-    'component',
+    element: undefined,
+    dimension: undefined,
+    modifier: undefined,
+  });
+  rules.push(
+    ...serializeStyle(`.${baseClassName}`, mergedBase as CSSProperties, {
+      breakpoints: classNaming.breakpoints,
+    }),
   );
-  const baseClassName = emitted.classNames;
-  rules.push(...emitted.rules);
 
   insertRules(finalizeComponentRules(classNaming, layer, rules));
 
@@ -838,9 +864,9 @@ function createAttributeDimensionedComponent<V extends VariantDefinitions>(
       if (selected == null) continue;
 
       if (isBooleanOptionKeys(optionKeys)) {
-        if (selected === 'true') attrs[`data-${dimension}`] = '';
+        if (selected === 'true') attrs[toDataAttributeName(dimension)] = '';
       } else {
-        attrs[`data-${dimension}`] = selected;
+        attrs[toDataAttributeName(dimension)] = selected;
       }
     }
 
@@ -875,25 +901,17 @@ function createComponentAttrsResult(
 // Flat variant component
 // ---------------------------------------------------------------------------
 
-/** Attribute flat uses semantic template naming; `resolveClassNameTemplate` does not support `attribute` yet. */
-function classNamingForSemanticFlat(classNaming: ClassNamingConfig): ClassNamingConfig {
-  return classNaming.mode === 'attribute'
-    ? mergeClassNaming({ ...classNaming, mode: 'semantic' })
-    : classNaming;
-}
-
 function createSemanticFlatComponent<K extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: FlatComponentConfig<K>,
   layer?: string,
 ): FlatComponentReturn<K> {
-  const naming = classNamingForSemanticFlat(classNaming);
   const rules: Array<{ key: string; css: string }> = [];
   const classMap: Record<string, string> = {};
   const variantKeys: string[] = [];
 
-  const blockClassName = buildTemplateClassName(naming, {
+  const blockClassName = buildSemanticTemplateClassName(classNaming, {
     namespace,
     element: undefined,
     dimension: undefined,
@@ -910,7 +928,7 @@ function createSemanticFlatComponent<K extends string>(
         ...serializeStyle(`.${blockClassName}`, props, { breakpoints: classNaming.breakpoints }),
       );
     } else {
-      const modifierClassName = buildTemplateClassName(naming, {
+      const modifierClassName = buildSemanticTemplateClassName(classNaming, {
         namespace,
         element: undefined,
         dimension: undefined,

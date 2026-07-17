@@ -34,8 +34,8 @@ describe('class naming modes', () => {
       base: { color: 'red' },
       primary: { backgroundColor: 'blue' },
     });
-    expect(button.base).toBe('btn-base');
-    expect(button.primary).toBe('btn-primary');
+    expect(button.base).toBe('btn');
+    expect(button.primary).toBe('btn--primary');
   });
 
   it('hashed mode yields stable prefixed class names for component()', () => {
@@ -180,13 +180,13 @@ describe('class name collision detection (dev)', () => {
   it('errors when two different definitions emit the same class string', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     // scope 'docs' + namespace 'button' and no scope + namespace 'docs-button'
-    // both emit "docs-button-base"
+    // both emit "docs-button"
     const scoped = createStyles({ scopeId: 'docs' });
     const unscoped = createStyles();
     scoped.component('button', { base: { color: 'red' } });
     unscoped.component('docs-button', { base: { color: 'blue' } });
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Class name collision'));
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('docs-button-base'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('docs-button'));
   });
 
   it('does not error when the same definition re-registers (HMR)', () => {

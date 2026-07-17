@@ -65,7 +65,7 @@ describe('cascade layers', () => {
     flushSync();
     const css = getRegisteredCss();
     expect(css).toMatch(/@layer components/);
-    expect(css).toContain('btn-base');
+    expect(css).toContain('.btn');
   });
 
   it('layered component: function config + internal vars uses dimensioned overload (intent selection types)', () => {
