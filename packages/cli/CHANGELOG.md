@@ -1,5 +1,20 @@
 # @typestyles/cli
 
+## 0.2.1
+
+### Patch Changes
+
+- [#141](https://github.com/type-styles/typestyles/pull/141) [`35e02a7`](https://github.com/type-styles/typestyles/commit/35e02a7f332be97fb116e39102998079f17d24dd) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Breaking: semantic component class names now use `block`, `block--dimension-option`,
+  and `block__slot` forms instead of hyphen semantic names. Compound variants now emit
+  chained modifier selectors instead of `*-compound-N` classes. Attribute mode now
+  kebab-cases `data-*` names and supports slots, returning per-slot
+  `{ className, attrs, props }` results.
+
+  Upgrade notes: regenerate public-classname snapshots; update hand-written CSS /
+  tests that targeted `*-base` or `*-compound-N`. Prefer distinct namespaces for
+  `styles.class` and `styles.component` when they would share a base class string —
+  dev builds warn on that collision. See docs migration guide (0.10 semantic naming).
+
 ## 0.2.0
 
 ### Minor Changes
