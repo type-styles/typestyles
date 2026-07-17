@@ -24,6 +24,7 @@ import { registeredNamespaces, warnUnscopedCollision } from './registry';
 import {
   emittedComponentClassPrefix,
   buildTemplateClassName,
+  mergeClassNaming,
   type ClassNamingConfig,
 } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
@@ -366,6 +367,14 @@ export function createComponent(
     return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
   }
   claimComponentNamespace(classNaming, namespace);
+  if (classNaming.mode === 'semantic' || classNaming.mode === 'attribute') {
+    return createSemanticFlatComponent(
+      classNaming,
+      namespace,
+      resolved as FlatComponentConfig<string>,
+      layer,
+    );
+  }
   return createFlatComponent(
     classNaming,
     namespace,
@@ -865,6 +874,88 @@ function createComponentAttrsResult(
 // ---------------------------------------------------------------------------
 // Flat variant component
 // ---------------------------------------------------------------------------
+
+/** Attribute flat uses semantic template naming; `resolveClassNameTemplate` does not support `attribute` yet. */
+function classNamingForSemanticFlat(classNaming: ClassNamingConfig): ClassNamingConfig {
+  return classNaming.mode === 'attribute'
+    ? mergeClassNaming({ ...classNaming, mode: 'semantic' })
+    : classNaming;
+}
+
+function createSemanticFlatComponent<K extends string>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: FlatComponentConfig<K>,
+  layer?: string,
+): FlatComponentReturn<K> {
+  const naming = classNamingForSemanticFlat(classNaming);
+  const rules: Array<{ key: string; css: string }> = [];
+  const classMap: Record<string, string> = {};
+  const variantKeys: string[] = [];
+
+  const blockClassName = buildTemplateClassName(naming, {
+    namespace,
+    element: undefined,
+    dimension: undefined,
+    modifier: undefined,
+  });
+
+  for (const [key, properties] of Object.entries(config)) {
+    if (RESERVED_KEYS.has(key) && key !== 'base') continue;
+    const props = properties as CSSProperties;
+
+    if (key === 'base') {
+      classMap['base'] = blockClassName;
+      rules.push(
+        ...serializeStyle(`.${blockClassName}`, props, { breakpoints: classNaming.breakpoints }),
+      );
+    } else {
+      const modifierClassName = buildTemplateClassName(naming, {
+        namespace,
+        element: undefined,
+        dimension: undefined,
+        modifier: key,
+      });
+      classMap[key] = modifierClassName;
+      rules.push(
+        ...serializeStyle(`.${modifierClassName}`, props, {
+          breakpoints: classNaming.breakpoints,
+        }),
+      );
+      variantKeys.push(key);
+    }
+  }
+
+  insertRules(finalizeComponentRules(classNaming, layer, rules));
+
+  const baseClassName = classMap['base'];
+
+  const selectorFn = (selections: Record<string, unknown> = {}): string => {
+    const classes: string[] = [];
+
+    devWarnUnknownFlatVariantKeys(namespace, selections, variantKeys);
+
+    if (baseClassName) classes.push(baseClassName);
+
+    for (const key of variantKeys) {
+      if (selections[key]) {
+        const cn = classMap[key];
+        if (cn) classes.push(cn);
+      }
+    }
+
+    return classes.join(' ');
+  };
+
+  const result = makeCallableObject(
+    (...args: unknown[]) => selectorFn(args[0] as Record<string, unknown> | undefined),
+    classMap,
+  ) as FlatComponentReturn<K>;
+
+  attachComposeMeta(result, variantKeys);
+
+  return result;
+}
 
 function createFlatComponent<K extends string>(
   classNaming: ClassNamingConfig,

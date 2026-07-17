@@ -16,7 +16,7 @@ describe('createComponent — duplicate namespace', () => {
       createComponent(defaultClassNamingConfig, 'dupbtn', { base: { padding: '2px' } }),
     ).not.toThrow();
     const again = createComponent(defaultClassNamingConfig, 'dupbtn', { base: { padding: '3px' } });
-    expect(again.base).toBe('dupbtn-base');
+    expect(again.base).toBe('dupbtn');
   });
 
   it('allows the same logical namespace when scopeId differs', () => {
@@ -57,8 +57,8 @@ describe('createComponent — dimensioned variants', () => {
     const btn = createComponent(defaultClassNamingConfig, 'btn', {
       base: { padding: '8px' },
     });
-    expect(btn()).toBe('btn-base');
-    expect(btn({})).toBe('btn-base');
+    expect(btn()).toBe('btn');
+    expect(btn({})).toBe('btn');
   });
 
   it('is destructurable — base property returns the base class string', () => {
@@ -365,7 +365,7 @@ describe('createComponent — flat variants', () => {
       base: { padding: '16px' },
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
     });
-    expect(card()).toBe('card-base');
+    expect(card()).toBe('card');
   });
 
   it('applies flat variants via boolean selections', () => {
@@ -375,9 +375,9 @@ describe('createComponent — flat variants', () => {
       compact: { padding: '8px' },
     });
 
-    expect(card({ elevated: true })).toBe('card-base card-elevated');
-    expect(card({ elevated: true, compact: true })).toBe('card-base card-elevated card-compact');
-    expect(card({ elevated: false })).toBe('card-base');
+    expect(card({ elevated: true })).toBe('card card--elevated');
+    expect(card({ elevated: true, compact: true })).toBe('card card--elevated card--compact');
+    expect(card({ elevated: false })).toBe('card');
   });
 
   it('is destructurable', () => {
@@ -386,8 +386,8 @@ describe('createComponent — flat variants', () => {
       elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
     });
 
-    expect(card.base).toBe('card-base');
-    expect(card.elevated).toBe('card-elevated');
+    expect(card.base).toBe('card');
+    expect(card.elevated).toBe('card--elevated');
   });
 
   it('supports Object.keys() for enumeration', () => {
@@ -409,8 +409,8 @@ describe('createComponent — flat variants', () => {
 
     flushSync();
     const css = getRegisteredCss();
-    expect(css).toContain('.flatcss-base');
-    expect(css).toContain('.flatcss-active');
+    expect(css).toContain('.flatcss');
+    expect(css).toContain('.flatcss--active');
   });
 
   it('works without base', () => {
@@ -419,7 +419,19 @@ describe('createComponent — flat variants', () => {
     });
 
     expect(card()).toBe('');
-    expect(card({ elevated: true })).toBe('nobase-elevated');
+    expect(card({ elevated: true })).toBe('nobase--elevated');
+  });
+
+  it('bem mode keeps hyphen flat naming', () => {
+    const bem = mergeClassNaming({ mode: 'bem' });
+    const card = createComponent(bem, 'bemflat', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+
+    expect(card.base).toBe('bemflat-base');
+    expect(card.elevated).toBe('bemflat-elevated');
+    expect(card({ elevated: true })).toBe('bemflat-base bemflat-elevated');
   });
 
   it('logs console.error in dev for unknown flat variant keys', () => {
@@ -436,6 +448,60 @@ describe('createComponent — flat variants', () => {
       expect.stringContaining('Unknown variant "primry" for namespace "flatbad"'),
     );
     err.mockRestore();
+  });
+});
+
+describe('createComponent — semantic flat variants', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('uses block and block--modifier class names', () => {
+    const semantic = mergeClassNaming({ mode: 'semantic', scopeId: 'flat-sem' });
+    const card = createComponent(semantic, 'card', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+
+    expect(card.base).toBe('flat-sem-card');
+    expect(card.elevated).toBe('flat-sem-card--elevated');
+    expect(card()).toBe('flat-sem-card');
+    expect(card({ elevated: true })).toBe('flat-sem-card flat-sem-card--elevated');
+  });
+
+  it('injects CSS with block and block--modifier selectors', () => {
+    const semantic = mergeClassNaming({ mode: 'semantic', scopeId: 'flat-sem' });
+    createComponent(semantic, 'cardcss', {
+      base: { display: 'block' },
+      active: { borderColor: 'blue' },
+    });
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.flat-sem-cardcss');
+    expect(css).toContain('.flat-sem-cardcss--active');
+    expect(css).not.toContain('.flat-sem-cardcss-base');
+  });
+});
+
+describe('createComponent — attribute flat variants', () => {
+  beforeEach(() => {
+    reset();
+    registeredNamespaces.clear();
+  });
+
+  it('uses semantic block--modifier names and returns plain strings', () => {
+    const attribute = mergeClassNaming({ mode: 'attribute', scopeId: 'flat-attr' });
+    const card = createComponent(attribute, 'card', {
+      base: { padding: '16px' },
+      elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+    });
+
+    expect(card.base).toBe('flat-attr-card');
+    expect(card.elevated).toBe('flat-attr-card--elevated');
+    expect(card({ elevated: true })).toBe('flat-attr-card flat-attr-card--elevated');
+    expect(typeof card({ elevated: true })).toBe('string');
   });
 });
 
@@ -722,8 +788,8 @@ describe('createComponent — function config & internal vars', () => {
       };
     });
 
-    expect(card()).toBe('fn-flat-base');
-    expect(card({ elevated: true })).toBe('fn-flat-base fn-flat-elevated');
+    expect(card()).toBe('fn-flat');
+    expect(card({ elevated: true })).toBe('fn-flat fn-flat--elevated');
   });
 
   it('supports multi-slot config via function', () => {

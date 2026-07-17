@@ -371,17 +371,17 @@ describe('createStylesWithUtils', () => {
       active: { marginX: 20 },
     });
 
-    expect(card()).toContain('util-flat-base');
-    expect(card({ active: true })).toContain('util-flat-active');
+    expect(card()).toContain('util-flat');
+    expect(card({ active: true })).toContain('util-flat--active');
 
     flushSync();
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     const baseRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat-base',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat',
     ) as CSSStyleRule;
     const activeRule = Array.from(style.sheet?.cssRules ?? []).find(
-      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat-active',
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-flat--active',
     ) as CSSStyleRule;
 
     expect(baseRule.style.getPropertyValue('margin-left')).toBe('10px');
