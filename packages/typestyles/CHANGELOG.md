@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.11.2
+
+### Patch Changes
+
+- [#150](https://github.com/type-styles/typestyles/pull/150) [`8496b57`](https://github.com/type-styles/typestyles/commit/8496b5759dedd5086bfdd30f0ac6e7070b8f346f) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Allow widened CSS keywords on `VariantOptionStyle` and block multi-slot overload fallthrough when recipe keys are present
+
 ## 0.11.1
 
 ### Patch Changes
