@@ -556,6 +556,12 @@ export function invalidateKeys(keys: string[], prefixes: string[]): void {
 }
 
 /** Whether a selector key belongs to a component class family at boundaries. */
+/**
+ * True when `selectorKey` references the block class family for `blockPrefix`
+ * (exact `.block`, `.block--…`, `.block__…`, or `.block[…]` / `:…`), but not a
+ * sibling identifier that merely shares a string prefix (`.block-group`,
+ * `.blockgroup`).
+ */
 function matchesComponentClassFamily(selectorKey: string, blockPrefix: string): boolean {
   const needle = `.${blockPrefix}`;
   for (let i = 0, f = selectorKey.indexOf(needle); f !== -1; f = selectorKey.indexOf(needle, i)) {
@@ -563,15 +569,17 @@ function matchesComponentClassFamily(selectorKey: string, blockPrefix: string): 
     const n = selectorKey[a];
     if (
       n === undefined ||
-      (n === '-' && selectorKey[a + 1] === '-') ||
-      (n === '_' && selectorKey[a + 1] === '_') ||
       n === '[' ||
       n === ':' ||
       n === ' ' ||
       n === '{' ||
-      !/[a-zA-Z0-9]/.test(n)
-    )
+      n === '.' ||
+      n === ',' ||
+      (n === '-' && selectorKey[a + 1] === '-') ||
+      (n === '_' && selectorKey[a + 1] === '_')
+    ) {
       return true;
+    }
     i = a + 1;
   }
   return false;
