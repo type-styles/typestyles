@@ -22,8 +22,7 @@ export function createRegisteredPropertyRef(name: string): RegisteredPropertyRef
 
 /**
  * `@property` initial values must be *computationally independent*
- * (CSS Properties & Values Level 1, §2.4) — `var()` / `env()` references are
- * not, and browsers reject the whole rule at parse/insert time.
+ * (CSS Properties & Values Level 1, §2.4) — `var()` / `env()` references are not.
  */
 function isComputationallyIndependent(value: string): boolean {
   return !/\b(?:var|env)\(/i.test(value);
@@ -33,14 +32,20 @@ export function registerAtPropertyRule(
   name: string,
   options: { value: string; syntax: string; inherits?: boolean },
 ): void {
+  // Skip `@property` for dependent values (token/`env()` refs). Emitting
+  // `syntax: "*"` (the only form allowed without initial-value) makes Chromium
+  // fail to invalidate properties that reference the registered custom property
+  // when its var()-resolved value changes — e.g. light/dark theme toggles leave
+  // `color: var(--component-color)` stuck on the previous computed color.
+  // Defaults still reach the cascade via `registerRootCustomProperty` / base styles.
+  // Note: skipping registration means CSS's default `inherits: true` for custom
+  // properties applies; pass a literal `value` when you need typed `@property`.
+  if (!isComputationallyIndependent(options.value)) {
+    return;
+  }
+
   const inherits = options.inherits ?? false;
-  // For dependent values (token refs), degrade to the universal syntax, which
-  // is the only form allowed to omit `initial-value`. Type checking is lost,
-  // but `inherits` — the load-bearing behavior — survives, and the default
-  // still reaches the cascade via `registerRootCustomProperty` / base styles.
-  const css = isComputationallyIndependent(options.value)
-    ? `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${options.value}; }`
-    : `@property ${name} { syntax: "*"; inherits: ${inherits}; }`;
+  const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${options.value}; }`;
   insertRule(`@property:${name}`, css);
 }
 
