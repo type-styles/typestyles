@@ -420,6 +420,34 @@ describe('tokens.declare', () => {
       api.create('color', { accent: '#0066ff' }, { nameTemplate: template }),
     ).not.toThrow();
   });
+
+  it('supports the Var UI colorRefShape pattern: multiple self-referencing derived tokens in one create() call', () => {
+    const api = createTokens({ scopeId: 'acme' });
+    const color = api.declare('color');
+
+    const built = api.create('color', {
+      background: { app: '#0a0a0a' },
+      accent: {
+        default: '#0066ff',
+        subtle: `color-mix(in oklch, ${color.accent.default} 24%, ${color.background.app})`,
+      },
+      danger: {
+        default: '#ef4444',
+        subtle: `color-mix(in oklch, ${color.danger.default} 12%, transparent)`,
+      },
+    });
+    flushSync();
+
+    expect(built.accent.subtle).toBe('var(--acme-color-accent-subtle)');
+
+    const css = getRegisteredCss();
+    expect(css).toContain(
+      '--acme-color-accent-subtle: color-mix(in oklch, var(--acme-color-accent-default) 24%, var(--acme-color-background-app))',
+    );
+    expect(css).toContain(
+      '--acme-color-danger-subtle: color-mix(in oklch, var(--acme-color-danger-default) 12%, transparent)',
+    );
+  });
 });
 
 describe('createTheme', () => {
