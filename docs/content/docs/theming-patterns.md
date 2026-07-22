@@ -792,7 +792,7 @@ const card = styles.class('card', {
 spec, but that requirement is only about the `@property` rule's fallback
 default — the real value still reaches the cascade through the ordinary
 `:root { --name: value }` declaration `tokens.create` always emits. So a
-derived token like `accentSubtle: { value: `color-mix(in oklch, ${accent} 24%, white)`, syntax: '<color>' }`
+derived token like ``accentSubtle: { value: `color-mix(in oklch, ${accent} 24%, white)`, syntax: '<color>' }``
 still gets a real, typed `@property` registration: TypeStyles picks a
 syntax-appropriate placeholder (`transparent` for `<color>`, `0` for
 `<number>`, `0px` for `<length>`, and so on) as the fallback `initial-value`,
