@@ -554,6 +554,19 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
           ? declaredNamespaceTemplates.get(namespace)
           : instanceDefaultTemplate));
 
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !isCreated &&
+      declaredNamespaceTemplates.has(namespace) &&
+      declaredNamespaceTemplates.get(namespace) !== effectiveTemplate
+    ) {
+      throw new Error(
+        `[typestyles] tokens.declare('${namespace}', ...) was called with a different nameTemplate than ` +
+          `a previous tokens.declare('${namespace}', ...) on this instance — pass the same nameTemplate ` +
+          `to every declare() call for a namespace, or reuse refs from the first declare().`,
+      );
+    }
+
     declaredNamespaceTemplates.set(namespace, effectiveTemplate);
 
     const nameByPath = createdTokenNameByPath.get(namespace) ?? new Map<string, string>();

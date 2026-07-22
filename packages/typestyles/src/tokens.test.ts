@@ -132,6 +132,28 @@ describe('tokens.create', () => {
     expect(css).toContain('initial-value: 200ms');
   });
 
+  it('registers @property with automatic transparent placeholder for a declare-built color-mix descriptor', () => {
+    const api = createTokens();
+    const color = api.declare('color');
+
+    api.create('color', {
+      accent: { default: '#0066ff' },
+      accentSubtle: {
+        value: `color-mix(in oklch, ${color.accent.default} 24%, white)`,
+        syntax: '<color>',
+        inherits: false,
+      },
+    });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --color-accentSubtle');
+    expect(css).toContain('initial-value: transparent');
+    expect(css).toContain(
+      '--color-accentSubtle: color-mix(in oklch, var(--color-accent-default) 24%, white)',
+    );
+  });
+
   it('uses an explicit descriptor `initial` as the @property placeholder for dependent values', () => {
     const api = createTokens();
     const base = api.create('base', { accent: '#0066ff' });
@@ -495,6 +517,15 @@ describe('tokens.declare', () => {
 
     expect(() => api.declare('color', { nameTemplate: ({ path }) => `--b-${path}` })).toThrow(
       /different nameTemplate/,
+    );
+  });
+
+  it('throws in dev mode when declare() is called twice with different nameTemplates before create()', () => {
+    const api = createTokens();
+    api.declare('color', { nameTemplate: ({ path }) => `--a-${path}` });
+
+    expect(() => api.declare('color', { nameTemplate: ({ path }) => `--b-${path}` })).toThrow(
+      /different nameTemplate.*previous tokens\.declare/,
     );
   });
 

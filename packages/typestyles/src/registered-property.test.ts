@@ -38,7 +38,7 @@ describe('registerAtPropertyRule', () => {
     );
   });
 
-  it('strips a trailing + or # list multiplier before matching the placeholder table', () => {
+  it('strips a trailing + list multiplier before matching the placeholder table', () => {
     registerAtPropertyRule('--ts-test-list', {
       value: 'var(--ts-a) var(--ts-b)',
       syntax: '<color>+',
@@ -47,6 +47,18 @@ describe('registerAtPropertyRule', () => {
     const css = getRegisteredCss();
     expect(css).toContain(
       '@property --ts-test-list { syntax: "<color>+"; inherits: false; initial-value: transparent; }',
+    );
+  });
+
+  it('strips a trailing # list multiplier before matching the placeholder table', () => {
+    registerAtPropertyRule('--ts-test-list-hash', {
+      value: 'var(--ts-a)',
+      syntax: '<color>#',
+      inherits: false,
+    });
+    const css = getRegisteredCss();
+    expect(css).toContain(
+      '@property --ts-test-list-hash { syntax: "<color>#"; inherits: false; initial-value: transparent; }',
     );
   });
 
