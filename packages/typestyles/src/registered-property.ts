@@ -28,24 +28,67 @@ function isComputationallyIndependent(value: string): boolean {
   return !/\b(?:var|env)\(/i.test(value);
 }
 
+/**
+ * Safe placeholder `initial-value`s for common single-component syntaxes. A
+ * placeholder only needs to satisfy the syntax grammar — the real, possibly
+ * `var()`-dependent value always reaches the cascade separately via the
+ * unconditional `:root { name: value }` declaration `registerRootCustomProperty`
+ * / `tokens.create` emit, which the cascade prefers over `initial-value`.
+ */
+const SYNTAX_PLACEHOLDERS: Record<string, string> = {
+  '<color>': 'transparent',
+  '<number>': '0',
+  '<integer>': '0',
+  '<length>': '0px',
+  '<percentage>': '0%',
+  '<length-percentage>': '0px',
+  '<angle>': '0deg',
+  '<time>': '0s',
+  '<resolution>': '0dpi',
+};
+
+/**
+ * Looks up a safe placeholder for `syntax`. Strips one optional trailing `+`/`#`
+ * list multiplier first — a single item always satisfies "one or more", so list
+ * syntaxes reuse their base placeholder. Anything not an exact match (unions,
+ * multi-component syntaxes, `<custom-ident>`, `<url>`, …) returns `undefined`;
+ * callers must not guess beyond this table.
+ */
+function placeholderForSyntax(syntax: string): string | undefined {
+  const base = syntax.trim().replace(/[+#]$/, '');
+  return SYNTAX_PLACEHOLDERS[base];
+}
+
 export function registerAtPropertyRule(
   name: string,
-  options: { value: string; syntax: string; inherits?: boolean },
+  options: { value: string; syntax: string; inherits?: boolean; initial?: string | number },
 ): void {
-  // Skip `@property` for dependent values (token/`env()` refs). Emitting
-  // `syntax: "*"` (the only form allowed without initial-value) makes Chromium
-  // fail to invalidate properties that reference the registered custom property
-  // when its var()-resolved value changes — e.g. light/dark theme toggles leave
-  // `color: var(--component-color)` stuck on the previous computed color.
-  // Defaults still reach the cascade via `registerRootCustomProperty` / base styles.
-  // Note: skipping registration means CSS's default `inherits: true` for custom
-  // properties applies; pass a literal `value` when you need typed `@property`.
-  if (!isComputationallyIndependent(options.value)) {
+  const inherits = options.inherits ?? false;
+
+  if (isComputationallyIndependent(options.value)) {
+    const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${options.value}; }`;
+    insertRule(`@property:${name}`, css);
     return;
   }
 
-  const inherits = options.inherits ?? false;
-  const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${options.value}; }`;
+  // The real (dependent) value reaches the cascade via a separate `:root`
+  // declaration — `@property`'s `initial-value` only needs to be *some* valid,
+  // computationally independent placeholder for the registered syntax.
+  const placeholder =
+    options.initial !== undefined ? String(options.initial) : placeholderForSyntax(options.syntax);
+
+  if (placeholder === undefined) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[typestyles] Skipping @property for "${name}": its value depends on var()/env() and ` +
+          `syntax "${options.syntax}" has no built-in placeholder initial-value. Pass an explicit ` +
+          `\`initial\` (e.g. { initial: '0' }) to register it typed, or accept the untyped custom property.`,
+      );
+    }
+    return;
+  }
+
+  const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${placeholder}; }`;
   insertRule(`@property:${name}`, css);
 }
 
@@ -55,7 +98,7 @@ export function registerRootCustomProperty(name: string, value: string): void {
 
 export function registerRegisteredProperty(
   name: string,
-  options: { value?: string; syntax?: string; inherits?: boolean },
+  options: { value?: string; syntax?: string; inherits?: boolean; initial?: string | number },
 ): void {
   if (options.syntax != null) {
     if (options.value == null) {
@@ -67,6 +110,7 @@ export function registerRegisteredProperty(
       value: options.value,
       syntax: options.syntax,
       inherits: options.inherits,
+      initial: options.initial,
     });
   }
 
