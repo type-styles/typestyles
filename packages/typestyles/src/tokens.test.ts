@@ -391,6 +391,35 @@ describe('tokens.declare', () => {
       '--color-accent-subtle: color-mix(in oklch, var(--color-accent-default) 24%, white)',
     );
   });
+
+  it('reuses the nameTemplate declared earlier when create() omits its own', () => {
+    const api = createTokens();
+    const template = ({ path }: { path: string }) => `--ds-color-${path}`;
+    const color = api.declare('color', { nameTemplate: template });
+    expect(`${color.accent}`).toBe('var(--ds-color-accent)');
+
+    const built = api.create('color', { accent: '#0066ff' });
+    expect(built.accent).toBe('var(--ds-color-accent)');
+  });
+
+  it('throws in dev mode when create() passes a different nameTemplate than declare() used', () => {
+    const api = createTokens();
+    api.declare('color', { nameTemplate: ({ path }) => `--a-${path}` });
+
+    expect(() =>
+      api.create('color', { accent: '#0066ff' }, { nameTemplate: ({ path }) => `--b-${path}` }),
+    ).toThrow(/different nameTemplate/);
+  });
+
+  it('does not throw when create() passes the same nameTemplate reference declare() used', () => {
+    const api = createTokens();
+    const template = ({ path }: { path: string }) => `--ds-color-${path}`;
+    api.declare('color', { nameTemplate: template });
+
+    expect(() =>
+      api.create('color', { accent: '#0066ff' }, { nameTemplate: template }),
+    ).not.toThrow();
+  });
 });
 
 describe('createTheme', () => {

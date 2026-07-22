@@ -389,10 +389,24 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       );
     }
 
+    const declaredTemplate = declaredNamespaceTemplates.get(namespace);
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      declaredTemplate !== undefined &&
+      options?.nameTemplate !== undefined &&
+      options.nameTemplate !== declaredTemplate
+    ) {
+      throw new Error(
+        `[typestyles] tokens.create('${namespace}', ...) was called with a different nameTemplate than ` +
+          `tokens.declare('${namespace}', ...) used — pass the same nameTemplate to both, or omit it on ` +
+          `create() to reuse the declared one.`,
+      );
+    }
+
     registeredNamespaces.add(namespace);
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
-    const effectiveTemplate = options?.nameTemplate ?? instanceDefaultTemplate;
+    const effectiveTemplate = options?.nameTemplate ?? declaredTemplate ?? instanceDefaultTemplate;
     if (effectiveTemplate !== undefined) customNamingActive = true;
 
     let declarations: string;
