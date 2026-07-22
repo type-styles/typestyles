@@ -389,10 +389,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       );
     }
 
+    const hasDeclared = declaredNamespaceTemplates.has(namespace);
     const declaredTemplate = declaredNamespaceTemplates.get(namespace);
     if (
       process.env.NODE_ENV !== 'production' &&
-      declaredTemplate !== undefined &&
+      hasDeclared &&
       options?.nameTemplate !== undefined &&
       options.nameTemplate !== declaredTemplate
     ) {
@@ -406,7 +407,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     registeredNamespaces.add(namespace);
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
-    const effectiveTemplate = options?.nameTemplate ?? declaredTemplate ?? instanceDefaultTemplate;
+    const effectiveTemplate =
+      options?.nameTemplate ?? (hasDeclared ? declaredTemplate : instanceDefaultTemplate);
     if (effectiveTemplate !== undefined) customNamingActive = true;
 
     let declarations: string;
@@ -529,14 +531,33 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     namespace: string,
     options?: { nameTemplate?: TokenNameTemplate },
   ): LooseTokenRef {
-    if (options?.nameTemplate !== undefined) {
-      declaredNamespaceTemplates.set(namespace, options.nameTemplate);
+    const isCreated = registeredNamespaces.has(namespace);
+    const createdTemplate = createdTokenTemplates.get(namespace);
+
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      isCreated &&
+      options?.nameTemplate !== undefined &&
+      options.nameTemplate !== createdTemplate
+    ) {
+      throw new Error(
+        `[typestyles] tokens.declare('${namespace}', ...) was called with a different nameTemplate than ` +
+          `tokens.create('${namespace}', ...) already used — pass the same nameTemplate to both, or omit it ` +
+          `on declare() to reuse the created one.`,
+      );
     }
 
-    const template =
-      options?.nameTemplate ?? declaredNamespaceTemplates.get(namespace) ?? instanceDefaultTemplate;
+    const effectiveTemplate = isCreated
+      ? createdTemplate
+      : (options?.nameTemplate ??
+        (declaredNamespaceTemplates.has(namespace)
+          ? declaredNamespaceTemplates.get(namespace)
+          : instanceDefaultTemplate));
+
+    declaredNamespaceTemplates.set(namespace, effectiveTemplate);
+
     const nameByPath = createdTokenNameByPath.get(namespace) ?? new Map<string, string>();
-    const resolvePathName = buildResolvePathName(namespace, template, nameByPath);
+    const resolvePathName = buildResolvePathName(namespace, effectiveTemplate, nameByPath);
 
     return createLooseTokenProxy(resolvePathName, '') as LooseTokenRef;
   }

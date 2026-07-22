@@ -527,6 +527,8 @@ export type ComponentVarDescriptor = {
   value: string | number;
   syntax?: string;
   inherits?: boolean;
+  /** @see {@link TokenDescriptor.initial} */
+  initial?: string | number;
 };
 
 /**
@@ -549,6 +551,8 @@ export type ComponentVarOptions = {
   value?: string | number;
   syntax?: string;
   inherits?: boolean;
+  /** @see {@link TokenDescriptor.initial} */
+  initial?: string | number;
 };
 
 /**
