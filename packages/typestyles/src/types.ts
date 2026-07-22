@@ -90,6 +90,13 @@ export type TokenDescriptor = {
   value: string | number;
   syntax?: string;
   inherits?: boolean;
+  /**
+   * Explicit `@property` placeholder `initial-value`, used when `value` is
+   * `var()`/`env()`-dependent (skips the built-in syntax-keyed placeholder
+   * table). Ignored for computationally independent `value`s, which use
+   * `value` itself as `initial-value`.
+   */
+  initial?: string | number;
 };
 
 /**
@@ -229,6 +236,8 @@ export type RegisteredPropertyOptions = {
   value?: string | number;
   syntax?: string;
   inherits?: boolean;
+  /** @see {@link TokenDescriptor.initial} */
+  initial?: string | number;
 };
 
 type TokenRefLeaf<V> = V extends TokenDescriptor
@@ -494,6 +503,18 @@ export type ComponentSelections<V extends VariantDimensions> = {
  */
 export type CSSVarRef = `var(--${string})` | `var(--${string}, ${string})`;
 
+/**
+ * Lazy `var(--…)` reference for `tokens.declare()`. Any property path, at any
+ * depth, resolves to a `var(--…)` string on coercion (template literal,
+ * `String()`, `valueOf()`) — there is no compile-time or dev-time validation
+ * that a given path will actually be created, since `declare()` runs before
+ * the namespace's shape exists. Pass an explicit generic to `declare<T>()`
+ * for a fully-typed `TokenRef<T>` instead.
+ */
+export type LooseTokenRef = CSSVarRef & {
+  readonly [key: string]: LooseTokenRef;
+};
+
 // ---------------------------------------------------------------------------
 // Dimensioned variant config (has `variants: { ... }`)
 // ---------------------------------------------------------------------------
@@ -506,6 +527,8 @@ export type ComponentVarDescriptor = {
   value: string | number;
   syntax?: string;
   inherits?: boolean;
+  /** @see {@link TokenDescriptor.initial} */
+  initial?: string | number;
 };
 
 /**
@@ -528,6 +551,8 @@ export type ComponentVarOptions = {
   value?: string | number;
   syntax?: string;
   inherits?: boolean;
+  /** @see {@link TokenDescriptor.initial} */
+  initial?: string | number;
 };
 
 /**

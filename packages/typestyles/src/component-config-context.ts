@@ -25,6 +25,7 @@ export type FlatComponentVarEntry = {
   value: string;
   syntax?: string;
   inherits?: boolean;
+  initial?: string | number;
 };
 
 /**
@@ -47,6 +48,7 @@ export function flattenComponentVars(
         value: String(value.value),
         syntax: value.syntax,
         inherits: value.inherits,
+        initial: value.initial,
       });
     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       out.push(...flattenComponentVars(value as Record<string, ComponentVarNode>, path));
@@ -156,7 +158,7 @@ export function createComponentConfigContextPair(
 
   function registerVar(
     logicalPath: string,
-    entry: { value: string; syntax?: string; inherits?: boolean },
+    entry: { value: string; syntax?: string; inherits?: boolean; initial?: string | number },
   ): ComponentInternalVarRef {
     const safeId = sanitizeClassSegment(logicalPath);
     if (seen.has(safeId)) {
@@ -178,6 +180,7 @@ export function createComponentConfigContextPair(
         value: entry.value,
         syntax: entry.syntax,
         inherits: entry.inherits,
+        initial: entry.initial,
       });
     }
 
@@ -194,6 +197,7 @@ export function createComponentConfigContextPair(
         value: valueStr,
         syntax: options?.syntax,
         inherits: options?.inherits,
+        initial: options?.initial,
       });
     }
 

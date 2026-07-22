@@ -766,6 +766,27 @@ describe('createComponent — function config & internal vars', () => {
     expect(css).toContain('initial-value: 1');
   });
 
+  it('uses an explicit initial as the @property placeholder for a var()-dependent ctx.var', () => {
+    const badge = createComponent(defaultClassNamingConfig, 'cb-badge2', (c) => {
+      const base = c.var('base', { value: '#0066ff' });
+      c.var('derived', {
+        value: `color-mix(in oklch, ${base.var} 30%, white)`,
+        syntax: '<color>',
+        inherits: false,
+        initial: 'hotpink',
+      });
+      return { base: { padding: '4px' } };
+    });
+    badge();
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --cb-badge2-derived');
+    expect(css).toContain('initial-value: hotpink');
+    expect(css).toContain(
+      '--cb-badge2-derived: color-mix(in oklch, var(--cb-badge2-base) 30%, white)',
+    );
+  });
+
   it('warns once on duplicate var id in dev', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

@@ -21,7 +21,7 @@ per package or micro-frontend for isolation.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
 - `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
 - `styles.hashClass(properties, label?)`: Create a deterministic hashed class
-- `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`
+- `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`. When `value` depends on `var()`/`env()`, pass optional `initial` for the `@property` placeholder `initial-value`, or let TypeStyles pick a syntax-keyed default (e.g. `transparent` for `<color>`).
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create a utility-aware styles API (prefer `createStyles({ utils })` for a single instance)
 - `styles.scope(opts, className, overrides)`: Proximity-correct overrides via CSS `@scope` (nested themes)
@@ -47,7 +47,8 @@ bundles share a page.
 
 **Methods:**
 
-- `tokens.create(namespace, values)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Leaf values may use `{ value, syntax?, inherits? }` to register `@property` and return `{ name, var, toString }` refs instead of plain `var(...)` strings.
+- `tokens.create(namespace, values)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Leaf values may use `{ value, syntax?, inherits?, initial? }` to register `@property` and return `{ name, var, toString }` refs instead of plain `var(...)` strings. For `var()`/`env()`-dependent values, `initial` overrides the built-in syntax placeholder used as `@property`'s `initial-value` (the real value still comes from the `:root` declaration).
+- `tokens.declare(namespace, options?)`: Reserves a namespace's naming and returns a lazy `var(--…)` reference proxy usable **before** `tokens.create()` — for same-call self-references or cross-module forward refs. Optional `nameTemplate` must match the later `create()` call (dev-mode throw on mismatch). Returns `LooseTokenRef` unless you pass an explicit generic for full typing. See [Tokens — Forward-referencing tokens](/docs/tokens#forward-referencing-tokens-tokensdeclare).
 - `tokens.use(namespace | createdRef)`: References existing tokens; infers types from a `tokens.create()` return value or a `createTokens<Registry>()` generic
 - `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
@@ -60,7 +61,7 @@ Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.cr
 
 The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
 
-Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**. Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
+Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**, **`LooseTokenRef`**, **`TokenDescriptor`** (`value`, `syntax?`, `inherits?`, `initial?`). Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
 
 ### `keyframes`
 

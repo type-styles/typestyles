@@ -532,6 +532,26 @@ describe('styles.property', () => {
     flushSync();
     expect(getRegisteredCss()).not.toContain('--property-external-var');
   });
+
+  it('uses explicit initial override for var()-dependent values with styles.property()', () => {
+    const s = createStyles();
+    const color = s.property('brand-color', {
+      value: 'var(--theme-primary)',
+      syntax: '<color>',
+      initial: 'red',
+    });
+
+    expect(color).toMatchObject({
+      name: '--property-brand-color',
+      var: 'var(--property-brand-color)',
+    });
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --property-brand-color');
+    expect(css).toContain('initial-value: red');
+    expect(css).toContain(':root { --property-brand-color: var(--theme-primary)');
+  });
 });
 
 describe('mode: template', () => {

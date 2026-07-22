@@ -7,6 +7,7 @@ import type {
   ThemeSurface,
   ThemeOverrides,
   TokenDescriptor,
+  LooseTokenRef,
 } from './types';
 import { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
 import { scopedTokenNamespace } from './class-naming';
@@ -89,6 +90,19 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
     <N extends keyof R & string>(namespace: N): TokenRef<R[N]>;
     <T extends TokenValues = TokenValues>(namespace: string): TokenRef<T>;
   };
+  /**
+   * Reserves `namespace`'s naming and returns a lazy `var(--…)` reference proxy
+   * usable **before** `tokens.create(namespace, …)` runs — for referencing a
+   * sibling token within the same `create()` call, or a namespace declared in
+   * another module without importing its `create()` output. See {@link LooseTokenRef}.
+   */
+  declare: {
+    (namespace: string, options?: { nameTemplate?: TokenNameTemplate }): LooseTokenRef;
+    <T extends TokenValues>(
+      namespace: string,
+      options?: { nameTemplate?: TokenNameTemplate },
+    ): TokenRef<T>;
+  };
   createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
   when: typeof when;
@@ -134,8 +148,11 @@ function getAllKeys(obj: TokenValues, prefix = ''): Set<string> {
 function collectDescriptorMeta(
   obj: TokenValues,
   prefix = '',
-): Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits'> & { value: string }> {
-  const meta = new Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits'> & { value: string }>();
+): Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits' | 'initial'> & { value: string }> {
+  const meta = new Map<
+    string,
+    Pick<TokenDescriptor, 'syntax' | 'inherits' | 'initial'> & { value: string }
+  >();
 
   if (obj === null || obj === undefined) return meta;
 
@@ -145,6 +162,7 @@ function collectDescriptorMeta(
         value: String(obj.value),
         syntax: obj.syntax,
         inherits: obj.inherits,
+        initial: obj.initial,
       });
     }
     return meta;
@@ -160,6 +178,7 @@ function collectDescriptorMeta(
         value: String(value.value),
         syntax: value.syntax,
         inherits: value.inherits,
+        initial: value.initial,
       });
     } else if (typeof value === 'object' && value !== null) {
       for (const [path, entry] of collectDescriptorMeta(value as TokenValues, fullKey)) {
@@ -241,6 +260,49 @@ function createTokenProxy(
 }
 
 /**
+ * Builds a proxy for `tokens.declare()`: unlike {@link createTokenProxy}, it
+ * has no known key set (the namespace hasn't been created yet), so it never
+ * collapses to a leaf value on its own — every property access continues the
+ * accumulated path as another proxy, at any depth. `toString`/`valueOf` are
+ * the only exit: they resolve the accumulated path to a `var(--…)` string via
+ * `resolvePathName`, the same resolver `create()`/`use()` use.
+ */
+function createLooseTokenProxy(resolvePathName: (path: string) => string, prefix: string): object {
+  const makeToken = (p: string) => `var(${resolvePathName(p)})`;
+
+  const handler: ProxyHandler<object> = {
+    get(_target, prop: string | symbol): unknown {
+      if (typeof prop === 'symbol') {
+        return undefined;
+      }
+      if (prop === 'toString' || prop === 'valueOf') {
+        return () => makeToken(prefix);
+      }
+      if (prop === 'constructor') {
+        return Object;
+      }
+      if (prop === '__esModule') {
+        return false;
+      }
+      if (prop === 'length') {
+        return 0;
+      }
+
+      const newPrefix = prefix ? `${prefix}-${prop}` : prop;
+      return createLooseTokenProxy(resolvePathName, newPrefix);
+    },
+    has(_target, _prop) {
+      return true;
+    },
+    set(_target, _prop, _value) {
+      return false;
+    },
+  };
+
+  return new Proxy({}, handler);
+}
+
+/**
  * Create a tokens + theme API for a package or app. Each instance keeps its own
  * namespace registry; with `scopeId`, emitted custom properties and theme classes
  * are prefixed so they do not collide with other bundles on the same page.
@@ -289,6 +351,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const createdDescriptorLeaves = new Map<string, Set<string>>();
   const createdTokenTemplates = new Map<string, TokenNameTemplate | undefined>();
   const createdTokenNameByPath = new Map<string, Map<string, string>>();
+  /** `nameTemplate` recorded by `tokens.declare()`, checked for agreement when `create()` later runs. */
+  const declaredNamespaceTemplates = new Map<string, TokenNameTemplate | undefined>();
   const instanceDefaultTemplate = options.nameTemplate;
   let customNamingActive = Boolean(instanceDefaultTemplate);
 
@@ -325,10 +389,26 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       );
     }
 
+    const hasDeclared = declaredNamespaceTemplates.has(namespace);
+    const declaredTemplate = declaredNamespaceTemplates.get(namespace);
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      hasDeclared &&
+      options?.nameTemplate !== undefined &&
+      options.nameTemplate !== declaredTemplate
+    ) {
+      throw new Error(
+        `[typestyles] tokens.create('${namespace}', ...) was called with a different nameTemplate than ` +
+          `tokens.declare('${namespace}', ...) used — pass the same nameTemplate to both, or omit it on ` +
+          `create() to reuse the declared one.`,
+      );
+    }
+
     registeredNamespaces.add(namespace);
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
-    const effectiveTemplate = options?.nameTemplate ?? instanceDefaultTemplate;
+    const effectiveTemplate =
+      options?.nameTemplate ?? (hasDeclared ? declaredTemplate : instanceDefaultTemplate);
     if (effectiveTemplate !== undefined) customNamingActive = true;
 
     let declarations: string;
@@ -400,6 +480,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
           value: entry.value,
           syntax: entry.syntax,
           inherits: entry.inherits,
+          initial: entry.initial,
         });
       }
     }
@@ -446,10 +527,59 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as TokenRef<T>;
   }
 
+  function declare(
+    namespace: string,
+    options?: { nameTemplate?: TokenNameTemplate },
+  ): LooseTokenRef {
+    const isCreated = registeredNamespaces.has(namespace);
+    const createdTemplate = createdTokenTemplates.get(namespace);
+
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      isCreated &&
+      options?.nameTemplate !== undefined &&
+      options.nameTemplate !== createdTemplate
+    ) {
+      throw new Error(
+        `[typestyles] tokens.declare('${namespace}', ...) was called with a different nameTemplate than ` +
+          `tokens.create('${namespace}', ...) already used — pass the same nameTemplate to both, or omit it ` +
+          `on declare() to reuse the created one.`,
+      );
+    }
+
+    const effectiveTemplate = isCreated
+      ? createdTemplate
+      : (options?.nameTemplate ??
+        (declaredNamespaceTemplates.has(namespace)
+          ? declaredNamespaceTemplates.get(namespace)
+          : instanceDefaultTemplate));
+
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !isCreated &&
+      declaredNamespaceTemplates.has(namespace) &&
+      declaredNamespaceTemplates.get(namespace) !== effectiveTemplate
+    ) {
+      throw new Error(
+        `[typestyles] tokens.declare('${namespace}', ...) was called with a different nameTemplate than ` +
+          `a previous tokens.declare('${namespace}', ...) on this instance — pass the same nameTemplate ` +
+          `to every declare() call for a namespace, or reuse refs from the first declare().`,
+      );
+    }
+
+    declaredNamespaceTemplates.set(namespace, effectiveTemplate);
+
+    const nameByPath = createdTokenNameByPath.get(namespace) ?? new Map<string, string>();
+    const resolvePathName = buildResolvePathName(namespace, effectiveTemplate, nameByPath);
+
+    return createLooseTokenProxy(resolvePathName, '') as LooseTokenRef;
+  }
+
   return {
     scopeId,
     create,
     use: use as TokensApi<R>['use'],
+    declare: declare as TokensApi<R>['declare'],
     createTheme: (name, config) =>
       createTheme(
         name,
