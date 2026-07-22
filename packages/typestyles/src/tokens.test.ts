@@ -343,6 +343,56 @@ describe('tokens.use', () => {
   });
 });
 
+describe('tokens.declare', () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  it('resolves nested paths to var() strings via template-literal coercion', () => {
+    const api = createTokens();
+    const color = api.declare('color');
+    expect(`${color.accent.default}`).toBe('var(--color-accent-default)');
+    expect(`${color.background.app}`).toBe('var(--color-background-app)');
+  });
+
+  it('resolves arbitrarily deep paths', () => {
+    const api = createTokens();
+    const color = api.declare('color');
+    expect(`${color.a.b.c.d}`).toBe('var(--color-a-b-c-d)');
+  });
+
+  it('coerces via String() and valueOf, not just template literals', () => {
+    const api = createTokens();
+    const color = api.declare('color');
+    expect(String(color.accent.default)).toBe('var(--color-accent-default)');
+    expect(color.accent.default.valueOf()).toBe('var(--color-accent-default)');
+  });
+
+  it('respects scopeId', () => {
+    const api = createTokens({ scopeId: 'acme' });
+    const color = api.declare('color');
+    expect(`${color.accent}`).toBe('var(--acme-color-accent)');
+  });
+
+  it('produces names matching a later tokens.create call in the same namespace', () => {
+    const api = createTokens();
+    const color = api.declare('color');
+    const built = api.create('color', {
+      accent: {
+        default: '#0066ff',
+        subtle: `color-mix(in oklch, ${color.accent.default} 24%, white)`,
+      },
+    });
+    flushSync();
+
+    expect(built.accent.default).toBe('var(--color-accent-default)');
+    const css = getRegisteredCss();
+    expect(css).toContain(
+      '--color-accent-subtle: color-mix(in oklch, var(--color-accent-default) 24%, white)',
+    );
+  });
+});
+
 describe('createTheme', () => {
   beforeEach(() => {
     reset();

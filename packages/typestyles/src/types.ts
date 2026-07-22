@@ -503,6 +503,18 @@ export type ComponentSelections<V extends VariantDimensions> = {
  */
 export type CSSVarRef = `var(--${string})` | `var(--${string}, ${string})`;
 
+/**
+ * Lazy `var(--…)` reference for `tokens.declare()`. Any property path, at any
+ * depth, resolves to a `var(--…)` string on coercion (template literal,
+ * `String()`, `valueOf()`) — there is no compile-time or dev-time validation
+ * that a given path will actually be created, since `declare()` runs before
+ * the namespace's shape exists. Pass an explicit generic to `declare<T>()`
+ * for a fully-typed `TokenRef<T>` instead.
+ */
+export type LooseTokenRef = CSSVarRef & {
+  readonly [key: string]: LooseTokenRef;
+};
+
 // ---------------------------------------------------------------------------
 // Dimensioned variant config (has `variants: { ... }`)
 // ---------------------------------------------------------------------------

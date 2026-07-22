@@ -7,6 +7,7 @@ import type {
   ThemeSurface,
   ThemeOverrides,
   TokenDescriptor,
+  LooseTokenRef,
 } from './types';
 import { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
 import { scopedTokenNamespace } from './class-naming';
@@ -88,6 +89,19 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
     <T extends TokenValues, N extends string>(ref: CreatedTokenRef<T, N>): TokenRef<T>;
     <N extends keyof R & string>(namespace: N): TokenRef<R[N]>;
     <T extends TokenValues = TokenValues>(namespace: string): TokenRef<T>;
+  };
+  /**
+   * Reserves `namespace`'s naming and returns a lazy `var(--…)` reference proxy
+   * usable **before** `tokens.create(namespace, …)` runs — for referencing a
+   * sibling token within the same `create()` call, or a namespace declared in
+   * another module without importing its `create()` output. See {@link LooseTokenRef}.
+   */
+  declare: {
+    (namespace: string, options?: { nameTemplate?: TokenNameTemplate }): LooseTokenRef;
+    <T extends TokenValues>(
+      namespace: string,
+      options?: { nameTemplate?: TokenNameTemplate },
+    ): TokenRef<T>;
   };
   createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
@@ -246,6 +260,49 @@ function createTokenProxy(
 }
 
 /**
+ * Builds a proxy for `tokens.declare()`: unlike {@link createTokenProxy}, it
+ * has no known key set (the namespace hasn't been created yet), so it never
+ * collapses to a leaf value on its own — every property access continues the
+ * accumulated path as another proxy, at any depth. `toString`/`valueOf` are
+ * the only exit: they resolve the accumulated path to a `var(--…)` string via
+ * `resolvePathName`, the same resolver `create()`/`use()` use.
+ */
+function createLooseTokenProxy(resolvePathName: (path: string) => string, prefix: string): object {
+  const makeToken = (p: string) => `var(${resolvePathName(p)})`;
+
+  const handler: ProxyHandler<object> = {
+    get(_target, prop: string | symbol): unknown {
+      if (typeof prop === 'symbol') {
+        return undefined;
+      }
+      if (prop === 'toString' || prop === 'valueOf') {
+        return () => makeToken(prefix);
+      }
+      if (prop === 'constructor') {
+        return Object;
+      }
+      if (prop === '__esModule') {
+        return false;
+      }
+      if (prop === 'length') {
+        return 0;
+      }
+
+      const newPrefix = prefix ? `${prefix}-${prop}` : prop;
+      return createLooseTokenProxy(resolvePathName, newPrefix);
+    },
+    has(_target, _prop) {
+      return true;
+    },
+    set(_target, _prop, _value) {
+      return false;
+    },
+  };
+
+  return new Proxy({}, handler);
+}
+
+/**
  * Create a tokens + theme API for a package or app. Each instance keeps its own
  * namespace registry; with `scopeId`, emitted custom properties and theme classes
  * are prefixed so they do not collide with other bundles on the same page.
@@ -294,6 +351,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const createdDescriptorLeaves = new Map<string, Set<string>>();
   const createdTokenTemplates = new Map<string, TokenNameTemplate | undefined>();
   const createdTokenNameByPath = new Map<string, Map<string, string>>();
+  /** `nameTemplate` recorded by `tokens.declare()`, checked for agreement when `create()` later runs. */
+  const declaredNamespaceTemplates = new Map<string, TokenNameTemplate | undefined>();
   const instanceDefaultTemplate = options.nameTemplate;
   let customNamingActive = Boolean(instanceDefaultTemplate);
 
@@ -452,10 +511,27 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as TokenRef<T>;
   }
 
+  function declare(
+    namespace: string,
+    options?: { nameTemplate?: TokenNameTemplate },
+  ): LooseTokenRef {
+    if (options?.nameTemplate !== undefined) {
+      declaredNamespaceTemplates.set(namespace, options.nameTemplate);
+    }
+
+    const template =
+      options?.nameTemplate ?? declaredNamespaceTemplates.get(namespace) ?? instanceDefaultTemplate;
+    const nameByPath = createdTokenNameByPath.get(namespace) ?? new Map<string, string>();
+    const resolvePathName = buildResolvePathName(namespace, template, nameByPath);
+
+    return createLooseTokenProxy(resolvePathName, '') as LooseTokenRef;
+  }
+
   return {
     scopeId,
     create,
     use: use as TokensApi<R>['use'],
+    declare: declare as TokensApi<R>['declare'],
     createTheme: (name, config) =>
       createTheme(
         name,
