@@ -132,6 +132,27 @@ describe('tokens.create', () => {
     expect(css).toContain('initial-value: 200ms');
   });
 
+  it('uses an explicit descriptor `initial` as the @property placeholder for dependent values', () => {
+    const api = createTokens();
+    const base = api.create('base', { accent: '#0066ff' });
+    api.create('derived', {
+      accentSubtle: {
+        value: `color-mix(in oklch, ${base.accent} 30%, white)`,
+        syntax: '<color>',
+        inherits: false,
+        initial: 'hotpink',
+      },
+    });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --derived-accentSubtle');
+    expect(css).toContain('initial-value: hotpink');
+    expect(css).toContain(
+      '--derived-accentSubtle: color-mix(in oklch, var(--base-accent) 30%, white)',
+    );
+  });
+
   it('exposes descriptor refs from tokens.use after create', () => {
     const api = createTokens();
     api.create('color', {

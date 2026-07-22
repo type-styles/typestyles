@@ -134,8 +134,11 @@ function getAllKeys(obj: TokenValues, prefix = ''): Set<string> {
 function collectDescriptorMeta(
   obj: TokenValues,
   prefix = '',
-): Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits'> & { value: string }> {
-  const meta = new Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits'> & { value: string }>();
+): Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits' | 'initial'> & { value: string }> {
+  const meta = new Map<
+    string,
+    Pick<TokenDescriptor, 'syntax' | 'inherits' | 'initial'> & { value: string }
+  >();
 
   if (obj === null || obj === undefined) return meta;
 
@@ -145,6 +148,7 @@ function collectDescriptorMeta(
         value: String(obj.value),
         syntax: obj.syntax,
         inherits: obj.inherits,
+        initial: obj.initial,
       });
     }
     return meta;
@@ -160,6 +164,7 @@ function collectDescriptorMeta(
         value: String(value.value),
         syntax: value.syntax,
         inherits: value.inherits,
+        initial: value.initial,
       });
     } else if (typeof value === 'object' && value !== null) {
       for (const [path, entry] of collectDescriptorMeta(value as TokenValues, fullKey)) {
@@ -400,6 +405,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
           value: entry.value,
           syntax: entry.syntax,
           inherits: entry.inherits,
+          initial: entry.initial,
         });
       }
     }

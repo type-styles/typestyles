@@ -90,6 +90,13 @@ export type TokenDescriptor = {
   value: string | number;
   syntax?: string;
   inherits?: boolean;
+  /**
+   * Explicit `@property` placeholder `initial-value`, used when `value` is
+   * `var()`/`env()`-dependent (skips the built-in syntax-keyed placeholder
+   * table). Ignored for computationally independent `value`s, which use
+   * `value` itself as `initial-value`.
+   */
+  initial?: string | number;
 };
 
 /**
@@ -229,6 +236,8 @@ export type RegisteredPropertyOptions = {
   value?: string | number;
   syntax?: string;
   inherits?: boolean;
+  /** @see {@link TokenDescriptor.initial} */
+  initial?: string | number;
 };
 
 type TokenRefLeaf<V> = V extends TokenDescriptor
