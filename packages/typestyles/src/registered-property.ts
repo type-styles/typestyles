@@ -160,6 +160,7 @@ export function createStylesPropertyFn(classNaming: ClassNamingConfig) {
         value: options.value != null ? String(options.value) : undefined,
         syntax: options.syntax,
         inherits: options.inherits,
+        initial: options.initial,
       });
     }
 
