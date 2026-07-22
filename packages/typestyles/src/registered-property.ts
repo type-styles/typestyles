@@ -74,8 +74,26 @@ export function registerAtPropertyRule(
   // The real (dependent) value reaches the cascade via a separate `:root`
   // declaration — `@property`'s `initial-value` only needs to be *some* valid,
   // computationally independent placeholder for the registered syntax.
-  const placeholder =
-    options.initial !== undefined ? String(options.initial) : placeholderForSyntax(options.syntax);
+  let placeholder: string | undefined;
+
+  if (options.initial !== undefined) {
+    const initialStr = String(options.initial);
+    // Explicit initial must also be computationally independent
+    if (!isComputationallyIndependent(initialStr)) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          `[typestyles] Skipping @property for "${name}": explicit \`initial\` value "${initialStr}" ` +
+            `depends on var()/env() and cannot be used as an initial-value (must be computationally ` +
+            `independent). Omit \`initial\` to use the built-in placeholder table for this syntax, ` +
+            `or provide a literal computationally independent value.`,
+        );
+      }
+      return;
+    }
+    placeholder = initialStr;
+  } else {
+    placeholder = placeholderForSyntax(options.syntax);
+  }
 
   if (placeholder === undefined) {
     if (process.env.NODE_ENV !== 'production') {

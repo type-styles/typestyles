@@ -94,4 +94,15 @@ describe('registerAtPropertyRule', () => {
     expect(css).toContain('@property --ts-test-root');
     expect(css).toContain('initial-value: transparent');
   });
+
+  it('skips @property when explicit initial contains var()/env() (not computationally independent)', () => {
+    registerAtPropertyRule('--ts-test-dependent-initial', {
+      value: 'var(--ts-token-ref)',
+      syntax: '<color>',
+      inherits: false,
+      initial: 'var(--other-token)',
+    });
+    const css = getRegisteredCss();
+    expect(css).not.toContain('@property --ts-test-dependent-initial');
+  });
 });
