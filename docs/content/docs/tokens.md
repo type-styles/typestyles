@@ -129,6 +129,81 @@ const space = tokens.use('space'); // typed from Registry
 
 Export `InferTokenValues<typeof created>` when consumers must reference tokens by namespace string.
 
+## Forward-referencing tokens (`tokens.declare`)
+
+`tokens.create(namespace, values)` takes a single plain object, so nothing
+inside `values` can reference the object being built — a semantic
+`accent.subtle` built from `color-mix()` of `accent.default` can't refer to
+`accent.default` from within the same `tokens.create('color', {...})` call,
+because `color` doesn't exist yet while `values` is still being constructed.
+
+`tokens.declare(namespace, options?)` reserves a namespace's naming ahead of
+time and returns a lazy reference proxy you can use while building that same
+namespace's values — or another namespace's, before it's been created:
+
+```ts
+import { tokens } from 'typestyles';
+
+const color = tokens.declare('color');
+
+export const colorTokens = tokens.create('color', {
+  background: { app: '#0a0a0a' },
+  accent: {
+    default: '#0066ff',
+    subtle: `color-mix(in oklch, ${color.accent.default} 24%, ${color.background.app})`,
+  },
+});
+```
+
+Any property path on a declared ref, at any depth, resolves to a real
+`var(--…)` string when coerced (template literals, `String()`, `assignVars`).
+Name resolution reuses the same logic `tokens.create` and `tokens.use` use
+internally — including `scopeId` and any `nameTemplate` — so a declared name
+and the name `tokens.create` eventually emits are always the same string. If
+you pass a `nameTemplate` to `declare()`, pass the **same** function reference
+to the matching `create()` call (or omit it there to reuse the declared one);
+passing a different one throws in development.
+
+**Cross-namespace / avoiding import cycles.** The same mechanism works across
+modules — declare what you need from a namespace before importing (or without
+ever importing) the module that creates it:
+
+```ts
+// module-a.ts
+import { tokens } from './runtime';
+const colorFromB = tokens.declare('colorB');
+export const colorA = tokens.create('colorA', {
+  accent: `color-mix(in oklch, ${colorFromB.accent} 50%, black)`,
+});
+
+// module-b.ts — no import of module-a.ts needed
+import { tokens } from './runtime';
+const colorFromA = tokens.declare('colorA');
+export const colorB = tokens.create('colorB', {
+  accent: `color-mix(in oklch, ${colorFromA.accent} 50%, white)`,
+});
+```
+
+**Type safety.** Without a type argument, `declare()` returns a `LooseTokenRef`
+— any path typechecks, since `declare()` genuinely can't know the namespace's
+eventual shape. Pass the shape explicitly for full autocomplete and type
+checking instead:
+
+```ts
+type DesignColorValues = {
+  background: { app: string };
+  accent: { default: string; subtle: string };
+};
+
+const color = tokens.declare<DesignColorValues>('color');
+color.accent.default; // string, typed
+color.accent.nonexistent; // ✗ type error
+```
+
+`declare()` only reserves naming — it emits no CSS. If you `declare()` a
+namespace and never call the matching `tokens.create()`, no `:root` rule is
+ever produced for it, the same as never calling `create()` at all.
+
 ## Theming
 
 Use `tokens.createTheme(name, config)` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.

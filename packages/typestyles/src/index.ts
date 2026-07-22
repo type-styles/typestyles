@@ -167,6 +167,7 @@ export type {
   ThemeConfig,
   ThemeSurface,
   DeepPartialTokenValues,
+  LooseTokenRef,
 } from './types';
 
 export { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
