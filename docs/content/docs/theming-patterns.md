@@ -787,6 +787,20 @@ const card = styles.class('card', {
 });
 ```
 
+**Tokens whose value references another token stay typed too.** `@property`'s
+`initial-value` must be computationally independent (no `var()`/`env()`) per
+spec, but that requirement is only about the `@property` rule's fallback
+default — the real value still reaches the cascade through the ordinary
+`:root { --name: value }` declaration `tokens.create` always emits. So a
+derived token like `accentSubtle: { value: `color-mix(in oklch, ${accent} 24%, white)`, syntax: '<color>' }`
+still gets a real, typed `@property` registration: TypeStyles picks a
+syntax-appropriate placeholder (`transparent` for `<color>`, `0` for
+`<number>`, `0px` for `<length>`, and so on) as the fallback `initial-value`,
+while `:root` carries the actual `color-mix()` result. Pass an explicit
+`initial` on the descriptor (`{ value, syntax, initial: 'hotpink' }`) to
+override the placeholder, or to type a syntax the built-in table doesn't
+cover.
+
 Toggling `dark.className` now smoothly rotates the gradient across the theme switch — the browser tweens `--brand-angle` (`brand.angle.name`) from `20deg` to `260deg` frame by frame, then the `conic-gradient` re-renders each step, because `@property` told it `--brand-angle` is an `<angle>`. Without the registered `syntax`, the same class swap would snap the gradient to its new angle with no animation at all.
 
 This is a genuine capability gap versus compiler-first tools: StyleX's own documented capability list marks explicit `@property` output as unsupported ("compiles but invalid CSS output"), so an Astryx/StyleX theme can't emit this pattern — a smoothly animating gradient angle or color token on theme switch is structurally unavailable to it. TypeStyles tokens and `styles.property` emit real `@property` rules because they're just CSS, not compiler-owned output. See [Theming architecture: TypeStyles vs. StyleX (and Astryx)](/docs/framework-comparison#theming-architecture-typestyles-vs-stylex-and-astryx) for the fuller comparison, and [`styles.property`](/docs/api-reference#styles) / [`tokens.create`](/docs/tokens#custom-css-variable-names-nametemplate) for the full options.
