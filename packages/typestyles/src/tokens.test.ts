@@ -448,6 +448,32 @@ describe('tokens.declare', () => {
       '--acme-color-danger-subtle: color-mix(in oklch, var(--acme-color-danger-default) 12%, transparent)',
     );
   });
+
+  it('supports two namespaces referencing each other without a real import cycle', () => {
+    const api = createTokens();
+
+    // Simulates module A: declares what it needs from "colorB" before "colorB" exists.
+    const colorBRef = api.declare('colorB');
+    const colorA = api.create('colorA', {
+      accent: `color-mix(in oklch, ${colorBRef.accent} 50%, black)`,
+    });
+
+    // Simulates module B: declares what it needs from "colorA" (already created above,
+    // but declare() doesn't require that — it would work in either creation order).
+    const colorARef = api.declare('colorA');
+    const colorB = api.create('colorB', {
+      accent: `color-mix(in oklch, ${colorARef.accent} 50%, white)`,
+    });
+
+    flushSync();
+
+    expect(colorA.accent).toBe('var(--colorA-accent)');
+    expect(colorB.accent).toBe('var(--colorB-accent)');
+
+    const css = getRegisteredCss();
+    expect(css).toContain('--colorA-accent: color-mix(in oklch, var(--colorB-accent) 50%, black)');
+    expect(css).toContain('--colorB-accent: color-mix(in oklch, var(--colorA-accent) 50%, white)');
+  });
 });
 
 describe('createTheme', () => {
