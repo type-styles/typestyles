@@ -1,5 +1,13 @@
 # typestyles
 
+## 0.12.0
+
+### Minor Changes
+
+- [#154](https://github.com/type-styles/typestyles/pull/154) [`0b1c9e8`](https://github.com/type-styles/typestyles/commit/0b1c9e8bbd520bb29a88d4296e0380f5e920cf86) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Register `@property` with a syntax-appropriate placeholder `initial-value` (e.g. `transparent` for `<color>`, `0` for `<number>`) instead of always skipping registration for `var()`/`env()`-dependent token values. The real value still reaches the cascade via the existing unconditional `:root` declaration. Add `TokenDescriptor.initial` / `RegisteredPropertyOptions.initial` to override the placeholder explicitly. Note: a dependent token that previously fell back to CSS's default `inherits: true` (because `@property` was skipped) now respects its `inherits` option like any other typed token — pass `inherits: true` explicitly if you relied on the old implicit-inheritance fallback.
+
+- [#154](https://github.com/type-styles/typestyles/pull/154) [`0b1c9e8`](https://github.com/type-styles/typestyles/commit/0b1c9e8bbd520bb29a88d4296e0380f5e920cf86) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `tokens.declare(namespace, options?)` — a lazy `var(--…)` reference proxy for referencing a token before its value exists, either within the same `tokens.create()` call (self-referencing derived tokens) or across modules without a real import cycle. Names resolve through the same logic `tokens.create`/`tokens.use` already use, including `scopeId` and `nameTemplate`.
+
 ## 0.11.2
 
 ### Patch Changes
