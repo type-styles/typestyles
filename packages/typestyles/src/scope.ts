@@ -1,5 +1,5 @@
 import type { CSSProperties } from './types';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { insertRules } from './sheet';
 import { applyLayerToRules, assertOwnLayer, type ResolvedCascadeLayers } from './layers';
 import type { ClassNamingConfig } from './class-naming';

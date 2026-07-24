@@ -396,6 +396,34 @@ const button = styles.component('button', (c) => {
 The [design-system example](/docs/design-system) uses this pattern throughout
 (`examples/design-system/src/components/button.ts`).
 
+When defaults live only in variants — or you want `@property` without a dummy value in the descriptor — use `ctx.vars.declare`:
+
+```ts
+const badge = styles.component('badge', (c) => {
+  const v = c.vars.declare({
+    textColor: { syntax: '<color>', inherits: false },
+    borderWidth: true,
+  });
+  return {
+    base: {
+      [v.borderWidth.name]: '1px',
+      color: v.textColor.var,
+      borderStyle: 'solid',
+      borderWidth: v.borderWidth.var,
+    },
+    variants: {
+      tone: {
+        neutral: { [v.textColor.name]: '#333' },
+        danger: { [v.textColor.name]: '#900' },
+      },
+    },
+    defaultVariants: { tone: 'neutral' },
+  };
+});
+```
+
+See [CSS primitives](/docs/css-primitives) for the full progressive-disclosure ladder.
+
 ## Responsive property values
 
 Register breakpoints once on your styles instance, then use `{ base, md, lg }` shorthand on individual CSS properties instead of repeating full `@media` keys beside every property.

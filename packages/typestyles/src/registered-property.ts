@@ -1,6 +1,35 @@
-import type { CSSVarRef, RegisteredPropertyOptions, RegisteredPropertyRef } from './types';
+import type {
+  CSSVarRef,
+  PropertyOptions,
+  PropertyRegistration,
+  RegisteredPropertyRef,
+  StylesPropertyFn,
+} from './types';
 import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
+import { syntaxPlaceholderFor } from './at-property';
+import { registerCustomProperty } from './custom-properties';
 import { insertRule } from './sheet';
+
+const propertyRegistrations = new Map<
+  string,
+  { syntax: string; inherits: boolean; initial?: string | number }
+>();
+
+export function propertyRegistrationsEqual(
+  a: { syntax: string; inherits?: boolean; initial?: string | number },
+  b: { syntax: string; inherits?: boolean; initial?: string | number },
+): boolean {
+  return (
+    a.syntax === b.syntax &&
+    (a.inherits ?? false) === (b.inherits ?? false) &&
+    (a.initial ?? undefined) === (b.initial ?? undefined)
+  );
+}
+
+/** @internal Test helper */
+export function resetPropertyRegistrations(): void {
+  propertyRegistrations.clear();
+}
 
 export function escapePropertySyntaxString(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -29,34 +58,15 @@ function isComputationallyIndependent(value: string): boolean {
 }
 
 /**
- * Safe placeholder `initial-value`s for common single-component syntaxes. A
- * placeholder only needs to satisfy the syntax grammar — the real, possibly
- * `var()`-dependent value always reaches the cascade separately via the
- * unconditional `:root { name: value }` declaration `registerRootCustomProperty`
- * / `tokens.create` emit, which the cascade prefers over `initial-value`.
- */
-const SYNTAX_PLACEHOLDERS: Record<string, string> = {
-  '<color>': 'transparent',
-  '<number>': '0',
-  '<integer>': '0',
-  '<length>': '0px',
-  '<percentage>': '0%',
-  '<length-percentage>': '0px',
-  '<angle>': '0deg',
-  '<time>': '0s',
-  '<resolution>': '0dpi',
-};
-
-/**
  * Looks up a safe placeholder for `syntax`. Strips one optional trailing `+`/`#`
  * list multiplier first — a single item always satisfies "one or more", so list
  * syntaxes reuse their base placeholder. Anything not an exact match (unions,
  * multi-component syntaxes, `<custom-ident>`, `<url>`, …) returns `undefined`;
- * callers must not guess beyond this table.
+ * callers must not guess beyond the {@link atProperty} preset table.
  */
 function placeholderForSyntax(syntax: string): string | undefined {
   const base = syntax.trim().replace(/[+#]$/, '');
-  return SYNTAX_PLACEHOLDERS[base];
+  return syntaxPlaceholderFor(base);
 }
 
 export function registerAtPropertyRule(
@@ -114,7 +124,21 @@ export function registerAtPropertySchema(
   name: string,
   options: { syntax: string; inherits?: boolean; initial?: string | number },
 ): void {
-  const inherits = options.inherits ?? false;
+  const normalized = {
+    syntax: options.syntax,
+    inherits: options.inherits ?? false,
+    initial: options.initial,
+  };
+  const existing = propertyRegistrations.get(name);
+  if (existing) {
+    if (propertyRegistrationsEqual(existing, normalized)) return;
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error(`[typestyles] Conflicting @property registration for "${name}".`);
+    }
+    return;
+  }
+
+  const inherits = normalized.inherits;
   let placeholder: string | undefined;
 
   if (options.initial !== undefined) {
@@ -144,11 +168,12 @@ export function registerAtPropertySchema(
   }
 
   const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${placeholder}; }`;
+  propertyRegistrations.set(name, normalized);
   insertRule(`@property:${name}`, css);
 }
 
 export function registerRootCustomProperty(name: string, value: string): void {
-  insertRule(`property-root:${name}`, `:root { ${name}: ${value}; }`);
+  registerCustomProperty(name, value, ':root');
 }
 
 export function registerRegisteredProperty(
@@ -174,11 +199,19 @@ export function registerRegisteredProperty(
   }
 }
 
-export function createStylesPropertyFn(classNaming: ClassNamingConfig) {
+const propertyRefInstances = new WeakMap<RegisteredPropertyRef, unknown>();
+
+export function createStylesPropertyFn(classNaming: ClassNamingConfig): StylesPropertyFn {
   const seen = new Set<string>();
   const ns = scopedTokenNamespace(classNaming.scopeId?.trim() || undefined, 'property');
+  const prefix = `--${ns}-`;
+  const instanceToken = {};
 
-  return (id: string, options?: RegisteredPropertyOptions): RegisteredPropertyRef => {
+  function resolveName(id: string): string {
+    return `${prefix}${sanitizeClassSegment(id)}`;
+  }
+
+  function trackId(id: string): void {
     const safeId = sanitizeClassSegment(id);
     if (seen.has(safeId)) {
       if (process.env.NODE_ENV !== 'production') {
@@ -190,17 +223,69 @@ export function createStylesPropertyFn(classNaming: ClassNamingConfig) {
     } else {
       seen.add(safeId);
     }
+  }
 
-    const name = `--${ns}-${safeId}`;
-    if (options) {
-      registerRegisteredProperty(name, {
-        value: options.value != null ? String(options.value) : undefined,
-        syntax: options.syntax,
-        inherits: options.inherits,
-        initial: options.initial,
-      });
+  function createInstanceRef(name: string): RegisteredPropertyRef {
+    const ref = createRegisteredPropertyRef(name);
+    propertyRefInstances.set(ref, instanceToken);
+    return ref;
+  }
+
+  function declareFn(id: string, registration: PropertyRegistration): RegisteredPropertyRef {
+    trackId(id);
+    const name = resolveName(id);
+    registerAtPropertySchema(name, registration);
+    return createInstanceRef(name);
+  }
+
+  function setFn(ref: RegisteredPropertyRef, value: string | number): void {
+    const refInstance = propertyRefInstances.get(ref);
+    if (refInstance !== undefined && refInstance !== instanceToken) {
+      throw new Error(
+        '[typestyles] styles.property.set() received a ref from a different styles instance.',
+      );
+    }
+    if (refInstance === undefined && !ref.name.startsWith(prefix)) {
+      throw new Error(
+        '[typestyles] styles.property.set() received a ref from a different styles instance.',
+      );
+    }
+    registerCustomProperty(ref.name, String(value), ':root');
+  }
+
+  function propertyFn(id: string, options?: PropertyOptions): RegisteredPropertyRef {
+    if (!options) {
+      trackId(id);
+      return createInstanceRef(resolveName(id));
     }
 
-    return createRegisteredPropertyRef(name);
-  };
+    const { value, syntax, inherits, initial } = options;
+
+    if (syntax != null) {
+      const registration: PropertyRegistration = { syntax, inherits, initial };
+      if (
+        registration.initial === undefined &&
+        value != null &&
+        isComputationallyIndependent(String(value))
+      ) {
+        registration.initial = value;
+      }
+      const ref = declareFn(id, registration);
+      if (value != null) {
+        setFn(ref, value);
+      }
+      return ref;
+    }
+
+    trackId(id);
+    const name = resolveName(id);
+
+    if (value != null) {
+      registerCustomProperty(name, String(value), ':root');
+    }
+
+    return createInstanceRef(name);
+  }
+
+  return Object.assign(propertyFn, { declare: declareFn, set: setFn });
 }

@@ -16,10 +16,9 @@ import type {
   SlotComponentFunction,
   MultiSlotConfigInput,
   MultiSlotReturn,
-  RegisteredPropertyOptions,
-  RegisteredPropertyRef,
+  StylesPropertyFn,
 } from './types';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { insertRules, invalidateClassNamespaceForDev } from './sheet';
 import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
@@ -282,7 +281,7 @@ export type StylesApi = {
    * Register a standalone CSS custom property (optionally with `@property` when `syntax` is set).
    * Returns `{ name, var, toString }` for use in style values and variant overrides.
    */
-  property: (id: string, options?: RegisteredPropertyOptions) => RegisteredPropertyRef;
+  property: StylesPropertyFn;
   class: (name: string, properties: CSSProperties) => string;
   hashClass: (properties: CSSProperties, label?: string) => string;
   component: {

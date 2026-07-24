@@ -6,7 +6,7 @@ import {
   expandResponsiveInProperties,
   validateResponsiveObject,
 } from './breakpoints';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { createStyles } from './styles';
 import { createGlobal } from './create-global';
 import { createTokens } from './tokens';

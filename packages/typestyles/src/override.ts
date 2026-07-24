@@ -8,7 +8,7 @@ import {
   type SlotComponentMeta,
   type VariantSelectorMap,
 } from './component-meta';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { insertRules } from './sheet';
 import { joinSelectorAlternatives } from './compound-selector';

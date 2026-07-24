@@ -24,6 +24,8 @@ To share a **cascade layer** stack with styles, use **`createTypeStyles`** or pa
 
 ## Creating tokens
 
+TypeStyles offers several tiers for custom properties — from design tokens down to exact-name migration helpers. [Tokens](/docs/tokens) (`tokens.declare` / `tokens.create`) is the top rung for design systems; see [CSS primitives](/docs/css-primitives) for the full ladder and when to use `ctx.vars`, `styles.property`, or `typestyles/css`.
+
 Use `tokens.create(prefix, object)` to define a set of tokens:
 
 ```ts

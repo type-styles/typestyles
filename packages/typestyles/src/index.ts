@@ -36,7 +36,7 @@ export type { CreateTokensOptions, TokensApi } from './tokens';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
 export { resolveBreakpoints } from './breakpoints';
 export { getTokenLeafValues, getDeclaredNamespace } from './tokens';
-export type { SerializeStyleOptions } from './css';
+export type { SerializeStyleOptions } from './serialize-style';
 
 export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';
 
@@ -84,6 +84,8 @@ export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';
 export type { GlobalStyleTuple } from './global-style-tuple';
 
 export { container, createContainerRef, atRuleBlock, has, is, where };
+export { atProperty } from './at-property';
+export type { AtPropertyPreset, AtPropertyPresetName } from './at-property';
 
 export { calc, clamp, content };
 
@@ -127,6 +129,9 @@ export type {
   ComponentConfigInput,
   ComponentInternalVarRef,
   RegisteredPropertyRef,
+  PropertyRegistration,
+  PropertyRef,
+  PropertyOptions,
   RegisteredPropertyOptions,
   ComponentReturn,
   ComponentAttrsReturn,

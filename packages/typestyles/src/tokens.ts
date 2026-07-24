@@ -27,6 +27,7 @@ import {
   type TokenNameTemplate,
   type ThemeTokenNaming,
 } from './token-naming';
+import { formatCustomPropertiesCss } from './custom-properties';
 import { insertRule, insertRules, invalidateKeys } from './sheet';
 import { createRegisteredPropertyRef, registerAtPropertySchema } from './registered-property';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
@@ -434,20 +435,21 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       options?.nameTemplate ?? (hasDeclared ? declaredTemplate : instanceDefaultTemplate);
     if (effectiveTemplate !== undefined) customNamingActive = true;
 
-    let declarations: string;
+    let flatEntries: Array<{ path: string; value: string }>;
     const nameByPath = new Map<string, string>();
 
     if (effectiveTemplate === undefined) {
-      const flatEntries = flattenTokenEntries(mergedValues as TokenValues);
-      for (const [path] of flatEntries) {
+      const entries = flattenTokenEntries(mergedValues as TokenValues);
+      flatEntries = entries.map(([path, value]) => ({ path, value }));
+      for (const { path } of flatEntries) {
         nameByPath.set(path, `--${cssNs}-${path}`);
       }
-      declarations = flatEntries.map(([key, value]) => `--${cssNs}-${key}: ${value}`).join('; ');
     } else {
-      const flatEntries = flattenTokenPaths(mergedValues as TokenValues);
+      const entries = flattenTokenPaths(mergedValues as TokenValues);
       const seenNames = new Map<string, string>();
+      flatEntries = entries.map(({ path, value }) => ({ path, value }));
 
-      for (const { path, segments } of flatEntries) {
+      for (const { path, segments } of entries) {
         const ctx = buildTokenNameContext(scopeId, namespace, path, segments);
         const name = resolveTokenName(effectiveTemplate, ctx, namespace);
 
@@ -464,21 +466,19 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
         nameByPath.set(path, name);
       }
-
-      declarations = flatEntries
-        .map(({ path, value }) => {
-          const propName = nameByPath.get(path);
-          if (propName === undefined) {
-            throw new Error(
-              `[typestyles] tokens.create('${namespace}'): internal error resolving name for "${path}".`,
-            );
-          }
-          return `${propName}: ${value}`;
-        })
-        .join('; ');
     }
 
-    const css = `:root { ${declarations}; }`;
+    const props: Record<string, string> = {};
+    for (const { path, value } of flatEntries) {
+      const propName = nameByPath.get(path);
+      if (propName === undefined) {
+        throw new Error(
+          `[typestyles] tokens.create('${namespace}'): internal error resolving name for "${path}".`,
+        );
+      }
+      props[propName] = value;
+    }
+    const css = formatCustomPropertiesCss(':root', props);
     if (themeLayerContext) {
       const layer = options?.layer ?? themeLayerContext.layer;
       assertOwnLayer(themeLayerContext.stack, layer, 'tokens.create');

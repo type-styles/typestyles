@@ -1,5 +1,5 @@
 import type { CSSProperties } from './types';
-import { toKebabCase } from './css';
+import { toKebabCase } from './serialize-style';
 import { insertRule } from './sheet';
 
 /**

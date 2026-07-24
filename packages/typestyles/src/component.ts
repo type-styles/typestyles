@@ -30,7 +30,7 @@ import {
   type ClassNamingConfig,
 } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { createComponentConfigContextPair } from './component-config-context';
 import { attachComposeMeta } from './compose-meta';
 import {

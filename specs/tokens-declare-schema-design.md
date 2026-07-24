@@ -32,7 +32,7 @@ mixing schema concerns (syntax, inherits, initial) with runtime values in one ob
 
 ## Non-goals
 
-- Changing `ctx.vars()` / `styles.property()` in this spec (may align later).
+- Changing `ctx.vars()` / `styles.property()` in this spec — aligned in `css-primitives-design.md`.
 - Automatic detection of declared-but-never-created namespaces beyond ordinary CSS
   undefined-custom-property behavior.
 - Solving cascade-layer concerns beyond what `layers` / `tokenLayer` already handle.

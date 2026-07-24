@@ -21,7 +21,9 @@ per package or micro-frontend for isolation.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
 - `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
 - `styles.hashClass(properties, label?)`: Create a deterministic hashed class
-- `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`. When `value` depends on `var()`/`env()`, pass optional `initial` for the `@property` placeholder `initial-value`, or let TypeStyles pick a syntax-keyed default (e.g. `transparent` for `<color>`).
+- `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`. When `value` depends on `var()`/`env()`, pass optional `initial` for the `@property` placeholder `initial-value`, or let TypeStyles pick a syntax-keyed default (e.g. `transparent` for `<color>`). Shorthand entry point — unchanged; bundles declare + set when `options` includes both `syntax` and `value`.
+- `styles.property.declare(id, registration)`: Emit `@property` for a scoped global custom property (`--{scope}-property-{id}`); returns a `PropertyRef`. Registration is metadata only (`syntax`, `inherits?`, `initial?`) — no runtime value.
+- `styles.property.set(ref, value)`: Set the value of a property ref from this styles instance (throws in dev if `ref` belongs to a different instance).
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create a utility-aware styles API (prefer `createStyles({ utils })` for a single instance)
 - `styles.scope(opts, className, overrides)`: Proximity-correct overrides via CSS `@scope` (nested themes)
@@ -92,6 +94,25 @@ Composes naturally with token references.
 - `color.alpha(color, opacity, space?)`: Adjust opacity
 
 See [Color](/docs/color).
+
+### `atProperty` presets
+
+Import: `import { atProperty } from 'typestyles'` or `import { atProperty } from 'typestyles/css'`
+
+Spreadable `@property` registration presets (`color`, `angle`, `number`, `length`, …) for `tokens.declare`, `ctx.vars.declare`, `styles.property.declare`, and `css.atProperty`. Helpers: `atProperty.list(preset)`, `atProperty.union(...presets)`.
+
+See [CSS primitives](/docs/css-primitives#atproperty-presets).
+
+### `typestyles/css`
+
+Import: `import { css, atProperty } from 'typestyles/css'`
+
+CSS-faithful custom property emitters with exact `--name` control — no `scopeId`, no namespace prefixing. See [CSS primitives](/docs/css-primitives).
+
+- `css.atProperty(name, registration)` — emit `@property` only
+- `css.customProperty(name, value, options?)` — emit value declaration (default selector `:root`)
+- `css.customProperties(selector, properties)` — batch emit on one selector
+- `css.var(name)` — ref without emitting
 
 ### `color-scale` (`typestyles/color-scale`)
 

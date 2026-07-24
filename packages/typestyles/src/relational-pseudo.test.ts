@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { has, is, where } from './relational-pseudo';
 
 describe('relational pseudo helpers', () => {
