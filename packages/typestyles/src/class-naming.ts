@@ -153,7 +153,9 @@ export function scopedTokenNamespace(
   logicalNamespace: string,
 ): string {
   if (!scopeId || !scopeId.trim()) return logicalNamespace;
-  return `${sanitizeClassSegment(scopeId)}-${logicalNamespace}`;
+  const scope = sanitizeClassSegment(scopeId);
+  if (!logicalNamespace) return scope;
+  return `${scope}-${logicalNamespace}`;
 }
 
 /**

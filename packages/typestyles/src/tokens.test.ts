@@ -33,6 +33,52 @@ describe('tokens.create', () => {
     expect(color.secondary).toBe('var(--color-secondary)');
   });
 
+  it('create(values) omits the namespace segment from custom property names', () => {
+    const api = createTokens({ scopeId: 'var-ui' });
+    const color = api.create({
+      accent: { default: '#0066ff' },
+      background: { app: '#0a0a0a' },
+    });
+
+    expect(color.accent.default).toBe('var(--var-ui-accent-default)');
+    expect(color.background.app).toBe('var(--var-ui-background-app)');
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--var-ui-accent-default: #0066ff');
+    expect(css).toContain('--var-ui-background-app: #0a0a0a');
+  });
+
+  it('create(values, { decl }) shares schema with namespace-less declare(schema)', () => {
+    const api = createTokens({ scopeId: 'var-ui' });
+    const colorSchema = {
+      accent: {
+        default: { syntax: '<color>', inherits: false },
+        subtle: { syntax: '<color>', inherits: false },
+      },
+      background: { app: true },
+    } as const;
+
+    const color = api.declare(colorSchema);
+    const built = api.create(
+      {
+        background: { app: '#0a0a0a' },
+        accent: {
+          default: '#0066ff',
+          subtle: `color-mix(in oklch, ${color.accent.default} 24%, ${color.background.app})`,
+        },
+      },
+      { decl: color },
+    );
+    flushSync();
+
+    expect(`${built.accent.subtle}`).toBe('var(--var-ui-accent-subtle)');
+    const css = getRegisteredCss();
+    expect(css).toContain(
+      '--var-ui-accent-subtle: color-mix(in oklch, var(--var-ui-accent-default) 24%, var(--var-ui-background-app))',
+    );
+  });
+
   it('injects :root CSS with custom properties', () => {
     const api = createTokens();
     api.create('spacing', {
@@ -457,6 +503,24 @@ describe('tokens.declare', () => {
     const api = createTokens({ scopeId: 'acme' });
     const color = api.declare('color', { accent: true });
     expect(`${color.accent}`).toBe('var(--acme-color-accent)');
+  });
+
+  it('declare(schema) omits the namespace segment from custom property names', () => {
+    const api = createTokens({ scopeId: 'var-ui' });
+    const color = api.declare({
+      accent: { default: true },
+      background: { app: true },
+    });
+    expect(`${color.accent.default}`).toBe('var(--var-ui-accent-default)');
+    expect(`${color.background.app}`).toBe('var(--var-ui-background-app)');
+  });
+
+  it('declare(schema) without scopeId emits --{path} names', () => {
+    const api = createTokens();
+    const color = api.declare({
+      accent: { default: { syntax: '<color>', inherits: false } },
+    });
+    expect(color.accent.default).toMatchObject({ name: '--accent-default' });
   });
 
   it('create merges values across calls for the same namespace', () => {

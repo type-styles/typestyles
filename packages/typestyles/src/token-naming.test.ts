@@ -12,6 +12,24 @@ describe('defaultTokenNameTemplate', () => {
     const ctx = buildTokenNameContext(undefined, 'color', 'primary', ['primary']);
     expect(defaultTokenNameTemplate(ctx)).toBe('--color-primary');
   });
+
+  it('uses scope only when namespace is empty', () => {
+    const ctx = buildTokenNameContext('var-ui', '', 'color-text-primary', [
+      'color',
+      'text',
+      'primary',
+    ]);
+    expect(defaultTokenNameTemplate(ctx)).toBe('--var-ui-color-text-primary');
+  });
+
+  it('omits namespace segment when namespace is empty and unscoped', () => {
+    const ctx = buildTokenNameContext(undefined, '', 'color-text-primary', [
+      'color',
+      'text',
+      'primary',
+    ]);
+    expect(defaultTokenNameTemplate(ctx)).toBe('--color-text-primary');
+  });
 });
 
 describe('resolveTokenName', () => {
