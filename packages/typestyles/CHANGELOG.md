@@ -1,5 +1,21 @@
 # typestyles
 
+## 0.14.0
+
+### Minor Changes
+
+- [#157](https://github.com/type-styles/typestyles/pull/157) [`f163b08`](https://github.com/type-styles/typestyles/commit/f163b08f071e8b34a64432be3c5b05566c73d81c) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `atProperty` presets (`atProperty.color`, `atProperty.angle`, etc.) for spreadable `@property` registration metadata across tokens, components, styles, and `typestyles/css`.
+
+  Add `typestyles/css` subpath with `css.atProperty`, `css.customProperty`, `css.customProperties`, and `css.var` for exact-name CSS custom property control.
+
+  Add `styles.property.declare` / `styles.property.set` and `ctx.vars.declare` / `ctx.var.declare` for split `@property` registration and value assignment. Shorthand `styles.property(id, options?)` and `ctx.vars(definitions)` behavior is unchanged.
+
+  Export `PropertyRegistration`, `PropertyRef`, and `PropertyOptions` types. `TokenDescriptor` and `RegisteredPropertyOptions` are deprecated aliases.
+
+- [#159](https://github.com/type-styles/typestyles/pull/159) [`bc7e94d`](https://github.com/type-styles/typestyles/commit/bc7e94d4eee898a2886d802b64570bbec4c69b87) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add namespace-optional overloads for `tokens.declare(schema)` and `tokens.create(values)` so design systems can register a flat token tree without a namespace segment in emitted `--*` names.
+
+  When the namespace is omitted, custom property names use `--{scopeId}-{path}` (scoped) or `--{path}` (unscoped) instead of `--{scopeId}-{namespace}-{path}`. Pass `{ decl }` on `create()` to pair with a namespace-less `declare()` for schema validation and forward references.
+
 ## 0.13.0
 
 ### Minor Changes
