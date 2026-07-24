@@ -1,6 +1,28 @@
 import type { CSSVarRef, RegisteredPropertyOptions, RegisteredPropertyRef } from './types';
 import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
+import { registerCustomProperty } from './custom-properties';
 import { insertRule } from './sheet';
+
+const propertyRegistrations = new Map<
+  string,
+  { syntax: string; inherits: boolean; initial?: string | number }
+>();
+
+export function propertyRegistrationsEqual(
+  a: { syntax: string; inherits?: boolean; initial?: string | number },
+  b: { syntax: string; inherits?: boolean; initial?: string | number },
+): boolean {
+  return (
+    a.syntax === b.syntax &&
+    (a.inherits ?? false) === (b.inherits ?? false) &&
+    (a.initial ?? undefined) === (b.initial ?? undefined)
+  );
+}
+
+/** @internal Test helper */
+export function resetPropertyRegistrations(): void {
+  propertyRegistrations.clear();
+}
 
 export function escapePropertySyntaxString(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -114,7 +136,21 @@ export function registerAtPropertySchema(
   name: string,
   options: { syntax: string; inherits?: boolean; initial?: string | number },
 ): void {
-  const inherits = options.inherits ?? false;
+  const normalized = {
+    syntax: options.syntax,
+    inherits: options.inherits ?? false,
+    initial: options.initial,
+  };
+  const existing = propertyRegistrations.get(name);
+  if (existing) {
+    if (propertyRegistrationsEqual(existing, normalized)) return;
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error(`[typestyles] Conflicting @property registration for "${name}".`);
+    }
+    return;
+  }
+
+  const inherits = normalized.inherits;
   let placeholder: string | undefined;
 
   if (options.initial !== undefined) {
@@ -144,11 +180,12 @@ export function registerAtPropertySchema(
   }
 
   const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${placeholder}; }`;
+  propertyRegistrations.set(name, normalized);
   insertRule(`@property:${name}`, css);
 }
 
 export function registerRootCustomProperty(name: string, value: string): void {
-  insertRule(`property-root:${name}`, `:root { ${name}: ${value}; }`);
+  registerCustomProperty(name, value, ':root');
 }
 
 export function registerRegisteredProperty(

@@ -1,9 +1,11 @@
+import { resetCustomProperties } from './custom-properties';
 import {
   namespacesFromTypestylesHmrPrefixes,
   registeredNamespaces,
   releaseReservedNamespacesForComponentOrClassNames,
   resetEmittedClassNameTracking,
 } from './registry';
+import { resetPropertyRegistrations } from './registered-property';
 import {
   getSheetState,
   getGlobalSheetState,
@@ -570,6 +572,8 @@ export function reset(): void {
   }
   registeredNamespaces.clear();
   resetEmittedClassNameTracking();
+  resetPropertyRegistrations();
+  resetCustomProperties();
   notifyRegisteredCssChanged();
   if (isBrowser && styleElement) {
     styleElement.remove();

@@ -148,3 +148,23 @@ describe('registerAtPropertySchema', () => {
     expect(getRegisteredCss()).toContain('initial-value: hotpink');
   });
 });
+
+describe('registerAtPropertySchema conflict detection', () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  it('identical re-registration is a no-op', () => {
+    registerAtPropertySchema('--ts-conflict', { syntax: '<color>', inherits: false });
+    registerAtPropertySchema('--ts-conflict', { syntax: '<color>', inherits: false });
+    flushSync();
+    expect(getRegisteredCss().match(/@property --ts-conflict/g)?.length).toBe(1);
+  });
+
+  it('conflicting re-registration throws in dev mode', () => {
+    registerAtPropertySchema('--ts-conflict', { syntax: '<color>', inherits: false });
+    expect(() =>
+      registerAtPropertySchema('--ts-conflict', { syntax: '<length>', inherits: false }),
+    ).toThrow(/conflicting/i);
+  });
+});
