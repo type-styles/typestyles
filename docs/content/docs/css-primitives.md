@@ -15,7 +15,7 @@ styles.property.declare / .set        ← global, scoped to a styles instance
         ↓ exact --names, no prefixing
 css.atProperty / css.customProperty   ← mirrors the cascade spec
         ↓ unanticipated at-rules
-insertRule(key, cssString)            ← escape hatch (already exists)
+insertRules(rules)                    ← escape hatch (already exists)
 ```
 
 ## When to use which tier
