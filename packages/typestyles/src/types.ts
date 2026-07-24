@@ -126,7 +126,7 @@ export type InferValuesFromSchema<S> = S extends true
 
 declare const DeclaredBrand: unique symbol;
 
-export type DeclaredTokenRef<TSchema, N extends string> = TokenRef<InferFromSchema<TSchema>> & {
+export type DeclaredTokenRef<TSchema, N extends string> = InferFromSchema<TSchema> & {
   readonly [DeclaredBrand]: { namespace: N; schema: TSchema };
 };
 

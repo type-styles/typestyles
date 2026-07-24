@@ -52,7 +52,11 @@ export function mergeTokenTrees<T extends Record<string, unknown>>(base: T, chun
 export function tokenSchemaLeavesEqual(a: TokenSchemaLeaf, b: TokenSchemaLeaf): boolean {
   if (a === true && b === true) return true;
   if (typeof a === 'object' && typeof b === 'object') {
-    return a.syntax === b.syntax && (a.inherits ?? false) === (b.inherits ?? false);
+    return (
+      a.syntax === b.syntax &&
+      (a.inherits ?? false) === (b.inherits ?? false) &&
+      (a.initial ?? undefined) === (b.initial ?? undefined)
+    );
   }
   return false;
 }
