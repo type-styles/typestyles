@@ -110,6 +110,43 @@ export function registerAtPropertyRule(
   insertRule(`@property:${name}`, css);
 }
 
+export function registerAtPropertySchema(
+  name: string,
+  options: { syntax: string; inherits?: boolean; initial?: string | number },
+): void {
+  const inherits = options.inherits ?? false;
+  let placeholder: string | undefined;
+
+  if (options.initial !== undefined) {
+    const initialStr = String(options.initial);
+    if (!isComputationallyIndependent(initialStr)) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          `[typestyles] Skipping @property for "${name}": explicit \`initial\` value "${initialStr}" ` +
+            `depends on var()/env() and cannot be used as an initial-value.`,
+        );
+      }
+      return;
+    }
+    placeholder = initialStr;
+  } else {
+    placeholder = placeholderForSyntax(options.syntax);
+  }
+
+  if (placeholder === undefined) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[typestyles] Skipping @property for "${name}": syntax "${options.syntax}" has no ` +
+          `built-in placeholder initial-value. Pass an explicit \`initial\`.`,
+      );
+    }
+    return;
+  }
+
+  const css = `@property ${name} { syntax: "${escapePropertySyntaxString(options.syntax)}"; inherits: ${inherits}; initial-value: ${placeholder}; }`;
+  insertRule(`@property:${name}`, css);
+}
+
 export function registerRootCustomProperty(name: string, value: string): void {
   insertRule(`property-root:${name}`, `:root { ${name}: ${value}; }`);
 }
