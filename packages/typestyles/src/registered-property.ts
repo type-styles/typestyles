@@ -6,6 +6,7 @@ import type {
   StylesPropertyFn,
 } from './types';
 import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
+import { syntaxPlaceholderFor } from './at-property';
 import { registerCustomProperty } from './custom-properties';
 import { insertRule } from './sheet';
 
@@ -57,34 +58,15 @@ function isComputationallyIndependent(value: string): boolean {
 }
 
 /**
- * Safe placeholder `initial-value`s for common single-component syntaxes. A
- * placeholder only needs to satisfy the syntax grammar — the real, possibly
- * `var()`-dependent value always reaches the cascade separately via the
- * unconditional `:root { name: value }` declaration `registerRootCustomProperty`
- * / `tokens.create` emit, which the cascade prefers over `initial-value`.
- */
-const SYNTAX_PLACEHOLDERS: Record<string, string> = {
-  '<color>': 'transparent',
-  '<number>': '0',
-  '<integer>': '0',
-  '<length>': '0px',
-  '<percentage>': '0%',
-  '<length-percentage>': '0px',
-  '<angle>': '0deg',
-  '<time>': '0s',
-  '<resolution>': '0dpi',
-};
-
-/**
  * Looks up a safe placeholder for `syntax`. Strips one optional trailing `+`/`#`
  * list multiplier first — a single item always satisfies "one or more", so list
  * syntaxes reuse their base placeholder. Anything not an exact match (unions,
  * multi-component syntaxes, `<custom-ident>`, `<url>`, …) returns `undefined`;
- * callers must not guess beyond this table.
+ * callers must not guess beyond the {@link atProperty} preset table.
  */
 function placeholderForSyntax(syntax: string): string | undefined {
   const base = syntax.trim().replace(/[+#]$/, '');
-  return SYNTAX_PLACEHOLDERS[base];
+  return syntaxPlaceholderFor(base);
 }
 
 export function registerAtPropertyRule(

@@ -84,6 +84,8 @@ export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';
 export type { GlobalStyleTuple } from './global-style-tuple';
 
 export { container, createContainerRef, atRuleBlock, has, is, where };
+export { atProperty } from './at-property';
+export type { AtPropertyPreset, AtPropertyPresetName } from './at-property';
 
 export { calc, clamp, content };
 

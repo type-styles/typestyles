@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { css } from './css';
+import { atProperty } from './at-property';
 import { getRegisteredCss, reset, flushSync } from './sheet';
 import { resetCustomProperties } from './custom-properties';
 
@@ -51,5 +52,13 @@ describe('css', () => {
     flushSync();
     expect(ref.name).toBe('--ts-external');
     expect(getRegisteredCss()).not.toContain('--ts-external');
+  });
+
+  it('css.atProperty accepts atProperty presets', () => {
+    css.atProperty('--ts-preset-color', atProperty.color);
+    flushSync();
+    expect(getRegisteredCss()).toContain(
+      '@property --ts-preset-color { syntax: "<color>"; inherits: false; initial-value: transparent; }',
+    );
   });
 });

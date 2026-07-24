@@ -95,9 +95,17 @@ Composes naturally with token references.
 
 See [Color](/docs/color).
 
+### `atProperty` presets
+
+Import: `import { atProperty } from 'typestyles'` or `import { atProperty } from 'typestyles/css'`
+
+Spreadable `@property` registration presets (`color`, `angle`, `number`, `length`, …) for `tokens.declare`, `ctx.vars.declare`, `styles.property.declare`, and `css.atProperty`. Helpers: `atProperty.list(preset)`, `atProperty.union(...presets)`.
+
+See [CSS primitives](/docs/css-primitives#atproperty-presets).
+
 ### `typestyles/css`
 
-Import: `import { css } from 'typestyles/css'`
+Import: `import { css, atProperty } from 'typestyles/css'`
 
 CSS-faithful custom property emitters with exact `--name` control — no `scopeId`, no namespace prefixing. See [CSS primitives](/docs/css-primitives).
 

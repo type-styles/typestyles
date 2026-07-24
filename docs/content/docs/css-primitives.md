@@ -43,6 +43,31 @@ Unanticipated at-rule not covered above?
 
 **Migration and interop** use `typestyles/css` when variable names must match an existing stylesheet exactly, with no scope prefixing.
 
+## `atProperty` presets
+
+Named `@property` registration presets for common syntaxes — spread, override, or pass directly to any tier:
+
+```ts
+import { atProperty } from 'typestyles';
+// or: import { atProperty } from 'typestyles/css';
+
+tokens.declare('color', {
+  accent: { default: atProperty.color },
+  border: { ...atProperty.color, inherits: true },
+  hue: { syntax: atProperty.angle.syntax },
+});
+
+css.atProperty('--ds-accent', atProperty.color);
+styles.property.declare('overlay-opacity', atProperty.number);
+```
+
+Each preset is `{ syntax, inherits, initial }` — the same shape as `PropertyRegistration`. Helpers:
+
+- `atProperty.list(atProperty.color)` → `{ syntax: '<color>+', … }`
+- `atProperty.union(atProperty.length, atProperty.percentage)` → `{ syntax: '<length> | <percentage>', … }`
+
+Available presets: `color`, `number`, `integer`, `length`, `percentage`, `lengthPercentage`, `angle`, `time`, `resolution`.
+
 ## `typestyles/css`
 
 Import from the dedicated subpath — no `scopeId`, no namespace prefixing:
@@ -66,11 +91,7 @@ Registration metadata (`syntax`, `inherits`, `initial`) is separate from values 
 import { css } from 'typestyles/css';
 
 // Match existing global stylesheet names exactly
-css.atProperty('--ds-color-accent', {
-  syntax: '<color>',
-  inherits: false,
-  initial: 'transparent',
-});
+css.atProperty('--ds-color-accent', atProperty.color);
 css.customProperty('--ds-color-accent', '#0066ff');
 
 const accent = css.var('--ds-color-accent');
