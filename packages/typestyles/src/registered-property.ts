@@ -1,4 +1,10 @@
-import type { CSSVarRef, RegisteredPropertyOptions, RegisteredPropertyRef } from './types';
+import type {
+  CSSVarRef,
+  PropertyOptions,
+  PropertyRegistration,
+  RegisteredPropertyRef,
+  StylesPropertyFn,
+} from './types';
 import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
 import { registerCustomProperty } from './custom-properties';
 import { insertRule } from './sheet';
@@ -211,11 +217,19 @@ export function registerRegisteredProperty(
   }
 }
 
-export function createStylesPropertyFn(classNaming: ClassNamingConfig) {
+const propertyRefInstances = new WeakMap<RegisteredPropertyRef, unknown>();
+
+export function createStylesPropertyFn(classNaming: ClassNamingConfig): StylesPropertyFn {
   const seen = new Set<string>();
   const ns = scopedTokenNamespace(classNaming.scopeId?.trim() || undefined, 'property');
+  const prefix = `--${ns}-`;
+  const instanceToken = {};
 
-  return (id: string, options?: RegisteredPropertyOptions): RegisteredPropertyRef => {
+  function resolveName(id: string): string {
+    return `${prefix}${sanitizeClassSegment(id)}`;
+  }
+
+  function trackId(id: string): void {
     const safeId = sanitizeClassSegment(id);
     if (seen.has(safeId)) {
       if (process.env.NODE_ENV !== 'production') {
@@ -227,17 +241,69 @@ export function createStylesPropertyFn(classNaming: ClassNamingConfig) {
     } else {
       seen.add(safeId);
     }
+  }
 
-    const name = `--${ns}-${safeId}`;
-    if (options) {
-      registerRegisteredProperty(name, {
-        value: options.value != null ? String(options.value) : undefined,
-        syntax: options.syntax,
-        inherits: options.inherits,
-        initial: options.initial,
-      });
+  function createInstanceRef(name: string): RegisteredPropertyRef {
+    const ref = createRegisteredPropertyRef(name);
+    propertyRefInstances.set(ref, instanceToken);
+    return ref;
+  }
+
+  function declareFn(id: string, registration: PropertyRegistration): RegisteredPropertyRef {
+    trackId(id);
+    const name = resolveName(id);
+    registerAtPropertySchema(name, registration);
+    return createInstanceRef(name);
+  }
+
+  function setFn(ref: RegisteredPropertyRef, value: string | number): void {
+    const refInstance = propertyRefInstances.get(ref);
+    if (refInstance !== undefined && refInstance !== instanceToken) {
+      throw new Error(
+        '[typestyles] styles.property.set() received a ref from a different styles instance.',
+      );
+    }
+    if (refInstance === undefined && !ref.name.startsWith(prefix)) {
+      throw new Error(
+        '[typestyles] styles.property.set() received a ref from a different styles instance.',
+      );
+    }
+    registerCustomProperty(ref.name, String(value), ':root');
+  }
+
+  function propertyFn(id: string, options?: PropertyOptions): RegisteredPropertyRef {
+    if (!options) {
+      trackId(id);
+      return createInstanceRef(resolveName(id));
     }
 
-    return createRegisteredPropertyRef(name);
-  };
+    const { value, syntax, inherits, initial } = options;
+
+    if (syntax != null) {
+      const registration: PropertyRegistration = { syntax, inherits, initial };
+      if (
+        registration.initial === undefined &&
+        value != null &&
+        isComputationallyIndependent(String(value))
+      ) {
+        registration.initial = value;
+      }
+      const ref = declareFn(id, registration);
+      if (value != null) {
+        setFn(ref, value);
+      }
+      return ref;
+    }
+
+    trackId(id);
+    const name = resolveName(id);
+
+    if (value != null) {
+      registerCustomProperty(name, String(value), ':root');
+    }
+
+    return createInstanceRef(name);
+  }
+
+  return Object.assign(propertyFn, { declare: declareFn, set: setFn });
 }

@@ -576,7 +576,7 @@ function buildStylesRuntimeApi(
       prefix: classNaming.prefix,
     });
 
-  const property = createStylesPropertyFn(classNaming) as StylesPropertyFn;
+  const property = createStylesPropertyFn(classNaming);
   const scope = (opts: ScopeOptions, className: string, overrides: CSSProperties) =>
     createScope(classNaming, opts, className, overrides);
   const override = ((component: object, config: unknown, options?: OverrideOptions<string>) =>

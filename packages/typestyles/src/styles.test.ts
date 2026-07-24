@@ -552,6 +552,51 @@ describe('styles.property', () => {
     expect(css).toContain('initial-value: red');
     expect(css).toContain(':root { --property-brand-color: var(--theme-primary)');
   });
+
+  it('declare emits @property without :root value', () => {
+    const s = createStyles();
+    const hue = s.property.declare('accent-hue', { syntax: '<number>', inherits: false });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --property-accent-hue');
+    expect(css).not.toContain(':root { --property-accent-hue');
+    expect(hue.var).toBe('var(--property-accent-hue)');
+  });
+
+  it('set emits :root value for a declared ref', () => {
+    const s = createStyles();
+    const hue = s.property.declare('accent-hue', { syntax: '<number>' });
+    s.property.set(hue, '220');
+    flushSync();
+    expect(getRegisteredCss()).toContain(':root { --property-accent-hue: 220');
+  });
+
+  it('declare + set matches shorthand output', () => {
+    reset();
+    const a = createStyles();
+    const split = a.property.declare('overlay-opacity', { syntax: '<number>', inherits: false });
+    a.property.set(split, '0.5');
+
+    reset();
+    const b = createStyles();
+    const combined = b.property('overlay-opacity', {
+      value: '0.5',
+      syntax: '<number>',
+      inherits: false,
+    });
+
+    flushSync();
+    expect(getRegisteredCss()).toContain('@property --property-overlay-opacity');
+    expect(getRegisteredCss()).toContain('initial-value: 0.5');
+    expect(split.var).toBe(combined.var);
+  });
+
+  it('set throws when ref is from a different styles instance', () => {
+    const a = createStyles();
+    const b = createStyles();
+    const ref = a.property.declare('x', { syntax: '<number>' });
+    expect(() => b.property.set(ref, '1')).toThrow(/different styles instance/i);
+  });
 });
 
 describe('mode: template', () => {
