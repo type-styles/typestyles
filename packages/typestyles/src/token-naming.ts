@@ -1,4 +1,4 @@
-import { sanitizeClassSegment } from './class-naming';
+import { sanitizeClassSegment, scopedTokenNamespace } from './class-naming';
 
 export type TokenNameContext = {
   /** Raw `scopeId` from `createTokens`, trimmed; undefined when unscoped. */
@@ -15,9 +15,19 @@ export type TokenNameContext = {
 
 export type TokenNameTemplate = (ctx: TokenNameContext) => string;
 
+/** Default `--*` name for a scoped namespace + flattened path (no `nameTemplate`). */
+export function formatScopedTokenPropertyName(
+  scopeId: string | undefined,
+  namespace: string,
+  path: string,
+): string {
+  const ns = scopedTokenNamespace(scopeId, namespace);
+  if (!ns) return `--${path}`;
+  return `--${ns}-${path}`;
+}
+
 export function defaultTokenNameTemplate(ctx: TokenNameContext): string {
-  const ns = ctx.scopeId ? `${ctx.scope}-${ctx.namespace}` : ctx.namespace;
-  return `--${ns}-${ctx.path}`;
+  return formatScopedTokenPropertyName(ctx.scopeId, ctx.namespace, ctx.path);
 }
 
 export function buildTokenNameContext(

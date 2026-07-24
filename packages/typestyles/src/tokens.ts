@@ -23,6 +23,7 @@ import { scopedTokenNamespace } from './class-naming';
 import {
   buildTokenNameContext,
   createThemeTokenNaming,
+  formatScopedTokenPropertyName,
   resolveTokenName,
   type TokenNameTemplate,
   type ThemeTokenNaming,
@@ -100,6 +101,18 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
   /** Same `scopeId` passed to `createTokens`, if any. */
   readonly scopeId: string | undefined;
   create: {
+    <TSchema extends TokenSchema>(
+      values: InferValuesFromSchema<TSchema>,
+      options: {
+        decl: DeclaredTokenRef<TSchema, ''>;
+        layer?: string;
+        nameTemplate?: TokenNameTemplate;
+      },
+    ): CreatedTokenRef<TokenValues, ''>;
+    <T extends CreateTokenValues>(
+      values: T,
+      options?: { layer?: string; nameTemplate?: TokenNameTemplate },
+    ): CreatedTokenRef<T, ''>;
     <TSchema extends TokenSchema, N extends string>(
       namespace: N,
       values: InferValuesFromSchema<TSchema>,
@@ -124,11 +137,17 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
    * Declares a namespace schema, emits `@property` for `syntax` leaves, and returns a
    * typed reference proxy usable before `tokens.create()`.
    */
-  declare: <TSchema extends TokenSchema, N extends string>(
-    namespace: N,
-    schema: TSchema,
-    options?: { nameTemplate?: TokenNameTemplate },
-  ) => DeclaredTokenRef<TSchema, N>;
+  declare: {
+    <TSchema extends TokenSchema>(
+      schema: TSchema,
+      options?: { nameTemplate?: TokenNameTemplate },
+    ): DeclaredTokenRef<TSchema, ''>;
+    <TSchema extends TokenSchema, N extends string>(
+      namespace: N,
+      schema: TSchema,
+      options?: { nameTemplate?: TokenNameTemplate },
+    ): DeclaredTokenRef<TSchema, N>;
+  };
   createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
   when: typeof when;
@@ -371,15 +390,31 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     };
   }
 
-  function create<T extends CreateTokenValues, N extends string>(
-    namespace: N,
-    values: T,
-    options?: {
+  function create(
+    namespaceOrValues: string | CreateTokenValues,
+    valuesOrOptions?:
+      | CreateTokenValues
+      | {
+          layer?: string;
+          nameTemplate?: TokenNameTemplate;
+          decl?: DeclaredTokenRef<TokenSchema, string>;
+        },
+    optionsMaybe?: {
       layer?: string;
       nameTemplate?: TokenNameTemplate;
-      decl?: DeclaredTokenRef<TokenSchema, N>;
+      decl?: DeclaredTokenRef<TokenSchema, string>;
     },
-  ): CreatedTokenRef<T, N> {
+  ): CreatedTokenRef<CreateTokenValues, string> {
+    const hasNamespace = typeof namespaceOrValues === 'string';
+    const namespace = hasNamespace ? namespaceOrValues : '';
+    const values = (hasNamespace ? valuesOrOptions : namespaceOrValues) as CreateTokenValues;
+    const options = (hasNamespace ? optionsMaybe : valuesOrOptions) as
+      | {
+          layer?: string;
+          nameTemplate?: TokenNameTemplate;
+          decl?: DeclaredTokenRef<TokenSchema, string>;
+        }
+      | undefined;
     if (options?.layer != null && !themeLayerContext) {
       throw new Error(
         '[typestyles] `tokens.create(..., { layer })` requires `createTokens({ layers, tokenLayer })`.',
@@ -442,7 +477,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       const entries = flattenTokenEntries(mergedValues as TokenValues);
       flatEntries = entries.map(([path, value]) => ({ path, value }));
       for (const { path } of flatEntries) {
-        nameByPath.set(path, `--${cssNs}-${path}`);
+        nameByPath.set(path, formatScopedTokenPropertyName(scopeId, namespace, path));
       }
     } else {
       const entries = flattenTokenPaths(mergedValues as TokenValues);
@@ -515,8 +550,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     );
 
     const ref = createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as CreatedTokenRef<
-      T,
-      N
+      CreateTokenValues,
+      string
     >;
     attachTokenMeta(ref, namespace);
     attachTokenLeafValues(ref, leafValues);
@@ -568,11 +603,17 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as TokenRef<T>;
   }
 
-  function declare<TSchema extends TokenSchema, N extends string>(
-    namespace: N,
-    schema: TSchema,
-    options?: { nameTemplate?: TokenNameTemplate },
-  ): DeclaredTokenRef<TSchema, N> {
+  function declare(
+    namespaceOrSchema: string | TokenSchema,
+    schemaOrOptions?: TokenSchema | { nameTemplate?: TokenNameTemplate },
+    optionsMaybe?: { nameTemplate?: TokenNameTemplate },
+  ): DeclaredTokenRef<TokenSchema, string> {
+    const hasNamespace = typeof namespaceOrSchema === 'string';
+    const namespace = hasNamespace ? namespaceOrSchema : '';
+    const schema = (hasNamespace ? schemaOrOptions : namespaceOrSchema) as TokenSchema;
+    const options = (hasNamespace ? optionsMaybe : schemaOrOptions) as
+      | { nameTemplate?: TokenNameTemplate }
+      | undefined;
     const isCreated = registeredNamespaces.has(namespace);
     const createdTemplate = createdTokenTemplates.get(namespace);
 
@@ -652,8 +693,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     const syntaxLeaves = getSchemaSyntaxLeaves(mergedSchema as TokenSchema);
     const ref = createDeclaredTokenProxy(resolvePathName, '', syntaxLeaves) as DeclaredTokenRef<
-      TSchema,
-      N
+      TokenSchema,
+      string
     >;
     attachDeclaredMeta(ref, { namespace, schema: mergedSchema as TokenSchema });
     return ref;
