@@ -228,7 +228,7 @@ export function createComponentConfigContextPair(
     return createVarRefsProxy(refByPath, allPathKeys, '') as ComponentVarRefTree<T>;
   }
 
-  const ctx: ComponentConfigContext = { var: varFn, vars: varsFn };
+  const ctx = { var: varFn, vars: varsFn } as ComponentConfigContext;
 
   return {
     ctx,

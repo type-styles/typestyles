@@ -262,14 +262,30 @@ export type RegisteredPropertyRef = {
   valueOf(): string;
 };
 
-/** Options for `styles.property(id, options?)`. */
-export type RegisteredPropertyOptions = {
-  value?: string | number;
-  syntax?: string;
+/** `@property` registration metadata — never includes a runtime value. */
+export type PropertyRegistration = {
+  syntax: string;
   inherits?: boolean;
-  /** @see {@link TokenDescriptor.initial} */
   initial?: string | number;
 };
+
+/** Reference to a registered CSS custom property. */
+export type PropertyRef = RegisteredPropertyRef;
+
+/** Shorthand options for bundled declare + optional set. */
+export type PropertyOptions = PropertyRegistration & {
+  value?: string | number;
+};
+
+/** Callable `styles.property` with `declare` / `set` namespace methods. */
+export type StylesPropertyFn = {
+  (id: string, options?: PropertyOptions): PropertyRef;
+  declare(id: string, registration: PropertyRegistration): PropertyRef;
+  set(ref: PropertyRef, value: string | number): void;
+};
+
+/** @deprecated Use {@link PropertyOptions} */
+export type RegisteredPropertyOptions = PropertyOptions;
 
 type TokenRefLeaf<V> = V extends TokenDescriptor
   ? RegisteredPropertyRef
@@ -538,17 +554,8 @@ export type CSSVarRef = `var(--${string})` | `var(--${string}, ${string})`;
 // Dimensioned variant config (has `variants: { ... }`)
 // ---------------------------------------------------------------------------
 
-/**
- * Leaf shape for `ctx.vars({ … })` — mirrors typed tokens: `value` is the default (merged into `base`);
- * optional `syntax` / `inherits` register `@property` like typed design tokens.
- */
-export type ComponentVarDescriptor = {
-  value: string | number;
-  syntax?: string;
-  inherits?: boolean;
-  /** @see {@link TokenDescriptor.initial} */
-  initial?: string | number;
-};
+/** @deprecated Use {@link PropertyOptions} */
+export type ComponentVarDescriptor = PropertyOptions;
 
 /**
  * Nested map of component internal vars (same nesting as `tokens.create` / theme token trees).
@@ -589,9 +596,18 @@ export type ComponentVarRefTree<T> = {
     : ComponentVarRefTree<T[K]>;
 };
 
+/** Schema for `ctx.vars.declare` — same shape as token declare schemas. */
+export type ComponentVarSchema = TokenSchema;
+
 export type ComponentConfigContext = {
-  var: (id: string, options?: ComponentVarOptions) => ComponentInternalVarRef;
-  vars: <const T extends ComponentVarDefinitions>(definitions: T) => ComponentVarRefTree<T>;
+  var: {
+    (id: string, options?: PropertyOptions): PropertyRef;
+    declare(id: string, registration: PropertyRegistration): PropertyRef;
+  };
+  vars: {
+    <const T extends ComponentVarDefinitions>(definitions: T): ComponentVarRefTree<T>;
+    declare<const T extends ComponentVarSchema>(schema: T): ComponentVarRefTree<InferFromSchema<T>>;
+  };
 };
 
 /**
