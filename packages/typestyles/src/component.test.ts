@@ -849,4 +849,55 @@ describe('createComponent — function config & internal vars', () => {
     expect(css).toContain('--nestv-text-primary: #222');
     expect(css).toContain('color: var(--nestv-text-primary)');
   });
+
+  it('vars.declare registers @property without base defaults; values set in variants', () => {
+    const badge = createComponent(defaultClassNamingConfig, 'cb-declare', (c) => {
+      const v = c.vars.declare({
+        textColor: { syntax: '<color>', inherits: false },
+        borderWidth: true,
+      });
+      return {
+        base: {
+          [v.borderWidth.name]: '1px',
+          color: v.textColor.var,
+          borderStyle: 'solid',
+          borderWidth: v.borderWidth.var,
+        },
+        variants: {
+          tone: {
+            neutral: { [v.textColor.name]: '#333' },
+            danger: { [v.textColor.name]: '#900' },
+          },
+        },
+        defaultVariants: { tone: 'neutral' },
+      };
+    });
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --cb-declare-textcolor');
+    expect(css).not.toMatch(/\.cb-declare \{[^}]*--cb-declare-textcolor:\s*#/); // no default in base for textColor
+    expect(badge({ tone: 'danger' })).toContain('cb-declare--tone-danger');
+    expect(css).toContain('cb-declare--tone-danger');
+  });
+
+  it('var.declare registers @property without merging a base default', () => {
+    createComponent(defaultClassNamingConfig, 'cb-var-declare', (c) => {
+      const border = c.var.declare('border-color', { syntax: '<color>', inherits: false });
+      return {
+        base: { borderWidth: '1px', borderStyle: 'solid' },
+        variants: {
+          tone: {
+            hot: { [border.name]: 'red' },
+          },
+        },
+      };
+    });
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --cb-var-declare-border-color');
+    expect(css).not.toMatch(/\.cb-var-declare \{[^}]*--cb-var-declare-border-color: red/);
+    expect(css).toContain('cb-var-declare--tone-hot');
+  });
 });

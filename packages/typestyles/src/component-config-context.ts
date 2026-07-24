@@ -1,4 +1,10 @@
 import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
+import {
+  createRegisteredPropertyRef,
+  registerAtPropertyRule,
+  registerAtPropertySchema,
+} from './registered-property';
+import { flattenTokenSchema } from './token-schema';
 import type {
   ComponentConfigContext,
   ComponentInternalVarRef,
@@ -7,8 +13,10 @@ import type {
   ComponentVarNode,
   ComponentVarOptions,
   ComponentVarRefTree,
+  ComponentVarSchema,
+  InferFromSchema,
+  PropertyRegistration,
 } from './types';
-import { createRegisteredPropertyRef, registerAtPropertyRule } from './registered-property';
 
 function isVarDescriptor(o: unknown): o is ComponentVarDescriptor {
   return (
@@ -126,6 +134,22 @@ function createVarRefsProxy(
   return new Proxy({}, handler);
 }
 
+function declareVarSchema(
+  schema: ComponentVarSchema,
+  registerRef: (logicalPath: string) => ComponentInternalVarRef,
+): void {
+  for (const { path, leaf } of flattenTokenSchema(schema)) {
+    const ref = registerRef(path);
+    if (leaf !== true) {
+      registerAtPropertySchema(ref.name, {
+        syntax: leaf.syntax,
+        inherits: leaf.inherits,
+        initial: leaf.initial,
+      });
+    }
+  }
+}
+
 export function mergeComponentVarDefaultsInto(
   config: Record<string, unknown>,
   defaults: Record<string, string>,
@@ -156,21 +180,25 @@ export function createComponentConfigContextPair(
 
   const varBaseDefaults: Record<string, string> = {};
 
-  function registerVar(
-    logicalPath: string,
-    entry: { value: string; syntax?: string; inherits?: boolean; initial?: string | number },
-  ): ComponentInternalVarRef {
-    const safeId = sanitizeClassSegment(logicalPath);
+  function trackSeen(safeId: string, label: string): void {
     if (seen.has(safeId)) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(
-          `[typestyles] Duplicate internal var path "${logicalPath}" for component "${namespace}". ` +
+          `[typestyles] Duplicate ${label} for component "${namespace}". ` +
             `Declare each path once and reuse the returned ref.`,
         );
       }
     } else {
       seen.add(safeId);
     }
+  }
+
+  function registerVarValue(
+    logicalPath: string,
+    entry: { value: string; syntax?: string; inherits?: boolean; initial?: string | number },
+  ): ComponentInternalVarRef {
+    const safeId = sanitizeClassSegment(logicalPath);
+    trackSeen(safeId, `internal var path "${logicalPath}"`);
 
     const name = `--${ns}-${safeId}`;
     varBaseDefaults[name] = entry.value;
@@ -187,13 +215,21 @@ export function createComponentConfigContextPair(
     return createRegisteredPropertyRef(name);
   }
 
+  function declareVarFn(id: string, registration: PropertyRegistration): ComponentInternalVarRef {
+    const safePath = sanitizeClassSegment(id);
+    trackSeen(safePath, `internal var "${id}"`);
+    const name = `--${ns}-${safePath}`;
+    registerAtPropertySchema(name, registration);
+    return createRegisteredPropertyRef(name);
+  }
+
   function varFn(id: string, options?: ComponentVarOptions): ComponentInternalVarRef {
     const safePath = sanitizeClassSegment(id);
     const valueStr =
       options?.value !== undefined && options?.value !== null ? String(options.value) : undefined;
 
     if (valueStr !== undefined) {
-      return registerVar(safePath, {
+      return registerVarValue(safePath, {
         value: valueStr,
         syntax: options?.syntax,
         inherits: options?.inherits,
@@ -201,18 +237,8 @@ export function createComponentConfigContextPair(
       });
     }
 
+    trackSeen(safePath, `internal var "${id}"`);
     const name = `--${ns}-${safePath}`;
-    if (seen.has(safePath)) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(
-          `[typestyles] Duplicate internal var "${id}" for component "${namespace}". ` +
-            `Declare each id once and reuse the returned ref.`,
-        );
-      }
-    } else {
-      seen.add(safePath);
-    }
-
     return createRegisteredPropertyRef(name);
   }
 
@@ -222,13 +248,40 @@ export function createComponentConfigContextPair(
     const allPathKeys = collectPathKeys(entries);
 
     for (const e of entries) {
-      refByPath.set(e.path, registerVar(e.path, e));
+      refByPath.set(e.path, registerVarValue(e.path, e));
     }
 
     return createVarRefsProxy(refByPath, allPathKeys, '') as ComponentVarRefTree<T>;
   }
 
-  const ctx = { var: varFn, vars: varsFn } as ComponentConfigContext;
+  function varsDeclareFn<const T extends ComponentVarSchema>(
+    schema: T,
+  ): ComponentVarRefTree<InferFromSchema<T>> {
+    const refByPath = new Map<string, ComponentInternalVarRef>();
+    const allPathKeys = new Set<string>();
+
+    for (const { path } of flattenTokenSchema(schema)) {
+      for (const p of pathPrefixes(path)) allPathKeys.add(p);
+      const safeId = sanitizeClassSegment(path);
+      trackSeen(safeId, `internal var path "${path}"`);
+      const name = `--${ns}-${safeId}`;
+      refByPath.set(path, createRegisteredPropertyRef(name));
+    }
+
+    declareVarSchema(schema, (logicalPath) => {
+      const ref = refByPath.get(logicalPath);
+      if (!ref) throw new Error(`[typestyles] internal error: missing ref for "${logicalPath}"`);
+      return ref;
+    });
+
+    return createVarRefsProxy(refByPath, allPathKeys, '') as ComponentVarRefTree<
+      InferFromSchema<T>
+    >;
+  }
+
+  const varCallable = Object.assign(varFn, { declare: declareVarFn });
+  const varsCallable = Object.assign(varsFn, { declare: varsDeclareFn });
+  const ctx: ComponentConfigContext = { var: varCallable, vars: varsCallable };
 
   return {
     ctx,
