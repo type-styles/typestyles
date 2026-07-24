@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { container, createContainerRef } from './container';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { createStyles } from './styles';
 
 describe('container', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { content } from './css-content';
 
 describe('content', () => {

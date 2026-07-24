@@ -1,5 +1,5 @@
 import type { CSSProperties, FontFaceProps } from './types';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { insertRules } from './sheet';
 import type { CascadeLayersInput } from './layers';
 import {

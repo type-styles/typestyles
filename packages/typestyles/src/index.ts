@@ -36,7 +36,7 @@ export type { CreateTokensOptions, TokensApi } from './tokens';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
 export { resolveBreakpoints } from './breakpoints';
 export { getTokenLeafValues, getDeclaredNamespace } from './tokens';
-export type { SerializeStyleOptions } from './css';
+export type { SerializeStyleOptions } from './serialize-style';
 
 export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';
 
@@ -127,6 +127,9 @@ export type {
   ComponentConfigInput,
   ComponentInternalVarRef,
   RegisteredPropertyRef,
+  PropertyRegistration,
+  PropertyRef,
+  PropertyOptions,
   RegisteredPropertyOptions,
   ComponentReturn,
   ComponentAttrsReturn,

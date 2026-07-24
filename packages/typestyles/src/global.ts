@@ -1,5 +1,5 @@
 import type { CSSProperties, FontFaceProps, FontFaceSrc } from './types';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { insertRule, insertRules } from './sheet';
 import type { GlobalStyleTuple } from './global-style-tuple';
 import { parseGlobalStyleArgs } from './global-style-tuple';

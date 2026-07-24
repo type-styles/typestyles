@@ -1,5 +1,10 @@
 import type { CSSProperties } from './types';
-import { formatDeclaration, resolveNestedSelector, serializeStyle, type CSSRule } from './css';
+import {
+  formatDeclaration,
+  resolveNestedSelector,
+  serializeStyle,
+  type CSSRule,
+} from './serialize-style';
 import { expandResponsiveInProperties } from './breakpoints';
 import {
   buildComponentClassName,

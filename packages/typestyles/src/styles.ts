@@ -18,7 +18,7 @@ import type {
   MultiSlotReturn,
   StylesPropertyFn,
 } from './types';
-import { serializeStyle } from './css';
+import { serializeStyle } from './serialize-style';
 import { insertRules, invalidateClassNamespaceForDev } from './sheet';
 import type { CascadeLayersInput, CascadeLayersObjectInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';

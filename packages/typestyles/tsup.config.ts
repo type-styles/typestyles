@@ -7,6 +7,7 @@ export default defineConfig({
     'color-scale': 'src/color-scale-entry.ts',
     'token-scale': 'src/token-scale-entry.ts',
     globals: 'src/globals.ts',
+    css: 'src/css-entry.ts',
     server: 'src/server.ts',
     hmr: 'src/hmr.ts',
     build: 'src/build.ts',
