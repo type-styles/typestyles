@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.13.0
+
+### Minor Changes
+
+- [#155](https://github.com/type-styles/typestyles/pull/155) [`9865095`](https://github.com/type-styles/typestyles/commit/9865095a7cba8f9c24a1df11508c6ac7dc716ed0) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - `tokens.declare(namespace, schema)` accepts a schema object, emits `@property` for `syntax` leaves, and infers ref types from the input shape. `tokens.create()` accepts plain values only (no inline `TokenDescriptor`); pass `{ decl }` for typed partial fills with merge semantics across calls. Schema-less `declare()`, `declare<T>()`, and `LooseTokenRef` are removed.
+
 ## 0.12.0
 
 ### Minor Changes
