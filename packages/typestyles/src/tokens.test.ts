@@ -105,12 +105,17 @@ describe('tokens.create', () => {
     expect(tokens.nested.key).toBe('var(--test-nested-key)');
   });
 
-  it('returns RegisteredPropertyRef leaves and registers @property for descriptor tokens', () => {
+  it('returns RegisteredPropertyRef leaves and registers @property for declared schema tokens', () => {
     const api = createTokens();
-    const motion = api.create('motion', {
-      duration: { value: '200ms', syntax: '<time>', inherits: false },
-      easing: 'ease',
+    const motionDecl = api.declare('motion', {
+      duration: { syntax: '<time>', inherits: false },
+      easing: true,
     });
+    const motion = api.create(
+      'motion',
+      { duration: '200ms', easing: 'ease' },
+      { decl: motionDecl },
+    );
 
     expect(typeof motion.easing).toBe('string');
     expect(motion.easing).toBe('var(--motion-easing)');
@@ -129,21 +134,24 @@ describe('tokens.create', () => {
     expect(css).toContain('--motion-duration: 200ms');
     expect(css).toContain('@property --motion-duration');
     expect(css).toContain('syntax: "<time>"');
-    expect(css).toContain('initial-value: 200ms');
+    expect(css).toContain('initial-value: 0s');
   });
 
-  it('registers @property with automatic transparent placeholder for a declare-built color-mix descriptor', () => {
+  it('registers @property with automatic transparent placeholder for a declare-built color-mix value', () => {
     const api = createTokens();
-    const color = api.declare('color');
-
-    api.create('color', {
-      accent: { default: '#0066ff' },
-      accentSubtle: {
-        value: `color-mix(in oklch, ${color.accent.default} 24%, white)`,
-        syntax: '<color>',
-        inherits: false,
-      },
+    const color = api.declare('color', {
+      accent: { default: { syntax: '<color>', inherits: false } },
+      accentSubtle: { syntax: '<color>', inherits: false },
     });
+
+    api.create(
+      'color',
+      {
+        accent: { default: '#0066ff' },
+        accentSubtle: `color-mix(in oklch, ${color.accent.default} 24%, white)`,
+      },
+      { decl: color },
+    );
     flushSync();
 
     const css = getRegisteredCss();
@@ -154,17 +162,17 @@ describe('tokens.create', () => {
     );
   });
 
-  it('uses an explicit descriptor `initial` as the @property placeholder for dependent values', () => {
+  it('uses an explicit schema `initial` as the @property placeholder for dependent values', () => {
     const api = createTokens();
     const base = api.create('base', { accent: '#0066ff' });
-    api.create('derived', {
-      accentSubtle: {
-        value: `color-mix(in oklch, ${base.accent} 30%, white)`,
-        syntax: '<color>',
-        inherits: false,
-        initial: 'hotpink',
-      },
+    const derivedDecl = api.declare('derived', {
+      accentSubtle: { syntax: '<color>', inherits: false, initial: 'hotpink' },
     });
+    api.create(
+      'derived',
+      { accentSubtle: `color-mix(in oklch, ${base.accent} 30%, white)` },
+      { decl: derivedDecl },
+    );
     flushSync();
 
     const css = getRegisteredCss();
@@ -175,11 +183,12 @@ describe('tokens.create', () => {
     );
   });
 
-  it('exposes descriptor refs from tokens.use after create', () => {
+  it('exposes schema refs from tokens.use after create', () => {
     const api = createTokens();
-    api.create('color', {
-      accent: { value: '#0066ff', syntax: '<color>' },
+    const colorDecl = api.declare('color', {
+      accent: { syntax: '<color>', inherits: false },
     });
+    api.create('color', { accent: '#0066ff' }, { decl: colorDecl });
     flushSync();
 
     const used = api.use('color');
@@ -187,6 +196,15 @@ describe('tokens.create', () => {
       name: '--color-accent',
       var: 'var(--color-accent)',
     });
+  });
+
+  it('throws when create() uses a TokenDescriptor inline', () => {
+    const api = createTokens();
+    expect(() =>
+      api.create('color', {
+        accent: { value: '#0066ff', syntax: '<color>' },
+      }),
+    ).toThrow(/TokenDescriptor/);
   });
 
   describe('nameTemplate', () => {
@@ -244,13 +262,14 @@ describe('tokens.create', () => {
       expect(plain.primary).toBe('var(--color-primary)');
     });
 
-    it('registers @property on templated names for descriptor leaves', () => {
+    it('registers @property on templated names for declared schema leaves', () => {
       const api = createTokens();
-      api.create(
+      const motionDecl = api.declare(
         'motion',
-        { duration: { value: '200ms', syntax: '<time>' } },
+        { duration: { syntax: '<time>', inherits: false } },
         { nameTemplate: ({ path }) => `--motion-${path}` },
       );
+      api.create('motion', { duration: '200ms' }, { decl: motionDecl });
       flushSync();
 
       const css = getRegisteredCss();
@@ -370,35 +389,117 @@ describe('tokens.declare', () => {
     reset();
   });
 
+  it('declare(schema) emits @property for syntax leaves immediately', () => {
+    const api = createTokens();
+    api.declare('color', {
+      accent: { default: { syntax: '<color>', inherits: false } },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --color-accent-default');
+    expect(css).toContain('initial-value: transparent');
+  });
+
+  it('declare deep-merges schemas across calls', () => {
+    const api = createTokens();
+    api.declare('color', { accent: { default: { syntax: '<color>', inherits: false } } });
+    api.declare('color', {
+      accent: { subtle: { syntax: '<color>', inherits: false } },
+      meta: { version: true },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --color-accent-default');
+    expect(css).toContain('@property --color-accent-subtle');
+  });
+
+  it('declare throws in dev when re-declaring a path with conflicting schema', () => {
+    const api = createTokens();
+    api.declare('color', { accent: { default: { syntax: '<color>', inherits: false } } });
+    expect(() => api.declare('color', { accent: { default: true } })).toThrow(
+      /conflicting schema/i,
+    );
+  });
+
+  it('declare returns a typed ref that coerces to var()', () => {
+    const api = createTokens();
+    const color = api.declare('color', {
+      accent: { default: { syntax: '<color>', inherits: false } },
+    });
+    expect(`${color.accent.default}`).toBe('var(--color-accent-default)');
+    expectTypeOf(color.accent.default).toMatchTypeOf<{ name: string; var: string }>();
+  });
+
   it('resolves nested paths to var() strings via template-literal coercion', () => {
     const api = createTokens();
-    const color = api.declare('color');
+    const color = api.declare('color', {
+      accent: { default: true },
+      background: { app: true },
+    });
     expect(`${color.accent.default}`).toBe('var(--color-accent-default)');
     expect(`${color.background.app}`).toBe('var(--color-background-app)');
   });
 
   it('resolves arbitrarily deep paths', () => {
     const api = createTokens();
-    const color = api.declare('color');
+    const color = api.declare('color', { a: { b: { c: { d: true } } } });
     expect(`${color.a.b.c.d}`).toBe('var(--color-a-b-c-d)');
   });
 
   it('coerces via String() and valueOf, not just template literals', () => {
     const api = createTokens();
-    const color = api.declare('color');
+    const color = api.declare('color', { accent: { default: true } });
     expect(String(color.accent.default)).toBe('var(--color-accent-default)');
     expect(color.accent.default.valueOf()).toBe('var(--color-accent-default)');
   });
 
   it('respects scopeId', () => {
     const api = createTokens({ scopeId: 'acme' });
-    const color = api.declare('color');
+    const color = api.declare('color', { accent: true });
     expect(`${color.accent}`).toBe('var(--acme-color-accent)');
+  });
+
+  it('create merges values across calls for the same namespace', () => {
+    const api = createTokens();
+    const color = api.declare('color', {
+      accent: {
+        default: { syntax: '<color>', inherits: false },
+        subtle: { syntax: '<color>', inherits: false },
+      },
+    });
+
+    api.create('color', { accent: { default: '#0066ff' } }, { decl: color });
+    api.create('color', { accent: { subtle: '#aabbcc' } }, { decl: color });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(css).toContain('--color-accent-default: #0066ff');
+    expect(css).toContain('--color-accent-subtle: #aabbcc');
+  });
+
+  it('create throws in dev when a value path is not in the declared schema', () => {
+    const api = createTokens();
+    const color = api.declare('color', {
+      accent: { default: { syntax: '<color>', inherits: false } },
+    });
+    expect(() => api.create('color', { bogus: 'x' }, { decl: color })).toThrow(
+      /not in the declared schema/i,
+    );
+  });
+
+  it('create throws in dev when decl namespace does not match', () => {
+    const api = createTokens();
+    const color = api.declare('color', {
+      accent: { default: { syntax: '<color>', inherits: false } },
+    });
+    expect(() => api.create('spacing', { sm: '8px' }, { decl: color })).toThrow(/decl handle for/i);
   });
 
   it('produces names matching a later tokens.create call in the same namespace', () => {
     const api = createTokens();
-    const color = api.declare('color');
+    const color = api.declare('color', {
+      accent: { default: true, subtle: true },
+    });
     const built = api.create('color', {
       accent: {
         default: '#0066ff',
@@ -417,7 +518,7 @@ describe('tokens.declare', () => {
   it('reuses the nameTemplate declared earlier when create() omits its own', () => {
     const api = createTokens();
     const template = ({ path }: { path: string }) => `--ds-color-${path}`;
-    const color = api.declare('color', { nameTemplate: template });
+    const color = api.declare('color', { accent: true }, { nameTemplate: template });
     expect(`${color.accent}`).toBe('var(--ds-color-accent)');
 
     const built = api.create('color', { accent: '#0066ff' });
@@ -426,7 +527,7 @@ describe('tokens.declare', () => {
 
   it('throws in dev mode when create() passes a different nameTemplate than declare() used', () => {
     const api = createTokens();
-    api.declare('color', { nameTemplate: ({ path }) => `--a-${path}` });
+    api.declare('color', { accent: true }, { nameTemplate: ({ path }) => `--a-${path}` });
 
     expect(() =>
       api.create('color', { accent: '#0066ff' }, { nameTemplate: ({ path }) => `--b-${path}` }),
@@ -436,7 +537,7 @@ describe('tokens.declare', () => {
   it('does not throw when create() passes the same nameTemplate reference declare() used', () => {
     const api = createTokens();
     const template = ({ path }: { path: string }) => `--ds-color-${path}`;
-    api.declare('color', { nameTemplate: template });
+    api.declare('color', { accent: true }, { nameTemplate: template });
 
     expect(() =>
       api.create('color', { accent: '#0066ff' }, { nameTemplate: template }),
@@ -445,7 +546,11 @@ describe('tokens.declare', () => {
 
   it('supports the Var UI colorRefShape pattern: multiple self-referencing derived tokens in one create() call', () => {
     const api = createTokens({ scopeId: 'acme' });
-    const color = api.declare('color');
+    const color = api.declare('color', {
+      background: { app: true },
+      accent: { default: true, subtle: true },
+      danger: { default: true, subtle: true },
+    });
 
     const built = api.create('color', {
       background: { app: '#0a0a0a' },
@@ -474,15 +579,12 @@ describe('tokens.declare', () => {
   it('supports two namespaces referencing each other without a real import cycle', () => {
     const api = createTokens();
 
-    // Simulates module A: declares what it needs from "colorB" before "colorB" exists.
-    const colorBRef = api.declare('colorB');
+    const colorBRef = api.declare('colorB', { accent: true });
     const colorA = api.create('colorA', {
       accent: `color-mix(in oklch, ${colorBRef.accent} 50%, black)`,
     });
 
-    // Simulates module B: declares what it needs from "colorA" (already created above,
-    // but declare() doesn't require that — it would work in either creation order).
-    const colorARef = api.declare('colorA');
+    const colorARef = api.declare('colorA', { accent: true });
     const colorB = api.create('colorB', {
       accent: `color-mix(in oklch, ${colorARef.accent} 50%, white)`,
     });
@@ -499,7 +601,7 @@ describe('tokens.declare', () => {
 
   it('throws in dev mode when create() introduces an explicit nameTemplate after declare() used the default', () => {
     const api = createTokens();
-    const color = api.declare('color');
+    const color = api.declare('color', { accent: true });
     expect(`${color.accent}`).toBe('var(--color-accent)');
 
     expect(() =>
@@ -515,18 +617,18 @@ describe('tokens.declare', () => {
     const api = createTokens();
     api.create('color', { accent: '#0066ff' }, { nameTemplate: ({ path }) => `--a-${path}` });
 
-    expect(() => api.declare('color', { nameTemplate: ({ path }) => `--b-${path}` })).toThrow(
-      /different nameTemplate/,
-    );
+    expect(() =>
+      api.declare('color', { accent: true }, { nameTemplate: ({ path }) => `--b-${path}` }),
+    ).toThrow(/different nameTemplate/);
   });
 
   it('throws in dev mode when declare() is called twice with different nameTemplates before create()', () => {
     const api = createTokens();
-    api.declare('color', { nameTemplate: ({ path }) => `--a-${path}` });
+    api.declare('color', { accent: true }, { nameTemplate: ({ path }) => `--a-${path}` });
 
-    expect(() => api.declare('color', { nameTemplate: ({ path }) => `--b-${path}` })).toThrow(
-      /different nameTemplate.*previous tokens\.declare/,
-    );
+    expect(() =>
+      api.declare('color', { accent: true }, { nameTemplate: ({ path }) => `--b-${path}` }),
+    ).toThrow(/different nameTemplate.*previous tokens\.declare/);
   });
 
   it('declare() after create() picks up the already-created template without repeating nameTemplate', () => {
@@ -537,16 +639,8 @@ describe('tokens.declare', () => {
       { nameTemplate: ({ path }) => `--ds-color-${path}` },
     );
 
-    const color = api.declare('color');
+    const color = api.declare('color', { accent: true });
     expect(`${color.accent}`).toBe('var(--ds-color-accent)');
-  });
-
-  it('supports the typed declare<T>() overload', () => {
-    type ColorShape = { accent: { default: string; subtle: string } };
-    const api = createTokens();
-    const color = api.declare<ColorShape>('color');
-    expectTypeOf(color.accent.default).toBeString();
-    expect(`${color.accent.default}`).toBe('var(--color-accent-default)');
   });
 });
 

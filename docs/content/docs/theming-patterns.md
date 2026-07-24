@@ -787,19 +787,28 @@ const card = styles.class('card', {
 });
 ```
 
-**Tokens whose value references another token stay typed too.** `@property`'s
-`initial-value` must be computationally independent (no `var()`/`env()`) per
-spec, but that requirement is only about the `@property` rule's fallback
-default — the real value still reaches the cascade through the ordinary
-`:root { --name: value }` declaration `tokens.create` always emits. So a
-derived token like ``accentSubtle: { value: `color-mix(in oklch, ${accent} 24%, white)`, syntax: '<color>' }``
-still gets a real, typed `@property` registration: TypeStyles picks a
-syntax-appropriate placeholder (`transparent` for `<color>`, `0` for
-`<number>`, `0px` for `<length>`, and so on) as the fallback `initial-value`,
-while `:root` carries the actual `color-mix()` result. Pass an explicit
-`initial` on the descriptor (`{ value, syntax, initial: 'hotpink' }`) to
-override the placeholder, or to type a syntax the built-in table doesn't
-cover.
+**Tokens whose value references another token stay typed too.** Declare the
+schema with `tokens.declare`, then pass plain values to `tokens.create`. For
+`syntax` leaves, `@property` is emitted at declare time with a
+syntax-appropriate placeholder `initial-value` (`transparent` for `<color>`,
+`0` for `<number>`, and so on), while `:root` carries the real value — including
+`color-mix()` expressions built from forward refs:
+
+```ts
+const color = tokens.declare('color', {
+  accent: { default: { syntax: '<color>', inherits: false } },
+  accentSubtle: { syntax: '<color>', inherits: false, initial: 'hotpink' },
+});
+
+tokens.create(
+  'color',
+  {
+    accent: { default: '#0066ff' },
+    accentSubtle: `color-mix(in oklch, ${color.accent.default} 24%, white)`,
+  },
+  { decl: color },
+);
+```
 
 Toggling `dark.className` now smoothly rotates the gradient across the theme switch — the browser tweens `--brand-angle` (`brand.angle.name`) from `20deg` to `260deg` frame by frame, then the `conic-gradient` re-renders each step, because `@property` told it `--brand-angle` is an `<angle>`. Without the registered `syntax`, the same class swap would snap the gradient to its new angle with no animation at all.
 

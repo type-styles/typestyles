@@ -35,7 +35,7 @@ export type {
 export type { CreateTokensOptions, TokensApi } from './tokens';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
 export { resolveBreakpoints } from './breakpoints';
-export { getTokenLeafValues } from './tokens';
+export { getTokenLeafValues, getDeclaredNamespace } from './tokens';
 export type { SerializeStyleOptions } from './css';
 
 export type { CascadeLayersInput, CascadeLayersObjectInput, ResolvedCascadeLayers } from './layers';
@@ -167,7 +167,12 @@ export type {
   ThemeConfig,
   ThemeSurface,
   DeepPartialTokenValues,
-  LooseTokenRef,
+  TokenSchema,
+  TokenSchemaLeaf,
+  CreateTokenValues,
+  DeclaredTokenRef,
+  InferFromSchema,
+  InferValuesFromSchema,
 } from './types';
 
 export { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';

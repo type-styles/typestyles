@@ -99,6 +99,37 @@ export type TokenDescriptor = {
   initial?: string | number;
 };
 
+export type TokenSchemaLeaf =
+  | true
+  | { syntax: string; inherits?: boolean; initial?: string | number };
+
+export type TokenSchema = TokenSchemaLeaf | { [key: string]: TokenSchema };
+
+/** Plain token values accepted by `tokens.create()` (no inline descriptors). */
+export type CreateTokenValues = string | number | { [key: string]: CreateTokenValues };
+
+export type InferFromSchema<S> = S extends { syntax: string }
+  ? RegisteredPropertyRef
+  : S extends true
+    ? string
+    : S extends Record<string, unknown>
+      ? { readonly [K in keyof S]: InferFromSchema<S[K]> }
+      : never;
+
+export type InferValuesFromSchema<S> = S extends true
+  ? string | number
+  : S extends { syntax: string }
+    ? string | number
+    : S extends Record<string, unknown>
+      ? { [K in keyof S]?: InferValuesFromSchema<S[K]> }
+      : never;
+
+declare const DeclaredBrand: unique symbol;
+
+export type DeclaredTokenRef<TSchema, N extends string> = InferFromSchema<TSchema> & {
+  readonly [DeclaredBrand]: { namespace: N; schema: TSchema };
+};
+
 /**
  * A token value can be a string/number, a typed descriptor leaf, or a nested object.
  * Supports arbitrarily deep nesting for hierarchical token structures.
@@ -502,18 +533,6 @@ export type ComponentSelections<V extends VariantDimensions> = {
  * A CSS custom property reference as a `var(--…)` value (tokens, `createVar()`, component internal vars).
  */
 export type CSSVarRef = `var(--${string})` | `var(--${string}, ${string})`;
-
-/**
- * Lazy `var(--…)` reference for `tokens.declare()`. Any property path, at any
- * depth, resolves to a `var(--…)` string on coercion (template literal,
- * `String()`, `valueOf()`) — there is no compile-time or dev-time validation
- * that a given path will actually be created, since `declare()` runs before
- * the namespace's shape exists. Pass an explicit generic to `declare<T>()`
- * for a fully-typed `TokenRef<T>` instead.
- */
-export type LooseTokenRef = CSSVarRef & {
-  readonly [key: string]: LooseTokenRef;
-};
 
 // ---------------------------------------------------------------------------
 // Dimensioned variant config (has `variants: { ... }`)

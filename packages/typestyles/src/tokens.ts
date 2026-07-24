@@ -6,10 +6,19 @@ import type {
   ThemeConfig,
   ThemeSurface,
   ThemeOverrides,
-  TokenDescriptor,
-  LooseTokenRef,
+  TokenSchema,
+  DeclaredTokenRef,
+  CreateTokenValues,
+  InferValuesFromSchema,
+  TokenSchemaLeaf,
 } from './types';
 import { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
+import {
+  flattenTokenSchema,
+  getSchemaSyntaxLeaves,
+  mergeTokenTrees,
+  tokenSchemaLeavesEqual,
+} from './token-schema';
 import { scopedTokenNamespace } from './class-naming';
 import {
   buildTokenNameContext,
@@ -18,17 +27,26 @@ import {
   type TokenNameTemplate,
   type ThemeTokenNaming,
 } from './token-naming';
-import { insertRule, insertRules } from './sheet';
-import { createRegisteredPropertyRef, registerAtPropertyRule } from './registered-property';
+import { insertRule, insertRules, invalidateKeys } from './sheet';
+import { createRegisteredPropertyRef, registerAtPropertySchema } from './registered-property';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
 import type { CascadeLayersInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
+const declaredMetaByRef = new WeakMap<object, { namespace: string; schema: TokenSchema }>();
 
 function attachTokenMeta(ref: object, namespace: string): void {
   tokenMetaByRef.set(ref, { namespace });
+}
+
+function attachDeclaredMeta(ref: object, meta: { namespace: string; schema: TokenSchema }): void {
+  declaredMetaByRef.set(ref, meta);
+}
+
+export function getDeclaredNamespace(ref: object): string | undefined {
+  return declaredMetaByRef.get(ref)?.namespace;
 }
 
 function attachTokenLeafValues(ref: object, leafValues: Record<string, string>): void {
@@ -80,29 +98,36 @@ export type CreateTokensOptions = {
 export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
   /** Same `scopeId` passed to `createTokens`, if any. */
   readonly scopeId: string | undefined;
-  create: <T extends TokenValues, N extends string>(
-    namespace: N,
-    values: T,
-    options?: { layer?: string; nameTemplate?: TokenNameTemplate },
-  ) => CreatedTokenRef<T, N>;
+  create: {
+    <TSchema extends TokenSchema, N extends string>(
+      namespace: N,
+      values: InferValuesFromSchema<TSchema>,
+      options: {
+        decl: DeclaredTokenRef<TSchema, N>;
+        layer?: string;
+        nameTemplate?: TokenNameTemplate;
+      },
+    ): CreatedTokenRef<TokenValues, N>;
+    <T extends CreateTokenValues, N extends string>(
+      namespace: N,
+      values: T,
+      options?: { layer?: string; nameTemplate?: TokenNameTemplate },
+    ): CreatedTokenRef<T, N>;
+  };
   use: {
     <T extends TokenValues, N extends string>(ref: CreatedTokenRef<T, N>): TokenRef<T>;
     <N extends keyof R & string>(namespace: N): TokenRef<R[N]>;
     <T extends TokenValues = TokenValues>(namespace: string): TokenRef<T>;
   };
   /**
-   * Reserves `namespace`'s naming and returns a lazy `var(--…)` reference proxy
-   * usable **before** `tokens.create(namespace, …)` runs — for referencing a
-   * sibling token within the same `create()` call, or a namespace declared in
-   * another module without importing its `create()` output. See {@link LooseTokenRef}.
+   * Declares a namespace schema, emits `@property` for `syntax` leaves, and returns a
+   * typed reference proxy usable before `tokens.create()`.
    */
-  declare: {
-    (namespace: string, options?: { nameTemplate?: TokenNameTemplate }): LooseTokenRef;
-    <T extends TokenValues>(
-      namespace: string,
-      options?: { nameTemplate?: TokenNameTemplate },
-    ): TokenRef<T>;
-  };
+  declare: <TSchema extends TokenSchema, N extends string>(
+    namespace: N,
+    schema: TSchema,
+    options?: { nameTemplate?: TokenNameTemplate },
+  ) => DeclaredTokenRef<TSchema, N>;
   createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
   when: typeof when;
@@ -113,81 +138,37 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
  * Registry tracking which token namespaces have been created per instance,
  * so `use()` can provide warnings in development.
  */
-function getAllKeys(obj: TokenValues, prefix = ''): Set<string> {
-  const keys = new Set<string>();
-
-  if (obj === null || obj === undefined) return keys;
-
-  if (typeof obj === 'string' || typeof obj === 'number') {
-    if (prefix) keys.add(prefix);
-    return keys;
-  }
-
-  if (isTokenDescriptor(obj)) {
-    if (prefix) keys.add(prefix);
-    return keys;
-  }
-
-  for (const [key, value] of Object.entries(obj)) {
-    const fullKey = prefix ? `${prefix}-${key}` : key;
-
-    if (typeof value !== 'object' || value === null) {
-      keys.add(fullKey);
-    } else if (isTokenDescriptor(value)) {
-      keys.add(fullKey);
-    } else {
-      keys.add(fullKey);
-      const nestedKeys = getAllKeys(value as TokenValues, fullKey);
-      nestedKeys.forEach((k) => keys.add(k));
-    }
-  }
-
-  return keys;
+function mergeCreateValues(
+  base: CreateTokenValues | undefined,
+  chunk: CreateTokenValues,
+): CreateTokenValues {
+  if (base === undefined) return chunk;
+  if (typeof base === 'string' || typeof base === 'number') return chunk;
+  if (typeof chunk === 'string' || typeof chunk === 'number') return chunk;
+  return mergeTokenTrees(
+    base as Record<string, unknown>,
+    chunk as Record<string, unknown>,
+  ) as CreateTokenValues;
 }
 
-function collectDescriptorMeta(
-  obj: TokenValues,
-  prefix = '',
-): Map<string, Pick<TokenDescriptor, 'syntax' | 'inherits' | 'initial'> & { value: string }> {
-  const meta = new Map<
-    string,
-    Pick<TokenDescriptor, 'syntax' | 'inherits' | 'initial'> & { value: string }
-  >();
-
-  if (obj === null || obj === undefined) return meta;
-
-  if (isTokenDescriptor(obj)) {
-    if (prefix) {
-      meta.set(prefix, {
-        value: String(obj.value),
-        syntax: obj.syntax,
-        inherits: obj.inherits,
-        initial: obj.initial,
-      });
-    }
-    return meta;
+function collectAllKeysFromValues(values: CreateTokenValues, prefix = ''): Set<string> {
+  const keys = new Set<string>();
+  if (typeof values === 'string' || typeof values === 'number') {
+    if (prefix) keys.add(prefix);
+    return keys;
   }
-
-  if (typeof obj !== 'object') return meta;
-
-  for (const [key, value] of Object.entries(obj)) {
+  for (const [key, value] of Object.entries(values)) {
     const fullKey = prefix ? `${prefix}-${key}` : key;
-
-    if (isTokenDescriptor(value)) {
-      meta.set(fullKey, {
-        value: String(value.value),
-        syntax: value.syntax,
-        inherits: value.inherits,
-        initial: value.initial,
-      });
-    } else if (typeof value === 'object' && value !== null) {
-      for (const [path, entry] of collectDescriptorMeta(value as TokenValues, fullKey)) {
-        meta.set(path, entry);
+    if (typeof value === 'string' || typeof value === 'number') {
+      keys.add(fullKey);
+    } else if (value !== null && typeof value === 'object') {
+      keys.add(fullKey);
+      for (const nested of collectAllKeysFromValues(value as CreateTokenValues, fullKey)) {
+        keys.add(nested);
       }
     }
   }
-
-  return meta;
+  return keys;
 }
 
 function createTokenProxy(
@@ -260,15 +241,20 @@ function createTokenProxy(
 }
 
 /**
- * Builds a proxy for `tokens.declare()`: unlike {@link createTokenProxy}, it
- * has no known key set (the namespace hasn't been created yet), so it never
- * collapses to a leaf value on its own — every property access continues the
- * accumulated path as another proxy, at any depth. `toString`/`valueOf` are
- * the only exit: they resolve the accumulated path to a `var(--…)` string via
- * `resolvePathName`, the same resolver `create()`/`use()` use.
+ * Builds a proxy for `tokens.declare()`: continues path accumulation at any depth;
+ * `toString`/`valueOf` resolve syntax leaves to {@link RegisteredPropertyRef}.
  */
-function createLooseTokenProxy(resolvePathName: (path: string) => string, prefix: string): object {
-  const makeToken = (p: string) => `var(${resolvePathName(p)})`;
+function createDeclaredTokenProxy(
+  resolvePathName: (path: string) => string,
+  prefix: string,
+  syntaxLeaves: Set<string>,
+): object {
+  const leafString = (p: string) => {
+    if (syntaxLeaves.has(p)) {
+      return String(createRegisteredPropertyRef(resolvePathName(p)));
+    }
+    return `var(${resolvePathName(p)})`;
+  };
 
   const handler: ProxyHandler<object> = {
     get(_target, prop: string | symbol): unknown {
@@ -276,7 +262,7 @@ function createLooseTokenProxy(resolvePathName: (path: string) => string, prefix
         return undefined;
       }
       if (prop === 'toString' || prop === 'valueOf') {
-        return () => makeToken(prefix);
+        return () => leafString(prefix);
       }
       if (prop === 'constructor') {
         return Object;
@@ -289,7 +275,10 @@ function createLooseTokenProxy(resolvePathName: (path: string) => string, prefix
       }
 
       const newPrefix = prefix ? `${prefix}-${prop}` : prop;
-      return createLooseTokenProxy(resolvePathName, newPrefix);
+      if (syntaxLeaves.has(newPrefix)) {
+        return createRegisteredPropertyRef(resolvePathName(newPrefix));
+      }
+      return createDeclaredTokenProxy(resolvePathName, newPrefix, syntaxLeaves);
     },
     has(_target, _prop) {
       return true;
@@ -353,6 +342,9 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const createdTokenNameByPath = new Map<string, Map<string, string>>();
   /** `nameTemplate` recorded by `tokens.declare()`, checked for agreement when `create()` later runs. */
   const declaredNamespaceTemplates = new Map<string, TokenNameTemplate | undefined>();
+  const namespaceSchemas = new Map<string, TokenSchema>();
+  const declaredSchemaLeaves = new Map<string, Map<string, TokenSchemaLeaf>>();
+  const namespaceValueTrees = new Map<string, CreateTokenValues>();
   const instanceDefaultTemplate = options.nameTemplate;
   let customNamingActive = Boolean(instanceDefaultTemplate);
 
@@ -378,15 +370,29 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     };
   }
 
-  function create<T extends TokenValues, N extends string>(
+  function create<T extends CreateTokenValues, N extends string>(
     namespace: N,
     values: T,
-    options?: { layer?: string; nameTemplate?: TokenNameTemplate },
+    options?: {
+      layer?: string;
+      nameTemplate?: TokenNameTemplate;
+      decl?: DeclaredTokenRef<TokenSchema, N>;
+    },
   ): CreatedTokenRef<T, N> {
     if (options?.layer != null && !themeLayerContext) {
       throw new Error(
         '[typestyles] `tokens.create(..., { layer })` requires `createTokens({ layers, tokenLayer })`.',
       );
+    }
+
+    if (process.env.NODE_ENV !== 'production' && options?.decl) {
+      const declNamespace = getDeclaredNamespace(options.decl);
+      if (declNamespace !== namespace) {
+        throw new Error(
+          `[typestyles] tokens.create('${namespace}', ...) was passed a decl handle for ` +
+            `'${declNamespace}' — namespace strings must match.`,
+        );
+      }
     }
 
     const hasDeclared = declaredNamespaceTemplates.has(namespace);
@@ -404,7 +410,24 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       );
     }
 
+    if (process.env.NODE_ENV !== 'production') {
+      const schemaLeaves = declaredSchemaLeaves.get(namespace);
+      if (schemaLeaves) {
+        for (const [path] of flattenTokenEntries(values as TokenValues)) {
+          if (!schemaLeaves.has(path)) {
+            throw new Error(
+              `[typestyles] tokens.create('${namespace}', ...) path "${path}" is not in the declared schema.`,
+            );
+          }
+        }
+      }
+      assertPlainCreateValues(values);
+    }
+
     registeredNamespaces.add(namespace);
+
+    const mergedValues = mergeCreateValues(namespaceValueTrees.get(namespace), values);
+    namespaceValueTrees.set(namespace, mergedValues);
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
     const effectiveTemplate =
@@ -415,13 +438,13 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     const nameByPath = new Map<string, string>();
 
     if (effectiveTemplate === undefined) {
-      const flatEntries = flattenTokenEntries(values);
+      const flatEntries = flattenTokenEntries(mergedValues as TokenValues);
       for (const [path] of flatEntries) {
         nameByPath.set(path, `--${cssNs}-${path}`);
       }
       declarations = flatEntries.map(([key, value]) => `--${cssNs}-${key}: ${value}`).join('; ');
     } else {
-      const flatEntries = flattenTokenPaths(values);
+      const flatEntries = flattenTokenPaths(mergedValues as TokenValues);
       const seenNames = new Map<string, string>();
 
       for (const { path, segments } of flatEntries) {
@@ -460,34 +483,35 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       const layer = options?.layer ?? themeLayerContext.layer;
       assertOwnLayer(themeLayerContext.stack, layer, 'tokens.create');
       const key = `tokens:${cssNs}@${layer}`;
+      invalidateKeys([key], []);
       insertRules(applyLayerToRules([{ key, css }], layer, themeLayerContext.stack));
     } else {
-      insertRule(`tokens:${cssNs}`, css);
+      const key = `tokens:${cssNs}`;
+      invalidateKeys([key], []);
+      insertRule(key, css);
     }
 
-    const allKeys = getAllKeys(values);
-    const descriptorMeta = collectDescriptorMeta(values);
-    const descriptorLeaves = new Set(descriptorMeta.keys());
+    const mergedSchema = namespaceSchemas.get(namespace);
+    const allKeys = collectAllKeysFromValues(mergedValues);
+    if (mergedSchema) {
+      for (const { path } of flattenTokenSchema(mergedSchema)) {
+        allKeys.add(path);
+      }
+    }
+
+    const descriptorLeaves = mergedSchema ? getSchemaSyntaxLeaves(mergedSchema) : new Set<string>();
+
     createdTokenKeys.set(namespace, allKeys);
     createdDescriptorLeaves.set(namespace, descriptorLeaves);
     createdTokenTemplates.set(namespace, effectiveTemplate);
     createdTokenNameByPath.set(namespace, nameByPath);
 
-    for (const [path, entry] of descriptorMeta) {
-      const propName = nameByPath.get(path);
-      if (propName !== undefined && entry.syntax != null) {
-        registerAtPropertyRule(propName, {
-          value: entry.value,
-          syntax: entry.syntax,
-          inherits: entry.inherits,
-          initial: entry.initial,
-        });
-      }
-    }
-
     const resolvePathName = buildResolvePathName(namespace, effectiveTemplate, nameByPath);
     const leafValues = Object.fromEntries(
-      flattenTokenEntries(values).map(([path, leafValue]) => [path, leafValue]),
+      flattenTokenEntries(mergedValues as TokenValues).map(([path, leafValue]) => [
+        path,
+        leafValue,
+      ]),
     );
 
     const ref = createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as CreatedTokenRef<
@@ -497,6 +521,23 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     attachTokenMeta(ref, namespace);
     attachTokenLeafValues(ref, leafValues);
     return ref;
+  }
+
+  function assertPlainCreateValues(obj: CreateTokenValues, path = ''): void {
+    if (typeof obj === 'string' || typeof obj === 'number') return;
+
+    for (const [key, value] of Object.entries(obj)) {
+      const fullKey = path ? `${path}-${key}` : key;
+      if (isTokenDescriptor(value)) {
+        throw new Error(
+          `[typestyles] tokens.create(...) path "${fullKey}" uses a TokenDescriptor — ` +
+            `move syntax to tokens.declare() schema instead.`,
+        );
+      }
+      if (value !== null && typeof value === 'object') {
+        assertPlainCreateValues(value as CreateTokenValues, fullKey);
+      }
+    }
   }
 
   function use<T extends TokenValues, N extends string>(
@@ -527,10 +568,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as TokenRef<T>;
   }
 
-  function declare(
-    namespace: string,
+  function declare<TSchema extends TokenSchema, N extends string>(
+    namespace: N,
+    schema: TSchema,
     options?: { nameTemplate?: TokenNameTemplate },
-  ): LooseTokenRef {
+  ): DeclaredTokenRef<TSchema, N> {
     const isCreated = registeredNamespaces.has(namespace);
     const createdTemplate = createdTokenTemplates.get(namespace);
 
@@ -569,15 +611,57 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     declaredNamespaceTemplates.set(namespace, effectiveTemplate);
 
+    const priorSchema = namespaceSchemas.get(namespace);
+    const mergedSchema = priorSchema
+      ? mergeTokenTrees(priorSchema as Record<string, unknown>, schema as Record<string, unknown>)
+      : schema;
+    namespaceSchemas.set(namespace, mergedSchema as TokenSchema);
+
+    const incoming = flattenTokenSchema(schema);
+    const leafMap = declaredSchemaLeaves.get(namespace) ?? new Map<string, TokenSchemaLeaf>();
     const nameByPath = createdTokenNameByPath.get(namespace) ?? new Map<string, string>();
     const resolvePathName = buildResolvePathName(namespace, effectiveTemplate, nameByPath);
 
-    return createLooseTokenProxy(resolvePathName, '') as LooseTokenRef;
+    for (const { path, leaf } of incoming) {
+      const existing = leafMap.get(path);
+      if (existing !== undefined) {
+        if (!tokenSchemaLeavesEqual(existing, leaf)) {
+          if (process.env.NODE_ENV !== 'production') {
+            throw new Error(
+              `[typestyles] tokens.declare('${namespace}', ...) re-declared path "${path}" with a ` +
+                `conflicting schema leaf.`,
+            );
+          }
+        } else {
+          continue;
+        }
+      }
+
+      leafMap.set(path, leaf);
+      if (leaf !== true) {
+        const propName = resolvePathName(path);
+        registerAtPropertySchema(propName, {
+          syntax: leaf.syntax,
+          inherits: leaf.inherits,
+          initial: leaf.initial,
+        });
+      }
+    }
+
+    declaredSchemaLeaves.set(namespace, leafMap);
+
+    const syntaxLeaves = getSchemaSyntaxLeaves(mergedSchema as TokenSchema);
+    const ref = createDeclaredTokenProxy(resolvePathName, '', syntaxLeaves) as DeclaredTokenRef<
+      TSchema,
+      N
+    >;
+    attachDeclaredMeta(ref, { namespace, schema: mergedSchema as TokenSchema });
+    return ref;
   }
 
   return {
     scopeId,
-    create,
+    create: create as TokensApi<R>['create'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
     createTheme: (name, config) =>

@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { registerAtPropertyRule, registerRegisteredProperty } from './registered-property';
-import { getRegisteredCss, reset } from './sheet';
+import {
+  registerAtPropertyRule,
+  registerAtPropertySchema,
+  registerRegisteredProperty,
+} from './registered-property';
+import { getRegisteredCss, reset, flushSync } from './sheet';
 
 describe('registerAtPropertyRule', () => {
   beforeEach(() => {
@@ -116,5 +120,31 @@ describe('registerAtPropertyRule', () => {
     });
     const css = getRegisteredCss();
     expect(css).not.toContain('@property --ts-test-dependent-initial');
+  });
+});
+
+describe('registerAtPropertySchema', () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  it('registerAtPropertySchema emits @property with syntax placeholder and no value arg', () => {
+    reset();
+    registerAtPropertySchema('--ts-schema-color', { syntax: '<color>', inherits: false });
+    flushSync();
+    expect(getRegisteredCss()).toContain(
+      '@property --ts-schema-color { syntax: "<color>"; inherits: false; initial-value: transparent; }',
+    );
+  });
+
+  it('registerAtPropertySchema uses explicit initial when provided', () => {
+    reset();
+    registerAtPropertySchema('--ts-schema-explicit', {
+      syntax: '<color>',
+      inherits: false,
+      initial: 'hotpink',
+    });
+    flushSync();
+    expect(getRegisteredCss()).toContain('initial-value: hotpink');
   });
 });

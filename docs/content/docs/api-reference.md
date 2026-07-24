@@ -47,8 +47,8 @@ bundles share a page.
 
 **Methods:**
 
-- `tokens.create(namespace, values)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Leaf values may use `{ value, syntax?, inherits?, initial? }` to register `@property` and return `{ name, var, toString }` refs instead of plain `var(...)` strings. For `var()`/`env()`-dependent values, `initial` overrides the built-in syntax placeholder used as `@property`'s `initial-value` (the real value still comes from the `:root` declaration).
-- `tokens.declare(namespace, options?)`: Reserves a namespace's naming and returns a lazy `var(--…)` reference proxy usable **before** `tokens.create()` — for same-call self-references or cross-module forward refs. Optional `nameTemplate` must match the later `create()` call (dev-mode throw on mismatch). Returns `LooseTokenRef` unless you pass an explicit generic for full typing. See [Tokens — Forward-referencing tokens](/docs/tokens#forward-referencing-tokens-tokensdeclare).
+- `tokens.create(namespace, values, options?)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Values are plain `string | number` (no inline `{ value, syntax }` descriptors — use `tokens.declare` for `@property` schema). Multiple calls on the same namespace merge values. Pass `{ decl }` (the return value of `tokens.declare`) for typed partial fills and dev-mode namespace alignment.
+- `tokens.declare(namespace, schema, options?)`: Declares a namespace schema, emits `@property` for `syntax` leaves, and returns a typed forward-reference proxy usable before `tokens.create()`. Schema leaves are `{ syntax, inherits?, initial? }` or `true` (plain path). Optional `nameTemplate` must match later `create()` calls (dev-mode throw on mismatch). See [Tokens — Forward-referencing tokens](/docs/tokens#forward-referencing-tokens-tokensdeclare).
 - `tokens.use(namespace | createdRef)`: References existing tokens; infers types from a `tokens.create()` return value or a `createTokens<Registry>()` generic
 - `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
@@ -61,7 +61,7 @@ Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.cr
 
 The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
 
-Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**, **`LooseTokenRef`**, **`TokenDescriptor`** (`value`, `syntax?`, `inherits?`, `initial?`). Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
+Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**, **`TokenSchema`**, **`TokenSchemaLeaf`**, **`DeclaredTokenRef`**, **`CreateTokenValues`**, **`TokenDescriptor`** (for `ctx.vars()` / `styles.property`). Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
 
 ### `keyframes`
 
