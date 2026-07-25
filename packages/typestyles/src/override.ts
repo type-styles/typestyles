@@ -208,7 +208,6 @@ function emitConditionalRules(
   options: OverrideOptions<string> | undefined,
   branchKey: string,
 ): void {
-  if (!validateConditionalOverride(entry, 0)) return;
   if (!entry.when || entry.style == null) return;
   if (Object.keys(entry.style).length === 0) return;
 

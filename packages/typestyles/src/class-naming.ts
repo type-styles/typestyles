@@ -81,6 +81,8 @@ export type ClassNamingConfig = {
   /**
    * Color mode keys for `{ light, dark }` shorthand on CSS property values.
    * Compiles color/image properties to `light-dark()`; structural properties should use `conditions`.
+   * **Order:** index `0` = light-scheme `light-dark()` arg, index `1` = dark-scheme arg.
+   * Prefer `colorModes` from `typestyles` (`['light', 'dark']`).
    */
   colorModes?: readonly string[];
   /**

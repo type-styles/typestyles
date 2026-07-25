@@ -951,6 +951,60 @@ beat recipe CSS without fighting specificity. When `createStyles({ layers })`
 includes an `"overrides"` layer, omitting `{ layer }` defaults to that name —
 custom stacks without `"overrides"` must pass `{ layer }` explicitly.
 
+#### Mode-aware property values (`colorModes`)
+
+Register color modes once on the styles instance, then use `{ light, dark }` on color
+and image properties — they compile to `light-dark()`:
+
+```ts
+import { createTypeStyles, colorModes } from 'typestyles';
+
+const { styles } = createTypeStyles({ scopeId: 'var-ui', colorModes });
+
+const button = styles.component('button', {
+  base: { borderColor: { light: 'red', dark: 'blue' } },
+});
+
+styles.override(button, {
+  base: { color: { light: '#111', dark: '#eee' } },
+});
+// => border-color: light-dark(red, blue); color: light-dark(#111, #eee)
+```
+
+`colorModes` from `typestyles` is `['light', 'dark']`. **Array order** defines
+`light-dark()` arguments: index `0` = light color-scheme, index `1` = dark. Structural
+properties (`padding`, `fontWeight`, …) should use `conditions` instead — dev warns if
+you pass mode objects on them. v1 supports at most two registered modes.
+
+#### Conditional override blocks (`conditions`)
+
+For structural or multi-property mode differences, add `conditions` on override style
+blocks (`base`, variant options, compounds, slot blocks). Each entry compiles `when` with
+the same `tokens.when.*` builders theme modes use:
+
+```ts
+import { conditional } from 'typestyles';
+import { when } from 'typestyles'; // or tokens.when from your tokens instance
+
+styles.override(
+  button,
+  {
+    base: {
+      letterSpacing: '0.02em',
+      conditions: [
+        conditional(when.attr('data-mode', 'dark', { scope: 'ancestor' }), {
+          letterSpacing: '0.06em',
+        }),
+        conditional(when.prefersDark, { color: 'white' }, 'dark-text'),
+      ],
+    },
+  },
+  { selectorPrefix: '.theme-acme', layer: 'overrides' },
+);
+```
+
+`conditions` is reserved — do not put it on `styles.component()` recipe definitions.
+
 `getComponentMeta(component)` reads the public `__tsMeta` blob (namespace, kind,
 naming mode, base class(es), per-option selector fragments). Renaming anything in
 that metadata is a breaking change — same contract as public class names.

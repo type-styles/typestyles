@@ -6,6 +6,17 @@ const BASE_KEYS = new Set(['base', '_']);
 
 export type ColorModeMap = readonly string[];
 
+/**
+ * Default color mode keys for `{ light, dark }` property shorthand.
+ * Pass to `createStyles({ colorModes })` or `createTypeStyles({ colorModes })`.
+ *
+ * **Order matters:** index `0` is the `light-dark()` light-scheme argument; index `1`
+ * is the dark-scheme argument — not inferred from key names alone.
+ */
+export const colorModes = ['light', 'dark'] as const;
+
+export type LightDarkColorModes = typeof colorModes;
+
 const COLOR_PROPERTIES = new Set([
   'color',
   'backgroundColor',
@@ -53,6 +64,23 @@ export function acceptsLightDark(prop: string): boolean {
 
 export function resolveColorModes(config: ColorModeMap | undefined): ColorModeMap | undefined {
   if (config == null || config.length === 0) return undefined;
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (config.length > 2) {
+      console.warn(
+        '[typestyles] `colorModes` supports at most two entries in v1 (light- and dark-scheme values for `light-dark()`). Extra modes are ignored during expansion.',
+      );
+    }
+    const hasLight = config.includes('light');
+    const hasDark = config.includes('dark');
+    if (hasLight && hasDark && config[0] !== 'light') {
+      console.warn(
+        '[typestyles] `colorModes` array order defines `light-dark()` arguments: index 0 is the light color-scheme value, index 1 is dark. ' +
+          "Use `colorModes` from `typestyles` (`['light', 'dark']`) or register `light` before `dark`.",
+      );
+    }
+  }
+
   return config;
 }
 
@@ -127,11 +155,10 @@ export function validateColorModeObject(
   }
 
   if (!colorModes) {
-    const modeLikeKeys = colorModeObjectKeys(value, ['light', 'dark']);
-    if (modeLikeKeys.length > 0) {
+    if (looksLikeUnconfiguredModeObject(value)) {
       console.warn(
         `[typestyles] Mode-aware object on "${prop}" requires \`colorModes\` on \`createStyles\` / \`createTypeStyles\`. ` +
-          `Register once, e.g. \`createTypeStyles({ colorModes: ['light', 'dark'] })\`.`,
+          `Register once, e.g. \`createTypeStyles({ colorModes: colorModes })\` with \`colorModes\` from \`typestyles\`.`,
       );
     }
     return;
@@ -238,6 +265,15 @@ export function expandColorModesInProperties(
 
   for (const [prop, value] of Object.entries(properties)) {
     if (value == null) continue;
+
+    if (prop === 'conditions') {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          '[typestyles] "conditions" is reserved for `styles.override()` style blocks — omit it from component recipes and plain style objects.',
+        );
+      }
+      continue;
+    }
 
     if (isNestedPropertyKey(prop) || prop.startsWith('@')) {
       const expandedChild = expandColorModesInProperties(

@@ -8,11 +8,17 @@ Engine spec for V8 conditional component overrides (var-ui:
 ### 1. `colorModes` instance config
 
 ```ts
+import { createTypeStyles, colorModes } from 'typestyles';
+
 createTypeStyles({
   scopeId: 'var-ui',
-  colorModes: ['light', 'dark'],
+  colorModes,
 });
 ```
+
+`colorModes` from `typestyles` is `['light', 'dark']` — the usual default. You can pass a
+custom tuple, but **array order** defines `light-dark()` arguments: index `0` is the light
+color-scheme value, index `1` is the dark-scheme value (not inferred from key names alone).
 
 When configured, `{ light, dark }` on CSS property values compiles as follows:
 
@@ -23,6 +29,7 @@ When configured, `{ light, dark }` on CSS property values compiles as follows:
 
 - Both mode keys required when using object form.
 - Scalars apply to both modes (no `light-dark()` wrapper).
+- v1: at most two registered modes; extra entries warn in dev and are ignored during expansion.
 - v1: mode + breakpoint keys on the same property → dev warning.
 - Resolution uses **used `color-scheme`** on the element tree (host responsibility).
 
@@ -41,6 +48,7 @@ type StylableOverride = VariantOptionStyle & {
 ```
 
 `conditions` is a reserved key on `base`, variant options, compound styles, and slot blocks.
+It is **not** valid on `styles.component()` recipe styles — dev warns and skips emission.
 
 Emission:
 
@@ -62,8 +70,8 @@ Theme modes use `anchor: '.theme-{name}'` with no `scopePrefix`.
 
 ## Public API
 
-- `colorModes` on `createStyles` / `createTypeStyles`
-- `StylableOverride`, `ConditionalOverride` types
+- `colorModes` constant (`['light', 'dark']`) and `colorModes` on `createStyles` / `createTypeStyles`
+- `StylableOverride`, `ConditionalOverride`, `ModeAwareValue` types
 - `conditional(when, style, id?)` helper
 - `tokens.when.*` builders (unchanged)
 

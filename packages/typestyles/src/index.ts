@@ -35,8 +35,8 @@ export type {
 export type { CreateTokensOptions, TokensApi } from './tokens';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
 export { resolveBreakpoints } from './breakpoints';
-export type { ColorModeMap, ModeAwareValue } from './color-modes';
-export { resolveColorModes, acceptsLightDark } from './color-modes';
+export type { ColorModeMap, ModeAwareValue, LightDarkColorModes } from './color-modes';
+export { colorModes, resolveColorModes, acceptsLightDark } from './color-modes';
 export type { ConditionCompileContext } from './condition-compile';
 export { getTokenLeafValues, getDeclaredNamespace } from './tokens';
 export type { SerializeStyleOptions } from './serialize-style';

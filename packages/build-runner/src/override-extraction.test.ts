@@ -92,4 +92,86 @@ globalThis.__typestylesOverrideExtractMarker = true;
       await rm(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('includes conditional override rules and light-dark() mode values', async () => {
+    const projectRoot = process.cwd();
+    const tempDir = await mkdtemp(join(tmpdir(), 'typestyles-override-cond-extract-'));
+    const libDir = join(tempDir, 'fixture-theme-cond');
+    const libFile = join(libDir, 'index.ts');
+    const entryFile = join(tempDir, 'entry-cond.ts');
+
+    await mkdir(libDir, { recursive: true });
+    await writeFile(
+      join(libDir, 'package.json'),
+      JSON.stringify({ name: 'fixture-theme-cond', sideEffects: false }),
+      'utf8',
+    );
+
+    await writeFile(
+      libFile,
+      `
+import { createStyles, colorModes, conditional } from 'typestyles';
+import { when } from 'typestyles';
+
+const styles = createStyles({
+  colorModes,
+  layers: ['components', 'overrides'],
+});
+
+export const FixtureCondButton = styles.component(
+  'fixture-cond-btn',
+  { base: { borderRadius: '6px' } },
+  { layer: 'components' },
+);
+
+styles.override(
+  FixtureCondButton,
+  {
+    base: {
+      color: { light: '#111', dark: '#eee' },
+      conditions: [conditional(when.prefersDark, { opacity: 0.9 })],
+    },
+  },
+  { selectorPrefix: '.theme-acme', layer: 'overrides' },
+);
+`,
+      'utf8',
+    );
+
+    await writeFile(
+      entryFile,
+      `
+import './fixture-theme-cond';
+globalThis.__typestylesOverrideCondExtractMarker = true;
+`,
+      'utf8',
+    );
+
+    const moduleForBuild = relative(projectRoot, entryFile);
+
+    try {
+      reset();
+      await import(`${pathToFileURL(entryFile).href}?runtime=${Date.now()}`);
+      flushSync();
+      const runtimeCss = getRegisteredCss();
+      expect(runtimeCss).toContain('color: light-dark(#111, #eee)');
+      expect(runtimeCss).toContain('@media (prefers-color-scheme: dark)');
+      expect(runtimeCss).toContain('opacity: 0.9');
+      expect(runtimeCss).toContain('.theme-acme .fixture-cond-btn');
+
+      reset();
+      const buildCss = await runTypestylesBuild({
+        root: projectRoot,
+        modules: [moduleForBuild],
+      });
+
+      expect(buildCss).toContain('color: light-dark(#111, #eee)');
+      expect(buildCss).toContain('@media (prefers-color-scheme: dark)');
+      expect(buildCss).toContain('opacity: 0.9');
+      expect(buildCss).toBe(runtimeCss);
+    } finally {
+      reset();
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
 });
