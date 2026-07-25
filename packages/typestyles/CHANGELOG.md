@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.15.0
+
+### Minor Changes
+
+- [#161](https://github.com/type-styles/typestyles/pull/161) [`7d24e42`](https://github.com/type-styles/typestyles/commit/7d24e420180fdef8429eeeb084c4d1eb0ab1dce2) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add conditional `styles.override()` blocks (`conditions` + `ThemeCondition`) and `colorModes` config for `{ light, dark }` property values that compile to `light-dark()` on color/image properties. Export `colorModes` constant (`['light', 'dark']`) for `createStyles` / `createTypeStyles`.
+
 ## 0.14.0
 
 ### Minor Changes
