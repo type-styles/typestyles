@@ -35,6 +35,9 @@ export type {
 export type { CreateTokensOptions, TokensApi } from './tokens';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
 export { resolveBreakpoints } from './breakpoints';
+export type { ColorModeMap, ModeAwareValue, LightDarkColorModes } from './color-modes';
+export { colorModes, resolveColorModes, acceptsLightDark } from './color-modes';
+export type { ConditionCompileContext } from './condition-compile';
 export { getTokenLeafValues, getDeclaredNamespace } from './tokens';
 export type { SerializeStyleOptions } from './serialize-style';
 
@@ -64,6 +67,7 @@ export type {
   FlatOverrideConfig,
   OverrideFn,
 } from './override';
+export { conditional } from './override';
 
 export type {
   ComponentMeta,
@@ -122,6 +126,8 @@ export type {
   KeyframeStops,
   VariantDefinitions,
   VariantOptionStyle,
+  StylableOverride,
+  ConditionalOverride,
   VariantOptionKey,
   CompoundSelectionValue,
   ComponentConfig,

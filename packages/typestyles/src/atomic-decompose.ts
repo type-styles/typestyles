@@ -137,6 +137,9 @@ export function classNamesAndRulesForProperties(
 
   return {
     classNames: className,
-    rules: serializeStyle(`.${className}`, properties, { breakpoints: classNaming.breakpoints }),
+    rules: serializeStyle(`.${className}`, properties, {
+      breakpoints: classNaming.breakpoints,
+      colorModes: classNaming.colorModes,
+    }),
   };
 }

@@ -34,11 +34,13 @@ per package or micro-frontend for isolation.
 
 **Helpers:** `getComponentMeta(component)` — read public component metadata attached by `styles.component()`.
 
+**Related exports:** `colorModes` (`['light', 'dark']`), `conditional(when, style, id?)`, `StylableOverride`, `ConditionalOverride`, `ModeAwareValue`.
+
 **Related types:** `OverrideConfig`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
 
 ### `createStyles(options?)`
 
-Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem' | 'template'`), `prefix`, `scopeId`. Optionally pass **`utils`** — a map of shorthand expanders — to get a utility-aware API in one step (same typing as `styles.withUtils(…)`; see [Styles](/docs/styles#utility-shortcuts)). Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)).
+Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem' | 'template'`), `prefix`, `scopeId`. Optionally pass **`utils`** — a map of shorthand expanders — to get a utility-aware API in one step (same typing as `styles.withUtils(…)`; see [Styles](/docs/styles#utility-shortcuts)). Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)). Optionally pass **`colorModes`** — register mode keys for `{ light, dark }` shorthand on color/image properties (`light-dark()`); use the **`colorModes`** constant from `typestyles` (`['light', 'dark']`) for the usual case (see [Theming patterns — mode-aware overrides](/docs/theming-patterns#mode-aware-property-values-colormodes)).
 
 The default `import { styles } from 'typestyles'` is `createStyles()` with default options.
 

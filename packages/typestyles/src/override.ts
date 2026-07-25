@@ -12,16 +12,25 @@ import { serializeStyle } from './serialize-style';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { insertRules } from './sheet';
 import { joinSelectorAlternatives } from './compound-selector';
+import {
+  compileThemeCondition,
+  buildSelectorForContext,
+  wrapRuleCss,
+  type ConditionCompileContext,
+} from './condition-compile';
 import type {
   ComponentAttrsReturn,
   ComponentReturn,
   CompoundSelectionValue,
+  ConditionalOverride,
   CSSProperties,
   FlatComponentReturn,
   MultiSlotReturn,
   SlotAttrsReturn,
   SlotComponentFunction,
   SlotVariantDefinitions,
+  StylableOverride,
+  ThemeCondition,
   VariantDefinitions,
   VariantOptionKey,
   VariantOptionStyle,
@@ -41,11 +50,11 @@ export type OverrideOptions<L extends string = string> = {
 };
 
 export type OverrideConfig<V extends VariantDefinitions> = {
-  base?: VariantOptionStyle;
-  variants?: { [K in keyof V]?: { [O in keyof V[K]]?: VariantOptionStyle } };
+  base?: StylableOverride;
+  variants?: { [K in keyof V]?: { [O in keyof V[K]]?: StylableOverride } };
   compoundVariants?: Array<{
     variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
-    style: VariantOptionStyle;
+    style: StylableOverride;
   }>;
   /** Reserved for phase 2 — typed component vars. */
   vars?: never;
@@ -55,28 +64,28 @@ export type SlotOverrideConfig<
   Slots extends readonly string[],
   V extends SlotVariantDefinitions<Slots[number]>,
 > = {
-  base?: Partial<Record<Slots[number], VariantOptionStyle>>;
+  base?: Partial<Record<Slots[number], StylableOverride>>;
   variants?: {
     [K in keyof V]?: {
-      [O in keyof V[K]]?: Partial<Record<Slots[number], VariantOptionStyle>>;
+      [O in keyof V[K]]?: Partial<Record<Slots[number], StylableOverride>>;
     };
   };
   compoundVariants?: Array<{
     variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
-    style: Partial<Record<Slots[number], VariantOptionStyle>>;
+    style: Partial<Record<Slots[number], StylableOverride>>;
   }>;
 };
 
 export type MultiSlotOverrideConfig<Slots extends readonly string[]> = {
-  base?: Partial<Record<Slots[number], VariantOptionStyle>>;
+  base?: Partial<Record<Slots[number], StylableOverride>>;
   /** Multi-slot recipes have no variants — forbidden so excess keys type-error. */
   variants?: never;
   compoundVariants?: never;
 };
 
 export type FlatOverrideConfig<K extends string> = {
-  base?: VariantOptionStyle;
-} & Partial<Record<Exclude<K, 'base'>, VariantOptionStyle>>;
+  base?: StylableOverride;
+} & Partial<Record<Exclude<K, 'base'>, StylableOverride>>;
 
 type AnyOverrideConfig =
   | OverrideConfig<VariantDefinitions>
@@ -107,21 +116,54 @@ function overrideRuleKey(
   return `override:${prefixSegment}:${layerSegment}:${selector}:${ruleKey}`;
 }
 
-function emitStyledSelector(
+function serializeOptions(classNaming: ClassNamingConfig) {
+  return {
+    breakpoints: classNaming.breakpoints,
+    colorModes: classNaming.colorModes,
+  };
+}
+
+function splitStylableOverride(styles: StylableOverride): {
+  unconditional: VariantOptionStyle;
+  conditions: readonly ConditionalOverride[];
+} {
+  const { conditions, ...rest } = styles;
+  return { unconditional: rest, conditions: conditions ?? [] };
+}
+
+const CONDITIONAL_OVERRIDE_KEYS = new Set(['id', 'when', 'style']);
+
+function validateConditionalOverride(entry: ConditionalOverride, index: number): boolean {
+  if (process.env.NODE_ENV === 'production') return true;
+  let ok = true;
+
+  for (const key of Object.keys(entry)) {
+    if (!CONDITIONAL_OVERRIDE_KEYS.has(key)) {
+      console.warn(
+        `[typestyles] Unknown key "${key}" in styles.override() conditions[${index}] — allowed: id, when, style.`,
+      );
+      ok = false;
+    }
+  }
+
+  if (!entry.when) {
+    console.warn(`[typestyles] styles.override() conditions[${index}] is missing "when".`);
+    ok = false;
+  }
+
+  if (entry.style == null) {
+    console.warn(`[typestyles] styles.override() conditions[${index}] is missing "style".`);
+    ok = false;
+  }
+
+  return ok;
+}
+
+function insertOverrideRules(
   classNaming: ClassNamingConfig,
-  selector: string,
-  styles: VariantOptionStyle,
+  keyed: Array<{ key: string; css: string }>,
   options: OverrideOptions<string> | undefined,
 ): void {
-  const prefixed = prefixSelector(selector, options?.selectorPrefix);
-  const serialized = serializeStyle(prefixed, styles as CSSProperties, {
-    breakpoints: classNaming.breakpoints,
-  });
-  const keyed = serialized.map((rule) => ({
-    key: overrideRuleKey(options, prefixed, rule.key),
-    css: rule.css,
-  }));
-
   if (options?.layer != null && options.layer !== '') {
     const stack = classNaming.cascadeLayers;
     if (!stack) {
@@ -135,6 +177,89 @@ function emitStyledSelector(
   }
 
   insertRules(keyed);
+}
+
+function emitUnconditionalRules(
+  classNaming: ClassNamingConfig,
+  selector: string,
+  styles: VariantOptionStyle,
+  options: OverrideOptions<string> | undefined,
+  keySuffix: string,
+): void {
+  if (!styles || Object.keys(styles).length === 0) return;
+
+  const prefixed = prefixSelector(selector, options?.selectorPrefix);
+  const serialized = serializeStyle(
+    prefixed,
+    styles as CSSProperties,
+    serializeOptions(classNaming),
+  );
+  const keyed = serialized.map((rule) => ({
+    key: `${overrideRuleKey(options, prefixed, rule.key)}:${keySuffix}`,
+    css: rule.css,
+  }));
+  insertOverrideRules(classNaming, keyed, options);
+}
+
+function emitConditionalRules(
+  classNaming: ClassNamingConfig,
+  selector: string,
+  entry: ConditionalOverride,
+  options: OverrideOptions<string> | undefined,
+  branchKey: string,
+): void {
+  if (!entry.when || entry.style == null) return;
+  if (Object.keys(entry.style).length === 0) return;
+
+  const branches = compileThemeCondition(entry.when);
+  if (branches.length === 0) return;
+
+  const ctx: ConditionCompileContext = {
+    anchor: selector,
+    scopePrefix: options?.selectorPrefix,
+  };
+
+  for (let i = 0; i < branches.length; i++) {
+    const branch = branches[i];
+    const conditionalSelector = buildSelectorForContext(ctx, branch);
+    const serialized = serializeStyle(
+      conditionalSelector,
+      entry.style as CSSProperties,
+      serializeOptions(classNaming),
+    );
+    const idSegment = entry.id ? `:${entry.id}` : '';
+    const keyed = serialized.map((rule) => ({
+      key: `${overrideRuleKey(options, conditionalSelector, rule.key)}:${branchKey}:cond${idSegment}:${i}`,
+      css: wrapRuleCss(rule.css, branch.media),
+    }));
+    insertOverrideRules(classNaming, keyed, options);
+  }
+}
+
+function emitStyledSelector(
+  classNaming: ClassNamingConfig,
+  selector: string,
+  styles: StylableOverride,
+  options: OverrideOptions<string> | undefined,
+  keySuffix = 'base',
+): void {
+  const { unconditional, conditions } = splitStylableOverride(styles);
+
+  emitUnconditionalRules(classNaming, selector, unconditional, options, keySuffix);
+
+  conditions.forEach((entry, index) => {
+    if (!validateConditionalOverride(entry, index)) return;
+    emitConditionalRules(classNaming, selector, entry, options, `${keySuffix}:c${index}`);
+  });
+}
+
+/** Build a {@link ConditionalOverride} — sugar over `{ when, style }`. */
+export function conditional(
+  when: ThemeCondition,
+  style: VariantOptionStyle,
+  id?: string,
+): ConditionalOverride {
+  return id != null ? { when, style, id } : { when, style };
 }
 
 function classFragmentsForDimension(

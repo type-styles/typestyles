@@ -617,6 +617,7 @@ function createTemplateDimensionedComponent<V extends VariantDefinitions>(
     rules.push(
       ...serializeStyle(`.${blockClassName}`, base as CSSProperties, {
         breakpoints: classNaming.breakpoints,
+        colorModes: classNaming.colorModes,
       }),
     );
   }
@@ -648,6 +649,7 @@ function createTemplateDimensionedComponent<V extends VariantDefinitions>(
     rules.push(
       ...serializeStyle(`.${modifierClassName}`, properties as CSSProperties, {
         breakpoints: classNaming.breakpoints,
+        colorModes: classNaming.colorModes,
       }),
     );
   }
@@ -672,7 +674,10 @@ function createTemplateDimensionedComponent<V extends VariantDefinitions>(
 
       if (!selectorSuffix) return;
       rules.push(
-        ...serializeStyle(selectorSuffix, cv.style, { breakpoints: classNaming.breakpoints }),
+        ...serializeStyle(selectorSuffix, cv.style, {
+          breakpoints: classNaming.breakpoints,
+          colorModes: classNaming.colorModes,
+        }),
       );
     },
   );
@@ -1048,6 +1053,7 @@ function createAttributeSlotComponent<
     rules.push(
       ...serializeStyle(`.${baseClassBySlot[slot]}`, mergedStylesBySlot[slot] as CSSProperties, {
         breakpoints: classNaming.breakpoints,
+        colorModes: classNaming.colorModes,
       }),
     );
   }
@@ -1112,7 +1118,10 @@ function createSemanticFlatComponent<K extends string>(
     if (key === 'base') {
       classMap['base'] = blockClassName;
       rules.push(
-        ...serializeStyle(`.${blockClassName}`, props, { breakpoints: classNaming.breakpoints }),
+        ...serializeStyle(`.${blockClassName}`, props, {
+          breakpoints: classNaming.breakpoints,
+          colorModes: classNaming.colorModes,
+        }),
       );
     } else {
       const modifierClassName = buildSemanticTemplateClassName(classNaming, {
@@ -1125,6 +1134,7 @@ function createSemanticFlatComponent<K extends string>(
       rules.push(
         ...serializeStyle(`.${modifierClassName}`, props, {
           breakpoints: classNaming.breakpoints,
+          colorModes: classNaming.colorModes,
         }),
       );
       variantKeys.push(key);
@@ -1331,7 +1341,10 @@ function createTemplateMultiSlotComponent<Slots extends readonly string[]>(
     const properties = (config as Record<string, CSSProperties | undefined>)[slot];
     if (properties) {
       rules.push(
-        ...serializeStyle(`.${className}`, properties, { breakpoints: classNaming.breakpoints }),
+        ...serializeStyle(`.${className}`, properties, {
+          breakpoints: classNaming.breakpoints,
+          colorModes: classNaming.colorModes,
+        }),
       );
     }
   }
@@ -1388,7 +1401,10 @@ function createTemplateSlotComponent<
     const properties = (base as Record<string, CSSProperties>)[slot];
     if (properties) {
       rules.push(
-        ...serializeStyle(`.${className}`, properties, { breakpoints: classNaming.breakpoints }),
+        ...serializeStyle(`.${className}`, properties, {
+          breakpoints: classNaming.breakpoints,
+          colorModes: classNaming.colorModes,
+        }),
       );
     }
   }
@@ -1429,6 +1445,7 @@ function createTemplateSlotComponent<
     rules.push(
       ...serializeStyle(`.${modifierClassName}`, properties, {
         breakpoints: classNaming.breakpoints,
+        colorModes: classNaming.colorModes,
       }),
     );
   }
@@ -1460,7 +1477,10 @@ function createTemplateSlotComponent<
 
       if (!selectorSuffix) continue;
       rules.push(
-        ...serializeStyle(selectorSuffix, properties, { breakpoints: classNaming.breakpoints }),
+        ...serializeStyle(selectorSuffix, properties, {
+          breakpoints: classNaming.breakpoints,
+          colorModes: classNaming.colorModes,
+        }),
       );
     }
   });
