@@ -510,6 +510,24 @@ export type VariantOptionStyle = {
     | undefined;
 };
 
+/** A single conditional patch on a component override selector. */
+export type ConditionalOverride = {
+  /** Optional label for devtools / HMR / snapshot tests. */
+  id?: string;
+  when: ThemeCondition;
+  style: VariantOptionStyle;
+};
+
+/**
+ * Style block for overrides: normal CSS properties + nested selectors/at-rules,
+ * plus an optional `conditions` array.
+ *
+ * `conditions` is a reserved key — not emitted as CSS.
+ */
+export type StylableOverride = VariantOptionStyle & {
+  conditions?: readonly ConditionalOverride[];
+};
+
 /**
  * A map of variant dimensions to their options (each option is {@link VariantOptionStyle}).
  */

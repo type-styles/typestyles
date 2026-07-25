@@ -15,11 +15,13 @@ import type {
 } from './styles';
 import type { StyleUtils } from './types';
 import type { BreakpointsConfig } from './breakpoints';
+import type { ColorModeMap } from './color-modes';
 import { createTokens } from './tokens';
 import type { TokensApi } from './tokens';
 
 type NamingPartial = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
   breakpoints?: BreakpointsConfig;
+  colorModes?: ColorModeMap;
 };
 
 type GlobalLayerOption<L extends string = string> = {

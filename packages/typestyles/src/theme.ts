@@ -6,7 +6,6 @@ import type {
   ThemeConditionSelector,
   ThemeConditionAnd,
   ThemeConditionOr,
-  ThemeConditionNot,
   ThemeConfig,
   ThemeModeDefinition,
   ThemeOverrides,
@@ -19,6 +18,11 @@ import type { ThemeTokenNaming } from './token-naming';
 import { insertRule, insertRules } from './sheet';
 import type { ResolvedCascadeLayers } from './layers';
 import { applyLayerToRules } from './layers';
+import {
+  compileThemeCondition,
+  buildSelectorForContext,
+  type CompiledCondition,
+} from './condition-compile';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {
@@ -143,180 +147,6 @@ function validateSelector(selector: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// Condition compilation — turns ThemeCondition into CSS wrappers
-// ---------------------------------------------------------------------------
-
-type CompiledCondition = {
-  media?: string;
-  selectorPrefix?: string;
-  selectorSuffix?: string;
-};
-
-/** Strip paired `not` wrappers; `negated` is true when an odd number of `not`s remain. */
-function peelNot(condition: ThemeConditionNot): { negated: boolean; inner: ThemeCondition } {
-  let negated = true;
-  let c: ThemeCondition = condition.condition;
-  while (c.type === 'not') {
-    negated = !negated;
-    c = c.condition;
-  }
-  return { negated, inner: c };
-}
-
-function compileCondition(condition: ThemeCondition): CompiledCondition[] {
-  switch (condition.type) {
-    case 'media':
-      return [{ media: condition.query }];
-
-    case 'attr':
-      if (condition.scope === 'self') {
-        return [{ selectorSuffix: `[${condition.name}="${condition.value}"]` }];
-      }
-      if (condition.scope === 'descendant') {
-        // Leading space → genuine descendant combinator: `.theme-name [data-x="y"]`.
-        return [{ selectorSuffix: ` [${condition.name}="${condition.value}"]` }];
-      }
-      return [{ selectorPrefix: `[${condition.name}="${condition.value}"]` }];
-
-    case 'class':
-      if (condition.scope === 'self') {
-        return [{ selectorSuffix: `.${condition.name}` }];
-      }
-      if (condition.scope === 'descendant') {
-        // Leading space → genuine descendant combinator: `.theme-name .marker`.
-        return [{ selectorSuffix: ` .${condition.name}` }];
-      }
-      return [{ selectorPrefix: `.${condition.name}` }];
-
-    case 'selector':
-      return [{ selectorPrefix: condition.selector }];
-
-    case 'and': {
-      let result: CompiledCondition[] = [{}];
-      for (const child of condition.conditions) {
-        const childCompiled = compileCondition(child);
-        const merged: CompiledCondition[] = [];
-        for (const existing of result) {
-          for (const cc of childCompiled) {
-            merged.push(mergeCompiled(existing, cc));
-          }
-        }
-        result = merged;
-      }
-      return result;
-    }
-
-    case 'or':
-      return condition.conditions.flatMap((c) => compileCondition(c));
-
-    case 'not': {
-      const { negated: shouldNegate, inner } = peelNot(condition);
-      if (!shouldNegate) {
-        return compileCondition(inner);
-      }
-
-      if (inner.type === 'selector') {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(
-            '[typestyles] when.not(when.selector(...)) is not supported — arbitrary selector text is not safe to wrap in :not(). Use when.attr, when.className, or when.media instead.',
-          );
-        }
-        return [];
-      }
-
-      const innerBranches = compileCondition(inner);
-      if (innerBranches.length !== 1) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(
-            '[typestyles] when.not() requires the inner condition to compile to a single rule branch. ' +
-              'Do not wrap when.or(), and avoid inner shapes that expand to multiple branches.',
-          );
-        }
-        return [];
-      }
-
-      const negated = negateCompiled(innerBranches[0]);
-      if (negated === null) {
-        return [];
-      }
-      return [negated];
-    }
-  }
-}
-
-function negateCompiled(c: CompiledCondition): CompiledCondition | null {
-  const { media, selectorPrefix, selectorSuffix } = c;
-  const hasMedia = Boolean(media);
-  const hasPre = Boolean(selectorPrefix);
-  const hasSuf = Boolean(selectorSuffix);
-
-  if (hasMedia && (hasPre || hasSuf)) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        '[typestyles] when.not() does not support negating combined @media + selector conditions. ' +
-          'Split into separate modes or use only media, only ancestor selector, or only self selector.',
-      );
-    }
-    return null;
-  }
-
-  if (hasPre && hasSuf) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        '[typestyles] when.not() does not support negating combined ancestor + self selector parts on one branch.',
-      );
-    }
-    return null;
-  }
-
-  if (hasMedia && media) {
-    return { media: `not ${media}` };
-  }
-
-  if (hasPre && selectorPrefix) {
-    const p = selectorPrefix.trim();
-    return { selectorPrefix: `:root:not(${p})` };
-  }
-
-  if (hasSuf && selectorSuffix) {
-    if (selectorSuffix.startsWith(' ')) {
-      // Descendant-scoped condition — a descendant relationship can't collapse
-      // into a single compound selector the way :not() requires.
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(
-          "[typestyles] when.not() does not support descendant-scoped conditions — a descendant relationship can't be expressed as a single :not() compound selector. Define an explicit mode for the non-matching state instead.",
-        );
-      }
-      return null;
-    }
-    const s = selectorSuffix.trim();
-    if (s.startsWith('[') || s.startsWith('.')) {
-      return { selectorSuffix: `:not(${s})` };
-    }
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[typestyles] when.not(): unexpected selector suffix shape: "${s}"`);
-    }
-    return null;
-  }
-
-  return {};
-}
-
-function mergeCompiled(a: CompiledCondition, b: CompiledCondition): CompiledCondition {
-  return {
-    media: a.media && b.media ? `${a.media} and ${b.media}` : a.media || b.media || undefined,
-    selectorPrefix:
-      a.selectorPrefix && b.selectorPrefix
-        ? `${a.selectorPrefix} ${b.selectorPrefix}`
-        : a.selectorPrefix || b.selectorPrefix || undefined,
-    selectorSuffix:
-      a.selectorSuffix && b.selectorSuffix
-        ? `${a.selectorSuffix}${b.selectorSuffix}`
-        : a.selectorSuffix || b.selectorSuffix || undefined,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // CSS declaration building
 // ---------------------------------------------------------------------------
 
@@ -351,9 +181,7 @@ function themeSegment(scopeId: string | undefined, name: string): string {
 }
 
 function buildSelector(themeClass: string, compiled: CompiledCondition): string {
-  const prefix = compiled.selectorPrefix ? `${compiled.selectorPrefix} ` : '';
-  const suffix = compiled.selectorSuffix ?? '';
-  return `${prefix}.${themeClass}${suffix}`;
+  return buildSelectorForContext({ anchor: `.${themeClass}` }, compiled);
 }
 
 function buildRule(selector: string, declarations: string, media?: string): string {
@@ -588,7 +416,7 @@ export function createTheme(
       continue;
     }
 
-    const compiledBranches = compileCondition(mode.when);
+    const compiledBranches = compileThemeCondition(mode.when);
 
     for (let i = 0; i < compiledBranches.length; i++) {
       const branch = compiledBranches[i];

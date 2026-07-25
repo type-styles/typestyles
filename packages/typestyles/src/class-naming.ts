@@ -79,6 +79,11 @@ export type ClassNamingConfig = {
    */
   breakpoints?: Record<string, string>;
   /**
+   * Color mode keys for `{ light, dark }` shorthand on CSS property values.
+   * Compiles color/image properties to `light-dark()`; structural properties should use `conditions`.
+   */
+  colorModes?: readonly string[];
+  /**
    * Required when `mode: 'template'`. Decides the class name for every base/element and
    * modifier class a dimensioned or slot `styles.component()` call emits. Not called for
    * `styles.class()` or flat (non-dimensioned) configs — those stay semantic-style. See

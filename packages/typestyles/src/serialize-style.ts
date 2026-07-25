@@ -1,6 +1,8 @@
 import type { CSSProperties } from './types';
 import type { BreakpointMap } from './breakpoints';
 import { expandResponsiveInProperties } from './breakpoints';
+import type { ColorModeMap } from './color-modes';
+import { expandColorModesInProperties } from './color-modes';
 
 /**
  * Convert a camelCase CSS property name to kebab-case.
@@ -111,6 +113,8 @@ export interface CSSRule {
 
 export type SerializeStyleOptions = {
   breakpoints?: BreakpointMap;
+  /** Registered color mode keys (`light`, `dark`, …) for `{ light, dark }` property values. */
+  colorModes?: ColorModeMap;
 };
 
 /**
@@ -122,7 +126,9 @@ export function serializeStyle(
   options?: SerializeStyleOptions,
 ): CSSRule[] {
   const breakpoints = options?.breakpoints;
-  const expanded = expandResponsiveInProperties(properties, breakpoints);
+  const colorModes = options?.colorModes;
+  const withModes = expandColorModesInProperties(properties, colorModes, breakpoints);
+  const expanded = expandResponsiveInProperties(withModes, breakpoints);
   return serializeStyleExpanded(selector, expanded);
 }
 

@@ -46,6 +46,7 @@ import {
 import { atRuleBlock as atRuleBlockFn } from './at-rule-block';
 import { has as hasNested, is as isNested, where as whereNested } from './relational-pseudo';
 import { resolveBreakpoints, type BreakpointsConfig } from './breakpoints';
+import { resolveColorModes, type ColorModeMap } from './color-modes';
 
 /**
  * Create a single class with the given styles. Returns the class name string.
@@ -179,7 +180,10 @@ export function createHashClass(
   // colliding on one class string is a real hash collision.
   trackEmittedClassName(className, `hashClass:${serialized}`);
   const selector = `.${className}`;
-  const rules = serializeStyle(selector, properties, { breakpoints: classNaming.breakpoints });
+  const rules = serializeStyle(selector, properties, {
+    breakpoints: classNaming.breakpoints,
+    colorModes: classNaming.colorModes,
+  });
   if (classNaming.cascadeLayers) {
     if (layer == null || layer === '') {
       throw new Error(
@@ -328,6 +332,11 @@ export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>
    * Enables responsive object values like `{ base: '8px', md: '16px' }` on CSS properties.
    */
   breakpoints?: BreakpointsConfig;
+  /**
+   * Color mode keys for `{ light, dark }` shorthand on CSS property values.
+   * Compiles color/image properties to `light-dark()` via used `color-scheme`.
+   */
+  colorModes?: ColorModeMap;
   /**
    * Only applies when using `createTokens` / `createTypeStyles` for `:root` and theme CSS.
    * Ignored by `createStyles` alone (passing it here avoids repeating the key at the factory).
@@ -525,6 +534,7 @@ export function createStyles(
     tokenLayer: tokenLayerHint,
     utils,
     breakpoints: breakpointsConfig,
+    colorModes: colorModesConfig,
     ...namingPartial
   } = partial;
 
@@ -536,7 +546,13 @@ export function createStyles(
 
   const cascadeLayers = layers ? resolveCascadeLayers(layers, namingPartial.scopeId) : undefined;
   const breakpoints = resolveBreakpoints(breakpointsConfig);
-  const classNaming = mergeClassNaming({ ...namingPartial, cascadeLayers, breakpoints });
+  const colorModes = resolveColorModes(colorModesConfig);
+  const classNaming = mergeClassNaming({
+    ...namingPartial,
+    cascadeLayers,
+    breakpoints,
+    colorModes,
+  });
 
   if (classNaming.mode === 'template' && !classNaming.classNameTemplate) {
     throw new Error(

@@ -1,5 +1,6 @@
 import type { CSSProperties, CreatedTokenRef, TokenValues } from './types';
 import { getTokenLeafValues } from './tokens';
+import { looksLikeUnconfiguredModeObject, validateColorModeObject } from './color-modes';
 
 export type BreakpointMap = Record<string, string>;
 
@@ -252,6 +253,13 @@ export function expandResponsiveInProperties(
     }
 
     if (isPlainObject(value)) {
+      if (looksLikeUnconfiguredModeObject(value)) {
+        if (process.env.NODE_ENV !== 'production') {
+          validateColorModeObject(prop, value, undefined, breakpoints);
+        }
+        continue;
+      }
+
       if (looksLikeResponsiveObject(value)) {
         validateResponsiveObject(prop, value, breakpoints);
         if (breakpoints && isResponsiveObject(value, breakpoints)) {
