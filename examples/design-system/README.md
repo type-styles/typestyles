@@ -40,7 +40,7 @@ Tokens are grouped for clarity; recipes consume the flat `designTokens` object (
 
 ## Theme surfaces
 
-Palettes are built with `createDesignTheme()` (see `src/create-theme.ts`): one **`ThemeSurface`** per palette from `tokens.createTheme` with **`base` light tokens** and **`colorMode: tokens.colorMode.systemWithLightDarkOverride`** on **`data-mode`** (`scope: 'self'`). Dark overrides follow OS preference unless `data-mode="light"` or `data-mode="dark"` is set on the **same element** that carries the theme class.
+Palettes are built with `createDesignTheme()` (see `src/create-theme.ts`): one **`ThemeSurface`** per palette from `tokens.createTheme` with **`base` light tokens** and a structured **`colorMode: { light, dark }`** patch compiled to `light-dark()` on theme custom properties. The shared `createTypeStyles` runtime registers `colorModes`, so each surface also emits `color-scheme: light dark`.
 
 | Export         | `className`     | Role                      |
 | -------------- | --------------- | ------------------------- |

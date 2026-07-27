@@ -2,7 +2,7 @@ import { createStyles } from './styles';
 import { createTokens } from './tokens';
 import { createTypeStyles } from './create-type-styles';
 import { createGlobal } from './create-global';
-import { createTheme, createDarkMode, when, colorMode } from './theme';
+import { createTheme, createDarkMode, when, colorMode, resolvedDarkWhen } from './theme';
 import { createKeyframes } from './keyframes';
 import {
   getRegisteredCss,
@@ -176,6 +176,7 @@ export type {
   ThemeConditionNot,
   ThemeModeDefinition,
   ThemeConfig,
+  ThemeColorModePatches,
   ThemeSurface,
   DeepPartialTokenValues,
   TokenSchema,
@@ -190,7 +191,8 @@ export { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './typ
 
 export { createVar, assignVars };
 
-export { createTheme, createDarkMode, when, colorMode };
+export { createTheme, createDarkMode, when, colorMode, resolvedDarkWhen };
+export { canUseLightDarkForTokenValue } from './token-color-modes';
 
 export type { ThemeEmitLayerContext } from './theme';
 

@@ -23,11 +23,22 @@ import {
   buildSelectorForContext,
   type CompiledCondition,
 } from './condition-compile';
+import type { ColorModeMap } from './color-modes';
+import { expandThemeOverrides, mergeThemeColorModePatches } from './token-color-modes';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {
   readonly stack: ResolvedCascadeLayers;
   readonly layer: string;
+};
+
+export type CreateThemeOptions = {
+  colorModes?: ColorModeMap;
+  /**
+   * Condition for dark-only token fallback rules (non-`light-dark()` leaves).
+   * Defaults to explicit `data-mode="dark"` or system dark when not pinned to light.
+   */
+  resolvedDarkWhen?: ThemeCondition;
 };
 
 // ---------------------------------------------------------------------------
@@ -111,6 +122,22 @@ export const when = {
   prefersLight: { type: 'media', query: '(prefers-color-scheme: light)' } as ThemeConditionMedia,
 } as const;
 
+/** Explicit attribute dark or system dark when not pinned to light (common app color-mode contract). */
+export function resolvedDarkWhen(
+  attribute = 'data-mode',
+  scope: 'self' | 'ancestor' = 'ancestor',
+): ThemeCondition {
+  return condOr(
+    condAttr(attribute, 'dark', { scope }),
+    condAnd(condNot(condAttr(attribute, 'light', { scope })), when.prefersDark),
+  );
+}
+
+/** Dark-mode condition for `:root` token overrides (`:root[data-mode="dark"]`). */
+export function resolvedDarkWhenOnRoot(attribute = 'data-mode'): ThemeCondition {
+  return resolvedDarkWhen(attribute, 'self');
+}
+
 // ---------------------------------------------------------------------------
 // Dev-only selector validation (lightweight heuristics)
 // ---------------------------------------------------------------------------
@@ -154,9 +181,11 @@ function buildDeclarations(
   scopeId: string | undefined,
   overrides: ThemeOverrides,
   naming?: ThemeTokenNaming,
-): string {
+  colorModes?: ColorModeMap,
+): { decls: string; darkOnly: ThemeOverrides | null } {
+  const { expanded, darkOnly } = expandThemeOverrides(overrides, colorModes);
   const parts: string[] = [];
-  for (const [namespace, values] of Object.entries(overrides)) {
+  for (const [namespace, values] of Object.entries(expanded)) {
     if (values === null || values === undefined) continue;
 
     if (naming) {
@@ -171,7 +200,7 @@ function buildDeclarations(
       parts.push(`--${cssNs}-${key}: ${value}`);
     }
   }
-  return parts.join('; ');
+  return { decls: parts.join('; '), darkOnly };
 }
 
 function themeSegment(scopeId: string | undefined, name: string): string {
@@ -304,7 +333,8 @@ function presetSystemWithLightDarkOverride(
 
 /**
  * Color mode presets that expand into `ThemeModeDefinition[]` arrays.
- * Use via the `colorMode` property on `tokens.createTheme()`.
+ * Use via the `modes` property on `tokens.createTheme()`, or spread into `modes`:
+ * `modes: tokens.colorMode.mediaOnly({ dark: … })`.
  *
  * @example
  * ```ts
@@ -358,7 +388,10 @@ function createThemeSurface(name: string, className: string): ThemeSurface {
  * ```ts
  * const acme = tokens.createTheme('acme', {
  *   base: { color: { text: { primary: '#111827' } } },
- *   colorMode: tokens.colorMode.mediaOnly({ dark: darkOverrides }),
+ *   colorMode: {
+ *     light: { color: { text: { primary: '#111827' } } },
+ *     dark: { color: { text: { primary: '#f9fafb' } } },
+ *   },
  * });
  *
  * // acme.className === 'theme-acme'
@@ -371,15 +404,10 @@ export function createTheme(
   scopeId?: string,
   layerContext?: ThemeEmitLayerContext,
   naming?: ThemeTokenNaming,
+  options?: CreateThemeOptions,
 ): ThemeSurface {
-  if (process.env.NODE_ENV !== 'production') {
-    if (config.modes && config.colorMode) {
-      throw new Error(
-        `[typestyles] createTheme('${name}'): provide either "modes" or "colorMode", not both. ` +
-          `Use "modes" for manual conditions or "colorMode" for presets like tokens.colorMode.mediaOnly().`,
-      );
-    }
-  }
+  const colorModes = options?.colorModes;
+  const darkWhen = options?.resolvedDarkWhen ?? resolvedDarkWhen('data-mode', 'self');
 
   const segment = themeSegment(scopeId, name);
   const className = `theme-${segment}`;
@@ -392,21 +420,52 @@ export function createTheme(
     }
   };
 
-  // 1. Base rule
-  const baseDecls = config.base ? buildDeclarations(scopeId, config.base, naming) : '';
-  if (baseDecls) {
-    emitRule(`theme:${segment}:base`, `.${className} { ${baseDecls}; }`);
+  let resolvedBase = config.base ?? {};
+  let darkOnlyFallback: ThemeOverrides | null = null;
+
+  if (config.colorMode) {
+    const merged = mergeThemeColorModePatches(
+      resolvedBase,
+      config.colorMode.light,
+      config.colorMode.dark,
+      colorModes,
+    );
+    resolvedBase = merged.merged;
+    darkOnlyFallback = merged.darkOnly;
   } else {
-    // Emit an empty base rule so the class always exists in the sheet
+    const expanded = expandThemeOverrides(resolvedBase, colorModes);
+    resolvedBase = expanded.expanded;
+    darkOnlyFallback = expanded.darkOnly;
+  }
+
+  const baseDecls = buildDeclarations(scopeId, resolvedBase, naming, colorModes).decls;
+  const colorSchemeDecl = colorModes ? 'color-scheme: light dark' : '';
+  const allBaseDecls = [colorSchemeDecl, baseDecls].filter(Boolean).join('; ');
+
+  if (allBaseDecls) {
+    emitRule(`theme:${segment}:base`, `.${className} { ${allBaseDecls}; }`);
+  } else {
     emitRule(`theme:${segment}:base`, `.${className} { }`);
   }
 
-  // 2. Mode layers
-  const modes = config.modes ?? config.colorMode ?? [];
+  const modes: ThemeModeDefinition[] = [...(config.modes ?? [])];
+  if (darkOnlyFallback && Object.keys(darkOnlyFallback).length > 0) {
+    modes.push({
+      id: 'token-dark-fallback',
+      overrides: darkOnlyFallback,
+      when: darkWhen,
+    });
+  }
+
   const rules: Array<{ key: string; css: string }> = [];
 
   for (const mode of modes) {
-    const decls = buildDeclarations(scopeId, mode.overrides, naming);
+    const { decls, darkOnly: modeDarkOnly } = buildDeclarations(
+      scopeId,
+      mode.overrides,
+      naming,
+      colorModes,
+    );
     if (!decls) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(
@@ -423,6 +482,18 @@ export function createTheme(
       const selector = buildSelector(className, branch);
       const key = `theme:${segment}:mode:${mode.id}:branch:${i}`;
       rules.push({ key, css: buildRule(selector, decls, branch.media) });
+    }
+
+    if (modeDarkOnly && Object.keys(modeDarkOnly).length > 0) {
+      const darkDecls = buildDeclarations(scopeId, modeDarkOnly, naming, colorModes).decls;
+      if (darkDecls) {
+        for (let i = 0; i < compiledBranches.length; i++) {
+          const branch = compiledBranches[i];
+          const selector = buildSelector(className, branch);
+          const key = `theme:${segment}:mode:${mode.id}:dark-only:${i}`;
+          rules.push({ key, css: buildRule(selector, darkDecls, branch.media) });
+        }
+      }
     }
   }
 
@@ -458,6 +529,7 @@ export function createDarkMode(
   scopeId?: string,
   layerContext?: ThemeEmitLayerContext,
   naming?: ThemeTokenNaming,
+  options?: CreateThemeOptions,
 ): ThemeSurface {
   return createTheme(
     name,
@@ -467,5 +539,6 @@ export function createDarkMode(
     scopeId,
     layerContext,
     naming,
+    options,
   );
 }

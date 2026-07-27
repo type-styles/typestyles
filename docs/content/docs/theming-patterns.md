@@ -10,14 +10,14 @@ TypeStyles uses CSS custom properties for theming, making it flexible and powerf
 `tokens.createTheme(name, config)` registers a **theme surface**: a stable class name `theme-{name}` whose custom properties override token values for that subtree.
 
 - **`config.base`** — Token overrides always applied on `.theme-{name}` (your usual light / brand default).
-- **`config.modes`** — Manual list of `{ id, overrides, when }` layers (see `tokens.when.*`).
-- **`config.colorMode`** — Preset mode layers from `tokens.colorMode.*` (media-only dark, attribute toggles, light/dark/system, etc.).
+- **`config.colorMode`** — Optional `{ light?, dark? }` patches deep-merged into `base` and compiled to `light-dark()` when `colorModes` is configured (see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves)).
+- **`config.modes`** — Manual list of `{ id, overrides, when }` layers (see `tokens.when.*`), including spreads of `tokens.colorMode.*` preset arrays.
 
-Provide **`modes` or `colorMode`, not both.** Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).
+Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).
 
 The return value is a **`ThemeSurface`**: `{ className, name }`, with `String(surface)` and template literals resolving to `className`. In React, pass **`surface.className`** (or `String(surface)`) to `className` props.
 
-For **dark only when the OS prefers dark**, use `tokens.createDarkMode(name, overrides)` or `colorMode: tokens.colorMode.mediaOnly({ dark: … })`.
+For **dark only when the OS prefers dark**, use `tokens.createDarkMode(name, overrides)` or `modes: tokens.colorMode.mediaOnly({ dark: … })`.
 
 See [Tokens](/docs/tokens) for the core API. The `THEME.md` file at the repository root documents conditions, presets, and cascade ordering in full.
 
@@ -286,7 +286,7 @@ const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
 export const appTheme = tokens.createTheme('app', {
   base: light,
-  colorMode: tokens.colorMode.mediaOnly({ dark }),
+  modes: tokens.colorMode.mediaOnly({ dark }),
 });
 ```
 
@@ -581,7 +581,7 @@ const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
 export const shell = tokens.createTheme('shell', {
   base: light,
-  colorMode: tokens.colorMode.systemWithLightDarkOverride({
+  modes: tokens.colorMode.systemWithLightDarkOverride({
     attribute: 'data-color-mode',
     values: { light: 'light', dark: 'dark', system: 'system' },
     scope: 'ancestor',
@@ -592,6 +592,33 @@ export const shell = tokens.createTheme('shell', {
 ```
 
 Set `data-color-mode` on `html` (or another ancestor); apply `shell.className` on your themed subtree.
+
+### Mode-aware token values (`light-dark()` on custom properties)
+
+When you register `colorModes` on `createTypeStyles` or `createTokens`, token leaves can use
+`{ light, dark }` directly in `tokens.create()` and structured `colorMode: { light, dark }`
+patches on `tokens.createTheme()`. Color-compatible values compile to `light-dark()` on `--*`
+variables; shadow-like shorthands get a dark override rule instead.
+
+```ts
+import { colorModes, createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app', colorModes });
+
+const brand = tokens.create('brand', {
+  accent: { light: '#111', dark: '#eee' },
+});
+
+const theme = tokens.createTheme('acme', {
+  base: { color: { text: '#111' } },
+  colorMode: { dark: { color: { text: '#eee' } } },
+});
+```
+
+This is separate from **style-level** `{ light, dark }` on component properties (see
+[Mode-aware property values](#mode-aware-property-values-colormodes) below) and from
+**conditional** `modes` layers driven by `tokens.when.*`. See
+[Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves) for the full API.
 
 ## Condition scopes: `self`, `ancestor`, `descendant`
 
@@ -639,7 +666,7 @@ export const app = tokens.createTheme('app', {
 </div>
 ```
 
-The descendant-scoped rule compiles to `.theme-app [data-surface="dark"]`, so any element carrying `data-surface="dark"` inside the theme gets the dark token values — no matter what `prefers-color-scheme` or `data-color-mode` currently say. Note that `colorMode.*` presets return plain mode arrays, so you can spread one into `modes` alongside hand-written entries (as above) instead of using the `colorMode` config field.
+The descendant-scoped rule compiles to `.theme-app [data-surface="dark"]`, so any element carrying `data-surface="dark"` inside the theme gets the dark token values — no matter what `prefers-color-scheme` or `data-color-mode` currently say. `tokens.colorMode.*` presets return plain mode arrays — spread them into `modes` alongside hand-written entries (as above).
 
 Two properties worth knowing:
 

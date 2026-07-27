@@ -31,9 +31,21 @@ import {
 import { formatCustomPropertiesCss } from './custom-properties';
 import { insertRule, insertRules, invalidateKeys } from './sheet';
 import { createRegisteredPropertyRef, registerAtPropertySchema } from './registered-property';
-import { createTheme, createDarkMode, when, colorMode } from './theme';
+import {
+  createTheme,
+  createDarkMode,
+  when,
+  colorMode,
+  resolvedDarkWhen,
+  type CreateThemeOptions,
+  resolvedDarkWhenOnRoot,
+} from './theme';
 import type { CascadeLayersInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
+import type { ColorModeMap } from './color-modes';
+import { isColorModeObject } from './color-modes';
+import { expandModeAwareTokenValues } from './token-color-modes';
+import { compileThemeCondition, buildSelectorForContext } from './condition-compile';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -82,6 +94,10 @@ export type CreateTokensOptions = {
    * `tokens.create('color', values, { nameTemplate })`.
    */
   nameTemplate?: TokenNameTemplate;
+  /**
+   * Color mode keys for `{ light, dark }` on token leaves — compiled to `light-dark()`.
+   */
+  colorModes?: ColorModeMap;
   /**
    * When set with **`tokenLayer`**, `:root` custom properties and theme surfaces are wrapped in
    * `@layer tokenLayer { … }`, and a matching `@layer …;` order preamble is registered.
@@ -171,7 +187,11 @@ function mergeCreateValues(
   ) as CreateTokenValues;
 }
 
-function collectAllKeysFromValues(values: CreateTokenValues, prefix = ''): Set<string> {
+function collectAllKeysFromValues(
+  values: CreateTokenValues,
+  prefix = '',
+  colorModes?: ColorModeMap,
+): Set<string> {
   const keys = new Set<string>();
   if (typeof values === 'string' || typeof values === 'number') {
     if (prefix) keys.add(prefix);
@@ -181,9 +201,15 @@ function collectAllKeysFromValues(values: CreateTokenValues, prefix = ''): Set<s
     const fullKey = prefix ? `${prefix}-${key}` : key;
     if (typeof value === 'string' || typeof value === 'number') {
       keys.add(fullKey);
+    } else if (colorModes && isColorModeObject(value, colorModes)) {
+      keys.add(fullKey);
     } else if (value !== null && typeof value === 'object') {
       keys.add(fullKey);
-      for (const nested of collectAllKeysFromValues(value as CreateTokenValues, fullKey)) {
+      for (const nested of collectAllKeysFromValues(
+        value as CreateTokenValues,
+        fullKey,
+        colorModes,
+      )) {
         keys.add(nested);
       }
     }
@@ -327,6 +353,12 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   options: CreateTokensOptions = {},
 ): TokensApi<R> {
   const scopeId = options.scopeId?.trim() || undefined;
+  const colorModes = options.colorModes;
+  const themeOptions: CreateThemeOptions = {
+    colorModes,
+    resolvedDarkWhen: resolvedDarkWhen('data-mode', 'self'),
+  };
+  const rootDarkWhen = resolvedDarkWhenOnRoot();
 
   if (process.env.NODE_ENV !== 'production') {
     if (options.layers && options.tokenLayer == null) {
@@ -465,6 +497,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     const mergedValues = mergeCreateValues(namespaceValueTrees.get(namespace), values);
     namespaceValueTrees.set(namespace, mergedValues);
 
+    const { expanded: emissionValues, darkOnly } = expandModeAwareTokenValues(
+      mergedValues as TokenValues,
+      colorModes,
+    );
+
     const cssNs = scopedTokenNamespace(scopeId, namespace);
     const effectiveTemplate =
       options?.nameTemplate ?? (hasDeclared ? declaredTemplate : instanceDefaultTemplate);
@@ -474,13 +511,13 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     const nameByPath = new Map<string, string>();
 
     if (effectiveTemplate === undefined) {
-      const entries = flattenTokenEntries(mergedValues as TokenValues);
+      const entries = flattenTokenEntries(emissionValues as TokenValues);
       flatEntries = entries.map(([path, value]) => ({ path, value }));
       for (const { path } of flatEntries) {
         nameByPath.set(path, formatScopedTokenPropertyName(scopeId, namespace, path));
       }
     } else {
-      const entries = flattenTokenPaths(mergedValues as TokenValues);
+      const entries = flattenTokenPaths(emissionValues as TokenValues);
       const seenNames = new Map<string, string>();
       flatEntries = entries.map(({ path, value }) => ({ path, value }));
 
@@ -514,20 +551,47 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       props[propName] = value;
     }
     const css = formatCustomPropertiesCss(':root', props);
+    const rulesToInsert: Array<{ key: string; css: string }> = [];
+
+    if (darkOnly != null && typeof darkOnly === 'object') {
+      const darkProps: Record<string, string> = {};
+      for (const [path, value] of flattenTokenEntries(darkOnly as TokenValues)) {
+        const propName =
+          nameByPath.get(path) ?? formatScopedTokenPropertyName(scopeId, namespace, path);
+        darkProps[propName] = value;
+      }
+      const decls = Object.entries(darkProps)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('; ');
+      const darkWhen = rootDarkWhen;
+      const compiledBranches = compileThemeCondition(darkWhen);
+      for (let i = 0; i < compiledBranches.length; i++) {
+        const branch = compiledBranches[i];
+        const selector = buildSelectorForContext({ anchor: ':root' }, branch);
+        const ruleCss = branch.media
+          ? `@media ${branch.media} { ${selector} { ${decls}; } }`
+          : `${selector} { ${decls}; }`;
+        rulesToInsert.push({ key: `tokens:${cssNs}:dark:${i}`, css: ruleCss });
+      }
+    }
+
     if (themeLayerContext) {
       const layer = options?.layer ?? themeLayerContext.layer;
       assertOwnLayer(themeLayerContext.stack, layer, 'tokens.create');
       const key = `tokens:${cssNs}@${layer}`;
-      invalidateKeys([key], []);
-      insertRules(applyLayerToRules([{ key, css }], layer, themeLayerContext.stack));
+      invalidateKeys([key, ...rulesToInsert.map((r) => r.key)], []);
+      insertRules(
+        applyLayerToRules([{ key, css }, ...rulesToInsert], layer, themeLayerContext.stack),
+      );
     } else {
       const key = `tokens:${cssNs}`;
-      invalidateKeys([key], []);
+      invalidateKeys([key, ...rulesToInsert.map((r) => r.key)], []);
       insertRule(key, css);
+      if (rulesToInsert.length > 0) insertRules(rulesToInsert);
     }
 
     const mergedSchema = namespaceSchemas.get(namespace);
-    const allKeys = collectAllKeysFromValues(mergedValues);
+    const allKeys = collectAllKeysFromValues(emissionValues as CreateTokenValues, '', colorModes);
     if (mergedSchema) {
       for (const { path } of flattenTokenSchema(mergedSchema)) {
         allKeys.add(path);
@@ -542,12 +606,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     createdTokenNameByPath.set(namespace, nameByPath);
 
     const resolvePathName = buildResolvePathName(namespace, effectiveTemplate, nameByPath);
-    const leafValues = Object.fromEntries(
-      flattenTokenEntries(mergedValues as TokenValues).map(([path, leafValue]) => [
-        path,
-        leafValue,
-      ]),
-    );
+    const leafValues = Object.fromEntries(flatEntries.map(({ path, value }) => [path, value]));
 
     const ref = createTokenProxy(resolvePathName, '', allKeys, descriptorLeaves) as CreatedTokenRef<
       CreateTokenValues,
@@ -568,6 +627,9 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
           `[typestyles] tokens.create(...) path "${fullKey}" uses a TokenDescriptor — ` +
             `move syntax to tokens.declare() schema instead.`,
         );
+      }
+      if (colorModes && isColorModeObject(value, colorModes)) {
+        continue;
       }
       if (value !== null && typeof value === 'object') {
         assertPlainCreateValues(value as CreateTokenValues, fullKey);
@@ -712,6 +774,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
         scopeId,
         themeLayerContext,
         customNamingActive ? themeTokenNaming : undefined,
+        themeOptions,
       ),
     createDarkMode: (name, darkOverrides) =>
       createDarkMode(
@@ -720,6 +783,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
         scopeId,
         themeLayerContext,
         customNamingActive ? themeTokenNaming : undefined,
+        themeOptions,
       ),
     when,
     colorMode,

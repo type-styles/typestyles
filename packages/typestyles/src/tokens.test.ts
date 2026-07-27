@@ -805,3 +805,73 @@ describe('createTheme', () => {
     expect(themeRule.cssText).not.toContain('--color-primary');
   });
 });
+
+describe('tokens.create mode-aware leaves', () => {
+  beforeEach(() => reset());
+
+  it('emits light-dark() for color-compatible mode-aware leaves', () => {
+    const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
+    api.create('brand', {
+      accent: { light: 'blue', dark: 'navy' },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/--app-brand-accent:\s*light-dark\(blue, navy\)/);
+  });
+
+  it('emits dark override rules for shadow-like mode-aware leaves', () => {
+    const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
+    api.create('brand', {
+      glow: { light: '0 0 0 3px blue', dark: '0 0 16px navy' },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--app-brand-glow: 0 0 0 3px blue');
+    expect(css).toContain(':root[data-mode="dark"]');
+    expect(css).toContain('--app-brand-glow: 0 0 16px navy');
+  });
+
+  it('falls back to light value when colorModes is not configured', () => {
+    const api = createTokens({ scopeId: 'app' });
+    api.create('brand', {
+      accent: { light: 'blue', dark: 'navy' },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--app-brand-accent: blue');
+    expect(css).not.toContain('--app-brand-accent-light');
+    expect(css).not.toContain('--app-brand-accent-dark');
+  });
+});
+
+describe('tokens.createTheme colorMode patches', () => {
+  beforeEach(() => reset());
+
+  it('compiles colorMode patches to light-dark() on theme class', () => {
+    const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
+    api.createTheme('acme', {
+      base: { color: { text: { primary: '#111' } } },
+      colorMode: {
+        dark: { color: { text: { primary: '#eee' } } },
+      },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/--app-color-text-primary:\s*light-dark\(#111, #eee\)/);
+    expect(css).toContain('.theme-app-acme { color-scheme: light dark');
+  });
+
+  it('supports mode-aware leaves directly on base', () => {
+    const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
+    api.createTheme('leaf', {
+      base: {
+        color: {
+          accent: { default: { light: '#111', dark: '#eee' } },
+        },
+      },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/--app-color-accent-default:\s*light-dark\(#111, #eee\)/);
+  });
+});
