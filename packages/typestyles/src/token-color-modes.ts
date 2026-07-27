@@ -1,7 +1,18 @@
 import { lightDark } from './color';
-import { isColorModeObject, validateColorModeObject, type ColorModeMap } from './color-modes';
+import {
+  isColorModeObject,
+  looksLikeUnconfiguredModeObject,
+  validateColorModeObject,
+  type ColorModeMap,
+} from './color-modes';
 import { isPlainObject } from './breakpoints';
 import type { ThemeOverrides, TokenValues } from './types';
+
+const defaultModeMap: ColorModeMap = ['light', 'dark'];
+
+function isModeLeaf(value: unknown): boolean {
+  return looksLikeUnconfiguredModeObject(value);
+}
 
 /** Whether a scalar token value can be wrapped in CSS `light-dark()` (color or image). */
 export function canUseLightDarkForTokenValue(value: string): boolean {
@@ -81,13 +92,15 @@ export function mergeTokenTreesWithColorModes(
     const darkValue = isNestedTokenObject(dark) ? dark[key] : undefined;
 
     if (isNestedTokenObject(lightValue) && isNestedTokenObject(darkValue)) {
-      const nested = mergeTokenTreesWithColorModes(lightValue, darkValue);
-      merged[key] = nested.merged;
-      if (nested.darkOnly) {
-        darkOnly[key] = nested.darkOnly;
-        hasDarkOnly = true;
+      if (!isModeLeaf(lightValue) && !isModeLeaf(darkValue)) {
+        const nested = mergeTokenTreesWithColorModes(lightValue, darkValue);
+        merged[key] = nested.merged;
+        if (nested.darkOnly) {
+          darkOnly[key] = nested.darkOnly;
+          hasDarkOnly = true;
+        }
+        continue;
       }
-      continue;
     }
 
     if (typeof lightValue === 'string' && typeof darkValue === 'string') {
@@ -102,6 +115,44 @@ export function mergeTokenTreesWithColorModes(
 
     if (typeof lightValue === 'number' && typeof darkValue === 'number') {
       const result = expandScalarPair(scalar(lightValue), scalar(darkValue), key);
+      merged[key] = result.merged;
+      if (result.darkOnly) {
+        darkOnly[key] = result.darkOnly;
+        hasDarkOnly = true;
+      }
+      continue;
+    }
+
+    if (isModeLeaf(lightValue) && typeof darkValue === 'string') {
+      const modeLeaf = lightValue as Record<string, string | number>;
+      const lightVal = scalar(modeLeaf.light ?? modeLeaf.dark!);
+      const result = expandScalarPair(lightVal, darkValue, key);
+      merged[key] = result.merged;
+      if (result.darkOnly) {
+        darkOnly[key] = result.darkOnly;
+        hasDarkOnly = true;
+      }
+      continue;
+    }
+
+    if (typeof lightValue === 'string' && isModeLeaf(darkValue)) {
+      const modeLeaf = darkValue as Record<string, string | number>;
+      const darkVal = scalar(modeLeaf.dark ?? modeLeaf.light!);
+      const result = expandScalarPair(lightValue, darkVal, key);
+      merged[key] = result.merged;
+      if (result.darkOnly) {
+        darkOnly[key] = result.darkOnly;
+        hasDarkOnly = true;
+      }
+      continue;
+    }
+
+    if (isModeLeaf(lightValue) && isModeLeaf(darkValue)) {
+      const lightLeaf = lightValue as Record<string, string | number>;
+      const darkLeaf = darkValue as Record<string, string | number>;
+      const lightVal = scalar(lightLeaf.light ?? darkLeaf.light!);
+      const darkVal = scalar(darkLeaf.dark ?? lightLeaf.dark!);
+      const result = expandScalarPair(lightVal, darkVal, key);
       merged[key] = result.merged;
       if (result.darkOnly) {
         darkOnly[key] = result.darkOnly;
@@ -209,14 +260,14 @@ export function expandModeAwareTokenValues(
   if (!colorModes) {
     if (process.env.NODE_ENV !== 'production' && isNestedTokenObject(values)) {
       for (const [key, child] of Object.entries(values)) {
-        if (isColorModeObject(child, ['light', 'dark'] as ColorModeMap)) {
+        if (isColorModeObject(child, defaultModeMap)) {
           console.warn(
             `[typestyles] Mode-aware token leaf "${key}" requires \`colorModes\` on \`createTypeStyles\` / \`createTokens\`.`,
           );
         }
       }
     }
-    return { expanded: values, darkOnly: null };
+    return { expanded: coerceUnexpandedModeLeaves(values), darkOnly: null };
   }
   return walkExpandModeAware(values, colorModes, '');
 }
@@ -229,6 +280,14 @@ export function mergeThemeColorModePatches(
   colorModes: ColorModeMap | undefined,
 ): { merged: ThemeOverrides; darkOnly: ThemeOverrides | null } {
   if (!colorModes) {
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      (lightPatch !== undefined || darkPatch !== undefined)
+    ) {
+      console.warn(
+        '[typestyles] `createTheme` `colorMode` patches require `colorModes` on `createTypeStyles` / `createTokens` — merging patches without compiling `light-dark()`.',
+      );
+    }
     return {
       merged: deepMergeThemeOverrides(deepMergeThemeOverrides(base, lightPatch), darkPatch),
       darkOnly: null,
@@ -274,6 +333,34 @@ export function mergeThemeColorModePatches(
     merged: expanded.expanded,
     darkOnly: hasDarkOnly ? (combinedDarkOnly as ThemeOverrides) : null,
   };
+}
+
+/**
+ * When `colorModes` is not configured, replace `{ light, dark }` leaves with the light
+ * value so flattening does not emit bogus `-light` / `-dark` custom property suffixes.
+ */
+export function coerceUnexpandedModeLeaves(values: TokenValues): TokenValues {
+  if (typeof values === 'string' || typeof values === 'number') {
+    return values;
+  }
+  if (!isNestedTokenObject(values)) {
+    return values;
+  }
+
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(values)) {
+    if (isModeLeaf(child)) {
+      const modeLeaf = child as Record<string, string | number>;
+      out[key] = modeLeaf.light ?? modeLeaf.dark!;
+      continue;
+    }
+    if (isNestedTokenObject(child)) {
+      out[key] = coerceUnexpandedModeLeaves(child as TokenValues);
+      continue;
+    }
+    out[key] = child;
+  }
+  return out as TokenValues;
 }
 
 /** Expand mode-aware values inside each namespace of theme overrides. */

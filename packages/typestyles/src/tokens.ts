@@ -356,7 +356,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const colorModes = options.colorModes;
   const themeOptions: CreateThemeOptions = {
     colorModes,
-    resolvedDarkWhen: resolvedDarkWhen(),
+    resolvedDarkWhen: resolvedDarkWhen('data-mode', 'self'),
   };
   const rootDarkWhen = resolvedDarkWhenOnRoot();
 

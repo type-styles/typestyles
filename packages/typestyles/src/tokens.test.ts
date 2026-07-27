@@ -830,6 +830,18 @@ describe('tokens.create mode-aware leaves', () => {
     expect(css).toContain(':root[data-mode="dark"]');
     expect(css).toContain('--app-brand-glow: 0 0 16px navy');
   });
+
+  it('falls back to light value when colorModes is not configured', () => {
+    const api = createTokens({ scopeId: 'app' });
+    api.create('brand', {
+      accent: { light: 'blue', dark: 'navy' },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--app-brand-accent: blue');
+    expect(css).not.toContain('--app-brand-accent-light');
+    expect(css).not.toContain('--app-brand-accent-dark');
+  });
 });
 
 describe('tokens.createTheme colorMode patches', () => {

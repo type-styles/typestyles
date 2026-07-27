@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { colorModes } from './color-modes';
+import { colorModes, isColorModeObject } from './color-modes';
 import {
   canUseLightDarkForTokenValue,
   expandModeAwareTokenValues,
   mergeThemeColorModePatches,
   mergeTokenTreesWithColorModes,
+  coerceUnexpandedModeLeaves,
 } from './token-color-modes';
 
 describe('token-color-modes', () => {
@@ -59,6 +60,29 @@ describe('token-color-modes', () => {
     expect(merged).toEqual({ accent: { default: 'light-dark(#111, #eee)' } });
   });
 
+  it('detects mode-aware leaves for merge', () => {
+    expect(isColorModeObject({ light: '#111', dark: '#222' }, colorModes)).toBe(true);
+  });
+
+  it('applies scalar dark patch over mode-aware base leaf', () => {
+    const { merged } = mergeTokenTreesWithColorModes(
+      { accent: { light: '#111', dark: '#222' } },
+      { accent: '#eee' },
+    );
+    expect(merged).toEqual({ accent: 'light-dark(#111, #eee)' });
+  });
+
+  it('coerces mode-aware leaves without colorModes to light value', () => {
+    expect(coerceUnexpandedModeLeaves({ accent: { light: '#111', dark: '#eee' } })).toEqual({
+      accent: '#111',
+    });
+    const { expanded } = expandModeAwareTokenValues(
+      { accent: { light: '#111', dark: '#eee' } },
+      undefined,
+    );
+    expect(expanded).toEqual({ accent: '#111' });
+  });
+
   describe('dev warnings', () => {
     const originalEnv = process.env.NODE_ENV;
 
@@ -75,6 +99,17 @@ describe('token-color-modes', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expandModeAwareTokenValues({ accent: { light: '#111', dark: '#eee' } }, undefined);
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('colorModes'));
+    });
+
+    it('warns when colorMode patches are used without colorModes', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      mergeThemeColorModePatches(
+        { color: { text: '#111' } },
+        undefined,
+        { color: { text: '#eee' } },
+        undefined,
+      );
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('colorMode'));
     });
   });
 });

@@ -853,6 +853,53 @@ describe('colorMode patches with modes', () => {
     expect(css).toContain('light-dark(#111, #eee)');
     expect(css).toContain('--shadow-sm:');
   });
+
+  it('emits dark-only values for mode-aware leaves inside manual modes', () => {
+    createTheme(
+      'shadow-mode',
+      {
+        base: { shadow: { glow: '0 0 0 1px #000' } },
+        modes: [
+          {
+            id: 'dark',
+            overrides: {
+              shadow: { glow: { light: '0 0 0 1px #000', dark: '0 0 16px #fff' } },
+            },
+            when: when.prefersDark,
+          },
+        ],
+      },
+      undefined,
+      undefined,
+      undefined,
+      { colorModes: ['light', 'dark'] },
+    );
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--shadow-glow: 0 0 0 1px #000');
+    expect(css).toMatch(/prefers-color-scheme:\s*dark[\s\S]*--shadow-glow:\s*0 0 16px #fff/);
+  });
+
+  it('uses self-scoped dark fallback for incompatible colorMode leaves', () => {
+    createTheme(
+      'fallback-self',
+      {
+        base: {
+          shadow: { glow: { light: '0 0 0 1px #000', dark: '0 0 16px #fff' } },
+        },
+      },
+      undefined,
+      undefined,
+      undefined,
+      { colorModes: ['light', 'dark'] },
+    );
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.theme-fallback-self[data-mode="dark"]');
+    expect(css).toMatch(
+      /\.theme-fallback-self\[data-mode="dark"\][\s\S]*--shadow-glow:\s*0 0 16px #fff/,
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

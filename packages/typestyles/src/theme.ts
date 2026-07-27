@@ -182,8 +182,8 @@ function buildDeclarations(
   overrides: ThemeOverrides,
   naming?: ThemeTokenNaming,
   colorModes?: ColorModeMap,
-): string {
-  const { expanded } = expandThemeOverrides(overrides, colorModes);
+): { decls: string; darkOnly: ThemeOverrides | null } {
+  const { expanded, darkOnly } = expandThemeOverrides(overrides, colorModes);
   const parts: string[] = [];
   for (const [namespace, values] of Object.entries(expanded)) {
     if (values === null || values === undefined) continue;
@@ -200,7 +200,7 @@ function buildDeclarations(
       parts.push(`--${cssNs}-${key}: ${value}`);
     }
   }
-  return parts.join('; ');
+  return { decls: parts.join('; '), darkOnly };
 }
 
 function themeSegment(scopeId: string | undefined, name: string): string {
@@ -407,7 +407,7 @@ export function createTheme(
   options?: CreateThemeOptions,
 ): ThemeSurface {
   const colorModes = options?.colorModes;
-  const darkWhen = options?.resolvedDarkWhen ?? resolvedDarkWhen();
+  const darkWhen = options?.resolvedDarkWhen ?? resolvedDarkWhen('data-mode', 'self');
 
   const segment = themeSegment(scopeId, name);
   const className = `theme-${segment}`;
@@ -438,7 +438,7 @@ export function createTheme(
     darkOnlyFallback = expanded.darkOnly;
   }
 
-  const baseDecls = buildDeclarations(scopeId, resolvedBase, naming, colorModes);
+  const baseDecls = buildDeclarations(scopeId, resolvedBase, naming, colorModes).decls;
   const colorSchemeDecl = colorModes ? 'color-scheme: light dark' : '';
   const allBaseDecls = [colorSchemeDecl, baseDecls].filter(Boolean).join('; ');
 
@@ -460,7 +460,12 @@ export function createTheme(
   const rules: Array<{ key: string; css: string }> = [];
 
   for (const mode of modes) {
-    const decls = buildDeclarations(scopeId, mode.overrides, naming, colorModes);
+    const { decls, darkOnly: modeDarkOnly } = buildDeclarations(
+      scopeId,
+      mode.overrides,
+      naming,
+      colorModes,
+    );
     if (!decls) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(
@@ -477,6 +482,18 @@ export function createTheme(
       const selector = buildSelector(className, branch);
       const key = `theme:${segment}:mode:${mode.id}:branch:${i}`;
       rules.push({ key, css: buildRule(selector, decls, branch.media) });
+    }
+
+    if (modeDarkOnly && Object.keys(modeDarkOnly).length > 0) {
+      const darkDecls = buildDeclarations(scopeId, modeDarkOnly, naming, colorModes).decls;
+      if (darkDecls) {
+        for (let i = 0; i < compiledBranches.length; i++) {
+          const branch = compiledBranches[i];
+          const selector = buildSelector(className, branch);
+          const key = `theme:${segment}:mode:${mode.id}:dark-only:${i}`;
+          rules.push({ key, css: buildRule(selector, darkDecls, branch.media) });
+        }
+      }
     }
   }
 
