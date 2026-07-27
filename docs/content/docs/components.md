@@ -110,6 +110,31 @@ c.trigger;
 c.content;
 ```
 
+When inference still needs help (for example a config built in a helper that returns a widened object), pin the slot overload with explicit type parameters — **slots first, then variant definitions**:
+
+```ts
+const APP_SHELL_SLOTS = ['root', 'header', 'main'] as const;
+type AppShellVariantDefs = {
+  density: {
+    compact: { root: { gap: string } };
+    comfortable: { root: { gap: string } };
+  };
+};
+
+export const appShell = styles.component<typeof APP_SHELL_SLOTS, AppShellVariantDefs>('app-shell', {
+  slots: APP_SHELL_SLOTS,
+  base: { root: { display: 'grid' } },
+  variants: {
+    density: {
+      compact: { root: { gap: '4px' } },
+      comfortable: { root: { gap: '12px' } },
+    },
+  },
+});
+```
+
+Callback configs `(ctx) => ({ slots, base, variants })` use the same slot overload as object literals — `slots` is not a valid key on flat or dimensioned configs.
+
 For **class-based** modes (`semantic` / `bem` / `template`), a `compoundVariants` entry whose `style` targets a slot only includes dimensions that actually emitted a modifier class for that slot. If a dimension option never styles the slot, that constraint is omitted from the chained selector and the compound can apply more broadly than the `variants` object suggests. Give every compounded dimension a style on that slot, or prefer `mode: 'attribute'` (attrs land on every slot).
 
 ## Data and ARIA selectors

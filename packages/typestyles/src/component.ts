@@ -268,20 +268,6 @@ function resolveComponentConfig(
  * Slot recipes return an attrs result for every declared slot; flat configs continue to return
  * plain class strings. See `specs/semantic-and-attribute-mode.md`.
  */
-export function createComponent<const V extends VariantDefinitions>(
-  classNaming: ClassNamingConfig,
-  namespace: string,
-  config: ComponentConfigInput<V>,
-  layer?: string,
-): ComponentReturn<V>;
-
-export function createComponent<const K extends string>(
-  classNaming: ClassNamingConfig,
-  namespace: string,
-  config: FlatComponentConfigInput<K>,
-  layer?: string,
-): FlatComponentReturn<K>;
-
 export function createComponent<
   const Slots extends readonly string[],
   V extends SlotVariantDefinitions<Slots[number]>,
@@ -298,6 +284,20 @@ export function createComponent<const Slots extends readonly string[]>(
   config: MultiSlotConfigInput<Slots>,
   layer?: string,
 ): MultiSlotReturn<Slots>;
+
+export function createComponent<const V extends VariantDefinitions>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: ComponentConfigInput<V>,
+  layer?: string,
+): ComponentReturn<V>;
+
+export function createComponent<const K extends string>(
+  classNaming: ClassNamingConfig,
+  namespace: string,
+  config: FlatComponentConfigInput<K>,
+  layer?: string,
+): FlatComponentReturn<K>;
 
 export function createComponent(
   classNaming: ClassNamingConfig,
