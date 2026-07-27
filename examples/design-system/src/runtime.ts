@@ -1,4 +1,4 @@
-import { createTypeStyles } from 'typestyles';
+import { colorModes, createTypeStyles } from 'typestyles';
 
 /**
  * Single factory: shared scope and optional cascade layer stack for classes + tokens.
@@ -8,6 +8,7 @@ import { createTypeStyles } from 'typestyles';
 export const { styles, tokens, global } = createTypeStyles({
   scopeId: 'example-ds',
   mode: 'semantic',
+  colorModes,
   layers: ['tokens', 'components', 'utilities'] as const,
   tokenLayer: 'tokens',
   /** Baseline globals (e.g. `body`) share the token layer so they cascade with `:root` theme CSS. */

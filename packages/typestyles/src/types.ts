@@ -436,17 +436,23 @@ export type ThemeModeDefinition = {
   readonly when: ThemeCondition;
 };
 
+export type ThemeColorModePatches = {
+  light?: ThemeOverrides;
+  dark?: ThemeOverrides;
+};
+
 /**
  * Configuration for `tokens.createTheme()`.
- * Provide `modes` (manual) **or** `colorMode` (preset), not both.
+ * `colorMode` merges light/dark patches into `light-dark()` on custom properties.
+ * `modes` adds conditional override layers (presets, shadow fallbacks, etc.).
  */
 export type ThemeConfig = {
   /** Base token overrides — emitted as `.theme-{name} { … }`. */
   base?: ThemeOverrides;
-  /** Manual mode layers with explicit conditions. Mutually exclusive with `colorMode`. */
+  /** Light/dark token patches compiled to `light-dark()` on theme custom properties. */
+  colorMode?: ThemeColorModePatches;
+  /** Conditional mode layers with explicit `when` conditions. */
   modes?: ThemeModeDefinition[];
-  /** Preset mode layers from `tokens.colorMode.*`. Mutually exclusive with `modes`. */
-  colorMode?: ThemeModeDefinition[];
 };
 
 /**

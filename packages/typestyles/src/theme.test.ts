@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createTheme, createDarkMode, when, colorMode } from './theme';
-import { reset, flushSync } from './sheet';
+import { reset, flushSync, getRegisteredCss } from './sheet';
 
 function getRules(): CSSRule[] {
   const style = document.getElementById('typestyles') as HTMLStyleElement;
@@ -666,7 +666,7 @@ describe('colorMode.mediaOnly', () => {
   it('produces a single dark mode under prefers-color-scheme: dark', () => {
     createTheme('m1', {
       base: { color: { text: '#000' } },
-      colorMode: colorMode.mediaOnly({
+      modes: colorMode.mediaOnly({
         dark: { color: { text: '#fff' } },
       }),
     });
@@ -686,7 +686,7 @@ describe('colorMode.attributeOnly', () => {
   it('produces dark mode via attribute only', () => {
     createTheme('a1', {
       base: { color: { text: '#000' } },
-      colorMode: colorMode.attributeOnly({
+      modes: colorMode.attributeOnly({
         attribute: 'data-theme',
         values: { dark: 'dark' },
         scope: 'ancestor',
@@ -706,7 +706,7 @@ describe('colorMode.attributeOnly', () => {
   it('includes optional light override', () => {
     createTheme('a2', {
       base: { color: { text: '#333' } },
-      colorMode: colorMode.attributeOnly({
+      modes: colorMode.attributeOnly({
         attribute: 'data-theme',
         values: { dark: 'dark', light: 'light' },
         scope: 'self',
@@ -732,7 +732,7 @@ describe('colorMode.mediaOrAttribute', () => {
   it('dark applies under either media or attribute (OR)', () => {
     createTheme('ma1', {
       base: { color: { bg: '#fff' } },
-      colorMode: colorMode.mediaOrAttribute({
+      modes: colorMode.mediaOrAttribute({
         attribute: 'data-color-mode',
         values: { dark: 'dark' },
         scope: 'ancestor',
@@ -761,7 +761,7 @@ describe('colorMode.systemWithLightDarkOverride', () => {
 
     createTheme('sw1', {
       base: lightTokens,
-      colorMode: colorMode.systemWithLightDarkOverride({
+      modes: colorMode.systemWithLightDarkOverride({
         attribute: 'data-color-mode',
         values: { light: 'light', dark: 'dark' },
         scope: 'ancestor',
@@ -801,7 +801,7 @@ describe('colorMode.systemWithLightDarkOverride', () => {
   it('works with self scope', () => {
     createTheme('sw2', {
       base: { color: { text: '#000' } },
-      colorMode: colorMode.systemWithLightDarkOverride({
+      modes: colorMode.systemWithLightDarkOverride({
         attribute: 'data-mode',
         values: { light: 'light', dark: 'dark' },
         scope: 'self',
@@ -825,20 +825,33 @@ describe('colorMode.systemWithLightDarkOverride', () => {
 });
 
 // ---------------------------------------------------------------------------
-// modes + colorMode mutual exclusion
+// structured colorMode patches + modes
 // ---------------------------------------------------------------------------
 
-describe('modes + colorMode mutual exclusion', () => {
+describe('colorMode patches with modes', () => {
   beforeEach(() => reset());
 
-  it('throws when both modes and colorMode are provided', () => {
-    expect(() =>
-      createTheme('bad', {
-        base: { color: { text: '#000' } },
-        modes: [{ id: 'dark', overrides: { color: { text: '#fff' } }, when: when.prefersDark }],
-        colorMode: colorMode.mediaOnly({ dark: { color: { text: '#fff' } } }),
-      }),
-    ).toThrow(/provide either "modes" or "colorMode"/);
+  it('allows colorMode patches alongside manual modes', () => {
+    createTheme(
+      'both',
+      {
+        base: { color: { text: '#111' } },
+        colorMode: {
+          dark: { color: { text: '#eee' } },
+        },
+        modes: [
+          { id: 'shadow', overrides: { shadow: { sm: '0 1px 2px #000' } }, when: when.prefersDark },
+        ],
+      },
+      undefined,
+      undefined,
+      undefined,
+      { colorModes: ['light', 'dark'] },
+    );
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('light-dark(#111, #eee)');
+    expect(css).toContain('--shadow-sm:');
   });
 });
 
@@ -967,12 +980,12 @@ describe('multiple themes (brand switching)', () => {
   it('independent themes do not interfere', () => {
     const acme = createTheme('acme', {
       base: { color: { primary: '#0066ff' } },
-      colorMode: colorMode.mediaOnly({ dark: { color: { primary: '#66b3ff' } } }),
+      modes: colorMode.mediaOnly({ dark: { color: { primary: '#66b3ff' } } }),
     });
 
     const contoso = createTheme('contoso', {
       base: { color: { primary: '#ff6600' } },
-      colorMode: colorMode.mediaOnly({ dark: { color: { primary: '#ffaa66' } } }),
+      modes: colorMode.mediaOnly({ dark: { color: { primary: '#ffaa66' } } }),
     });
 
     flushSync();
@@ -989,8 +1002,8 @@ describe('multiple themes (brand switching)', () => {
     const darkTokens = { color: { text: '#eee' } };
     const sharedModes = () => colorMode.mediaOnly({ dark: darkTokens });
 
-    createTheme('brand-a', { base: { color: { text: '#111' } }, colorMode: sharedModes() });
-    createTheme('brand-b', { base: { color: { text: '#222' } }, colorMode: sharedModes() });
+    createTheme('brand-a', { base: { color: { text: '#111' } }, modes: sharedModes() });
+    createTheme('brand-b', { base: { color: { text: '#222' } }, modes: sharedModes() });
 
     flushSync();
 
