@@ -649,6 +649,12 @@ export type ComponentConfig<V extends VariantDefinitions> = {
     style: VariantOptionStyle;
   }>;
   defaultVariants?: ComponentSelections<V>;
+  /**
+   * Forbidden — use {@link SlotComponentConfig} when a recipe declares `slots`.
+   * Without this, callback configs `(ctx) => ({ slots, base, variants })` structurally
+   * match dimensioned configs (excess-property checks do not apply to function return types).
+   */
+  slots?: never;
 };
 
 // ---------------------------------------------------------------------------

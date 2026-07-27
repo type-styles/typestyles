@@ -154,7 +154,7 @@ function Button({ variant = 'primary', size = 'medium', children }: ButtonProps)
 
 ### Stricter object literals
 
-You can add `as const` to **nested values** when you want literal types preserved (for example token-like maps). For `styles.component`, variant keys are inferred from the config object, and **multipart `slots` names are inferred from a `slots` array literal** (no `as const` needed when the array is written inline in the config). Use explicit component prop types when you need a narrower public API than the style keys alone.
+You can add `as const` to **nested values** when you want literal types preserved (for example token-like maps). For `styles.component`, variant keys are inferred from the config object, and **multipart `slots` names are inferred from a `slots` array literal** (no `as const` needed when the array is written inline in the config). If a slot recipe is built in a helper with a widened return type, pin the overload with `styles.component<typeof SLOTS, VariantDefs>(…)` — see [Components — Multipart `slots`](/docs/components#multipart-slots). Use explicit component prop types when you need a narrower public API than the style keys alone.
 
 ## Utility types
 

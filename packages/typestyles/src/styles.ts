@@ -289,14 +289,6 @@ export type StylesApi = {
   class: (name: string, properties: CSSProperties) => string;
   hashClass: (properties: CSSProperties, label?: string) => string;
   component: {
-    <const V extends VariantDefinitions>(
-      namespace: string,
-      config: ComponentConfigInput<V>,
-    ): ComponentReturn<V>;
-    <const K extends string>(
-      namespace: string,
-      config: FlatComponentConfigInput<K>,
-    ): FlatComponentReturn<K>;
     <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
       namespace: string,
       config: SlotComponentConfigInput<Slots, V>,
@@ -305,6 +297,14 @@ export type StylesApi = {
       namespace: string,
       config: MultiSlotConfigInput<Slots>,
     ): MultiSlotReturn<Slots>;
+    <const V extends VariantDefinitions>(
+      namespace: string,
+      config: ComponentConfigInput<V>,
+    ): ComponentReturn<V>;
+    <const K extends string>(
+      namespace: string,
+      config: FlatComponentConfigInput<K>,
+    ): FlatComponentReturn<K>;
   };
   withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApi<U>;
   compose: typeof compose;
@@ -350,16 +350,6 @@ export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>
 };
 
 export type LayeredComponentFn<L extends string> = {
-  <const V extends VariantDefinitions>(
-    namespace: string,
-    config: ComponentConfigInput<V>,
-    options: LayerOption<L>,
-  ): ComponentReturn<V>;
-  <const K extends string>(
-    namespace: string,
-    config: FlatComponentConfigInput<K>,
-    options: LayerOption<L>,
-  ): FlatComponentReturn<K>;
   <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
     namespace: string,
     config: SlotComponentConfigInput<Slots, V>,
@@ -370,19 +360,19 @@ export type LayeredComponentFn<L extends string> = {
     config: MultiSlotConfigInput<Slots>,
     options: LayerOption<L>,
   ): MultiSlotReturn<Slots>;
+  <const V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+    options: LayerOption<L>,
+  ): ComponentReturn<V>;
+  <const K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+    options: LayerOption<L>,
+  ): FlatComponentReturn<K>;
 };
 
 export type LayeredComponentFnWithUtils<L extends string> = {
-  <const V extends VariantDefinitions>(
-    namespace: string,
-    config: ComponentConfigInput<V>,
-    options: LayerOption<L>,
-  ): ComponentReturn<V>;
-  <const K extends string>(
-    namespace: string,
-    config: FlatComponentConfigInput<K>,
-    options: LayerOption<L>,
-  ): FlatComponentReturn<K>;
   <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
     namespace: string,
     config: SlotComponentConfigInput<Slots, V>,
@@ -393,6 +383,16 @@ export type LayeredComponentFnWithUtils<L extends string> = {
     config: MultiSlotConfigInput<Slots>,
     options: LayerOption<L>,
   ): MultiSlotReturn<Slots>;
+  <const V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+    options: LayerOption<L>,
+  ): ComponentReturn<V>;
+  <const K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+    options: LayerOption<L>,
+  ): FlatComponentReturn<K>;
 };
 
 export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = Omit<
@@ -668,14 +668,6 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
   component: {
-    <const V extends VariantDefinitions>(
-      namespace: string,
-      config: ComponentConfigInput<V>,
-    ): ComponentReturn<V>;
-    <const K extends string>(
-      namespace: string,
-      config: FlatComponentConfigInput<K>,
-    ): FlatComponentReturn<K>;
     <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
       namespace: string,
       config: SlotComponentConfigInput<Slots, V>,
@@ -684,6 +676,14 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
       namespace: string,
       config: MultiSlotConfigInput<Slots>,
     ): MultiSlotReturn<Slots>;
+    <const V extends VariantDefinitions>(
+      namespace: string,
+      config: ComponentConfigInput<V>,
+    ): ComponentReturn<V>;
+    <const K extends string>(
+      namespace: string,
+      config: FlatComponentConfigInput<K>,
+    ): FlatComponentReturn<K>;
   };
   compose: typeof compose;
   scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) => void;
@@ -696,14 +696,6 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
 // ---------------------------------------------------------------------------
 
 export type AttributeComponentFn = {
-  <const V extends VariantDefinitions>(
-    namespace: string,
-    config: ComponentConfigInput<V>,
-  ): ComponentAttrsReturn<V>;
-  <const K extends string>(
-    namespace: string,
-    config: FlatComponentConfigInput<K>,
-  ): FlatComponentReturn<K>;
   <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
     namespace: string,
     config: SlotComponentConfigInput<Slots, V>,
@@ -712,19 +704,17 @@ export type AttributeComponentFn = {
     namespace: string,
     config: MultiSlotConfigInput<Slots>,
   ): MultiSlotReturn<Slots>;
+  <const V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+  ): ComponentAttrsReturn<V>;
+  <const K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+  ): FlatComponentReturn<K>;
 };
 
 export type LayeredAttributeComponentFn<L extends string> = {
-  <const V extends VariantDefinitions>(
-    namespace: string,
-    config: ComponentConfigInput<V>,
-    options: LayerOption<L>,
-  ): ComponentAttrsReturn<V>;
-  <const K extends string>(
-    namespace: string,
-    config: FlatComponentConfigInput<K>,
-    options: LayerOption<L>,
-  ): FlatComponentReturn<K>;
   <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
     namespace: string,
     config: SlotComponentConfigInput<Slots, V>,
@@ -735,6 +725,16 @@ export type LayeredAttributeComponentFn<L extends string> = {
     config: MultiSlotConfigInput<Slots>,
     options: LayerOption<L>,
   ): MultiSlotReturn<Slots>;
+  <const V extends VariantDefinitions>(
+    namespace: string,
+    config: ComponentConfigInput<V>,
+    options: LayerOption<L>,
+  ): ComponentAttrsReturn<V>;
+  <const K extends string>(
+    namespace: string,
+    config: FlatComponentConfigInput<K>,
+    options: LayerOption<L>,
+  ): FlatComponentReturn<K>;
 };
 
 export type AttributeStylesApi = Omit<StylesApi, 'component' | 'withUtils'> & {
