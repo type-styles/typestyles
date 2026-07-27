@@ -40,7 +40,9 @@ type CSSPropertiesBase = {
     | undefined;
 };
 
-export type CSSProperties = CSSPropertiesBase;
+// Empty interface (not type alias) so consumers can augment via `declare module 'typestyles'`.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- module augmentation
+export interface CSSProperties extends CSSPropertiesBase {}
 
 /**
  * Utility function map used by `createStyles({ utils })` and `styles.withUtils()`.
@@ -60,15 +62,12 @@ type UtilityValue<U extends StyleUtils, K extends keyof U> = U[K] extends (
 
 /**
  * CSS properties augmented with user-defined utility keys.
+ *
+ * Extends {@link CSSProperties} with mapped utility keys; same open string index as
+ * `CSSProperties` so `[v.name]: value` works in nested selectors (Issue #167).
  */
-export type CSSPropertiesWithUtils<U extends StyleUtils> = CSS.Properties<CSSValue> & {
+export type CSSPropertiesWithUtils<U extends StyleUtils> = CSSPropertiesBase & {
   [K in keyof U]?: UtilityValue<U, K>;
-} & {
-  [selector: `&${string}`]: CSSPropertiesWithUtils<U>;
-  [selectorWithAncestor: `${string}&${string}`]: CSSPropertiesWithUtils<U>;
-  [attribute: `[${string}]`]: CSSPropertiesWithUtils<U>;
-  /** @see {@link CSSProperties} at-rule index signature (TODO: `supports()` helper). */
-  [atRule: `@${string}`]: CSSPropertiesWithUtils<U>;
 };
 
 /**

@@ -3,7 +3,7 @@
  * Issue #167 — failures here fail `pnpm typecheck`.
  */
 import { createStyles } from './styles';
-import type { VariantOptionStyle } from './types';
+import type { CSSProperties, VariantOptionStyle } from './types';
 
 const styles = createStyles();
 
@@ -153,11 +153,35 @@ const multiSlot = styles.component('vars-multi', (ctx) => {
   };
 });
 
+function setCssVar(name: string, value: string): CSSProperties {
+  return { [name]: value };
+}
+
 // --- direct assignability ---
 const directAssign: VariantOptionStyle = {
   color: 'red',
   '&[data-selected]': setVar('--test-bg', 'blue'),
 };
+
+const directCssProperties: CSSProperties = {
+  color: 'red',
+  '&[data-selected]': setCssVar('--test-bg', 'blue'),
+};
+
+// --- withUtils + computed var keys ---
+const utils = styles.withUtils({
+  padded: (size: number) => ({ padding: size }),
+});
+
+function withUtilsVars(v: { background: { name: string } }): string {
+  return utils.class('vars-utils', {
+    [v.background.name]: '#eee',
+    '&:hover': {
+      [v.background.name]: '#ddd',
+    },
+    padded: 8,
+  });
+}
 
 void baseVars;
 void flatVars;
@@ -166,3 +190,5 @@ void slotVars;
 void cvaVars;
 void multiSlot;
 void directAssign;
+void directCssProperties;
+void withUtilsVars;
