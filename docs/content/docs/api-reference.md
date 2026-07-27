@@ -51,17 +51,17 @@ bundles share a page.
 
 **Methods:**
 
-- `tokens.create(namespace, values, options?)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Values are plain `string | number` (no inline `{ value, syntax }` descriptors — use `tokens.declare` for `@property` schema). Multiple calls on the same namespace merge values. Pass `{ decl }` (the return value of `tokens.declare`) for typed partial fills and dev-mode namespace alignment.
+- `tokens.create(namespace, values, options?)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Values are plain `string | number`, or `{ light, dark }` leaves when `colorModes` is configured (see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves)). Multiple calls on the same namespace merge values. Pass `{ decl }` (the return value of `tokens.declare`) for typed partial fills and dev-mode namespace alignment.
 - `tokens.declare(namespace, schema, options?)`: Declares a namespace schema, emits `@property` for `syntax` leaves, and returns a typed forward-reference proxy usable before `tokens.create()`. Schema leaves are `{ syntax, inherits?, initial? }` or `true` (plain path). Optional `nameTemplate` must match later `create()` calls (dev-mode throw on mismatch). See [Tokens — Forward-referencing tokens](/docs/tokens#forward-referencing-tokens-tokensdeclare).
 - `tokens.use(namespace | createdRef)`: References existing tokens; infers types from a `tokens.create()` return value or a `createTokens<Registry>()` generic
-- `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties
+- `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties. `config.colorMode` accepts optional `{ light?, dark? }` patches; `config.modes` accepts conditional layers and `tokens.colorMode.*` preset arrays.
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
 - `tokens.when` / `tokens.colorMode`: Condition helpers for themes
 - `tokens.scopeId`: The scope passed to `createTokens`, if any
 
 ### `createTokens(options?)`
 
-Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme('dark', …)` registers `.theme-{scopeId}-dark` (sanitized segments). With **`layers`**, **`tokenLayer`** is required and token/theme CSS is wrapped in that layer. Optional **`nameTemplate`** on the instance or per `tokens.create` call controls emitted `--*` names (see [Tokens](/docs/tokens#custom-css-variable-names-nametemplate)).
+Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme('dark', …)` registers `.theme-{scopeId}-dark` (sanitized segments). With **`layers`**, **`tokenLayer`** is required and token/theme CSS is wrapped in that layer. Optional **`nameTemplate`** on the instance or per `tokens.create` call controls emitted `--*` names (see [Tokens](/docs/tokens#custom-css-variable-names-nametemplate)). Optional **`colorModes`** registers mode keys for `{ light, dark }` token leaves and theme `colorMode` patches (`light-dark()` emission); use the **`colorModes`** constant from `typestyles` (`['light', 'dark']`).
 
 The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
 
@@ -151,7 +151,7 @@ See [TypeScript Tips — Complex CSS values](/docs/typescript-tips).
 
 ### `createTypeStyles(options)`
 
-Returns **`{ styles, tokens, global }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. See [Cascade layers](/docs/cascade-layers).
+Returns **`{ styles, tokens, global }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**, **`colorModes`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. Pass **`colorModes`** (use the `colorModes` export from `typestyles`) to enable `{ light, dark }` on token leaves and theme patches — see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves). See [Cascade layers](/docs/cascade-layers).
 
 **Default singleton:** `import { styles, tokens } from 'typestyles'` is the same as calling `createStyles()` and `createTokens()` with **no** `scopeId`. That is fine for throwaway demos, but **prefer `createTypeStyles({ scopeId })`** in real apps and libraries so tokens and themes stay namespaced. Add **`global`** from the same constructor when you register [cascade layers](/docs/cascade-layers) or shared `@layer` stacks.
 

@@ -1,6 +1,6 @@
 ---
 title: Tokens
-description: Design tokens and theming with tokens.create, createTheme, and color modes
+description: Design tokens, mode-aware leaves, and theming with tokens.create and createTheme
 ---
 
 Tokens are design primitives (colors, spacing, etc.) exposed as CSS custom properties. They keep your styles consistent and make theming straightforward.
@@ -213,13 +213,103 @@ internally — including `scopeId` and any `nameTemplate`. If you pass a
 matching `create()` call (or omit it there to reuse the declared one);
 passing a different one throws in development.
 
+## Mode-aware token leaves
+
+Register color modes once on your TypeStyles instance, then use `{ light, dark }` on **token
+leaves** in `tokens.create()` and `tokens.createTheme()`. Compatible values (colors, images)
+compile to `light-dark()` on `--*` custom properties; incompatible values (shadow shorthands,
+lengths) keep the light value on the base rule and emit a dark-mode override rule.
+
+```ts
+import { colorModes, createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app', colorModes });
+
+tokens.create('brand', {
+  accent: { light: '#111827', dark: '#f9fafb' },
+  glow: { light: '0 0 0 3px blue', dark: '0 0 16px navy' },
+});
+// --app-brand-accent: light-dark(#111827, #f9fafb);
+// --app-brand-glow: 0 0 0 3px blue;
+// + dark override rule for --app-brand-glow when dark mode is active
+```
+
+`colorModes` from `typestyles` is `['light', 'dark']`. **Array order** defines
+`light-dark()` arguments: index `0` = light color-scheme, index `1` = dark — not inferred
+from key names alone. v1 supports at most two registered modes.
+
+Theme surfaces created while `colorModes` is configured also emit `color-scheme: light dark` on
+the theme class so `light-dark()` resolves correctly in the subtree.
+
+### Structured `colorMode` patches on themes
+
+Pass light and dark token trees as **patches** on `createTheme` — TypeStyles deep-merges them
+into `base` and compiles color-compatible leaves to `light-dark()`:
+
+```ts
+const light = { color: { text: { primary: '#111827' } } };
+const dark = { color: { text: { primary: '#f9fafb' } } };
+
+const acme = tokens.createTheme('acme', {
+  base: light,
+  colorMode: { light, dark },
+});
+// .theme-app-acme { color-scheme: light dark; --app-color-text-primary: light-dark(#111827, #f9fafb); }
+```
+
+You can supply only one side — for example `colorMode: { dark }` when `base` already holds the
+light values. Mode-aware leaves are also valid directly on `base`:
+
+```ts
+tokens.createTheme('leaf', {
+  base: {
+    color: {
+      accent: { default: { light: '#111', dark: '#eee' } },
+    },
+  },
+});
+```
+
+`colorMode` patches can be combined with manual `modes` layers (for example a shadow-only dark
+layer under `tokens.when.prefersDark`).
+
+### Preset mode layers (`tokens.colorMode.*`)
+
+Preset helpers (`mediaOnly`, `attributeOnly`, `mediaOrAttribute`,
+`systemWithLightDarkOverride`) return `ThemeModeDefinition[]` arrays. Pass them via **`modes`**
+(spread or assign), not the `colorMode` config field:
+
+```ts
+const light = { color: { text: '#111', surface: '#fff' } };
+const dark = { color: { text: '#eee', surface: '#111' } };
+
+const shell = tokens.createTheme('shell', {
+  base: light,
+  modes: tokens.colorMode.systemWithLightDarkOverride({
+    attribute: 'data-color-mode',
+    values: { light: 'light', dark: 'dark', system: 'system' },
+    scope: 'ancestor',
+    light,
+    dark,
+  }),
+});
+```
+
+See [Theming patterns](/docs/theming-patterns) for end-to-end examples with `data-mode`,
+multi-brand palettes, and condition scopes.
+
+`colorMode` on `createTheme` and `tokens.colorMode.*` presets solve different problems:
+**structured patches** compile static light/dark token values into `light-dark()` on the theme
+surface; **presets** emit conditional override rules when appearance should follow media queries
+or attribute toggles.
+
 ## Theming
 
 Use `tokens.createTheme(name, config)` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.
 
 - **`base`** — Overrides always applied on the surface (typical light / default brand).
-- **`modes`** — Extra layers with explicit `tokens.when.*` conditions.
-- **`colorMode`** — Preset layers from `tokens.colorMode.*` (mutually exclusive with `modes`).
+- **`colorMode`** — Optional `{ light?, dark? }` patches deep-merged into `base` and compiled to `light-dark()` when `colorModes` is configured (see [Mode-aware token leaves](#mode-aware-token-leaves)).
+- **`modes`** — Conditional layers with explicit `tokens.when.*` conditions, including spreads of `tokens.colorMode.*` preset arrays.
 
 ```ts
 const dark = tokens.createTheme('dark', {
@@ -247,27 +337,21 @@ const autoDark = tokens.createDarkMode('app', {
 });
 ```
 
-**Preset — system + `data-color-mode` toggle:**
+**Light/dark patches compiled to `light-dark()`:**
 
 ```ts
 const light = { color: { text: '#111', surface: '#fff' } };
 const dark = { color: { text: '#eee', surface: '#111' } };
 
-const shell = tokens.createTheme('shell', {
+const brand = tokens.createTheme('brand', {
   base: light,
-  colorMode: tokens.colorMode.systemWithLightDarkOverride({
-    attribute: 'data-color-mode',
-    values: { light: 'light', dark: 'dark', system: 'system' },
-    scope: 'ancestor',
-    light,
-    dark,
-  }),
+  colorMode: { light, dark },
 });
 ```
 
-Other presets: `tokens.colorMode.mediaOnly`, `attributeOnly`, `mediaOrAttribute`. Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`. `attr` and `className` take a `scope` of `'self'`, `'ancestor'`, or `'descendant'` describing where the marker lives relative to the theme root (see [Theming patterns](/docs/theming-patterns#condition-scopes-self-ancestor-descendant)).
+Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`. `attr` and `className` take a `scope` of `'self'`, `'ancestor'`, or `'descendant'` describing where the marker lives relative to the theme root (see [Theming patterns](/docs/theming-patterns#condition-scopes-self-ancestor-descendant)).
 
-See [Theming patterns](/docs/theming-patterns) for end-to-end examples.
+See [Theming patterns](/docs/theming-patterns) for preset mode layers, multi-brand setups, and component overrides.
 
 ## Interop with DTCG and Style Dictionary
 
