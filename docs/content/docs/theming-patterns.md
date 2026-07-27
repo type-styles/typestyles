@@ -620,6 +620,47 @@ This is separate from **style-level** `{ light, dark }` on component properties 
 **conditional** `modes` layers driven by `tokens.when.*`. See
 [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves) for the full API.
 
+## Building `createTheme({ from, tokens })` wrappers
+
+Design systems often expose a higher-level `createDesignTheme({ from, tokens, colorMode })`
+that merges a preset with user overrides before calling `tokens.createTheme()`. Token refs from
+`tokens.declare()` are proxy objects — they cannot be cloned with `structuredClone` and will not
+round-trip through ad-hoc deep merges.
+
+Use the exported helpers instead:
+
+```ts
+import { cloneThemeValues, mergeThemeOverrides } from 'typestyles';
+
+const preset = { color: { text: '#111827', accent: { default: '#0066ff' } } };
+
+export function createDesignTheme(options: {
+  from?: typeof preset;
+  tokens?: typeof preset;
+  colorMode?: { light?: typeof preset; dark?: typeof preset };
+}) {
+  const base = mergeThemeOverrides(options.from ?? {}, options.tokens);
+  const light = options.colorMode?.light
+    ? mergeThemeOverrides(base, options.colorMode.light)
+    : undefined;
+  const dark = options.colorMode?.dark
+    ? mergeThemeOverrides(base, options.colorMode.dark)
+    : undefined;
+
+  return tokens.createTheme('app', {
+    base: cloneThemeValues(base),
+    colorMode: { light, dark },
+  });
+}
+```
+
+**`mergeThemeOverrides(base, patch?)`** — deep-merge two override trees. Plain objects merge
+recursively; arrays and primitives from `patch` replace `base`. Token refs stringify to
+`var(--…)` at leaves.
+
+**`cloneThemeValues(values)`** — deep-clone a value tree with the same ref serialization.
+Useful when you need an isolated copy before passing overrides to `tokens.createTheme()`.
+
 ## Condition scopes: `self`, `ancestor`, `descendant`
 
 `tokens.when.attr(name, value, { scope })` and `tokens.when.className(name, { scope })` accept three `scope` values describing where the marker lives relative to the theme root:

@@ -170,35 +170,55 @@ export function mergeTokenTreesWithColorModes(
   };
 }
 
-function deepMergeThemeOverrides(base: ThemeOverrides, patch?: ThemeOverrides): ThemeOverrides {
-  if (!patch) return structuredClone(base) as ThemeOverrides;
-  const out = structuredClone(base) as Record<string, unknown>;
-  for (const [key, patchValue] of Object.entries(patch)) {
-    const baseValue = out[key];
-    if (isNestedTokenObject(baseValue) && isNestedTokenObject(patchValue)) {
-      out[key] = deepMergeTokenValues(baseValue as TokenValues, patchValue as TokenValues);
-    } else {
-      out[key] = patchValue;
-    }
-  }
-  return out as ThemeOverrides;
+function isRefLeaf(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (('name' in value && 'var' in value) ||
+      (Object.keys(value).length === 0 && String(value).startsWith('var(')))
+  );
 }
 
-function deepMergeTokenValues(base: TokenValues, patch: TokenValues): TokenValues {
-  if (typeof base === 'string' || typeof base === 'number') return patch;
-  if (typeof patch === 'string' || typeof patch === 'number') return patch;
-  if (!isNestedTokenObject(base) || !isNestedTokenObject(patch)) return patch;
+/** Deep-clone theme values; token refs stringify to `var(--…)` instead of `structuredClone`. */
+export function cloneThemeValues<T>(values: T): T {
+  if (values == null || typeof values !== 'object') return values;
+  if (isRefLeaf(values)) return String(values) as T;
+  if (Array.isArray(values)) return values.map(cloneThemeValues) as T;
+  if (!isPlainObject(values)) return String(values) as T;
 
-  const out = { ...base } as Record<string, TokenValues>;
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(values)) {
+    out[key] = cloneThemeValues(child);
+  }
+  return out as T;
+}
+
+function mergeTokenValues(base: TokenValues, patch: TokenValues): TokenValues {
+  if (!isPlainObject(base) || !isPlainObject(patch)) return cloneThemeValues(patch);
+
+  const out = cloneThemeValues(base) as Record<string, TokenValues>;
   for (const [key, patchValue] of Object.entries(patch)) {
     const baseValue = out[key];
-    if (baseValue != null && isNestedTokenObject(baseValue) && isNestedTokenObject(patchValue)) {
-      out[key] = deepMergeTokenValues(baseValue, patchValue);
-    } else {
-      out[key] = patchValue;
-    }
+    out[key] =
+      baseValue != null && isPlainObject(baseValue) && isPlainObject(patchValue)
+        ? mergeTokenValues(baseValue as TokenValues, patchValue as TokenValues)
+        : cloneThemeValues(patchValue);
   }
   return out as TokenValues;
+}
+
+/** Deep-merge theme overrides (objects recurse; arrays/scalars from patch replace base). */
+export function mergeThemeOverrides(base: ThemeOverrides, patch?: ThemeOverrides): ThemeOverrides {
+  if (!patch) return cloneThemeValues(base);
+  const out = cloneThemeValues(base) as Record<string, unknown>;
+  for (const [key, patchValue] of Object.entries(patch)) {
+    const baseValue = out[key];
+    out[key] =
+      isPlainObject(baseValue) && isPlainObject(patchValue)
+        ? mergeTokenValues(baseValue as TokenValues, patchValue as TokenValues)
+        : cloneThemeValues(patchValue);
+  }
+  return out as ThemeOverrides;
 }
 
 function walkExpandModeAware(
@@ -289,13 +309,13 @@ export function mergeThemeColorModePatches(
       );
     }
     return {
-      merged: deepMergeThemeOverrides(deepMergeThemeOverrides(base, lightPatch), darkPatch),
+      merged: mergeThemeOverrides(mergeThemeOverrides(base, lightPatch), darkPatch),
       darkOnly: null,
     };
   }
 
-  const lightTree = deepMergeThemeOverrides(base, lightPatch);
-  const darkTree = deepMergeThemeOverrides(base, darkPatch);
+  const lightTree = mergeThemeOverrides(base, lightPatch);
+  const darkTree = mergeThemeOverrides(base, darkPatch);
   const merged: Record<string, unknown> = {};
   const darkOnly: Record<string, unknown> = {};
   let hasDarkOnly = false;
