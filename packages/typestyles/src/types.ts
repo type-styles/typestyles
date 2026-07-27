@@ -13,7 +13,14 @@ export type CSSValue = string | number;
 
 /**
  * CSS properties with support for nested selectors and at-rules.
- * Extends csstype's Properties with nesting capabilities.
+ *
+ * Mapped csstype properties keep **CSS key IntelliSense** (`borderRadius`, `display`, …). Values also accept
+ * {@link CSSValue} so unconstrained inference that widens keywords to `string` stays assignable. An open string
+ * index accepts **`[v.name]: value`** from {@link ComponentInternalVarRef}, literal custom properties (`--foo`),
+ * and nested selectors / at-rules (`&:hover`, `@media`, …) — including when computed var keys would otherwise
+ * widen a nested block and break assignability (Issue #167). Template-literal selector indexes were removed in
+ * favor of this open index (same approach as {@link VariantOptionStyle}) because they conflicted with computed
+ * custom-property keys inside nested blocks.
  *
  * For `@…` keys, **`container()`** / **`styles.container()`** infer a **literal** `@container …` template so
  * `[container({ minWidth: 400 })]` mixes with longhands without casting. For **dynamic** `@…` strings, spread
@@ -23,22 +30,19 @@ export type CSSValue = string | number;
  * **`@supports`** uses the same `` `@${string}` `` / `atRuleBlock` path; a first-class **`supports()`** helper
  * (mirroring `container()`) would improve literals and authoring ergonomics for feature queries.
  */
-export interface CSSProperties extends CSS.Properties<CSSValue> {
-  /** Nested selector (e.g., '&:hover', `has('.x')`, '& .child', '&::before', '&[data-variant]') */
-  [selector: `&${string}`]: CSSProperties;
-  /**
-   * Ancestor-prefixed selector where `&` is the styled element (e.g. `html[data-mode="dark"] &`,
-   * `html:not([data-mode="light"]) &`). Runtime serialization replaces every `&` with the class selector.
-   */
-  [selectorWithAncestor: `${string}&${string}`]: CSSProperties;
-  /** Attribute selector (e.g., '[data-variant]', '[data-variant="primary"]', '[disabled]') */
-  [attribute: `[${string}]`]: CSSProperties;
-  /**
-   * At-rule (e.g., '@media (max-width: 768px)', '@container', '@supports').
-   * TODO(typestyles): `supports()` helper for @supports (mirror `container()` literals and typing).
-   */
-  [atRule: `@${string}`]: CSSProperties;
-}
+type CSSPropertiesBase = {
+  [K in keyof CSS.Properties<CSSValue>]?: CSS.Properties<CSSValue>[K] | CSSValue;
+} & {
+  [key: string]:
+    | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
+    | CSSPropertiesBase
+    | CSSValue
+    | undefined;
+};
+
+// Empty interface (not type alias) so consumers can augment via `declare module 'typestyles'`.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- module augmentation
+export interface CSSProperties extends CSSPropertiesBase {}
 
 /**
  * Utility function map used by `createStyles({ utils })` and `styles.withUtils()`.
@@ -58,15 +62,12 @@ type UtilityValue<U extends StyleUtils, K extends keyof U> = U[K] extends (
 
 /**
  * CSS properties augmented with user-defined utility keys.
+ *
+ * Extends {@link CSSProperties} with mapped utility keys; same open string index as
+ * `CSSProperties` so `[v.name]: value` works in nested selectors (Issue #167).
  */
-export type CSSPropertiesWithUtils<U extends StyleUtils> = CSS.Properties<CSSValue> & {
+export type CSSPropertiesWithUtils<U extends StyleUtils> = CSSPropertiesBase & {
   [K in keyof U]?: UtilityValue<U, K>;
-} & {
-  [selector: `&${string}`]: CSSPropertiesWithUtils<U>;
-  [selectorWithAncestor: `${string}&${string}`]: CSSPropertiesWithUtils<U>;
-  [attribute: `[${string}]`]: CSSPropertiesWithUtils<U>;
-  /** @see {@link CSSProperties} at-rule index signature (TODO: `supports()` helper). */
-  [atRule: `@${string}`]: CSSPropertiesWithUtils<U>;
 };
 
 /**
