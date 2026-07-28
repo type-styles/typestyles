@@ -233,3 +233,34 @@ styles.override(condBtn, {
     conditions: [{ style: { color: 'red' } }],
   },
 });
+
+// Mode-aware `{ light, dark }` values (Issue #169) — must type-check on override configs.
+const modeBtn = styles.component('ov-type-mode-btn', {
+  base: { color: 'black' },
+  variants: {
+    intent: { primary: { color: 'blue' } },
+  },
+});
+
+styles.override(modeBtn, {
+  base: { color: { light: '#111', dark: '#eee' } },
+  variants: {
+    intent: { primary: { backgroundColor: { light: '#fff', dark: '#000' } } },
+  },
+});
+
+const modeOk: VariantOptionStyle = { color: { light: '#111', dark: '#eee' } };
+void modeOk;
+
+// @ts-expect-error — mode object missing required `dark` key
+const modeMissingDark: VariantOptionStyle = { color: { light: '#111' } };
+void modeMissingDark;
+
+// Slot overrides also accept mode-aware values
+const modeAlert = styles.component('ov-type-mode-slot', {
+  slots: ['root'] as const,
+  base: { root: { display: 'flex' } },
+});
+styles.override(modeAlert, {
+  base: { root: { color: { light: '#111', dark: '#eee' } } },
+});

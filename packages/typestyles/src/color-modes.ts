@@ -329,6 +329,6 @@ export function expandColorModesInProperties(
   return result;
 }
 
-export type ModeAwareValue<T extends string | number, M extends ColorModeMap> =
+export type ModeAwareValue<T extends string | number | undefined, M extends ColorModeMap> =
   | T
   | { [K in M[number]]: T };
