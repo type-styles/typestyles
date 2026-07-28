@@ -1,5 +1,25 @@
 # typestyles
 
+## 0.17.0
+
+### Minor Changes
+
+- [#176](https://github.com/type-styles/typestyles/pull/176) [`939a158`](https://github.com/type-styles/typestyles/commit/939a15833e740cce4144b78014cfb38874068727) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Export `cloneThemeValues` and `mergeThemeOverrides` for ref-aware theme override merging (Issue [#168](https://github.com/type-styles/typestyles/issues/168))
+
+- [#180](https://github.com/type-styles/typestyles/pull/180) [`1338c06`](https://github.com/type-styles/typestyles/commit/1338c06841b1acdb8821c9d2e20600676def26a7) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Export `ModeAwareTokenLeaf`, `ModeAwareTokenObject`, and `TokenRefTree`; preserve input shape in `tokens.create()` return types (nested namespaces, mode-aware leaves, plain scalars).
+
+- [#178](https://github.com/type-styles/typestyles/pull/178) [`eeb4253`](https://github.com/type-styles/typestyles/commit/eeb425307b3768ed85ae61233febadeed5b9dc76) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `styles.breakpoint()` and `styles.media()` helpers that build viewport `@media` keys from configured `breakpoints`, matching the `container()` + `atRuleBlock` pattern for container queries.
+
+### Patch Changes
+
+- [#175](https://github.com/type-styles/typestyles/pull/175) [`f96b133`](https://github.com/type-styles/typestyles/commit/f96b13308930a4221f4b5288609d9e92f2c7798c) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Discriminate slot+variant `styles.component()` configs so callback recipes infer per-slot return types without casts (Issue [#166](https://github.com/type-styles/typestyles/issues/166))
+
+- [#179](https://github.com/type-styles/typestyles/pull/179) [`200359e`](https://github.com/type-styles/typestyles/commit/200359e78b2a44d57d9e7c77422a435e3420c0c1) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Export `OverrideConfigFor` and `MultiSlotReturn` so design-system consumers can infer `styles.override()` config shapes from recipe return types (Issue [#160](https://github.com/type-styles/typestyles/issues/160))
+
+- [#177](https://github.com/type-styles/typestyles/pull/177) [`3a8feb2`](https://github.com/type-styles/typestyles/commit/3a8feb2a3be61afcba55038a31320a78182ee57c) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix `conditions` type-checking in `styles.override()` configs and type mode-aware `{ light, dark }` property values in override and recipe styles (Issue [#169](https://github.com/type-styles/typestyles/issues/169))
+
+- [#173](https://github.com/type-styles/typestyles/pull/173) [`ed956d8`](https://github.com/type-styles/typestyles/commit/ed956d8577d4bda104d333fa1190d1e33fd915ee) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix `CSSProperties` assignability for `c.vars()` computed custom-property keys in nested selectors (Issue [#167](https://github.com/type-styles/typestyles/issues/167))
+
 ## 0.16.0
 
 ### Minor Changes
