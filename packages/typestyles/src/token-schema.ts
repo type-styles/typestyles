@@ -68,3 +68,7 @@ export function getSchemaSyntaxLeaves(schema: TokenSchema): Set<string> {
       .map((entry) => entry.path),
   );
 }
+
+export function getSchemaLeafPaths(schema: TokenSchema): Set<string> {
+  return new Set(flattenTokenSchema(schema).map((entry) => entry.path));
+}

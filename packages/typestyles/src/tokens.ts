@@ -15,6 +15,7 @@ import type {
 import { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
 import {
   flattenTokenSchema,
+  getSchemaLeafPaths,
   getSchemaSyntaxLeaves,
   mergeTokenTrees,
   tokenSchemaLeavesEqual,
@@ -293,10 +294,10 @@ function createTokenProxy(
 function createDeclaredTokenProxy(
   resolvePathName: (path: string) => string,
   prefix: string,
-  syntaxLeaves: Set<string>,
+  leafPaths: Set<string>,
 ): object {
   const leafString = (p: string) => {
-    if (syntaxLeaves.has(p)) {
+    if (leafPaths.has(p)) {
       return String(createRegisteredPropertyRef(resolvePathName(p)));
     }
     return `var(${resolvePathName(p)})`;
@@ -321,10 +322,10 @@ function createDeclaredTokenProxy(
       }
 
       const newPrefix = prefix ? `${prefix}-${prop}` : prop;
-      if (syntaxLeaves.has(newPrefix)) {
+      if (leafPaths.has(newPrefix)) {
         return createRegisteredPropertyRef(resolvePathName(newPrefix));
       }
-      return createDeclaredTokenProxy(resolvePathName, newPrefix, syntaxLeaves);
+      return createDeclaredTokenProxy(resolvePathName, newPrefix, leafPaths);
     },
     has(_target, _prop) {
       return true;
@@ -753,8 +754,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     declaredSchemaLeaves.set(namespace, leafMap);
 
-    const syntaxLeaves = getSchemaSyntaxLeaves(mergedSchema as TokenSchema);
-    const ref = createDeclaredTokenProxy(resolvePathName, '', syntaxLeaves) as DeclaredTokenRef<
+    const leafPaths = getSchemaLeafPaths(mergedSchema as TokenSchema);
+    const ref = createDeclaredTokenProxy(resolvePathName, '', leafPaths) as DeclaredTokenRef<
       TokenSchema,
       string
     >;

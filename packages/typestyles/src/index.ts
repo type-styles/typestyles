@@ -192,7 +192,11 @@ export { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './typ
 export { createVar, assignVars };
 
 export { createTheme, createDarkMode, when, colorMode, resolvedDarkWhen };
-export { canUseLightDarkForTokenValue } from './token-color-modes';
+export {
+  canUseLightDarkForTokenValue,
+  cloneThemeValues,
+  mergeThemeOverrides,
+} from './token-color-modes';
 
 export type { ThemeEmitLayerContext } from './theme';
 
