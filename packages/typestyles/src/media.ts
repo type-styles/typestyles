@@ -8,6 +8,11 @@ import type { CSSProperties } from './types';
  */
 export type MediaQueryKey = `@media ${string}`;
 
+/** `@media` key inferred from a stored breakpoint condition (mirrors {@link toMediaAtRuleKey}). */
+export type MediaKeyFromCondition<C extends string> = C extends `(${string}`
+  ? `@media ${C}`
+  : `@media (${C})`;
+
 /** Viewport width/height feature for {@link breakpoint} / {@link media}. */
 export type MediaBreakpointFeature = 'min' | 'max' | 'minHeight' | 'maxHeight';
 
@@ -45,7 +50,8 @@ type ParsedMediaCondition = {
 
 function parseMediaCondition(condition: string): ParsedMediaCondition | null {
   const trimmed = condition.trim();
-  const match = trimmed.match(/^\(\s*([\w-]+)\s*:\s*(.+)\s*\)$/);
+  // Single parenthesized feature only — not compound `(a) and (b)` queries.
+  const match = trimmed.match(/^\(\s*([\w-]+)\s*:\s*([^)]+)\s*\)$/);
   if (match && match[1] && match[2]) {
     return { feature: match[1], value: match[2].trim() };
   }
@@ -88,6 +94,12 @@ function resolveBreakpointCondition(
 
   const parsed = parseMediaCondition(condition);
   if (!parsed) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[typestyles] breakpoint("${name}", …): could not apply feature override to ${JSON.stringify(condition)}. ` +
+          `Feature overrides apply to single-feature conditions like \`(min-width: 768px)\`.`,
+      );
+    }
     return condition;
   }
 
@@ -113,7 +125,10 @@ export function resolveBreakpointMediaKey(
 export type BreakpointMediaFn<B extends BreakpointMap = BreakpointMap> = {
   <const K extends keyof B & string>(
     name: K,
-    feature?: MediaBreakpointFeature | MediaBreakpointOptions,
+  ): B[K] extends string ? MediaKeyFromCondition<B[K]> : MediaQueryKey;
+  <const K extends keyof B & string>(
+    name: K,
+    feature: MediaBreakpointFeature | MediaBreakpointOptions,
   ): MediaQueryKey;
 };
 
@@ -121,7 +136,7 @@ export type MediaFn<B extends BreakpointMap = BreakpointMap> = {
   <const K extends keyof B & string>(
     name: K,
     block: CSSProperties,
-  ): Record<MediaQueryKey, CSSProperties>;
+  ): Record<B[K] extends string ? MediaKeyFromCondition<B[K]> : MediaQueryKey, CSSProperties>;
   <const K extends keyof B & string>(
     name: K,
     feature: MediaBreakpointFeature | MediaBreakpointOptions,

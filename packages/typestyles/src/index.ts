@@ -37,6 +37,7 @@ export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakp
 export { resolveBreakpoints, toMediaAtRuleKey } from './breakpoints';
 export type {
   MediaQueryKey,
+  MediaKeyFromCondition,
   MediaBreakpointFeature,
   MediaBreakpointOptions,
   BreakpointMediaFn,

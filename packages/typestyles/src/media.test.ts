@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createBreakpointMediaFn, createMediaFn, resolveBreakpointMediaKey } from './media';
+import { resolveBreakpoints } from './breakpoints';
 import { createStyles } from './styles';
+import { createTokens } from './tokens';
 import { reset, getRegisteredCss } from './sheet';
 import { registeredNamespaces } from './registry';
 
@@ -23,13 +25,52 @@ describe('resolveBreakpointMediaKey', () => {
     expect(resolveBreakpointMediaKey(breakpoints, 'md', 'max')).toBe('@media (max-width: 768px)');
   });
 
+  it('maps min-height breakpoints to max-height when requested', () => {
+    const heightBreakpoints = { tall: '(min-height: 600px)' } as const;
+    expect(resolveBreakpointMediaKey(heightBreakpoints, 'tall', 'maxHeight')).toBe(
+      '@media (max-height: 600px)',
+    );
+    expect(resolveBreakpointMediaKey(heightBreakpoints, 'tall', 'minHeight')).toBe(
+      '@media (min-height: 600px)',
+    );
+  });
+
   it('supports object feature options', () => {
     expect(resolveBreakpointMediaKey(breakpoints, 'md', { min: true })).toBe(
       '@media (min-width: 768px)',
     );
   });
 
-  it('throws for unknown breakpoint names in development', () => {
+  it('resolves keys from breakpoints derived via fromTokens', () => {
+    const tokens = createTokens();
+    const media = tokens.create('media', {
+      sm: '(min-width: 640px)',
+    });
+    const resolved = resolveBreakpoints({
+      fromTokens: media,
+      md: '(min-width: 768px)',
+    });
+
+    expect(resolveBreakpointMediaKey(resolved, 'sm')).toBe('@media (min-width: 640px)');
+    expect(resolveBreakpointMediaKey(resolved, 'md')).toBe('@media (min-width: 768px)');
+  });
+
+  it('leaves compound conditions unchanged and warns when feature override is requested', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const compound = { md: '(min-width: 768px) and (orientation: landscape)' };
+    expect(resolveBreakpointMediaKey(compound, 'md', 'max')).toBe(
+      '@media (min-width: 768px) and (orientation: landscape)',
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('feature override'));
+
+    warn.mockRestore();
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  it('throws for unknown breakpoint names', () => {
     expect(() => resolveBreakpointMediaKey(breakpoints, 'xl')).toThrow(/Unknown breakpoint "xl"/);
   });
 
@@ -49,6 +90,13 @@ describe('createMediaFn', () => {
   it('accepts feature + block overload', () => {
     const media = createMediaFn(breakpoints);
     expect(media('md', 'max', { display: 'none' })).toEqual({
+      '@media (max-width: 768px)': { display: 'none' },
+    });
+  });
+
+  it('accepts object feature + block in three-argument form', () => {
+    const media = createMediaFn(breakpoints);
+    expect(media('md', { max: true }, { display: 'none' })).toEqual({
       '@media (max-width: 768px)': { display: 'none' },
     });
   });
@@ -90,7 +138,7 @@ describe('createStyles breakpoint helpers', () => {
 });
 
 describe('createBreakpointMediaFn typing', () => {
-  it('narrows breakpoint names from a const map', () => {
+  it('narrows breakpoint names and infers literal @media keys', () => {
     const breakpoint = createBreakpointMediaFn(breakpoints);
     const key: '@media (min-width: 768px)' = breakpoint('md');
     expect(key).toBe('@media (min-width: 768px)');

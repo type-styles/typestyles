@@ -372,7 +372,7 @@ const layout = styles.component('layout', {
 });
 ```
 
-`styles.breakpoint(name)` uses the configured media condition as-is. Pass a second argument to target a width/height feature — useful when the stored condition is `(min-width: …)` but you need `(max-width: …)` with the same token value:
+`styles.breakpoint(name)` uses the configured media condition as-is. Pass a second argument to target a width/height feature (`min`, `max`, `minHeight`, `maxHeight`) — useful when the stored condition is `(min-width: …)` but you need `(max-width: …)` with the same token value:
 
 ```ts
 ...styles.atRuleBlock(styles.breakpoint('md', 'max'), {
@@ -380,7 +380,19 @@ const layout = styles.component('layout', {
 });
 ```
 
-**TypeScript:** breakpoint names are typed from your `breakpoints` map when it is a `const` object. For dynamic names, spread `styles.atRuleBlock(styles.breakpoint(name), nested)` or use a plain `'@media …'` key.
+Feature overrides apply to **single-feature** conditions like `(min-width: 768px)`. Compound queries such as `(min-width: 768px) and (orientation: landscape)` are left unchanged (a dev warning is logged if you pass a feature).
+
+For `styles.media()`, use the **three-argument** form when the feature is an object — the two-argument form treats the second value as nested styles:
+
+```ts
+// ✓ feature override + block
+...styles.media('md', { max: true }, { padding: '12px' }),
+
+// ✗ `{ max: true }` is treated as CSS properties, not a feature
+...styles.media('md', { max: true }),
+```
+
+**TypeScript:** breakpoint names are typed from your `breakpoints` map when it is a `const` object; `breakpoint('md')` infers a literal `@media …` key like `container()`. For dynamic names, spread `styles.atRuleBlock(styles.breakpoint(name), nested)` or use a plain `'@media …'` key.
 
 ## Container queries
 
