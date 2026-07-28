@@ -627,10 +627,13 @@ that merges a preset with user overrides before calling `tokens.createTheme()`. 
 `tokens.declare()` are proxy objects — they cannot be cloned with `structuredClone` and will not
 round-trip through ad-hoc deep merges.
 
-Use the exported helpers instead:
+Use the exported helpers instead. Pass **leaf** refs (`semantic.accent.default`), not branch
+proxies (`semantic.accent`):
 
 ```ts
-import { cloneThemeValues, mergeThemeOverrides } from 'typestyles';
+import { createTypeStyles, mergeThemeOverrides } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const preset = { color: { text: '#111827', accent: { default: '#0066ff' } } };
 
@@ -648,18 +651,18 @@ export function createDesignTheme(options: {
     : undefined;
 
   return tokens.createTheme('app', {
-    base: cloneThemeValues(base),
+    base,
     colorMode: { light, dark },
   });
 }
 ```
 
 **`mergeThemeOverrides(base, patch?)`** — deep-merge two override trees. Plain objects merge
-recursively; arrays and primitives from `patch` replace `base`. Token refs stringify to
-`var(--…)` at leaves.
+recursively; arrays and primitives from `patch` replace `base`. Leaf token refs stringify to
+`var(--…)`; the result is always a deep clone.
 
-**`cloneThemeValues(values)`** — deep-clone a value tree with the same ref serialization.
-Useful when you need an isolated copy before passing overrides to `tokens.createTheme()`.
+**`cloneThemeValues(values)`** — deep-clone a value tree with the same ref serialization when
+you need an isolated copy outside of `mergeThemeOverrides`.
 
 ## Condition scopes: `self`, `ancestor`, `descendant`
 

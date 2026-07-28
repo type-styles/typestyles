@@ -6,7 +6,7 @@ import {
   type ColorModeMap,
 } from './color-modes';
 import { isPlainObject } from './breakpoints';
-import type { ThemeOverrides, TokenValues } from './types';
+import type { ThemeOverrides, TokenValues, RegisteredPropertyRef } from './types';
 
 const defaultModeMap: ColorModeMap = ['light', 'dark'];
 
@@ -170,12 +170,14 @@ export function mergeTokenTreesWithColorModes(
   };
 }
 
-function isRefLeaf(value: unknown): boolean {
+function isRefLeaf(value: unknown): value is RegisteredPropertyRef {
+  if (typeof value !== 'object' || value === null) return false;
+  const { name, var: varRef } = value as RegisteredPropertyRef;
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    (('name' in value && 'var' in value) ||
-      (Object.keys(value).length === 0 && String(value).startsWith('var(')))
+    typeof name === 'string' &&
+    name.startsWith('--') &&
+    typeof varRef === 'string' &&
+    varRef === `var(${name})`
   );
 }
 

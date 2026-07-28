@@ -87,6 +87,32 @@ describe('theme-merge', () => {
     expect(merged.color).not.toBe(base.color);
   });
 
+  it('does not stringify branch declare proxies as a single var()', () => {
+    const api = createTokens();
+    const semantic = api.declare('semantic', {
+      accent: { default: true, hover: true },
+    });
+
+    expect(cloneThemeValues(semantic.accent)).toEqual({});
+    expect(
+      mergeThemeOverrides(
+        { color: { accent: { default: '#0066ff', hover: '#0055dd' } } },
+        { color: { accent: semantic.accent } },
+      ),
+    ).toEqual({
+      color: { accent: { default: '#0066ff', hover: '#0055dd' } },
+    });
+  });
+
+  it('does not stringify branch create() proxies as a single var()', () => {
+    const api = createTokens();
+    const color = api.create('color', {
+      accent: { default: '#0066ff', hover: '#0055dd' },
+    });
+
+    expect(cloneThemeValues(color.accent)).toEqual({});
+  });
+
   it('mergeThemeOverrides supports createTheme-style preset + override flow', () => {
     const api = createTokens();
     const semantic = api.declare('semantic', {
