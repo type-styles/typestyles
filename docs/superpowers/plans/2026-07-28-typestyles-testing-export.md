@@ -515,9 +515,9 @@ section is the authoritative tracker for the items themselves.
   - `vite-app`, `rollup-app`, `rolldown-app`, `next-app`, `typewind` have no `test` script, so
     `turbo run test` (what CI actually runs) skips them entirely — including their own `build`
     script. `next-app`'s `build` script runs `pnpm typestyles:verify`, a real correctness check
-    that currently executes nowhere in CI. Give each a `test` script (`build` at minimum; `build`
-    - a `verify-build.mjs` where a real assertion is cheap to add), matching the
-      esbuild-app/parcel-app/svelte-app/vue-app pattern.
+    that currently executes nowhere in CI. Give each a `test` script (`build` at minimum, or
+    `build` plus a `verify-build.mjs` where a real assertion is cheap to add), matching the
+    esbuild-app/parcel-app/svelte-app/vue-app pattern.
 
 - [ ] **P7.2 — Roll out the `*.type-tests.ts` convention beyond `packages/typestyles`**
   - Only `packages/typestyles` has compile-time-checked type tests
