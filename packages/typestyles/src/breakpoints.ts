@@ -39,7 +39,8 @@ function normalizeMediaCondition(condition: string): string {
   return trimmed;
 }
 
-function mediaAtRuleKey(condition: string): `@${string}` {
+/** Wrap a media condition (with or without parentheses) as a style-object `@media` key. */
+export function toMediaAtRuleKey(condition: string): `@media ${string}` {
   const trimmed = normalizeMediaCondition(condition);
   if (trimmed.startsWith('(')) {
     return `@media ${trimmed}`;
@@ -183,7 +184,7 @@ export function expandResponsiveProperty(
     const condition = breakpoints[name];
     if (!condition) continue;
 
-    const mediaKey = mediaAtRuleKey(condition);
+    const mediaKey = toMediaAtRuleKey(condition);
     const existing = result[mediaKey];
     if (existing && isPlainObject(existing)) {
       (existing as Record<string, string | number>)[prop] = bpValue;

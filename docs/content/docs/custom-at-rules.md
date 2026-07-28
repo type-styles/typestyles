@@ -340,6 +340,60 @@ const button = styles.component('button', {
 });
 ```
 
+### Viewport breakpoints from config
+
+When you register breakpoints on `createTypeStyles` / `createStyles`, use **`styles.breakpoint()`** and **`styles.media()`** for nested viewport rules instead of repeating `` `@media (min-width: …)` `` strings.
+
+```ts
+const { styles } = createTypeStyles({
+  scopeId: 'app',
+  breakpoints: {
+    sm: '(min-width: 640px)',
+    md: '(min-width: 768px)',
+    lg: '(min-width: 1024px)',
+  },
+});
+
+const layout = styles.component('layout', {
+  container: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+
+    // Spreadable block helper
+    ...styles.media('md', {
+      gridTemplateColumns: 'repeat(2, 1fr)',
+    }),
+
+    // Same pattern as container queries: breakpoint key + atRuleBlock
+    ...styles.atRuleBlock(styles.breakpoint('lg'), {
+      gridTemplateColumns: 'repeat(3, 1fr)',
+    }),
+  },
+});
+```
+
+`styles.breakpoint(name)` uses the configured media condition as-is. Pass a second argument to target a width/height feature (`min`, `max`, `minHeight`, `maxHeight`) — useful when the stored condition is `(min-width: …)` but you need `(max-width: …)` with the same token value:
+
+```ts
+...styles.atRuleBlock(styles.breakpoint('md', 'max'), {
+  padding: '12px',
+});
+```
+
+Feature overrides apply to **single-feature** conditions like `(min-width: 768px)`. Compound queries such as `(min-width: 768px) and (orientation: landscape)` are left unchanged (a dev warning is logged if you pass a feature).
+
+For `styles.media()`, use the **three-argument** form when the feature is an object — the two-argument form treats the second value as nested styles:
+
+```ts
+// ✓ feature override + block
+...styles.media('md', { max: true }, { padding: '12px' }),
+
+// ✗ `{ max: true }` is treated as CSS properties, not a feature
+...styles.media('md', { max: true }),
+```
+
+**TypeScript:** breakpoint names are typed from your `breakpoints` map when it is a `const` object; `breakpoint('md')` infers a literal `@media …` key like `container()`. For dynamic names, spread `styles.atRuleBlock(styles.breakpoint(name), nested)` or use a plain `'@media …'` key.
+
 ## Container queries
 
 Container queries respond to the size of a container, not the viewport. You can write plain `'@container …'` keys (they serialize like `@media`), or use **`styles.container()`** / **`container()`** for typed size features and named containers.

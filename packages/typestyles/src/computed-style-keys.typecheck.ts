@@ -30,3 +30,18 @@ export function _rawContainerLiteral(): CSSProperties {
     [container('(min-width: 1px)')]: { display: 'flex' },
   };
 }
+
+const responsiveStyles = createStyles({
+  breakpoints: {
+    sm: '(min-width: 640px)',
+    md: '(min-width: 768px)',
+  },
+});
+
+export function _breakpointAndLonghands(): CSSProperties {
+  return {
+    display: 'grid',
+    [responsiveStyles.breakpoint('md')]: { gap: 16 },
+    ...responsiveStyles.media('sm', { gridTemplateColumns: 'repeat(2, 1fr)' }),
+  };
+}

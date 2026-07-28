@@ -34,7 +34,16 @@ export type {
 } from './styles';
 export type { CreateTokensOptions, TokensApi } from './tokens';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
-export { resolveBreakpoints } from './breakpoints';
+export { resolveBreakpoints, toMediaAtRuleKey } from './breakpoints';
+export type {
+  MediaQueryKey,
+  MediaKeyFromCondition,
+  MediaBreakpointFeature,
+  MediaBreakpointOptions,
+  BreakpointMediaFn,
+  MediaFn,
+} from './media';
+export { createBreakpointMediaFn, createMediaFn, resolveBreakpointMediaKey } from './media';
 export type { ColorModeMap, ModeAwareValue, LightDarkColorModes } from './color-modes';
 export { colorModes, resolveColorModes, acceptsLightDark } from './color-modes';
 export type { ConditionCompileContext } from './condition-compile';
