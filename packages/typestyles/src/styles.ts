@@ -44,6 +44,12 @@ import {
   type ContainerNameRef,
 } from './container';
 import { atRuleBlock as atRuleBlockFn } from './at-rule-block';
+import {
+  createBreakpointMediaFn,
+  createMediaFn,
+  type BreakpointMediaFn,
+  type MediaFn,
+} from './media';
 import { has as hasNested, is as isNested, where as whereNested } from './relational-pseudo';
 import { resolveBreakpoints, type BreakpointsConfig } from './breakpoints';
 import { resolveColorModes, type ColorModeMap } from './color-modes';
@@ -269,6 +275,14 @@ export type StylesApi = {
    * Build a spreadable `{ [ @key ]: nested }` so computed `@…` keys stay typed (see `atRuleBlock` export).
    */
   readonly atRuleBlock: typeof atRuleBlockFn;
+  /**
+   * Typed `@media` object keys from configured viewport breakpoints (see `breakpoint` / `media`).
+   */
+  readonly breakpoint: BreakpointMediaFn;
+  /**
+   * Spreadable viewport breakpoint blocks — `media(name, block)` or `media(name, feature, block)`.
+   */
+  readonly media: MediaFn;
   /**
    * Nested `&:has(…)` object keys (same helpers as the `has` export).
    */
@@ -575,6 +589,12 @@ export function createStyles(
   return buildStylesRuntimeApi(classNaming) as StylesApi | StylesApiWithLayers<string>;
 }
 
+function createMediaHelpers(classNaming: ClassNamingConfig) {
+  const breakpoint = createBreakpointMediaFn(classNaming.breakpoints);
+  const media = createMediaFn(classNaming.breakpoints);
+  return { breakpoint, media };
+}
+
 function buildStylesRuntimeApi(
   classNaming: ClassNamingConfig,
 ): StylesApi | StylesApiWithLayers<string> {
@@ -591,6 +611,7 @@ function buildStylesRuntimeApi(
       scopeId: classNaming.scopeId,
       prefix: classNaming.prefix,
     });
+  const { breakpoint, media } = createMediaHelpers(classNaming);
 
   const property = createStylesPropertyFn(classNaming);
   const scope = (opts: ScopeOptions, className: string, overrides: CSSProperties) =>
@@ -609,6 +630,8 @@ function buildStylesRuntimeApi(
       container: containerQuery,
       containerRef,
       atRuleBlock: atRuleBlockFn,
+      breakpoint,
+      media,
       has: hasNested,
       is: isNested,
       where: whereNested,
@@ -635,6 +658,8 @@ function buildStylesRuntimeApi(
     container: containerQuery,
     containerRef,
     atRuleBlock: atRuleBlockFn,
+    breakpoint,
+    media,
     has: hasNested,
     is: isNested,
     where: whereNested,
@@ -662,6 +687,8 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   readonly container: typeof containerQuery;
   readonly containerRef: (label: string) => ContainerNameRef;
   readonly atRuleBlock: typeof atRuleBlockFn;
+  readonly breakpoint: BreakpointMediaFn;
+  readonly media: MediaFn;
   readonly has: typeof hasNested;
   readonly is: typeof isNested;
   readonly where: typeof whereNested;
@@ -788,6 +815,7 @@ export function createStylesWithUtils<U extends StyleUtils>(
       scopeId: classNaming.scopeId,
       prefix: classNaming.prefix,
     });
+  const { breakpoint, media } = createMediaHelpers(classNaming);
 
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
@@ -814,6 +842,8 @@ export function createStylesWithUtils<U extends StyleUtils>(
     container: containerQuery,
     containerRef,
     atRuleBlock: atRuleBlockFn,
+    breakpoint,
+    media,
     has: hasNested,
     is: isNested,
     where: whereNested,
@@ -845,6 +875,7 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
       scopeId: classNaming.scopeId,
       prefix: classNaming.prefix,
     });
+  const { breakpoint, media } = createMediaHelpers(classNaming);
 
   const apply = (properties: CSSPropertiesWithUtils<U>): CSSProperties =>
     expandStyleWithUtils(properties, utils);
@@ -877,6 +908,8 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     container: containerQuery,
     containerRef,
     atRuleBlock: atRuleBlockFn,
+    breakpoint,
+    media,
     has: hasNested,
     is: isNested,
     where: whereNested,

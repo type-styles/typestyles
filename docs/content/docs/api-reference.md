@@ -19,6 +19,8 @@ per package or micro-frontend for isolation.
 - `styles.container(…)`: Build typed `@container` keys for nested styles (also exported as `container`). Object/two-arg forms infer a **literal** `@container …` string, so `[container({ minWidth: 400 })]: { … }` works next to longhands without casting; use `atRuleBlock` when the key is only known as a generic `string`.
 - `styles.has(…)`, `styles.is(…)`, `styles.where(…)`: Build nested `&`-keys for `:has()`, `:is()`, and `:where()` (same as the `has` / `is` / `where` exports). Literal arguments narrow to a concrete `&:…` key so you can mix them with longhands as `[has('.x')]: { … }` without `as CSSProperties`. `:where()` keeps **zero specificity**; raw `'&:has(…)'` strings still work.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
+- `styles.breakpoint(name, feature?)`: Build typed `@media` keys from configured viewport breakpoints (also `createBreakpointMediaFn`)
+- `styles.media(name, block)` / `styles.media(name, feature, block)`: Spreadable viewport breakpoint blocks (also `createMediaFn`)
 - `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
 - `styles.hashClass(properties, label?)`: Create a deterministic hashed class
 - `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`. When `value` depends on `var()`/`env()`, pass optional `initial` for the `@property` placeholder `initial-value`, or let TypeStyles pick a syntax-keyed default (e.g. `transparent` for `<color>`). Shorthand entry point — unchanged; bundles declare + set when `options` includes both `syntax` and `value`.
@@ -30,7 +32,7 @@ per package or micro-frontend for isolation.
 - `styles.override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta` (see [Theming patterns](/docs/theming-patterns#typed-component-overrides))
 - `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
 
-**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `atRuleBlock`, `has`, `is`, `where`.
+**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `atRuleBlock`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
 
 **Helpers:** `getComponentMeta(component)` — read public component metadata attached by `styles.component()`.
 
