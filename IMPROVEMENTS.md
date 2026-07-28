@@ -401,3 +401,39 @@ in var-ui's own roadmap, not here.
     inferred from the component return; mode-aware emission via non-enumerable
     `__tsMeta` + `getComponentMeta`. Spec: `specs/styles-override-meta.md`.
 - 1.0 stability policy and criteria
+
+## P7 — Testing architecture
+
+Gaps identified while designing the `typestyles/testing` export (issue #170). See
+`docs/superpowers/specs/2026-07-28-testing-architecture-design.md` for the full analysis; this
+section is the authoritative tracker for the items themselves.
+
+- [ ] **P7.1 — Wire unbuilt example apps into CI**
+  - `vite-app`, `rollup-app`, `rolldown-app`, `next-app`, `typewind` have no `test` script, so
+    `turbo run test` (what CI actually runs) skips them entirely — including their own `build`
+    script. `next-app`'s `build` script runs `pnpm typestyles:verify`, a real correctness check
+    that currently executes nowhere in CI. Give each a `test` script (`build` at minimum; `build`
+    - a `verify-build.mjs` where a real assertion is cheap to add), matching the
+      esbuild-app/parcel-app/svelte-app/vue-app pattern.
+
+- [ ] **P7.2 — Roll out the `*.type-tests.ts` convention beyond `packages/typestyles`**
+  - Only `packages/typestyles` has compile-time-checked type tests
+    (`tsc --noEmit`-only, excluded from the vitest glob). Extend the convention to
+    `packages/react` and `packages/props` — the two packages with the most consumer-facing
+    generic/overload surface.
+
+- [ ] **P7.3 — Harden build-parity tests against silent skip**
+  - `describe.skipIf(!existsSync(dist))` in the per-bundler parity tests (vite, rollup, esbuild,
+    webpack, next, astro) means a parity test silently vanishes if run outside turbo's
+    dependency graph. Make the skip loud (log a warning naming the missing dist) or assert the
+    dist exists explicitly in CI.
+
+- [ ] **P7.4 — Visual regression baseline**
+  - No Playwright/Cypress anywhere in the repo despite `docs/content/docs/testing.md`
+    recommending both to consumers. Evaluate adding one to a single example app as a dogfooding
+    proof point, not a full rollout.
+
+- [x] **P7.5 — Public test-harness contract**
+  - Shipped: `typestyles/testing` subpath export (`resetAll`, `onAfterReset`,
+    `createTestHarness`), closing issue #170. Docs:
+    `docs/content/docs/testing-design-systems.md`.
