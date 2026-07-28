@@ -1,4 +1,5 @@
 import type * as CSS from 'csstype';
+import type { LightDarkColorModes, ModeAwareValue } from './color-modes';
 
 /**
  * A CSS value that can be a standard value or a token reference (var() string).
@@ -31,12 +32,16 @@ export type CSSValue = string | number;
  * (mirroring `container()`) would improve literals and authoring ergonomics for feature queries.
  */
 type CSSPropertiesBase = {
-  [K in keyof CSS.Properties<CSSValue>]?: CSS.Properties<CSSValue>[K] | CSSValue;
+  [K in keyof CSS.Properties<CSSValue>]?: ModeAwareValue<
+    CSS.Properties<CSSValue>[K] | CSSValue,
+    LightDarkColorModes
+  >;
 } & {
   [key: string]:
     | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
     | CSSPropertiesBase
     | CSSValue
+    | { readonly [mode: string]: CSSValue }
     | undefined;
 };
 
@@ -508,12 +513,16 @@ export interface ComponentAttrsResult {
  * (typos included).
  */
 export type VariantOptionStyle = {
-  [K in keyof CSS.Properties<CSSValue>]?: CSS.Properties<CSSValue>[K] | CSSValue;
+  [K in keyof CSS.Properties<CSSValue>]?: ModeAwareValue<
+    CSS.Properties<CSSValue>[K] | CSSValue,
+    LightDarkColorModes
+  >;
 } & {
   [key: string]:
     | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
     | VariantOptionStyle
     | CSSValue
+    | { readonly [mode: string]: CSSValue }
     | undefined;
 };
 
@@ -531,8 +540,20 @@ export type ConditionalOverride = {
  *
  * `conditions` is a reserved key — not emitted as CSS.
  */
-export type StylableOverride = VariantOptionStyle & {
+export type StylableOverride = {
+  [K in keyof CSS.Properties<CSSValue>]?: ModeAwareValue<
+    CSS.Properties<CSSValue>[K] | CSSValue,
+    LightDarkColorModes
+  >;
+} & {
   conditions?: readonly ConditionalOverride[];
+  [key: string]:
+    | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
+    | VariantOptionStyle
+    | readonly ConditionalOverride[]
+    | CSSValue
+    | { readonly [mode: string]: CSSValue }
+    | undefined;
 };
 
 /**

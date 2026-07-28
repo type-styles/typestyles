@@ -124,3 +124,15 @@ void pinned;
 void badge;
 void button;
 void card;
+
+// Mode-aware `{ light, dark }` values (Issue #169) — must type-check in recipe authoring,
+// matching what color-modes.ts already compiles to `light-dark()` at runtime.
+const modeAware = styles.component('mode-aware-btn', {
+  base: { color: { light: '#111', dark: '#eee' } },
+  variants: {
+    intent: {
+      primary: { backgroundColor: { light: '#fff', dark: '#000' } },
+    },
+  },
+});
+void modeAware;

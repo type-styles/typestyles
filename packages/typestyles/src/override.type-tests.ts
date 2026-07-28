@@ -3,6 +3,8 @@
  * (unlike `*.test.ts`). Failures here fail `pnpm typecheck`.
  */
 import { createStyles } from './styles';
+import { when } from './theme';
+import { conditional } from './override';
 import type { VariantOptionStyle } from './types';
 
 const styles = createStyles();
@@ -192,3 +194,73 @@ widenedRecipe({ size: 'md' });
 widenedRecipe({ size: 'nope' });
 
 void widenedOk;
+
+// `conditions` in styles.override() configs (Issue #169) — must type-check, not just
+// run correctly under vitest's untyped transform (see override-conditions.test.ts).
+const condBtn = styles.component('ov-type-cond-btn', {
+  base: { color: 'black' },
+  variants: {
+    intent: { primary: { color: 'blue' }, ghost: { color: 'gray' } },
+  },
+});
+
+styles.override(condBtn, {
+  base: {
+    color: 'red',
+    conditions: [conditional(when.prefersDark, { color: 'white' })],
+  },
+  variants: {
+    intent: {
+      primary: {
+        conditions: [conditional(when.prefersDark, { color: 'lightblue' }, 'primary-dark')],
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: { intent: 'primary' },
+      style: {
+        fontWeight: 700,
+        conditions: [conditional(when.prefersDark, { fontWeight: 900 })],
+      },
+    },
+  ],
+});
+
+// @ts-expect-error — conditions entry missing required `when`
+styles.override(condBtn, {
+  base: {
+    conditions: [{ style: { color: 'red' } }],
+  },
+});
+
+// Mode-aware `{ light, dark }` values (Issue #169) — must type-check on override configs.
+const modeBtn = styles.component('ov-type-mode-btn', {
+  base: { color: 'black' },
+  variants: {
+    intent: { primary: { color: 'blue' } },
+  },
+});
+
+styles.override(modeBtn, {
+  base: { color: { light: '#111', dark: '#eee' } },
+  variants: {
+    intent: { primary: { backgroundColor: { light: '#fff', dark: '#000' } } },
+  },
+});
+
+const modeOk: VariantOptionStyle = { color: { light: '#111', dark: '#eee' } };
+void modeOk;
+
+// @ts-expect-error — mode object missing required `dark` key
+const modeMissingDark: VariantOptionStyle = { color: { light: '#111' } };
+void modeMissingDark;
+
+// Slot overrides also accept mode-aware values
+const modeAlert = styles.component('ov-type-mode-slot', {
+  slots: ['root'] as const,
+  base: { root: { display: 'flex' } },
+});
+styles.override(modeAlert, {
+  base: { root: { color: { light: '#111', dark: '#eee' } } },
+});
