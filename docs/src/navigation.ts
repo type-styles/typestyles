@@ -65,6 +65,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
         { slug: 'publishing-packages', title: 'Publishing Packages' },
         { slug: 'best-practices', title: 'Best Practices' },
         { slug: 'testing', title: 'Testing' },
+        { slug: 'testing-design-systems', title: 'Testing Design Systems' },
         { slug: 'performance', title: 'Performance' },
         { slug: 'benchmarks', title: 'Benchmarks' },
         { slug: 'typescript-tips', title: 'TypeScript Tips' },
