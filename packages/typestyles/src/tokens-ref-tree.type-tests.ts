@@ -37,6 +37,20 @@ void _brandHero;
 // @ts-expect-error — primary is a string ref, not a nested object
 const _brandPrimaryLight = brand.primary.light;
 
+// --- root-level light/dark keys are separate token paths, not one mode-aware leaf ---
+const modeKeys = tokens.create('modes', {
+  light: '#fff',
+  dark: '#000',
+});
+
+type ModeKeysRef = typeof modeKeys;
+type _ModeKeysLight = ModeKeysRef['light'];
+type _ModeKeysDark = ModeKeysRef['dark'];
+const _modeLight: _ModeKeysLight = modeKeys.light;
+const _modeDark: _ModeKeysDark = modeKeys.dark;
+void _modeLight;
+void _modeDark;
+
 // --- exported helper types ---
 type Leaf = ModeAwareTokenLeaf;
 const _leaf: Leaf = { light: '#fff', dark: '#000' };

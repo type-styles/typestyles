@@ -196,6 +196,7 @@ export type {
   TokenSchema,
   TokenSchemaLeaf,
   CreateTokenValues,
+  CreateTokenNode,
   DeclaredTokenRef,
   InferFromSchema,
   InferValuesFromSchema,

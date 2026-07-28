@@ -120,7 +120,7 @@ export type ModeAwareTokenObject<M extends ColorModeMap = LightDarkColorModes> =
 };
 
 /**
- * Scalar or mode-aware leaf accepted by `tokens.create()`.
+ * Scalar or mode-aware leaf nested under a token path (not a root namespace key).
  * Equivalent to `string | number | { light: string | number; dark: string | number }` with default modes.
  */
 export type ModeAwareTokenLeaf<M extends ColorModeMap = LightDarkColorModes> =
@@ -128,10 +128,19 @@ export type ModeAwareTokenLeaf<M extends ColorModeMap = LightDarkColorModes> =
   | number
   | ModeAwareTokenObject<M>;
 
-/** Plain token values accepted by `tokens.create()` (no inline descriptors). */
-export type CreateTokenValues<M extends ColorModeMap = LightDarkColorModes> =
+/** A single node in a `tokens.create()` value tree — scalar, mode-aware leaf, or nested group. */
+export type CreateTokenNode<M extends ColorModeMap = LightDarkColorModes> =
   | ModeAwareTokenLeaf<M>
-  | { readonly [key: string]: CreateTokenValues<M> };
+  | CreateTokenValues<M>;
+
+/**
+ * Plain token values accepted by `tokens.create()` (no inline descriptors).
+ * Root-level keys are always separate token paths — `{ light, dark }` at the namespace root
+ * registers `--ns-light` and `--ns-dark`, not a single mode-aware leaf.
+ */
+export type CreateTokenValues<M extends ColorModeMap = LightDarkColorModes> = {
+  readonly [key: string]: CreateTokenNode<M>;
+};
 
 export type InferFromSchema<S> = S extends { syntax: string }
   ? RegisteredPropertyRef
@@ -318,7 +327,7 @@ type TokenRefTreeLeaf<V, M extends ColorModeMap = LightDarkColorModes> = V exten
     ? string
     : V extends ModeAwareTokenObject<M>
       ? string
-      : V extends TokenValues | CreateTokenValues<M>
+      : V extends TokenValues | CreateTokenNode<M>
         ? TokenRefTree<V, M>
         : string;
 
@@ -331,11 +340,9 @@ export type TokenRefTree<T, M extends ColorModeMap = LightDarkColorModes> = T ex
   ? string
   : T extends TokenDescriptor
     ? RegisteredPropertyRef
-    : T extends ModeAwareTokenObject<M>
-      ? string
-      : T extends Record<string, unknown>
-        ? { readonly [K in keyof T]: TokenRefTreeLeaf<T[K], M> }
-        : string;
+    : T extends Record<string, unknown>
+      ? { readonly [K in keyof T]: TokenRefTreeLeaf<T[K], M> }
+      : string;
 
 /**
  * A typed token reference object. Property access returns var(--namespace-key) strings

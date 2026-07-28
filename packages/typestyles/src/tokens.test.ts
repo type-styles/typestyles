@@ -822,6 +822,19 @@ describe('tokens.create mode-aware leaves', () => {
     expect(brand.spacing.hero).toBe('var(--app-brand-spacing-hero)');
   });
 
+  it('treats root-level light and dark keys as separate token paths', () => {
+    const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
+    const modes = api.create('modes', {
+      light: '#fff',
+      dark: '#000',
+    });
+
+    expectTypeOf(modes.light).toBeString();
+    expectTypeOf(modes.dark).toBeString();
+    expect(modes.light).toBe('var(--app-modes-light)');
+    expect(modes.dark).toBe('var(--app-modes-dark)');
+  });
+
   it('emits light-dark() for color-compatible mode-aware leaves', () => {
     const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
     api.create('brand', {
