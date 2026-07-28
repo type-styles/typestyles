@@ -635,6 +635,24 @@ export function createOverride(
   }
 }
 
+/**
+ * Infer the `styles.override()` config shape from a component return type.
+ * Branches mirror {@link OverrideFn}.
+ */
+export type OverrideConfigFor<C> = C extends
+  | ComponentReturn<infer V>
+  | ComponentAttrsReturn<infer V>
+  ? OverrideConfig<V>
+  : C extends FlatComponentReturn<infer K>
+    ? FlatOverrideConfig<K>
+    : C extends MultiSlotReturn<infer Slots>
+      ? MultiSlotOverrideConfig<Slots>
+      : C extends
+            | SlotComponentFunction<infer Slots, infer V>
+            | SlotAttrsReturn<infer Slots, infer V>
+        ? SlotOverrideConfig<Slots, V>
+        : never;
+
 /** Overload surface mirrored on `styles.override`. */
 export type OverrideFn<L extends string = string> = {
   <const V extends VariantDefinitions>(

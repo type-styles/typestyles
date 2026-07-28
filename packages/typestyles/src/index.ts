@@ -74,6 +74,7 @@ export type {
   SlotOverrideConfig,
   MultiSlotOverrideConfig,
   FlatOverrideConfig,
+  OverrideConfigFor,
   OverrideFn,
 } from './override';
 export { conditional } from './override';
@@ -167,6 +168,7 @@ export type {
   SlotComponentConfig,
   SlotComponentConfigInput,
   SlotComponentFunction,
+  MultiSlotReturn,
   MultiSlotConfigInput,
   FontFaceProps,
   FontFaceSrc,

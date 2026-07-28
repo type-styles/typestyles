@@ -5,6 +5,7 @@
 import { createStyles } from './styles';
 import { when } from './theme';
 import { conditional } from './override';
+import type { OverrideConfigFor } from './override';
 import type { VariantOptionStyle } from './types';
 
 const styles = createStyles();
@@ -264,3 +265,61 @@ const modeAlert = styles.component('ov-type-mode-slot', {
 styles.override(modeAlert, {
   base: { root: { color: { light: '#111', dark: '#eee' } } },
 });
+
+// OverrideConfigFor<C> — mirrors OverrideFn branches (Issue #160)
+const dimOverride: OverrideConfigFor<typeof button> = {
+  base: { color: 'red' },
+  variants: { intent: { primary: { textTransform: 'uppercase' } } },
+};
+void dimOverride;
+
+const flatCard = styles.component('ov-type-flat', {
+  base: { padding: '8px' },
+  elevated: { boxShadow: '0 2px 4px' },
+});
+void flatCard;
+const flatOverride: OverrideConfigFor<typeof flatCard> = {
+  base: { padding: '12px' },
+  elevated: { boxShadow: '0 4px 8px' },
+};
+void flatOverride;
+
+const slotOverride: OverrideConfigFor<typeof alert> = {
+  base: { root: { gap: '8px' } },
+  variants: { tone: { danger: { root: { outline: '1px solid red' } } } },
+};
+void slotOverride;
+
+const multiOverride: OverrideConfigFor<typeof multi> = {
+  base: { root: { gap: '4px' }, title: { fontSize: '14px' } },
+};
+void multiOverride;
+
+const dimBad: OverrideConfigFor<typeof button> = {
+  variants: {
+    // @ts-expect-error — dimensioned config rejects unknown variant dimension
+    missing: { primary: { color: 'red' } },
+  },
+};
+void dimBad;
+
+const flatBad: OverrideConfigFor<typeof flatCard> = {
+  // @ts-expect-error — flat config rejects unknown variant key
+  missing: { padding: '0' },
+};
+void flatBad;
+
+const slotBad: OverrideConfigFor<typeof alert> = {
+  variants: {
+    // @ts-expect-error — slot config rejects unknown variant dimension
+    missing: { danger: { root: { color: 'red' } } },
+  },
+};
+void slotBad;
+
+const multiBad: OverrideConfigFor<typeof multi> = {
+  base: { root: { gap: '4px' } },
+  // @ts-expect-error — multi-slot config forbids variants
+  variants: { tone: { danger: { root: { color: 'red' } } } },
+};
+void multiBad;
