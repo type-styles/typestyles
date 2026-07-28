@@ -128,7 +128,10 @@ function splitStylableOverride(styles: StylableOverride): {
   conditions: readonly ConditionalOverride[];
 } {
   const { conditions, ...rest } = styles;
-  return { unconditional: rest, conditions: conditions ?? [] };
+  // `rest`'s inferred type still carries StylableOverride's widened index signature (it
+  // permits `readonly ConditionalOverride[]` to accommodate the now-stripped `conditions`
+  // key) — safe to narrow back to VariantOptionStyle since `conditions` is destructured out.
+  return { unconditional: rest as VariantOptionStyle, conditions: conditions ?? [] };
 }
 
 const CONDITIONAL_OVERRIDE_KEYS = new Set(['id', 'when', 'style']);

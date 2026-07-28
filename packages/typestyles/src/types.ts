@@ -531,8 +531,16 @@ export type ConditionalOverride = {
  *
  * `conditions` is a reserved key — not emitted as CSS.
  */
-export type StylableOverride = VariantOptionStyle & {
+export type StylableOverride = {
+  [K in keyof CSS.Properties<CSSValue>]?: CSS.Properties<CSSValue>[K] | CSSValue;
+} & {
   conditions?: readonly ConditionalOverride[];
+  [key: string]:
+    | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
+    | VariantOptionStyle
+    | readonly ConditionalOverride[]
+    | CSSValue
+    | undefined;
 };
 
 /**

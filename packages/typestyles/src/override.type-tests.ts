@@ -3,6 +3,8 @@
  * (unlike `*.test.ts`). Failures here fail `pnpm typecheck`.
  */
 import { createStyles } from './styles';
+import { when } from './theme';
+import { conditional } from './override';
 import type { VariantOptionStyle } from './types';
 
 const styles = createStyles();
@@ -192,3 +194,42 @@ widenedRecipe({ size: 'md' });
 widenedRecipe({ size: 'nope' });
 
 void widenedOk;
+
+// `conditions` in styles.override() configs (Issue #169) — must type-check, not just
+// run correctly under vitest's untyped transform (see override-conditions.test.ts).
+const condBtn = styles.component('ov-type-cond-btn', {
+  base: { color: 'black' },
+  variants: {
+    intent: { primary: { color: 'blue' }, ghost: { color: 'gray' } },
+  },
+});
+
+styles.override(condBtn, {
+  base: {
+    color: 'red',
+    conditions: [conditional(when.prefersDark, { color: 'white' })],
+  },
+  variants: {
+    intent: {
+      primary: {
+        conditions: [conditional(when.prefersDark, { color: 'lightblue' }, 'primary-dark')],
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: { intent: 'primary' },
+      style: {
+        fontWeight: 700,
+        conditions: [conditional(when.prefersDark, { fontWeight: 900 })],
+      },
+    },
+  ],
+});
+
+// @ts-expect-error — conditions entry missing required `when`
+styles.override(condBtn, {
+  base: {
+    conditions: [{ style: { color: 'red' } }],
+  },
+});
