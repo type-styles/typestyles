@@ -888,33 +888,3 @@ describe('tokens.createTheme colorMode patches', () => {
     expect(css).toMatch(/--app-color-accent-default:\s*light-dark\(#111, #eee\)/);
   });
 });
-
-describe('tokens.extend', () => {
-  beforeEach(() => reset());
-
-  it('deep-merges values across calls like create', () => {
-    const api = createTokens({ scopeId: 'pkg' });
-    api.extend('brand', { primary: '#111' });
-    api.extend('brand', { spacing: { hero: '4rem' } });
-    flushSync();
-
-    const brand = api.use('brand');
-    expect(brand.primary).toBe('var(--pkg-brand-primary)');
-    expect(brand.spacing.hero).toBe('var(--pkg-brand-spacing-hero)');
-
-    const css = getRegisteredCss();
-    expect(css).toContain('--pkg-brand-primary: #111');
-    expect(css).toContain('--pkg-brand-spacing-hero: 4rem');
-  });
-
-  it('infers merged ref shape from extend return value', () => {
-    const api = createTokens({ scopeId: 'pkg', colorModes: ['light', 'dark'] });
-    const brand = api.extend('brand', {
-      primary: { light: '#0064E0', dark: '#4d9fff' },
-      spacing: { hero: '4rem' },
-    });
-
-    expectTypeOf(brand.primary).toBeString();
-    expectTypeOf(brand.spacing.hero).toBeString();
-  });
-});

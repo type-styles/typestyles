@@ -1,5 +1,5 @@
 /**
- * Compile-time assertions for tokens.create / tokens.extend ref-tree inference.
+ * Compile-time assertions for tokens.create ref-tree inference.
  * Issue #172 — failures here fail `pnpm typecheck`.
  */
 import { createTokens } from './tokens';
@@ -36,16 +36,6 @@ void _brandHero;
 // Mode-aware leaves are a single var() ref, not { light, dark } sub-keys.
 // @ts-expect-error — primary is a string ref, not a nested object
 const _brandPrimaryLight = brand.primary.light;
-
-// --- tokens.extend preserves the same inference as create ---
-const extended = tokens.extend('brand', {
-  accent: { light: '#111', dark: '#eee' },
-});
-
-type ExtendedBrand = typeof extended;
-type _ExtendedAccent = ExtendedBrand['accent'];
-const _extendedAccent: _ExtendedAccent = extended.accent;
-void _extendedAccent;
 
 // --- exported helper types ---
 type Leaf = ModeAwareTokenLeaf;

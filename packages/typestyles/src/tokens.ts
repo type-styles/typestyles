@@ -146,12 +146,6 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
       options?: { layer?: string; nameTemplate?: TokenNameTemplate },
     ): CreatedTokenRef<T, N>;
   };
-  /**
-   * Register or merge token values for a namespace. Safe to call from multiple modules
-   * with the same namespace — values deep-merge like `create()`, and the returned ref
-   * reflects the full merged tree.
-   */
-  extend: TokensApi<R>['create'];
   use: {
     <const T extends CreateTokenValues, N extends string>(
       ref: CreatedTokenRef<T, N>,
@@ -775,7 +769,6 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   return {
     scopeId,
     create: create as TokensApi<R>['create'],
-    extend: create as TokensApi<R>['extend'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
     createTheme: (name, config) =>
