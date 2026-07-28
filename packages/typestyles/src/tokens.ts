@@ -10,6 +10,7 @@ import type {
   DeclaredTokenRef,
   CreateTokenValues,
   InferValuesFromSchema,
+  TokenRefTree,
   TokenSchemaLeaf,
 } from './types';
 import { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
@@ -126,7 +127,7 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
         nameTemplate?: TokenNameTemplate;
       },
     ): CreatedTokenRef<TokenValues, ''>;
-    <T extends CreateTokenValues>(
+    <const T extends CreateTokenValues>(
       values: T,
       options?: { layer?: string; nameTemplate?: TokenNameTemplate },
     ): CreatedTokenRef<T, ''>;
@@ -139,14 +140,22 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
         nameTemplate?: TokenNameTemplate;
       },
     ): CreatedTokenRef<TokenValues, N>;
-    <T extends CreateTokenValues, N extends string>(
+    <const T extends CreateTokenValues, N extends string>(
       namespace: N,
       values: T,
       options?: { layer?: string; nameTemplate?: TokenNameTemplate },
     ): CreatedTokenRef<T, N>;
   };
+  /**
+   * Register or merge token values for a namespace. Safe to call from multiple modules
+   * with the same namespace — values deep-merge like `create()`, and the returned ref
+   * reflects the full merged tree.
+   */
+  extend: TokensApi<R>['create'];
   use: {
-    <T extends TokenValues, N extends string>(ref: CreatedTokenRef<T, N>): TokenRef<T>;
+    <const T extends CreateTokenValues, N extends string>(
+      ref: CreatedTokenRef<T, N>,
+    ): TokenRefTree<T>;
     <N extends keyof R & string>(namespace: N): TokenRef<R[N]>;
     <T extends TokenValues = TokenValues>(namespace: string): TokenRef<T>;
   };
@@ -638,7 +647,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     }
   }
 
-  function use<T extends TokenValues, N extends string>(
+  function use<T extends CreateTokenValues | TokenValues, N extends string>(
     namespaceOrRef: string | CreatedTokenRef<T, N>,
   ): TokenRef<T> {
     const namespace =
@@ -766,6 +775,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   return {
     scopeId,
     create: create as TokensApi<R>['create'],
+    extend: create as TokensApi<R>['extend'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
     createTheme: (name, config) =>

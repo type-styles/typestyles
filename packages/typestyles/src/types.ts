@@ -1,5 +1,5 @@
 import type * as CSS from 'csstype';
-import type { LightDarkColorModes, ModeAwareValue } from './color-modes';
+import type { ColorModeMap, LightDarkColorModes, ModeAwareValue } from './color-modes';
 
 /**
  * A CSS value that can be a standard value or a token reference (var() string).
@@ -111,8 +111,27 @@ export type TokenSchemaLeaf =
 
 export type TokenSchema = TokenSchemaLeaf | { [key: string]: TokenSchema };
 
+/**
+ * Mode-aware token leaf: `{ light, dark }` (or custom keys from `colorModes`).
+ * Compiles to `light-dark()` on `:root` when `colorModes` is configured on `createTokens()`.
+ */
+export type ModeAwareTokenObject<M extends ColorModeMap = LightDarkColorModes> = {
+  readonly [K in M[number]]: string | number;
+};
+
+/**
+ * Scalar or mode-aware leaf accepted by `tokens.create()`.
+ * Equivalent to `string | number | { light: string | number; dark: string | number }` with default modes.
+ */
+export type ModeAwareTokenLeaf<M extends ColorModeMap = LightDarkColorModes> =
+  | string
+  | number
+  | ModeAwareTokenObject<M>;
+
 /** Plain token values accepted by `tokens.create()` (no inline descriptors). */
-export type CreateTokenValues = string | number | { [key: string]: CreateTokenValues };
+export type CreateTokenValues<M extends ColorModeMap = LightDarkColorModes> =
+  | ModeAwareTokenLeaf<M>
+  | { readonly [key: string]: CreateTokenValues<M> };
 
 export type InferFromSchema<S> = S extends { syntax: string }
   ? RegisteredPropertyRef
@@ -293,26 +312,37 @@ export type StylesPropertyFn = {
 /** @deprecated Use {@link PropertyOptions} */
 export type RegisteredPropertyOptions = PropertyOptions;
 
-type TokenRefLeaf<V> = V extends TokenDescriptor
+type TokenRefTreeLeaf<V, M extends ColorModeMap = LightDarkColorModes> = V extends TokenDescriptor
   ? RegisteredPropertyRef
   : V extends string | number
     ? string
-    : V extends TokenValues
-      ? TokenRef<V>
-      : string;
+    : V extends ModeAwareTokenObject<M>
+      ? string
+      : V extends TokenValues | CreateTokenValues<M>
+        ? TokenRefTree<V, M>
+        : string;
+
+/**
+ * Maps a `tokens.create()` value tree to nested `var(--…)` refs (mode-aware leaves become a single ref).
+ */
+export type TokenRefTree<T, M extends ColorModeMap = LightDarkColorModes> = T extends
+  | string
+  | number
+  ? string
+  : T extends TokenDescriptor
+    ? RegisteredPropertyRef
+    : T extends ModeAwareTokenObject<M>
+      ? string
+      : T extends Record<string, unknown>
+        ? { readonly [K in keyof T]: TokenRefTreeLeaf<T[K], M> }
+        : string;
 
 /**
  * A typed token reference object. Property access returns var(--namespace-key) strings
  * or {@link RegisteredPropertyRef} for descriptor leaves.
  * Supports nested access: token.text.primary => var(--namespace-text-primary)
  */
-export type TokenRef<T extends TokenValues> = T extends string | number
-  ? string
-  : T extends TokenDescriptor
-    ? RegisteredPropertyRef
-    : {
-        readonly [K in keyof T]: TokenRefLeaf<T[K]>;
-      };
+export type TokenRef<T extends TokenValues | CreateTokenValues> = TokenRefTree<T>;
 
 declare const CreatedTokenBrand: unique symbol;
 
@@ -321,19 +351,19 @@ declare const CreatedTokenBrand: unique symbol;
  * so `tokens.use(created)` can infer types across packages.
  */
 export type CreatedTokenRef<
-  T extends TokenValues = TokenValues,
+  T extends CreateTokenValues | TokenValues = CreateTokenValues,
   N extends string = string,
-> = TokenRef<T> & {
+> = TokenRefTree<T> & {
   readonly [CreatedTokenBrand]: { readonly values: T; readonly namespace: N };
 };
 
 /** Extract token value shape from a `tokens.create()` return value. */
 export type InferTokenValues<R> =
   R extends CreatedTokenRef<infer T, string>
-    ? T extends TokenValues
+    ? T extends CreateTokenValues | TokenValues
       ? T
-      : TokenValues
-    : TokenValues;
+      : CreateTokenValues
+    : CreateTokenValues;
 
 /** Extract namespace literal from a `tokens.create()` return value. */
 export type InferTokenNamespace<R> =
