@@ -1,5 +1,17 @@
 # typestyles
 
+## 0.18.0
+
+### Minor Changes
+
+- [#185](https://github.com/type-styles/typestyles/pull/185) [`06de0f6`](https://github.com/type-styles/typestyles/commit/06de0f621febba04684b32dcc2b35529aee15f1f) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `mediaQueries` constant export with ready-to-use `@media (...)` strings for `prefers-reduced-motion`, `prefers-contrast`, and hover/pointer capability queries (`hover`, `any-hover`, `pointer`, `any-pointer`), grouped by feature. Drop a leaf value (e.g. `mediaQueries.prefersReducedMotion.reduce`) directly into a `styles.class`, `styles.override`, or `styles.component` (nested inside `base` or a variant's style) object as a key.
+
+- [#184](https://github.com/type-styles/typestyles/pull/184) [`00cf163`](https://github.com/type-styles/typestyles/commit/00cf16386ea79141d74e3305ba636a0b79040cb5) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `typestyles/testing` subpath export (`resetAll`, `onAfterReset`, `createTestHarness`) for coordinating test-state reset across design systems built on typestyles.
+
+### Patch Changes
+
+- [#182](https://github.com/type-styles/typestyles/pull/182) [`748d530`](https://github.com/type-styles/typestyles/commit/748d5303dae9b9bd4d0ff60626003fa228902265) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Default `tokens.declare()` typed schema leaves to `inherits: true` for `@property` registration, including direct `atProperty` preset leaves, while preserving explicit `inherits: false` overrides.
+
 ## 0.17.0
 
 ### Minor Changes

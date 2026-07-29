@@ -1,5 +1,12 @@
 # @typestyles/open-props
 
+## 0.3.17
+
+### Patch Changes
+
+- Updated dependencies [[`748d530`](https://github.com/type-styles/typestyles/commit/748d5303dae9b9bd4d0ff60626003fa228902265), [`06de0f6`](https://github.com/type-styles/typestyles/commit/06de0f621febba04684b32dcc2b35529aee15f1f), [`00cf163`](https://github.com/type-styles/typestyles/commit/00cf16386ea79141d74e3305ba636a0b79040cb5)]:
+  - typestyles@0.18.0
+
 ## 0.3.16
 
 ### Patch Changes
