@@ -348,13 +348,15 @@ const button = styles.component('button', {
 import { styles, mediaQueries } from 'typestyles';
 
 const card = styles.component('card', {
-  base: { transition: 'transform 200ms ease' },
+  base: {
+    transition: 'transform 200ms ease',
 
-  // Respect prefers-reduced-motion
-  [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
+    // Respect prefers-reduced-motion
+    [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
 
-  // Larger touch target on coarse pointers (e.g. touchscreens)
-  [mediaQueries.pointer.coarse]: { padding: '12px 20px' },
+    // Larger touch target on coarse pointers (e.g. touchscreens)
+    [mediaQueries.pointer.coarse]: { padding: '12px 20px' },
+  },
 });
 ```
 

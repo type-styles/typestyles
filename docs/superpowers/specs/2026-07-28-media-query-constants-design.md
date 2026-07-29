@@ -9,18 +9,19 @@
 `packages/open-props/src/index.ts` already has a `media` object (via `tokens.create('media', ...)`)
 covering `prefers-reduced-motion`, `prefers-color-scheme`, `orientation`, and width breakpoints —
 but every value resolves to a CSS custom property reference (`var(--media-motionReduce)`), which is
-not valid inside an actual `@media (...)` condition or a `styles.component`/`css`/`override` object
-key.
+not valid inside an actual `@media (...)` condition or a `styles.class`/`styles.override`/
+`styles.component` object key.
 
 `packages/typestyles/src/theme.ts` has `when.prefersDark` / `when.prefersLight` — plain literal
 condition strings, but scoped narrowly to theme token-override layers (`ThemeCondition`), not
 general-purpose keys for style objects.
 
 There is currently no literal, ready-to-use `@media (...)` string constant for general use as an
-object key in `styles.component`, `styles.class`, `css`, or `override` calls — authors have to hand
-write the full string (e.g. `'@media (prefers-reduced-motion: reduce)'`) every time. This request
-adds constants for `prefers-reduced-motion`, `prefers-contrast`, and hover/pointer capability
-queries, grouped by CSS media feature.
+object key in `styles.class`, `styles.override`, or `styles.component` (nested inside `base` or a
+variant's style) calls — authors have to hand write the full string (e.g.
+`'@media (prefers-reduced-motion: reduce)'`) every time. This request adds constants for
+`prefers-reduced-motion`, `prefers-contrast`, and hover/pointer capability queries, grouped by CSS
+media feature.
 
 ## Design
 
@@ -70,10 +71,16 @@ Usage:
 import { styles, mediaQueries } from 'typestyles';
 
 const card = styles.component('card', {
-  base: { transition: 'transform 200ms ease' },
-  [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
+  base: {
+    transition: 'transform 200ms ease',
+    [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
+  },
 });
 ```
+
+Note: for `styles.component`, the media key must be nested inside `base` (or a variant's style),
+not placed at the config's top level — a top-level key there matches the flat-variant overload
+instead of an `@media` block.
 
 ### Wiring
 
@@ -102,6 +109,6 @@ pointing to `@typestyles/open-props`'s `media` token map for anyone who wants `p
 - `prefers-color-scheme`, `orientation`, and width breakpoints — already covered by
   `@typestyles/open-props`'s `media` map and `theme.ts`'s `when.prefersDark`/`prefersLight`.
 - `forced-colors`, `inverted-colors`, `print` — explicitly deferred by the user during scoping.
-- Any change to how `styles.component`/`css`/`override` resolve `@media` keys — the existing
+- Any change to how `styles.class`/`styles.override`/`styles.component` resolve `@media` keys — the existing
   mechanism already handles arbitrary literal `@media (...)` string keys; this PR only adds string
   constants, not new resolution logic.

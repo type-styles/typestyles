@@ -4,7 +4,7 @@
 
 **Goal:** Add a new `mediaQueries` constant export to the `typestyles` package providing ready-to-use `@media (...)` string constants for `prefers-reduced-motion`, `prefers-contrast`, and hover/pointer capability queries.
 
-**Architecture:** One new small, self-contained module (`media-queries.ts`) exporting a single `as const` object grouped by CSS media feature, wired into the existing `index.ts` barrel export. No changes to runtime style-resolution code — the existing `@media (...)` string-key handling in `styles.component`/`css`/`override` already supports arbitrary literal keys (see `at-rule-block.ts`, `media.ts`), so this is purely additive constants.
+**Architecture:** One new small, self-contained module (`media-queries.ts`) exporting a single `as const` object grouped by CSS media feature, wired into the existing `index.ts` barrel export. No changes to runtime style-resolution code — the existing `@media (...)` string-key handling in `styles.class`/`styles.override`/`styles.component` already supports arbitrary literal keys (see `at-rule-block.ts`, `media.ts`), so this is purely additive constants.
 
 **Tech Stack:** TypeScript, Vitest (existing project toolchain — no new dependencies).
 
@@ -99,14 +99,17 @@ import type { MediaQueryKey } from './media';
 
 /**
  * Ready-to-use `@media (...)` string constants for common CSS media features,
- * grouped by feature. Drop a leaf value directly into a `styles.component` /
- * `css` / `override` style object as a key:
+ * grouped by feature. Drop a leaf value directly into a `styles.class` /
+ * `styles.override` style object as a key — for `styles.component`, nest it
+ * inside `base` or a variant's style, not at the config's top level:
  *
  * @example
  * ```ts
  * const card = styles.component('card', {
- *   base: { transition: 'transform 200ms ease' },
- *   [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
+ *   base: {
+ *     transition: 'transform 200ms ease',
+ *     [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
+ *   },
  * });
  * ```
  */
@@ -284,13 +287,15 @@ Insert a new subsection directly after the closing ` ``` ` of the "Combining med
 import { styles, mediaQueries } from 'typestyles';
 
 const card = styles.component('card', {
-  base: { transition: 'transform 200ms ease' },
+  base: {
+    transition: 'transform 200ms ease',
 
-  // Respect prefers-reduced-motion
-  [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
+    // Respect prefers-reduced-motion
+    [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
 
-  // Larger touch target on coarse pointers (e.g. touchscreens)
-  [mediaQueries.pointer.coarse]: { padding: '12px 20px' },
+    // Larger touch target on coarse pointers (e.g. touchscreens)
+    [mediaQueries.pointer.coarse]: { padding: '12px 20px' },
+  },
 });
 ````
 
