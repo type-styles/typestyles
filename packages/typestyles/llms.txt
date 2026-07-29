@@ -79,6 +79,7 @@ Guide: https://typestyles.dev/docs/zero-runtime.md
 | `typestyles/server` | SSR (`collectStyles`, …) |
 | `typestyles/build` | Build stubs when runtime disabled |
 | `typestyles/color` | Color helpers (off main bundle) |
+| `typestyles/testing` | Test-state reset (`resetAll`, `onAfterReset`, `createTestHarness`) |
 
 ## More
 

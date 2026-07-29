@@ -8,6 +8,8 @@ package-level globals, extended token namespaces, or font faces at import time �
 that touches your styles needs a coordinated reset. This page covers the `typestyles/testing`
 utilities that make that reset automatic.
 
+> **Note:** `typestyles/testing` shares in-memory state with `typestyles` at the module level. This is reliable under ESM resolution (Vite, Vitest's default, modern bundlers). If your test runner transforms everything to CommonJS (e.g. Jest without ESM support enabled), `typestyles` and `typestyles/testing` can resolve to separate module instances with separate state, and `resetAll()` will not correctly clear or re-register your design system's CSS. Use an ESM-native test runner (Vitest is recommended) for accurate results.
+
 ## The problem
 
 typestyles' own `reset()` clears its internal state (styles, tokens, custom properties, property
@@ -32,11 +34,12 @@ tests that silently assert against incomplete CSS.
 
 ## `onAfterReset` — register once, re-run automatically
 
-Instead of re-registering globals in every test file's `beforeEach`, register them once, at
-import time, in your package's runtime module:
+Instead of re-registering globals in every test file's `beforeEach`, register them once, in a
+test-setup file that every test file imports (not your package's production runtime module —
+`typestyles/testing` is test-only):
 
 ```ts
-// your-design-system/src/runtime.ts
+// your-design-system/test-setup.ts
 import { onAfterReset } from 'typestyles/testing';
 
 export function registerColorSchemeGlobals() {
@@ -114,7 +117,7 @@ surface with `@typestyles/cli` rather than asserting individual class names by h
 
 | Cleared automatically by `reset()` / `resetAll()` | Must be re-registered via `onAfterReset`                                 |
 | ------------------------------------------------- | ------------------------------------------------------------------------ |
-| Injected style rules, atomic cache                | Global styles (`typestyles.global.style`) registered at import time      |
+| Injected style rules, atomic cache                | Global styles (`global.style(...)`) registered at import time            |
 | Token registrations (`tokens.create`)             | Package-level token dedup registries you built on top of `tokens.create` |
 | Custom property (`@property`) registrations       | Font faces registered via your own wrapper around `globalFontFace`       |
 | Emitted class-name tracking                       | Any other package-level singleton state initialized at import time       |

@@ -56,6 +56,7 @@ const button = styles.component('button', {
 | `typestyles/hmr`     | HMR invalidation (used by `@typestyles/vite`)                                      |
 | `typestyles/color`   | Color helpers (`rgb`, `oklch`, `mix`, …) — kept off the main entry for bundle size |
 | `typestyles/globals` | Ambient types for CSS modules and global augmentation                              |
+| `typestyles/testing` | Test-state reset (`resetAll`, `onAfterReset`, `createTestHarness`)                 |
 
 ## Runtime vs zero-runtime
 
