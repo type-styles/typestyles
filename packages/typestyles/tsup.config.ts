@@ -11,6 +11,7 @@ export default defineConfig({
     server: 'src/server.ts',
     hmr: 'src/hmr.ts',
     build: 'src/build.ts',
+    testing: 'src/testing.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

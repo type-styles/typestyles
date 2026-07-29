@@ -440,6 +440,13 @@ export const tokens = {
 
 However, mocking is usually unnecessary since typestyles has minimal side effects in tests.
 
+## Testing design systems built on typestyles
+
+If you're building a design system or component library — not just consuming one — see
+[Testing Design Systems](/docs/testing-design-systems) for the `typestyles/testing` harness
+utilities (`resetAll`, `onAfterReset`, `createTestHarness`) that coordinate resetting typestyles'
+state with your own package-level registries (global styles, extended tokens, font faces).
+
 ## Best practices
 
 1. **Test behavior, not classes** - Focus on what users see and interact with
