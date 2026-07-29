@@ -44,6 +44,8 @@ export type {
   MediaFn,
 } from './media';
 export { createBreakpointMediaFn, createMediaFn, resolveBreakpointMediaKey } from './media';
+export type { MediaQueries } from './media-queries';
+export { mediaQueries } from './media-queries';
 export type { ColorModeMap, ModeAwareValue, LightDarkColorModes } from './color-modes';
 export { colorModes, resolveColorModes, acceptsLightDark } from './color-modes';
 export type { ConditionCompileContext } from './condition-compile';

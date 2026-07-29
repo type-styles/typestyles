@@ -41,3 +41,10 @@ describe('mediaQueries', () => {
     expect(mediaQueries.anyPointer.none).toBe('@media (any-pointer: none)');
   });
 });
+
+describe('mediaQueries package export', () => {
+  it('is re-exported from the package root', async () => {
+    const pkg = await import('./index');
+    expect(pkg.mediaQueries).toBe(mediaQueries);
+  });
+});
