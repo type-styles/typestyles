@@ -766,6 +766,38 @@ describe('createComponent — function config & internal vars', () => {
     expect(css).toContain('initial-value: 1');
   });
 
+  it('defaults c.vars() @property declarations to inherits: true', () => {
+    createComponent(defaultClassNamingConfig, 'inherit-vars', (c) => {
+      c.vars({
+        accent: { value: '#0066ff', syntax: '<color>' },
+      });
+      return { base: { padding: '4px' } };
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/@property --inherit-vars-accent \{[^}]*inherits: true;/);
+  });
+
+  it('defaults c.var() @property declarations to inherits: true', () => {
+    createComponent(defaultClassNamingConfig, 'inherit-var', (c) => {
+      c.var('accent', { value: '#0066ff', syntax: '<color>' });
+      return { base: { padding: '4px' } };
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/@property --inherit-var-accent \{[^}]*inherits: true;/);
+  });
+
+  it('defaults c.vars.declare() @property declarations to inherits: true', () => {
+    createComponent(defaultClassNamingConfig, 'inherit-declare', (c) => {
+      c.vars.declare({ accent: { syntax: '<color>' } });
+      return { base: { padding: '4px' } };
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/@property --inherit-declare-accent \{[^}]*inherits: true;/);
+  });
+
   it('uses an explicit initial as the @property placeholder for a var()-dependent ctx.var', () => {
     const badge = createComponent(defaultClassNamingConfig, 'cb-badge2', (c) => {
       const base = c.var('base', { value: '#0066ff' });

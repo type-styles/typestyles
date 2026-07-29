@@ -143,7 +143,7 @@ function declareVarSchema(
     if (leaf !== true) {
       registerAtPropertySchema(ref.name, {
         syntax: leaf.syntax,
-        inherits: leaf.inherits,
+        inherits: leaf.inherits ?? true,
         initial: leaf.initial,
       });
     }
@@ -207,7 +207,7 @@ export function createComponentConfigContextPair(
       registerAtPropertyRule(name, {
         value: entry.value,
         syntax: entry.syntax,
-        inherits: entry.inherits,
+        inherits: entry.inherits ?? true,
         initial: entry.initial,
       });
     }
@@ -219,7 +219,10 @@ export function createComponentConfigContextPair(
     const safePath = sanitizeClassSegment(id);
     trackSeen(safePath, `internal var "${id}"`);
     const name = `--${ns}-${safePath}`;
-    registerAtPropertySchema(name, registration);
+    registerAtPropertySchema(name, {
+      ...registration,
+      inherits: registration.inherits ?? true,
+    });
     return createRegisteredPropertyRef(name);
   }
 
