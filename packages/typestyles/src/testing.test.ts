@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resetAll, onAfterReset, createTestHarness } from './testing';
 import { reset } from './sheet';
+import { styles, flushSync, getRegisteredCss } from './index';
 
 describe('resetAll', () => {
   it('calls core reset()', () => {
@@ -65,5 +66,15 @@ describe('reset() interop', () => {
     expect(spy).not.toHaveBeenCalled();
     resetAll();
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('resetAll actually clears registered CSS (not just subscriber notification)', () => {
+    styles.class('resetall-clears-probe', { color: 'red' });
+    flushSync();
+    expect(getRegisteredCss()).toContain('resetall-clears-probe');
+
+    resetAll();
+
+    expect(getRegisteredCss()).not.toContain('resetall-clears-probe');
   });
 });
