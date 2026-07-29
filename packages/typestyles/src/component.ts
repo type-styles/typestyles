@@ -223,7 +223,7 @@ function resolveComponentConfig(
  * const badge = styles.component('badge', (c) => {
  *   const v = c.vars({
  *     textColor: '#333',
- *     borderColor: { value: '#ccc', syntax: '<color>', inherits: false },
+ *     borderColor: { value: '#ccc', syntax: '<color>' },
  *   });
  *   return {
  *     base: { color: v.textColor.var, borderColor: v.borderColor.var, borderWidth: '1px' },
