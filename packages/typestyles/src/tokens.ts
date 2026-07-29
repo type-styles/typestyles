@@ -749,7 +749,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
         const propName = resolvePathName(path);
         registerAtPropertySchema(propName, {
           syntax: leaf.syntax,
-          inherits: leaf.inherits,
+          inherits: leaf.inherits ?? true,
           initial: leaf.initial,
         });
       }

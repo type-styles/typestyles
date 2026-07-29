@@ -2,55 +2,46 @@ import type { PropertyRegistration } from './types';
 
 const color = {
   syntax: '<color>',
-  inherits: false,
   initial: 'transparent',
 } as const satisfies PropertyRegistration;
 
 const number = {
   syntax: '<number>',
-  inherits: false,
   initial: 0,
 } as const satisfies PropertyRegistration;
 
 const integer = {
   syntax: '<integer>',
-  inherits: false,
   initial: 0,
 } as const satisfies PropertyRegistration;
 
 const length = {
   syntax: '<length>',
-  inherits: false,
   initial: '0px',
 } as const satisfies PropertyRegistration;
 
 const percentage = {
   syntax: '<percentage>',
-  inherits: false,
   initial: '0%',
 } as const satisfies PropertyRegistration;
 
 const lengthPercentage = {
   syntax: '<length-percentage>',
-  inherits: false,
   initial: '0px',
 } as const satisfies PropertyRegistration;
 
 const angle = {
   syntax: '<angle>',
-  inherits: false,
   initial: '0deg',
 } as const satisfies PropertyRegistration;
 
 const time = {
   syntax: '<time>',
-  inherits: false,
   initial: '0s',
 } as const satisfies PropertyRegistration;
 
 const resolution = {
   syntax: '<resolution>',
-  inherits: false,
   initial: '0dpi',
 } as const satisfies PropertyRegistration;
 

@@ -49,6 +49,9 @@ describe('token-schema', () => {
         { syntax: '<length>', inherits: false },
       ),
     ).toBe(false);
+    expect(
+      tokenSchemaLeavesEqual({ syntax: '<color>' }, { syntax: '<color>', inherits: true }),
+    ).toBe(true);
   });
 
   it('getSchemaSyntaxLeaves returns paths with syntax', () => {
