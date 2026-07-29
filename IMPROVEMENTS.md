@@ -437,3 +437,13 @@ section is the authoritative tracker for the items themselves.
   - Shipped: `typestyles/testing` subpath export (`resetAll`, `onAfterReset`,
     `createTestHarness`), closing issue #170. Docs:
     `docs/content/docs/testing-design-systems.md`.
+
+- [ ] **P7.6 — Fix CJS subpath state duplication**
+  - tsup only code-splits ESM output; each subpath's `.cjs` build carries its own copy of
+    module-level singletons (`globalSheetState`, `registeredNamespaces`, property registrations,
+    etc.) instead of sharing one instance. A consumer requiring both `typestyles` and
+    `typestyles/testing` (or `typestyles/server`) under CJS gets two disjoint sheets —
+    `resetAll()` silently no-ops against state it doesn't share, producing stale or duplicate CSS
+    with no error. Pre-existing across all subpaths (also present in `dist/server.cjs`), surfaced
+    by `typestyles/testing`'s reliance on shared mutable state. Fix: enable tsup `splitting` for
+    cjs output, or give the shared singletons a dedicated always-shared entry module.

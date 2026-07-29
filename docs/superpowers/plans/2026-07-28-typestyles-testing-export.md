@@ -575,7 +575,7 @@ Closes #170.
 ## Test plan
 - [ ] `pnpm --filter typestyles test` passes
 - [ ] `pnpm typecheck` passes
-- [ ] `pnpm --filter typestyles-docs build` succeeds with the new page
+- [ ] `pnpm --filter docs build` succeeds with the new page
 - [ ] `pnpm verify` passes end-to-end
 EOF
 )"
