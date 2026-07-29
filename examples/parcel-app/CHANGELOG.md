@@ -1,5 +1,12 @@
 # typestyles-parcel-example
 
+## 0.0.17
+
+### Patch Changes
+
+- Updated dependencies [[`db05b28`](https://github.com/type-styles/typestyles/commit/db05b288c0878d1ec08093c8a4dd88b5e8f975e5)]:
+  - typestyles@0.18.1
+
 ## 0.0.16
 
 ### Patch Changes

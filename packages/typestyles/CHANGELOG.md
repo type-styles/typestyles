@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.18.1
+
+### Patch Changes
+
+- [#186](https://github.com/type-styles/typestyles/pull/186) [`db05b28`](https://github.com/type-styles/typestyles/commit/db05b288c0878d1ec08093c8a4dd88b5e8f975e5) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Default component `c.var()`, `c.vars()`, and `.declare()` `@property` registrations to `inherits: true`, matching `tokens.declare()` behavior. Explicit `inherits: false` overrides are preserved.
+
 ## 0.18.0
 
 ### Minor Changes
