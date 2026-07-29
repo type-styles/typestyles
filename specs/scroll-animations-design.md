@@ -76,14 +76,25 @@ view({ inset: '20%' }); // "view(20%)"
 view({ axis: 'block', inset: ['10%', '20%'] }); // "view(block 10% 20%)"
 ```
 
-These live in `css-math.ts` alongside `calc`/`clamp`/`anchor`/`anchorSize` — same
-"typed function-value builder" shape.
+These live in `scroll-animations.ts` — same "typed function-value builder" shape as
+`calc`/`clamp`/`anchor`/`anchorSize` in `css-math.ts`, but in a separate module
+because timelines are not math-shaped. Cross-reference in docs only; no `css-math.ts`
+changes.
+
+**Export naming:** top-level `scroll` and `view` match the CSS function names for
+discoverability and parity with MDN. The names are generic (`view` especially), but
+they're unambiguous in the `typestyles` import namespace and tree-shake independently;
+`scrollTimeline()` / `viewTimeline()` aliases are not planned for v1. Do not confuse
+`view()` with `viewTransition` from `view-transitions-design.md` — that namespace is
+for the **View Transitions API** (`::view-transition-*` pseudo-elements), not scroll
+view timelines. Cross-link both doc pages.
 
 ### Named timelines — `createScrollTimelineRef`, `createViewTimelineRef`
 
 `scroll-timeline-name` and `view-timeline-name` are `<dashed-ident>` (same category
 as `anchor-name` — must start with `--`), so these mirror `createAnchorRef()`, not
-`createContainerRef()`.
+`createContainerRef()`. Options type: `CreateAnchorRefOptions` from
+`anchor-positioning-design.md`.
 
 ```ts
 export type ScrollTimelineRef = `--${string}` & { readonly __scrollTimelineRef?: true };
@@ -112,8 +123,48 @@ styles.class('article', {
 styles.class('progress-bar', {
   animationName: fillBar,
   animationTimeline: progress,
+  animationRange: animationRange('0%', '100%'),
 });
 ```
+
+Named **view** timeline (symmetric to scroll — declare on the observed element, consume
+on the animated element or the same element):
+
+```ts
+const reveal = createViewTimelineRef('hero-reveal');
+
+styles.class('hero', {
+  viewTimelineName: reveal,
+  viewTimelineAxis: 'block',
+  viewTimelineInset: '10%',
+  animationName: fadeIn,
+  animationTimeline: reveal,
+  animationRange: animationRange('entry 0%', 'entry 100%'),
+});
+```
+
+### `animationTimeline` value typing
+
+Branded refs are only useful if `animationTimeline` accepts them at the property
+boundary:
+
+```ts
+export type AnimationTimelineValue =
+  | string
+  | ScrollTimelineRef
+  | ViewTimelineRef
+  | ReturnType<typeof scroll>
+  | ReturnType<typeof view>;
+```
+
+`animationTimeline` on base `CSSProperties` should be narrowed to
+`AnimationTimelineValue` (or a compatible union) so passing a ref or builder return
+value is typed without `as any`.
+
+**Range pairing:** `cover`, `contain`, `entry`, `exit`, `entry-crossing`, and
+`exit-crossing` are **view-timeline** range names — pair them with `view()` or a
+`ViewTimelineRef`. Scroll progress timelines (`scroll()` or `ScrollTimelineRef`) use
+length/percentage ranges (e.g. `'0%'`, `'100%'`) or `normal`, not `entry`/`cover`.
 
 ### `animationRange(start, end?)`
 
@@ -137,19 +188,38 @@ export function animationRange(start: AnimationRangeValue, end?: AnimationRangeV
 ```ts
 animationRange('entry 0%', 'entry 100%'); // "entry 0% entry 100%"
 animationRange('cover 25%', 'cover 75%'); // "cover 25% cover 75%"
+animationRange('entry'); // "entry" — end omitted, single value passed through
+animationRange('0%', '100%'); // "0% 100%" — scroll-timeline progress range
 ```
 
-### Full scroll example
+No inner validation of offset units or range-name pairing — same passthrough stance
+as `calc`/`clamp`.
+
+### Reveal-on-scroll (`view()` + view ranges)
 
 ```ts
-import { styles, keyframes, scroll, animationRange } from 'typestyles';
+import { styles, keyframes, view, animationRange } from 'typestyles';
 
 const fadeIn = keyframes.create('fade-in', { from: { opacity: 0 }, to: { opacity: 1 } });
 
 styles.class('hero', {
   animationName: fadeIn,
-  animationTimeline: scroll({ axis: 'block' }),
+  animationTimeline: view({ axis: 'block' }),
   animationRange: animationRange('entry 25%', 'entry 75%'),
+});
+```
+
+### Scroll progress (`scroll()` + progress ranges)
+
+```ts
+import { styles, keyframes, scroll, animationRange } from 'typestyles';
+
+const fillBar = keyframes.create('fill-bar', { from: { width: '0%' }, to: { width: '100%' } });
+
+styles.class('progress-bar', {
+  animationName: fillBar,
+  animationTimeline: scroll({ axis: 'block' }),
+  animationRange: animationRange('0%', '100%'),
 });
 ```
 
@@ -176,15 +246,19 @@ function entryTransition(config) {
 ```
 
 ```ts
-styles.class('tooltip', {
+styles.class('popover', {
   ...entryTransition({
-    from: { opacity: 0, scale: 0.95 },
-    to: { opacity: 1, scale: 1 },
+    from: { opacity: 0, scale: 0.95, display: 'none' },
+    to: { opacity: 1, scale: 1, display: 'block' },
     transition:
       'opacity 200ms, scale 200ms, display 200ms allow-discrete, overlay 200ms allow-discrete',
   }),
 });
 ```
+
+`config.transition` always wins over `config.to.transition` — spread order is
+`...config.to`, then `transition: config.transition`, then the `@starting-style` block
+(which cannot collide with top-level longhands).
 
 Deliberately requires an explicit `transition` string rather than auto-deriving it
 from `to`'s keys — matches TypeStyles' "no runtime magic" stance (see `css-math.ts`'s
@@ -197,43 +271,39 @@ instant in Safari even with this helper. Note it in docs; not a TypeStyles bug.
 
 ## Implementation
 
-| File                                                | Change                                                                                                                                                                                                |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/typestyles/src/scroll-animations.ts`      | New — `scroll`, `view`, refs, `animationRange`                                                                                                                                                        |
-| `packages/typestyles/src/scroll-animations.test.ts` | New                                                                                                                                                                                                   |
-| `packages/typestyles/src/starting-style.ts`         | New — `entryTransition`                                                                                                                                                                               |
-| `packages/typestyles/src/starting-style.test.ts`    | New                                                                                                                                                                                                   |
-| `packages/typestyles/src/css-math.ts`               | No change — scroll/view are separate file since they're timeline-shaped, not calc-shaped; cross-reference in docs only                                                                                |
-| `packages/typestyles/src/styles.ts`                 | `styles.scrollTimelineRef(label)` / `styles.viewTimelineRef(label)`, mirroring `containerRef`/`anchorRef`                                                                                             |
-| `packages/typestyles/src/types.ts`                  | Verify `animationTimeline`, `animationRange`, `scrollTimelineName`, `scrollTimelineAxis`, `viewTimelineName`, `viewTimelineAxis`, `viewTimelineInset` present on base `CSSProperties`; add if missing |
-| `packages/typestyles/src/index.ts`                  | Re-export all of the above                                                                                                                                                                            |
+| File                                                | Change                                                                                                                                                     |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/typestyles/src/scroll-animations.ts`      | New — `scroll`, `view`, refs, `animationRange`                                                                                                             |
+| `packages/typestyles/src/scroll-animations.test.ts` | New                                                                                                                                                        |
+| `packages/typestyles/src/starting-style.ts`         | New — `entryTransition` only (~10 lines today; separate from scroll-animations so `@starting-style` helpers can grow without bloating the timeline module) |
+| `packages/typestyles/src/starting-style.test.ts`    | New                                                                                                                                                        |
+| `packages/typestyles/src/css-math.ts`               | No change — scroll/view are separate file since they're timeline-shaped, not calc-shaped; cross-reference in docs only                                     |
+| `packages/typestyles/src/styles.ts`                 | `styles.scrollTimelineRef(label)` / `styles.viewTimelineRef(label)`, mirroring `containerRef`/`anchorRef`                                                  |
+| `packages/typestyles/src/types.ts`                  | Verify timeline/range properties on base `CSSProperties`; add if missing. Narrow `animationTimeline` to `AnimationTimelineValue`                           |
+| `packages/typestyles/src/index.ts`                  | Re-export all of the above                                                                                                                                 |
 
 ## Documentation
 
 New doc page: `docs/content/docs/scroll-animations.md`. Sections: anonymous vs named
-timelines (when to reach for each), `animationRange` patterns, pairing with
+timelines (when to reach for each), `animationRange` patterns (**view ranges** vs
+**scroll progress ranges** — don't mix `entry`/`cover` with `scroll()`), pairing with
 `keyframes.create()`, `entryTransition()` plus the raw `atRuleBlock('@starting-style', …)`
-escape hatch, Safari `overlay: allow-discrete` caveat. Cross-link from
-`api-reference.md` and `keyframes` docs.
+escape hatch, Safari `overlay: allow-discrete` caveat, **`prefers-reduced-motion`**
+(wrap scroll/view animations in `@media (prefers-reduced-motion: no-preference)` or
+set `animation: none` — no new API). Cross-link from `api-reference.md` and `keyframes`
+docs.
+
+**`view()` `inset` vs `viewTimelineInset`:** the CSS spec uses different names for the
+anonymous function argument and the named-timeline property; accept that asymmetry in
+TypeStyles and note it in docs rather than inventing a unified option name.
 
 ## Testing
 
-| Area                                                | Cases                                                                                |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `scroll()` / `view()`                               | all option combinations, defaults, inset tuple vs scalar                             |
-| `createScrollTimelineRef` / `createViewTimelineRef` | `--` prefix, scoping, sanitization                                                   |
-| `animationRange()`                                  | named-range + offset, `normal`, single-arg (end omitted)                             |
-| `entryTransition()`                                 | correct `@starting-style` key + spread order (to-properties not overwritten by from) |
-| Extraction                                          | refs/timelines extracted like other primitives (build smoke test)                    |
-
-## Open design questions
-
-- Should `entryTransition()`'s returned object risk key collisions if `config.to`
-  itself contains a `transition` key — last-write-wins spread order needs to be
-  documented explicitly (config.transition always wins).
-- Is a `viewTimelineInset` shorthand pairing with `view()`'s `inset` option worth
-  aligning 1:1, or is slight asymmetry between the anonymous-function option name and
-  the named-timeline property name acceptable (spec itself has this asymmetry)?
-- Whether `animationRange`'s type should more strictly prevent nonsensical pairs
-  (e.g. mismatched offset units) or, consistent with `calc`/`clamp`, stay
-  string-passthrough with zero inner validation.
+| Area                                                | Cases                                                                                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `scroll()` / `view()`                               | all option combinations, defaults, inset tuple vs scalar                                                                             |
+| `createScrollTimelineRef` / `createViewTimelineRef` | `--` prefix, scoping, sanitization                                                                                                   |
+| `animationRange()`                                  | named-range + offset, `normal`, single-arg (`animationRange('entry')` → `"entry"`)                                                   |
+| `entryTransition()`                                 | `@starting-style` key, spread order, `config.transition` overrides `config.to.transition`, popover `display` + `allow-discrete` case |
+| Examples / docs                                     | `view()` + `entry` reveal pattern; `scroll()` + `%` progress pattern — not crossed                                                   |
+| Extraction                                          | refs/timelines extracted like other primitives (build smoke test)                                                                    |

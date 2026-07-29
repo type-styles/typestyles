@@ -2,7 +2,7 @@
 title: CSS View Transitions (`createViewTransitionRef`, `viewTransition.*`)
 status: draft
 date: 2026-07-29
-related: container.ts (createContainerRef precedent), global.ts
+related: container.ts (createContainerRef precedent), global.ts, scroll-animations-design.md (naming disambiguation)
 ---
 
 # CSS View Transitions
@@ -22,6 +22,16 @@ TypeStyles has no DX for it. The pain points if left uncovered:
 - The transition pseudo-elements (`::view-transition-old(...)` etc.) are **not**
   descendants of any authored element — they live in a browser-generated tree
   parallel to `<html>` — so there's no obvious place in today's API to style them.
+
+**Naming:** do not confuse this spec with `scroll-animations-design.md` — scroll's
+`view()` builds a `view()` **timeline** function for scroll-driven animations;
+`viewTransition` here is the **View Transitions API** pseudo-element namespace.
+Similarly `createViewTransitionRef()` names an element for morph transitions;
+`createViewTimelineRef()` names a scroll **view timeline**. Cross-link both doc pages.
+
+**`view-transition-class`:** Level 2, newer than core same-document VT (Chrome 125,
+Safari 18.2+). Transitions still run without it; custom group timing falls back to
+defaults in older engines — progressive enhancement, not a hard dependency.
 
 ## Goals
 
@@ -44,6 +54,8 @@ TypeStyles has no DX for it. The pain points if left uncovered:
   and is progressive enhancement by nature.
 - No dedicated component API for "transition this element" — users assign
   `viewTransitionName` like any other CSS property.
+- No multi-class `view-transition-class` builder in v1 (CSS allows
+  `view-transition-class: card featured`; pass a raw string or add a helper later).
 
 ## `view-transition-name` is a `<custom-ident>`, not a dashed-ident
 
@@ -59,14 +71,12 @@ prefix.
 ```ts
 export type ViewTransitionNameRef = string & { readonly __viewTransitionNameRef?: true };
 
-export type CreateViewTransitionRefOptions = {
-  scopeId?: string; // "{scopeId}-{label}"
-  prefix?: string; // "{prefix}-{label}", default "ts"
-};
+/** Alias of `CreateContainerRefOptions` — same `{scopeId}-{label}` / `{prefix}-{label}` shape. */
+export type CreateViewTransitionRefOptions = CreateContainerRefOptions;
 
 export function createViewTransitionRef(
   label: string,
-  options?: CreateViewTransitionRefOptions,
+  options?: CreateContainerRefOptions,
 ): ViewTransitionNameRef;
 ```
 
@@ -86,9 +96,22 @@ Same shape, for `view-transition-class` (tags many elements under one shared rul
 export type ViewTransitionClassRef = string & { readonly __viewTransitionClassRef?: true };
 export function createViewTransitionClassRef(
   label: string,
-  options?: CreateViewTransitionRefOptions,
+  options?: CreateContainerRefOptions,
 ): ViewTransitionClassRef;
 ```
+
+`styles.viewTransitionClassRef(label)` is the instance-scoped shorthand (mirrors
+`viewTransitionRef`).
+
+### Property value typing
+
+```ts
+export type ViewTransitionNameValue = 'none' | ViewTransitionNameRef | string;
+export type ViewTransitionClassValue = 'none' | ViewTransitionClassRef | string;
+```
+
+Narrow `viewTransitionName` / `viewTransitionClass` on base `CSSProperties` so refs
+type-check without `as any`. CSS `none` is allowed on both properties.
 
 ### `viewTransition.*` pseudo-element selectors
 
@@ -97,43 +120,74 @@ return **bare** selector strings for use with `global.style()`, not `&`-relative
 nested keys.
 
 ```ts
+export type ViewTransitionNameSelector = ViewTransitionNameRef | '*' | 'root';
+
 export const viewTransition: {
-  group(ref: ViewTransitionNameRef | '*'): `::view-transition-group(${string})`;
-  imagePair(ref: ViewTransitionNameRef | '*'): `::view-transition-image-pair(${string})`;
-  old(ref: ViewTransitionNameRef | '*'): `::view-transition-old(${string})`;
-  new (ref: ViewTransitionNameRef | '*'): `::view-transition-new(${string})`;
-  groupByClass(ref: ViewTransitionClassRef): `::view-transition-group(*.${string})`;
+  group(ref: ViewTransitionNameSelector): `::view-transition-group(${string})`;
+  imagePair(ref: ViewTransitionNameSelector): `::view-transition-image-pair(${string})`;
+  old(ref: ViewTransitionNameSelector): `::view-transition-old(${string})`;
+  new (ref: ViewTransitionNameSelector): `::view-transition-new(${string})`;
+  groupByClass(ref: ViewTransitionClassRef): `::view-transition-group(.${string})`;
 };
 ```
 
-`'*'` is accepted directly (not just via a cast) because targeting "every named
-transition" (e.g. a default crossfade duration) is the common starting point before
-naming individual elements.
+`'*'` targets every named transition (common default crossfade). `'root'` targets the
+user-agent page-level transition group (elements not assigned their own
+`view-transition-name`). `groupByClass` uses the class-only selector form
+(`.${ref}`) — equivalent to `*.${ref}` but simpler when styling by
+`view-transition-class` alone.
+
+**v1 scope:** only `groupByClass` is provided for class-based targeting. Style
+`::view-transition-old(.class)` / `::view-transition-new(.class)` via raw selector
+strings passed to `global.style()` until demand justifies `oldByClass` / `newByClass`
+helpers.
+
+`'*'` and `'root'` are accepted directly (not just via a cast) because global and
+page-level defaults are common starting points before naming individual elements.
 
 ## Examples
 
 ```ts
-import { styles, global, createViewTransitionRef, viewTransition } from 'typestyles';
+import {
+  styles,
+  global,
+  keyframes,
+  createViewTransitionRef,
+  createViewTransitionClassRef,
+  viewTransition,
+} from 'typestyles';
 
 const cardTransition = createViewTransitionRef('card');
+const cardGroup = createViewTransitionClassRef('shared-card');
 
-styles.class('card', { viewTransitionName: cardTransition });
+styles.class('card', {
+  viewTransitionName: cardTransition,
+  viewTransitionClass: cardGroup,
+});
 
 global.style(viewTransition.old(cardTransition), { animationDuration: '200ms' });
 global.style(viewTransition.new(cardTransition), { animationTimingFunction: 'ease-out' });
 global.style(viewTransition.group(cardTransition), { animationDuration: '400ms' });
+global.style(viewTransition.groupByClass(cardGroup), { animationDuration: '400ms' });
 
 // Default crossfade for everything, before naming individual elements
 global.style(viewTransition.old('*'), { animationDuration: '150ms' });
 global.style(viewTransition.new('*'), { animationDuration: '150ms' });
+
+// Page-level (root) transition group
+global.style(viewTransition.group('root'), { animationDuration: '300ms' });
 ```
 
-```ts
-// view-transition-class: style a whole group's transition with one rule
-const cardGroup = createViewTransitionClassRef('shared-card');
+Custom morph animation via `keyframes.create()` on the transition pseudo-elements:
 
-styles.class('card', { viewTransitionName: cardTransition, viewTransitionClass: cardGroup });
-global.style(viewTransition.groupByClass(cardGroup), { animationDuration: '400ms' });
+```ts
+const slideOut = keyframes.create('vt-slide-out', { to: { transform: 'translateX(-100%)' } });
+
+global.style(viewTransition.old(cardTransition), {
+  animationName: slideOut,
+  animationDuration: '300ms',
+  animationFillMode: 'both',
+});
 ```
 
 ```ts
@@ -146,10 +200,12 @@ function navigate() {
 
 ### `enableViewTransitions()` (optional, cross-document)
 
-Thin `@view-transition` at-rule enabler for MPA navigations:
+Thin `@view-transition` at-rule enabler for MPA navigations. v1 emits
+`navigation: auto` only — named `types` for `:active-view-transition-type()` styling
+is deferred until there is a concrete use case.
 
 ```ts
-export function enableViewTransitions(options?: { types?: string[] }): void;
+export function enableViewTransitions(): void;
 ```
 
 ```ts
@@ -163,13 +219,13 @@ low-risk addition, not because it needs its own subsystem.
 
 ## Implementation
 
-| File                                               | Change                                                                                             |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `packages/typestyles/src/view-transitions.ts`      | New — refs, `viewTransition.*`, `enableViewTransitions`                                            |
-| `packages/typestyles/src/view-transitions.test.ts` | New                                                                                                |
-| `packages/typestyles/src/styles.ts`                | `styles.viewTransitionRef(label)` instance method                                                  |
-| `packages/typestyles/src/types.ts`                 | Verify `viewTransitionName`, `viewTransitionClass` present on base `CSSProperties`; add if missing |
-| `packages/typestyles/src/index.ts`                 | Re-export refs, `viewTransition`, `enableViewTransitions`                                          |
+| File                                               | Change                                                                                                      |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `packages/typestyles/src/view-transitions.ts`      | New — refs, `viewTransition.*`, `enableViewTransitions`                                                     |
+| `packages/typestyles/src/view-transitions.test.ts` | New                                                                                                         |
+| `packages/typestyles/src/styles.ts`                | `styles.viewTransitionRef(label)` / `styles.viewTransitionClassRef(label)` instance methods                 |
+| `packages/typestyles/src/types.ts`                 | Verify properties on base `CSSProperties`; narrow to `ViewTransitionNameValue` / `ViewTransitionClassValue` |
+| `packages/typestyles/src/index.ts`                 | Re-export refs, `viewTransition`, `enableViewTransitions`                                                   |
 
 No changes needed to `serialize-style.ts` or `global.ts` — `viewTransition.*` returns
 plain selector strings consumed by the existing `global.style(selector, properties)`
@@ -178,27 +234,23 @@ signature.
 ## Documentation
 
 New doc page: `docs/content/docs/view-transitions.md`. Sections: same-document basics,
-pairing with `keyframes.create()` for custom transition animations,
-`view-transition-class` for groups, the `document.startViewTransition()` scope
-boundary (explicit "TypeStyles styles the transition, your router triggers it"
-callout), cross-document enabler. Cross-link from `api-reference.md`.
+pairing with `keyframes.create()` for custom transition animations (see Examples),
+`view-transition-class` for groups (**Level 2** — progressive enhancement),
+the `document.startViewTransition()` scope boundary (explicit "TypeStyles styles the
+transition, your router triggers it" callout), cross-document enabler,
+**`prefers-reduced-motion`** (set `animation-duration: 0s` or skip custom VT styles
+under `prefers-reduced-motion: reduce` — no new API). Cross-link from
+`api-reference.md` and **`scroll-animations.md`** (disambiguate `view()` vs
+`viewTransition`).
 
 ## Testing
 
-| Area                                                       | Cases                                                                                  |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `createViewTransitionRef` / `createViewTransitionClassRef` | scoping, sanitization, empty-label throw                                               |
-| `viewTransition.*`                                         | correct selector strings for all four pseudo-elements + `groupByClass`, `'*'` handling |
-| `enableViewTransitions`                                    | dedup on repeated call, `types` option serialization                                   |
-| Extraction                                                 | refs/selectors extracted like `container()` calls (build smoke test)                   |
-
-## Open design questions
-
-- Should `viewTransition.old`/`.new` reject `'*'` when a specific ref type is expected
-  elsewhere in the same call site (unlikely useful), or is the union always fine?
-- Is `enableViewTransitions({ types })` worth the `types` option in v1 (named
-  transition types for conditional styling via `:active-view-transition-type()`), or
-  ship the at-rule enabler without it and add later?
-- Does `view-transition-class` justify a bundled ref (`ViewTransitionClassRef`) or
-  should it just accept a plain string, given it's a simpler feature than
-  `view-transition-name`'s per-element uniqueness requirement?
+| Area                                                       | Cases                                                                  |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `createViewTransitionRef` / `createViewTransitionClassRef` | scoping, sanitization, empty-label throw                               |
+| `styles.viewTransitionRef` / `viewTransitionClassRef`      | scoping matches `containerRef`                                         |
+| `viewTransition.*`                                         | all four pseudo-elements + `groupByClass` (`.${ref}`), `'*'`, `'root'` |
+| `viewTransitionName` / `viewTransitionClass`               | `'none'` serializes correctly                                          |
+| `enableViewTransitions`                                    | dedup on repeated call; emits `navigation: auto` only                  |
+| Examples / docs                                            | keyframes on `::view-transition-old` / `::view-transition-new`         |
+| Extraction                                                 | refs/selectors extracted like `container()` calls (build smoke test)   |
