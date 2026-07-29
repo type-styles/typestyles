@@ -101,78 +101,39 @@ createAnchorRef('tooltip-trigger', { scopeId: 'my-app' }); // "--my-app-tooltip-
 Both module-level `createAnchorRef()` and `styles.anchorRef(label)` coexist — same
 pattern as `createContainerRef` / `styles.containerRef`.
 
-### Property value typing
+### Property value typing — already covered by csstype, no `types.ts` changes
+
+The installed `csstype` version (3.2.3+) already fully types these properties via its
+public `Property` and `DataType` namespaces (`export namespace Property` /
+`export namespace DataType` in `csstype`'s `index.d.ts`), and `types.ts` already does
+`import type * as CSS from 'csstype'`:
+
+- `CSS.Property.AnchorName = Globals | "none" | (string & {})`
+- `CSS.Property.PositionAnchor = Globals | "auto" | (string & {})`
+- `CSS.Property.PositionArea = Globals | CSS.DataType.PositionArea | "none"` —
+  `DataType.PositionArea` is a ~35-keyword union covering every axis and `span-*`
+  keyword (more complete than a hand-rolled union would be, and maintained upstream).
+- `CSS.Property.PositionVisibility = Globals | "always" | "anchors-valid" | "anchors-visible" | "no-overflow" | (string & {})`
+- `CSS.Property.PositionTryFallbacks = Globals | CSS.DataType.TryTactic | CSS.DataType.PositionArea | "none" | (string & {})`
+
+Every one of these unions includes `(string & {})` — TypeScript's "branded string"
+widening idiom — so `AnchorNameRef` (a `` `--${string}` `` subtype of `string`) is
+already assignable without `as any`. **No new types are defined for these property
+values; no `types.ts` changes are needed.** This also means `PositionTryTactic` (used
+only by `positionTryFallbacks()`'s parameter type below, not as a `CSSProperties`
+value) is the only hand-authored keyword union in this spec — kept because it
+documents `flip-x`/`flip-y` per the current CSS spec text even though the installed
+csstype's `DataType.TryTactic` doesn't list them yet (its own `(string & {})` member
+means this is a documentation/autocomplete gap in the upstream package, not a
+type-check failure).
+
+For authoring `position-area` values with autocomplete, reference `CSS.DataType.PositionArea`
+directly rather than duplicating its members:
 
 ```ts
-export type AnchorNameValue = 'none' | AnchorNameRef | string;
-export type PositionAnchorValue = 'auto' | 'none' | AnchorNameRef | string;
-export type PositionVisibilityValue = 'always' | 'anchors-visible' | 'no-overflow';
+import type * as CSS from 'csstype';
+export type PositionAreaKeyword = CSS.DataType.PositionArea;
 ```
-
-Narrow `anchorName`, `positionAnchor`, and `positionVisibility` on base `CSSProperties`
-so refs and keywords type-check without `as any`.
-
-### `position-area` typing
-
-`position-area` is a property value, not a CSS function — no string builder needed.
-Export keyword unions for autocomplete; allow `string` for the full grammar.
-
-```ts
-export type PositionAreaAxisKeyword =
-  | 'top'
-  | 'left'
-  | 'right'
-  | 'bottom'
-  | 'center'
-  | 'start'
-  | 'end'
-  | 'block-start'
-  | 'block-end'
-  | 'inline-start'
-  | 'inline-end'
-  | 'x-start'
-  | 'x-end'
-  | 'y-start'
-  | 'y-end'
-  | 'self-start'
-  | 'self-end'
-  | 'self-block-start'
-  | 'self-block-end'
-  | 'self-inline-start'
-  | 'self-inline-end'
-  | 'self-x-start'
-  | 'self-x-end'
-  | 'self-y-start'
-  | 'self-y-end';
-
-export type PositionAreaSpanKeyword =
-  | 'span-left'
-  | 'span-right'
-  | 'span-top'
-  | 'span-bottom'
-  | 'span-start'
-  | 'span-end'
-  | 'span-block-start'
-  | 'span-block-end'
-  | 'span-inline-start'
-  | 'span-inline-end'
-  | 'span-x-start'
-  | 'span-x-end'
-  | 'span-y-start'
-  | 'span-y-end'
-  | 'span-all';
-
-export type PositionAreaKeyword = PositionAreaAxisKeyword | PositionAreaSpanKeyword;
-
-export type PositionAreaValue =
-  | 'none'
-  | PositionAreaKeyword
-  | `${PositionAreaKeyword} ${PositionAreaKeyword}`
-  | string;
-```
-
-Narrow `positionArea` on `CSSProperties` to `PositionAreaValue`. Verify against the
-current spec text at implementation time — keyword lists grew incrementally.
 
 ### `anchor(ref?, side, fallback?)`
 
@@ -260,6 +221,8 @@ export type PositionTryRef = `--${string}` & { readonly __positionTryRef?: true 
 
 export type PositionTryProperties = Pick<
   CSSProperties,
+  | 'positionAnchor'
+  | 'positionArea'
   | 'top'
   | 'left'
   | 'right'
@@ -282,10 +245,7 @@ export type PositionTryProperties = Pick<
   | 'marginLeft'
   | 'justifySelf'
   | 'alignSelf'
-> & {
-  positionAnchor?: PositionAnchorValue;
-  positionArea?: PositionAreaValue;
-};
+>;
 
 export function positionTry(
   name: string,
@@ -410,15 +370,15 @@ styles.class('menu', {
 
 ## Implementation
 
-| File                                       | Change                                                                                                     |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `packages/typestyles/src/anchor.ts`        | New — refs, `positionTry`, `positionTryFallbacks`, `PositionArea*` types                                   |
-| `packages/typestyles/src/anchor.test.ts`   | New                                                                                                        |
-| `packages/typestyles/src/css-math.ts`      | Add `anchor()`, `anchorSize()` (shares `CssMathValue`)                                                     |
-| `packages/typestyles/src/css-math.test.ts` | Add cases                                                                                                  |
-| `packages/typestyles/src/styles.ts`        | `styles.anchorRef(label)` / `styles.positionTry(name, properties)`                                         |
-| `packages/typestyles/src/types.ts`         | Narrow `anchorName`, `positionAnchor`, `positionArea`, `positionVisibility`; verify `positionTryFallbacks` |
-| `packages/typestyles/src/index.ts`         | Re-export refs, builders, `positionTry`, `positionTryFallbacks`, value/ref types                           |
+| File                                       | Change                                                                                                                                                                                   |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/typestyles/src/anchor.ts`        | New — refs, `positionTry`, `positionTryFallbacks`, `PositionAreaKeyword` (alias of `CSS.DataType.PositionArea`)                                                                          |
+| `packages/typestyles/src/anchor.test.ts`   | New                                                                                                                                                                                      |
+| `packages/typestyles/src/css-math.ts`      | Add `anchor()`, `anchorSize()` (shares `CssMathValue`)                                                                                                                                   |
+| `packages/typestyles/src/css-math.test.ts` | Add cases                                                                                                                                                                                |
+| `packages/typestyles/src/styles.ts`        | `styles.anchorRef(label)` / `styles.positionTry(name, properties)`                                                                                                                       |
+| `packages/typestyles/src/types.ts`         | No changes — `anchorName`, `positionAnchor`, `positionArea`, `positionVisibility`, `positionTryFallbacks` are already fully typed via `csstype` 3.2.3's `Property`/`DataType` namespaces |
+| `packages/typestyles/src/index.ts`         | Re-export refs, builders, `positionTry`, `positionTryFallbacks`, `PositionTryTactic`, `PositionAreaKeyword`                                                                              |
 
 No changes needed to `serialize-style.ts` or `global.ts`.
 
@@ -454,8 +414,12 @@ Cross-link from `api-reference.md`.
 
 Before locking types, re-verify against the current [CSS Anchor Positioning](https://drafts.csswg.org/css-anchor-position/) text:
 
-- `AnchorSideKeyword` / `AnchorSizeDimension` unions
-- `PositionAreaKeyword` / span keyword list
-- `PositionTryTactic` (`flip-x` / `flip-y` were added after initial Chromium ship)
+- `AnchorSideKeyword` / `AnchorSizeDimension` unions (hand-authored — `anchor()`/`anchor-size()`
+  are value builders, not `CSSProperties` fields, so csstype doesn't cover them)
+- `PositionAreaKeyword` — aliased to `CSS.DataType.PositionArea` from the installed
+  `csstype` version; re-check that alias still matches the spec if `csstype` is
+  upgraded, rather than re-verifying a hand-rolled list
+- `PositionTryTactic` (`flip-x` / `flip-y` were added after initial Chromium ship; not
+  yet in installed `csstype`'s `DataType.TryTactic` — still valid via `(string & {})`)
 - `@position-try` accepted descriptors (`position-anchor`, `position-area`, insets,
   margins, sizing, self-alignment — confirm no further changes since this spec)
