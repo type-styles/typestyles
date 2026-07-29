@@ -340,6 +340,28 @@ const button = styles.component('button', {
 });
 ```
 
+### Media query constants (`mediaQueries`)
+
+`typestyles` exports a `mediaQueries` constant with ready-to-use `@media (...)` strings for common features that don't come from your configured breakpoints — motion, contrast, and hover/pointer capability preferences. Each value is grouped by feature, then by the literal CSS keyword:
+
+```ts
+import { styles, mediaQueries } from 'typestyles';
+
+const card = styles.component('card', {
+  base: { transition: 'transform 200ms ease' },
+
+  // Respect prefers-reduced-motion
+  [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
+
+  // Larger touch target on coarse pointers (e.g. touchscreens)
+  [mediaQueries.pointer.coarse]: { padding: '12px 20px' },
+});
+```
+
+Available groups: `prefersReducedMotion` (`reduce`, `noPreference`), `prefersContrast` (`more`, `less`, `noPreference`), `hover` (`hover`, `none`), `anyHover` (`hover`, `none`), `pointer` (`fine`, `coarse`, `none`), `anyPointer` (`fine`, `coarse`, `none`).
+
+For `prefers-color-scheme`, viewport orientation, or width breakpoints, see [`@typestyles/open-props`'s `media` token map](/docs/open-props#media-queries) or [`tokens.when.prefersDark` / `prefersLight`](/docs/theming-patterns) instead.
+
 ### Viewport breakpoints from config
 
 When you register breakpoints on `createTypeStyles` / `createStyles`, use **`styles.breakpoint()`** and **`styles.media()`** for nested viewport rules instead of repeating `` `@media (min-width: …)` `` strings.
