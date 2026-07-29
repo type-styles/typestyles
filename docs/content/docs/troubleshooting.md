@@ -447,6 +447,11 @@ const darkTheme = tokens.createTheme('dark', {
    });
    ```
 
+4. If you're using `tokens.declare()` with typed schema leaves (`{ syntax: ... }`), those
+   registered `@property` tokens inherit by default so values set on `.theme-*` surfaces
+   cascade into descendants. Only set `inherits: false` on a leaf when you explicitly want
+   descendant `var(--token)` lookups to fall back to that leaf's `initial-value`.
+
 ### Theme flashing on load
 
 **Cause:** Theme is applied after initial render.

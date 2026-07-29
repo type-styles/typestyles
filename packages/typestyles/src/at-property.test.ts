@@ -4,10 +4,9 @@ import { tokens } from './index';
 import { getRegisteredCss, reset, flushSync } from './sheet';
 
 describe('atProperty', () => {
-  it('exposes spreadable presets with syntax, inherits, and initial', () => {
+  it('exposes spreadable presets with syntax and initial placeholders', () => {
     expect(atProperty.color).toEqual({
       syntax: '<color>',
-      inherits: false,
       initial: 'transparent',
     });
     expect(atProperty.angle.syntax).toBe('<angle>');
@@ -16,7 +15,6 @@ describe('atProperty', () => {
   it('list applies a list multiplier to a preset syntax', () => {
     expect(atProperty.list(atProperty.color)).toEqual({
       syntax: '<color>+',
-      inherits: false,
       initial: 'transparent',
     });
     expect(atProperty.list(atProperty.color, '#')).toMatchObject({ syntax: '<color>#' });
@@ -53,6 +51,7 @@ describe('atProperty with tokens.declare', () => {
     const css = getRegisteredCss();
     expect(css).toContain('@property --at-prop-color-accent-default');
     expect(css).toContain('initial-value: transparent');
+    expect(css).toMatch(/@property --at-prop-color-accent-default \{[^}]*inherits: true;/);
     expect(css).toContain('@property --at-prop-color-border');
     expect(css).toContain('inherits: true');
     expect(css).toContain('@property --at-prop-color-hue');

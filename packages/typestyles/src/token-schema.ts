@@ -54,7 +54,7 @@ export function tokenSchemaLeavesEqual(a: TokenSchemaLeaf, b: TokenSchemaLeaf): 
   if (typeof a === 'object' && typeof b === 'object') {
     return (
       a.syntax === b.syntax &&
-      (a.inherits ?? false) === (b.inherits ?? false) &&
+      (a.inherits ?? true) === (b.inherits ?? true) &&
       (a.initial ?? undefined) === (b.initial ?? undefined)
     );
   }

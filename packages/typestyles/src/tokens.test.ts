@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, expectTypeOf } from 'vitest';
 import { createTokens } from './tokens';
 import { createTheme } from './theme';
+import { atProperty } from './at-property';
 import { reset, flushSync, getRegisteredCss } from './sheet';
 import type { TokenRef, TokenValues } from './types';
 
@@ -444,6 +445,41 @@ describe('tokens.declare', () => {
     const css = getRegisteredCss();
     expect(css).toContain('@property --color-accent-default');
     expect(css).toContain('initial-value: transparent');
+  });
+
+  it('defaults declared preset leaves to inherits: true', () => {
+    const api = createTokens();
+    api.declare('space', {
+      md: atProperty.length,
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/@property --space-md \{[^}]*inherits: true;/);
+  });
+
+  it('preserves explicit inherits: false on declared leaves', () => {
+    const api = createTokens();
+    api.declare('space', {
+      md: { ...atProperty.length, inherits: false },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/@property --space-md \{[^}]*inherits: false;/);
+  });
+
+  it('keeps theme-surface token overrides consumable by descendant var() usage', () => {
+    const api = createTokens();
+    const space = api.declare('space', {
+      md: atProperty.length,
+    });
+    api.createTheme('acme', { base: { space: { md: '14px' } } });
+    flushSync();
+
+    const css = getRegisteredCss();
+    expect(String(space.md)).toBe('var(--space-md)');
+    expect(css).toContain('.theme-acme');
+    expect(css).toContain('--space-md: 14px');
+    expect(css).toMatch(/@property --space-md \{[^}]*inherits: true;/);
   });
 
   it('declare deep-merges schemas across calls', () => {
