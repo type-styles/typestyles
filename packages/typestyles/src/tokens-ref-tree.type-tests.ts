@@ -3,7 +3,7 @@
  * Issue #172 — failures here fail `pnpm typecheck`.
  */
 import { createTokens } from './tokens';
-import type { ModeAwareTokenLeaf, TokenRefTree } from './types';
+import type { ModeAwareTokenLeaf, SyntaxRef, TokenRefTree } from './types';
 
 const tokens = createTokens({ colorModes: ['light', 'dark'] });
 
@@ -12,6 +12,16 @@ const space = tokens.create('space', {
   sm: '8px',
   md: '16px',
 });
+
+const colorDecl = tokens.declare('color-decl', {
+  primary: { syntax: '<color>', inherits: false },
+} as const);
+
+type ColorDeclPrimary = typeof colorDecl.primary;
+type _ColorDeclIsSyntaxRef = ColorDeclPrimary extends SyntaxRef<'<color>'> ? true : false;
+const _colorDeclCheck: _ColorDeclIsSyntaxRef = true;
+void _colorDeclCheck;
+void colorDecl;
 
 type SpaceRef = typeof space;
 type _SpaceSm = SpaceRef['sm'];

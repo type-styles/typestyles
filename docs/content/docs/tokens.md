@@ -213,6 +213,63 @@ internally — including `scopeId` and any `nameTemplate`. If you pass a
 matching `create()` call (or omit it there to reuse the declared one);
 passing a different one throws in development.
 
+## Syntax-typed tokens
+
+`tokens.declare()` is also the opt-in path for **compile-time syntax safety**. Schema
+leaves with `syntax` (for example `{ syntax: '<color>', inherits: false }`) return
+`SyntaxRef<'<color>'>` refs instead of plain `string`. TypeScript then checks:
+
+- **`tokens.create(…, { decl })`** — a `<color>` path accepts plain `string | number`
+  literals (you still set values like `'#0066ff'`), compatible `SyntaxRef` values, and
+  mode-aware `{ light, dark }` leaves. Assigning a `SyntaxRef<'<length>'>` to a
+  `<color>` path is a type error.
+- **`styles()` / component styles** — when the value is a `SyntaxRef`, it must match the
+  target CSS property (`color.bg` on `backgroundColor` ✓, on `width` ✗). Plain
+  `string` literals are always allowed (escape hatch).
+- **`tokens.use(decl)`** — preserves `SyntaxRef<S>` from the declared schema.
+
+Plain `tokens.create()` **without** `declare` is unchanged: refs stay `string` and no
+property checking applies. Strictness follows the value's type, not a global flag.
+
+TypeScript does **not** validate that a literal string is a valid CSS color or length —
+the schema declares the slot; literals are trusted. Strictness is about **ref
+compatibility** (token-to-slot and ref-to-property), aligned with the `@property` rules
+already emitted at declare time.
+
+```ts
+import { createTypeStyles } from 'typestyles';
+
+const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+
+const color = tokens.declare('color', {
+  bg: { syntax: '<color>', inherits: false },
+  text: { syntax: '<color>', inherits: false },
+});
+
+const space = tokens.declare('space', {
+  md: { syntax: '<length>' },
+});
+
+tokens.create('color', { bg: '#0a0a0a', text: '#fafafa' }, { decl: color });
+
+export const card = styles({
+  backgroundColor: color.bg,
+  color: color.text,
+  padding: space.md,
+});
+
+// Type errors:
+// styles({ width: color.bg })
+// tokens.create('color', { bg: space.md }, { decl: color })
+```
+
+Supported syntax strings match [`atProperty`](/docs/api-reference#atproperty-presets) presets (`<color>`, `<length>`,
+`<length-percentage>`, `<number>`, `<angle>`, `<time>`, …). `<length>` refs are
+assignable where `<length-percentage>` is expected (for example `width` and `padding`).
+
+Exported types: `SyntaxRef`, `CssSyntax`, `SyntaxRefAccepts`, `CreateValueForSyntax`,
+`CompatibleSourceSyntax`, `SyntaxAwareLonghands`, `CSSPropertyValue`.
+
 ## Mode-aware token leaves
 
 Register color modes once on your TypeStyles instance, then use `{ light, dark }` on **token

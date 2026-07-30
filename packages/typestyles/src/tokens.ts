@@ -10,6 +10,7 @@ import type {
   DeclaredTokenRef,
   CreateTokenValues,
   InferValuesFromSchema,
+  InferFromSchema,
   TokenRefTree,
   TokenSchemaLeaf,
 } from './types';
@@ -119,7 +120,7 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
   /** Same `scopeId` passed to `createTokens`, if any. */
   readonly scopeId: string | undefined;
   create: {
-    <TSchema extends TokenSchema>(
+    <const TSchema extends TokenSchema>(
       values: InferValuesFromSchema<TSchema>,
       options: {
         decl: DeclaredTokenRef<TSchema, ''>;
@@ -131,7 +132,7 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
       values: T,
       options?: { layer?: string; nameTemplate?: TokenNameTemplate },
     ): CreatedTokenRef<T, ''>;
-    <TSchema extends TokenSchema, N extends string>(
+    <const TSchema extends TokenSchema, N extends string>(
       namespace: N,
       values: InferValuesFromSchema<TSchema>,
       options: {
@@ -150,6 +151,9 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
     <const T extends CreateTokenValues, N extends string>(
       ref: CreatedTokenRef<T, N>,
     ): TokenRefTree<T>;
+    <const TSchema extends TokenSchema, N extends string>(
+      ref: DeclaredTokenRef<TSchema, N>,
+    ): InferFromSchema<TSchema>;
     <N extends keyof R & string>(namespace: N): TokenRef<R[N]>;
     <T extends TokenValues = TokenValues>(namespace: string): TokenRef<T>;
   };
@@ -158,11 +162,11 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
    * typed reference proxy usable before `tokens.create()`.
    */
   declare: {
-    <TSchema extends TokenSchema>(
+    <const TSchema extends TokenSchema>(
       schema: TSchema,
       options?: { nameTemplate?: TokenNameTemplate },
     ): DeclaredTokenRef<TSchema, ''>;
-    <TSchema extends TokenSchema, N extends string>(
+    <const TSchema extends TokenSchema, N extends string>(
       namespace: N,
       schema: TSchema,
       options?: { nameTemplate?: TokenNameTemplate },

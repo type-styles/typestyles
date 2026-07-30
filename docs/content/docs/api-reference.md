@@ -53,9 +53,9 @@ bundles share a page.
 
 **Methods:**
 
-- `tokens.create(namespace, values, options?)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Values are plain `string | number`, or `{ light, dark }` leaves when `colorModes` is configured (see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves)). Multiple calls on the same namespace merge values. Pass `{ decl }` (the return value of `tokens.declare`) for typed partial fills and dev-mode namespace alignment.
-- `tokens.declare(namespace, schema, options?)`: Declares a namespace schema, emits `@property` for `syntax` leaves, and returns a typed forward-reference proxy usable before `tokens.create()`. Schema leaves are `{ syntax, inherits?, initial? }` or `true` (plain path). Optional `nameTemplate` must match later `create()` calls (dev-mode throw on mismatch). See [Tokens — Forward-referencing tokens](/docs/tokens#forward-referencing-tokens-tokensdeclare).
-- `tokens.use(namespace | createdRef)`: References existing tokens; infers types from a `tokens.create()` return value or a `createTokens<Registry>()` generic
+- `tokens.create(namespace, values, options?)`: Creates CSS custom properties; returns a branded `CreatedTokenRef`. Values are plain `string | number`, or `{ light, dark }` leaves when `colorModes` is configured (see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves)). Multiple calls on the same namespace merge values. Pass `{ decl }` (the return value of `tokens.declare`) for typed partial fills, dev-mode namespace alignment, and syntax-aware value checking when the schema uses `syntax` leaves.
+- `tokens.declare(namespace, schema, options?)`: Declares a namespace schema, emits `@property` for `syntax` leaves, and returns a typed forward-reference proxy usable before `tokens.create()`. Schema leaves are `{ syntax, inherits?, initial? }` or `true` (plain path). Syntax leaves return `SyntaxRef<'<color>'>` (etc.) for compile-time property and cross-token ref checking — see [Tokens — Syntax-typed tokens](/docs/tokens#syntax-typed-tokens). Optional `nameTemplate` must match later `create()` calls (dev-mode throw on mismatch). See [Tokens — Forward-referencing tokens](/docs/tokens#forward-referencing-tokens-tokensdeclare).
+- `tokens.use(namespace | createdRef | declRef)`: References existing tokens; infers types from a `tokens.create()` return value, a `tokens.declare()` return value (`SyntaxRef` brands preserved), or a `createTokens<Registry>()` generic
 - `tokens.createTheme(name, config)`: Registers a theme class that overrides token custom properties. `config.colorMode` accepts optional `{ light?, dark? }` patches; `config.modes` accepts conditional layers and `tokens.colorMode.*` preset arrays.
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
 - `tokens.when` / `tokens.colorMode`: Condition helpers for themes
@@ -67,7 +67,7 @@ Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.cr
 
 The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
 
-Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**, **`TokenSchema`**, **`TokenSchemaLeaf`**, **`DeclaredTokenRef`**, **`CreateTokenValues`**, **`TokenDescriptor`** (for `ctx.vars()` / `styles.property`). Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
+Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**, **`TokenSchema`**, **`TokenSchemaLeaf`**, **`DeclaredTokenRef`**, **`CreateTokenValues`**, **`TokenDescriptor`** (for `ctx.vars()` / `styles.property`), **`SyntaxRef`**, **`CssSyntax`**, **`SyntaxRefAccepts`**, **`CreateValueForSyntax`**, **`CompatibleSourceSyntax`**, **`SyntaxAwareLonghands`**, **`CSSPropertyValue`**, **`InferFromSchema`**, **`InferValuesFromSchema`**. Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
 
 ### `keyframes`
 

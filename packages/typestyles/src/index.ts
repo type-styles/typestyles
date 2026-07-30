@@ -202,6 +202,14 @@ export type {
   DeclaredTokenRef,
   InferFromSchema,
   InferValuesFromSchema,
+  CssSyntax,
+  SyntaxRef,
+  SyntaxRefAccepts,
+  CreateValueForSyntax,
+  CompatibleSourceSyntax,
+  SyntaxAwareLonghands,
+  SyntaxPropertyValue,
+  CSSPropertyValue,
 } from './types';
 
 export { flattenTokenEntries, flattenTokenPaths, isTokenDescriptor } from './types';
