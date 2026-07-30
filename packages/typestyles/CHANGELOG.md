@@ -1,5 +1,15 @@
 # typestyles
 
+## 0.19.0
+
+### Minor Changes
+
+- [#188](https://github.com/type-styles/typestyles/pull/188) [`0d33463`](https://github.com/type-styles/typestyles/commit/0d334636c0253106c214d89ff6d65db8979dd730) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add syntax-typed design tokens via `tokens.declare()`: `SyntaxRef<'<color>'>` (and other CSS syntaxes) for compile-time ref compatibility in `create({ decl })` and `styles()`, while plain `tokens.create()` without `declare` stays unchanged.
+
+### Patch Changes
+
+- [#190](https://github.com/type-styles/typestyles/pull/190) [`046d084`](https://github.com/type-styles/typestyles/commit/046d0848877219f928f7c7eeef867c346b733fff) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix `tokens.use()` when passed a `tokens.declare()` handle — rebuild proxies from declared schema paths instead of resolving an empty namespace. Raise main-entry gzip budget (+200 B) for syntax-typed token runtime.
+
 ## 0.18.1
 
 ### Patch Changes
