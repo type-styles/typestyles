@@ -1,5 +1,18 @@
 import type * as CSS from 'csstype';
-import type { ColorModeMap, LightDarkColorModes, ModeAwareValue } from './color-modes';
+import type { ColorModeMap, LightDarkColorModes } from './color-modes';
+import type { CreateValueForSyntax, CssSyntax, CSSPropertyValue, SyntaxRef } from './types-syntax';
+
+export type {
+  CompatibleSourceSyntax,
+  CreateValueForSyntax,
+  CssSyntax,
+  CSSPropertyValue,
+  ModeAwareCreateValue,
+  SyntaxAwareLonghands,
+  SyntaxPropertyValue,
+  SyntaxRef,
+  SyntaxRefAccepts,
+} from './types-syntax';
 
 /**
  * A CSS value that can be a standard value or a token reference (var() string).
@@ -32,15 +45,14 @@ export type CSSValue = string | number;
  * (mirroring `container()`) would improve literals and authoring ergonomics for feature queries.
  */
 type CSSPropertiesBase = {
-  [K in keyof CSS.Properties<CSSValue>]?: ModeAwareValue<
-    CSS.Properties<CSSValue>[K] | CSSValue,
-    LightDarkColorModes
-  >;
+  [K in keyof CSS.Properties<CSSValue>]?: CSSPropertyValue<K>;
 } & {
   [key: string]:
     | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
     | CSSPropertiesBase
     | CSSValue
+    | RegisteredPropertyRef
+    | SyntaxRef<string>
     | { readonly [mode: string]: CSSValue }
     | undefined;
 };
@@ -142,20 +154,24 @@ export type CreateTokenValues<M extends ColorModeMap = LightDarkColorModes> = {
   readonly [key: string]: CreateTokenNode<M>;
 };
 
-export type InferFromSchema<S> = S extends { syntax: string }
-  ? RegisteredPropertyRef
+export type InferFromSchema<S> = S extends { syntax: infer Syn extends string }
+  ? Syn extends CssSyntax
+    ? SyntaxRef<Syn>
+    : SyntaxRef<string>
   : S extends true
     ? string
     : S extends Record<string, unknown>
       ? { readonly [K in keyof S]: InferFromSchema<S[K]> }
       : never;
 
-export type InferValuesFromSchema<S> = S extends true
+export type InferValuesFromSchema<S, M extends ColorModeMap = LightDarkColorModes> = S extends true
   ? string | number
-  : S extends { syntax: string }
-    ? string | number
+  : S extends { syntax: infer Syn extends string }
+    ? Syn extends CssSyntax
+      ? CreateValueForSyntax<Syn, M>
+      : string | number
     : S extends Record<string, unknown>
-      ? { [K in keyof S]?: InferValuesFromSchema<S[K]> }
+      ? { [K in keyof S]?: InferValuesFromSchema<S[K], M> }
       : never;
 
 declare const DeclaredBrand: unique symbol;
@@ -288,13 +304,9 @@ export function flattenTokenPaths(
 
 /**
  * Reference to a registered CSS custom property with `.name`, `.var`, and string coercion.
+ * Syntax-unknown refs use `SyntaxRef<string>`; declared schema leaves use `SyntaxRef<'<color>'>` etc.
  */
-export type RegisteredPropertyRef = {
-  readonly name: string;
-  readonly var: CSSVarRef;
-  toString(): string;
-  valueOf(): string;
-};
+export type RegisteredPropertyRef = SyntaxRef<string>;
 
 /** `@property` registration metadata — never includes a runtime value. */
 export type PropertyRegistration = {
@@ -550,15 +562,13 @@ export interface ComponentAttrsResult {
  * (typos included).
  */
 export type VariantOptionStyle = {
-  [K in keyof CSS.Properties<CSSValue>]?: ModeAwareValue<
-    CSS.Properties<CSSValue>[K] | CSSValue,
-    LightDarkColorModes
-  >;
+  [K in keyof CSS.Properties<CSSValue>]?: CSSPropertyValue<K>;
 } & {
   [key: string]:
     | CSS.Properties<CSSValue>[keyof CSS.Properties<CSSValue>]
     | VariantOptionStyle
     | CSSValue
+    | SyntaxRef<string>
     | { readonly [mode: string]: CSSValue }
     | undefined;
 };
@@ -578,10 +588,7 @@ export type ConditionalOverride = {
  * `conditions` is a reserved key — not emitted as CSS.
  */
 export type StylableOverride = {
-  [K in keyof CSS.Properties<CSSValue>]?: ModeAwareValue<
-    CSS.Properties<CSSValue>[K] | CSSValue,
-    LightDarkColorModes
-  >;
+  [K in keyof CSS.Properties<CSSValue>]?: CSSPropertyValue<K>;
 } & {
   conditions?: readonly ConditionalOverride[];
   [key: string]:
@@ -589,6 +596,7 @@ export type StylableOverride = {
     | VariantOptionStyle
     | readonly ConditionalOverride[]
     | CSSValue
+    | SyntaxRef<string>
     | { readonly [mode: string]: CSSValue }
     | undefined;
 };
