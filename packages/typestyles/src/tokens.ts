@@ -646,8 +646,25 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   }
 
   function use<T extends CreateTokenValues | TokenValues, N extends string>(
-    namespaceOrRef: string | CreatedTokenRef<T, N>,
+    namespaceOrRef: string | CreatedTokenRef<T, N> | DeclaredTokenRef<TokenSchema, N>,
   ): TokenRef<T> {
+    if (typeof namespaceOrRef !== 'string') {
+      const declaredNamespace = getDeclaredNamespace(namespaceOrRef);
+      if (declaredNamespace !== undefined) {
+        const mergedSchema =
+          namespaceSchemas.get(declaredNamespace) ?? declaredMetaByRef.get(namespaceOrRef)?.schema;
+        const leafPaths = mergedSchema ? getSchemaLeafPaths(mergedSchema) : new Set<string>();
+        const template =
+          declaredNamespaceTemplates.get(declaredNamespace) ??
+          createdTokenTemplates.get(declaredNamespace) ??
+          instanceDefaultTemplate;
+        const nameByPath =
+          createdTokenNameByPath.get(declaredNamespace) ?? new Map<string, string>();
+        const resolvePathName = buildResolvePathName(declaredNamespace, template, nameByPath);
+        return createDeclaredTokenProxy(resolvePathName, '', leafPaths) as TokenRef<T>;
+      }
+    }
+
     const namespace =
       typeof namespaceOrRef === 'string'
         ? namespaceOrRef

@@ -383,6 +383,51 @@ describe('tokens.use', () => {
     expect(tokens.text.primary).toBe('var(--color-text-primary)');
   });
 
+  it('resolves namespace and schema paths from a declare handle via use()', () => {
+    const api = createTokens();
+    const colorDecl = api.declare('color', {
+      accent: { syntax: '<color>', inherits: false },
+      subtle: { syntax: '<color>', inherits: false },
+    });
+    flushSync();
+
+    const used = api.use(colorDecl);
+    expect(used.accent).toMatchObject({
+      name: '--color-accent',
+      var: 'var(--color-accent)',
+    });
+    expect(used.subtle).toMatchObject({
+      name: '--color-subtle',
+      var: 'var(--color-subtle)',
+    });
+  });
+
+  it('resolves declare handle via use() before create()', () => {
+    const api = createTokens();
+    const colorDecl = api.declare('color', {
+      accent: { syntax: '<color>', inherits: false },
+    });
+
+    const used = api.use(colorDecl);
+    expect(used.accent).toMatchObject({
+      name: '--color-accent',
+      var: 'var(--color-accent)',
+    });
+  });
+
+  it('resolves namespace-less declare handle via use()', () => {
+    const api = createTokens();
+    const colorDecl = api.declare({
+      accent: { syntax: '<color>', inherits: false },
+    });
+
+    const used = api.use(colorDecl);
+    expect(used.accent).toMatchObject({
+      name: '--accent',
+      var: 'var(--accent)',
+    });
+  });
+
   it('infers token shape when passed a created ref', () => {
     const api = createTokens();
     const space = api.create('space', { sm: '8px', md: '16px' } as const);
