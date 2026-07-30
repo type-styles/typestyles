@@ -645,23 +645,28 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     }
   }
 
+  function declaredRefProxyForNamespace(namespace: string, schemaFallback?: TokenSchema): object {
+    const mergedSchema = namespaceSchemas.get(namespace) ?? schemaFallback;
+    const leafPaths = mergedSchema ? getSchemaLeafPaths(mergedSchema) : new Set<string>();
+    const template =
+      declaredNamespaceTemplates.get(namespace) ??
+      createdTokenTemplates.get(namespace) ??
+      instanceDefaultTemplate;
+    const nameByPath = createdTokenNameByPath.get(namespace) ?? new Map<string, string>();
+    const resolvePathName = buildResolvePathName(namespace, template, nameByPath);
+    return createDeclaredTokenProxy(resolvePathName, '', leafPaths);
+  }
+
   function use<T extends CreateTokenValues | TokenValues, N extends string>(
     namespaceOrRef: string | CreatedTokenRef<T, N> | DeclaredTokenRef<TokenSchema, N>,
   ): TokenRef<T> {
     if (typeof namespaceOrRef !== 'string') {
       const declaredNamespace = getDeclaredNamespace(namespaceOrRef);
       if (declaredNamespace !== undefined) {
-        const mergedSchema =
-          namespaceSchemas.get(declaredNamespace) ?? declaredMetaByRef.get(namespaceOrRef)?.schema;
-        const leafPaths = mergedSchema ? getSchemaLeafPaths(mergedSchema) : new Set<string>();
-        const template =
-          declaredNamespaceTemplates.get(declaredNamespace) ??
-          createdTokenTemplates.get(declaredNamespace) ??
-          instanceDefaultTemplate;
-        const nameByPath =
-          createdTokenNameByPath.get(declaredNamespace) ?? new Map<string, string>();
-        const resolvePathName = buildResolvePathName(declaredNamespace, template, nameByPath);
-        return createDeclaredTokenProxy(resolvePathName, '', leafPaths) as TokenRef<T>;
+        return declaredRefProxyForNamespace(
+          declaredNamespace,
+          declaredMetaByRef.get(namespaceOrRef)?.schema,
+        ) as TokenRef<T>;
       }
     }
 
@@ -778,11 +783,10 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     declaredSchemaLeaves.set(namespace, leafMap);
 
-    const leafPaths = getSchemaLeafPaths(mergedSchema as TokenSchema);
-    const ref = createDeclaredTokenProxy(resolvePathName, '', leafPaths) as DeclaredTokenRef<
-      TokenSchema,
-      string
-    >;
+    const ref = declaredRefProxyForNamespace(
+      namespace,
+      mergedSchema as TokenSchema,
+    ) as DeclaredTokenRef<TokenSchema, string>;
     attachDeclaredMeta(ref, { namespace, schema: mergedSchema as TokenSchema });
     return ref;
   }
