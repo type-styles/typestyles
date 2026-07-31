@@ -155,14 +155,20 @@ export function mergeComponentVarDefaultsInto(
   defaults: Record<string, string>,
 ): Record<string, unknown> {
   if (Object.keys(defaults).length === 0) return config;
-  if ('slots' in config) return config;
 
-  const userBase = config.base;
-  const mergedBase =
-    userBase && typeof userBase === 'object' && !Array.isArray(userBase)
-      ? { ...defaults, ...userBase }
+  let key = 'base';
+  if ('slots' in config) {
+    const slots = config.slots;
+    if (!Array.isArray(slots) || slots.length === 0) return config;
+    key = slots.includes('root') ? 'root' : String(slots[0]);
+  }
+
+  const block = config[key];
+  const merged =
+    block && typeof block === 'object' && !Array.isArray(block)
+      ? { ...defaults, ...(block as Record<string, string>) }
       : { ...defaults };
-  return { ...config, base: mergedBase };
+  return { ...config, [key]: merged };
 }
 
 export function createComponentConfigContextPair(
