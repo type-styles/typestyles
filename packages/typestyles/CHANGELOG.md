@@ -1,5 +1,15 @@
 # typestyles
 
+## 0.20.0
+
+### Minor Changes
+
+- [#192](https://github.com/type-styles/typestyles/pull/192) [`51a78c0`](https://github.com/type-styles/typestyles/commit/51a78c0a0a0d75bd6d8edee66498cc725edd461e) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add relative color syntax helpers (`color.from`, `rgbFrom`, `oklchFrom`) and OKLCH manipulation sugar (`lighten`, `darken`, `saturate`, `desaturate`, `rotate`, `grayscale`) on `typestyles/color`, plus trigonometric/exponential CSS math helpers (`sin`, `cos`, `tan`, `atan2`, `pow`, `sqrt`, `hypot`) on the main entry.
+
+### Patch Changes
+
+- [#195](https://github.com/type-styles/typestyles/pull/195) [`40ca798`](https://github.com/type-styles/typestyles/commit/40ca798658357a97e675b7f8af67b95944703e04) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix slot-based components not emitting `c.vars()` default assignments when values reference other CSS custom properties.
+
 ## 0.19.0
 
 ### Minor Changes
