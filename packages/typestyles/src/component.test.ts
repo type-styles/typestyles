@@ -862,6 +862,56 @@ describe('createComponent — function config & internal vars', () => {
     expect(getRegisteredCss()).toContain('gap: var(--fn-slot-g)');
   });
 
+  it('emits c.vars() defaults on the root slot when values reference other CSS variables', () => {
+    const select = createComponent(defaultClassNamingConfig, 'fn-select', (c) => {
+      const v = c.vars({
+        triggerBackground: {
+          value: 'var(--demo-color-surface)',
+          syntax: '<color>',
+        },
+      });
+      return {
+        slots: ['root', 'trigger'],
+        root: { display: 'grid' },
+        trigger: {
+          backgroundColor: v.triggerBackground.var,
+        },
+      };
+    });
+
+    select();
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --fn-select-triggerbackground');
+    expect(css).toContain('.fn-select {');
+    expect(css).toContain('--fn-select-triggerbackground: var(--demo-color-surface)');
+    expect(css).toContain('.fn-select__trigger');
+    expect(css).toContain('background-color: var(--fn-select-triggerbackground)');
+  });
+
+  it('emits c.vars() defaults on the first slot when there is no root slot', () => {
+    const dialog = createComponent(defaultClassNamingConfig, 'fn-dialog', (c) => {
+      const v = c.vars({
+        backdrop: {
+          value: 'var(--demo-color-overlay)',
+          syntax: '<color>',
+        },
+      });
+      return {
+        slots: ['overlay', 'modal'],
+        overlay: { backgroundColor: v.backdrop.var },
+        modal: { padding: '16px' },
+      };
+    });
+
+    dialog();
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('.fn-dialog__overlay');
+    expect(css).toContain('--fn-dialog-backdrop: var(--demo-color-overlay)');
+    expect(css).toContain('background-color: var(--fn-dialog-backdrop)');
+  });
+
   it('supports nested vars object like tokens.create', () => {
     createComponent(defaultClassNamingConfig, 'nestv', (c) => {
       const v = c.vars({
