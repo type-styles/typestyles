@@ -13,6 +13,12 @@ import {
   from,
   rgbFrom,
   oklchFrom,
+  lighten,
+  darken,
+  saturate,
+  desaturate,
+  rotate,
+  grayscale,
 } from './color';
 
 describe('rgb', () => {
@@ -196,5 +202,36 @@ describe('oklchFrom', () => {
     expect(oklchFrom('var(--primary)', 'l', 'c', 'h', 0.5)).toBe(
       'oklch(from var(--primary) l c h / 0.5)',
     );
+  });
+});
+
+describe('OKLCH manipulation sugar', () => {
+  const token = 'var(--theme-primary)';
+
+  it('lighten', () => {
+    expect(lighten(token, 0.1)).toBe('oklch(from var(--theme-primary) calc(l + 0.1) c h)');
+    expect(lighten(token, '10%')).toBe('oklch(from var(--theme-primary) calc(l + 10%) c h)');
+  });
+
+  it('darken', () => {
+    expect(darken(token, 0.1)).toBe('oklch(from var(--theme-primary) calc(l - 0.1) c h)');
+    expect(darken(token, '10%')).toBe('oklch(from var(--theme-primary) calc(l - 10%) c h)');
+  });
+
+  it('saturate', () => {
+    expect(saturate(token, 1.2)).toBe('oklch(from var(--theme-primary) l calc(c * 1.2) h)');
+  });
+
+  it('desaturate', () => {
+    expect(desaturate(token, 0.5)).toBe('oklch(from var(--theme-primary) l calc(c * 0.5) h)');
+  });
+
+  it('rotate', () => {
+    expect(rotate(token, 30)).toBe('oklch(from var(--theme-primary) l c calc(h + 30))');
+    expect(rotate(token, '30deg')).toBe('oklch(from var(--theme-primary) l c calc(h + 30deg))');
+  });
+
+  it('grayscale', () => {
+    expect(grayscale(token)).toBe('oklch(from var(--theme-primary) l 0 h)');
   });
 });
