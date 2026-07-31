@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { rgb, hsl, oklch, oklab, lab, lch, hwb, mix, lightDark, alpha } from './color';
+import {
+  rgb,
+  hsl,
+  oklch,
+  oklab,
+  lab,
+  lch,
+  hwb,
+  mix,
+  lightDark,
+  alpha,
+  from,
+  rgbFrom,
+  oklchFrom,
+  lighten,
+  darken,
+  saturate,
+  desaturate,
+  rotate,
+  grayscale,
+} from './color';
 
 describe('rgb', () => {
   it('produces rgb() without alpha', () => {
@@ -130,5 +150,88 @@ describe('alpha', () => {
 
   it('handles zero opacity', () => {
     expect(alpha('red', 0)).toBe('color-mix(in srgb, red 0%, transparent)');
+  });
+});
+
+describe('from', () => {
+  const spaces = ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'] as const;
+
+  it.each(spaces)('produces %s(from …) without alpha', (space) => {
+    expect(from(space, 'red', 'a b c')).toBe(`${space}(from red a b c)`);
+  });
+
+  it.each(spaces)('produces %s(from …) with alpha', (space) => {
+    expect(from(space, 'red', 'a b c', 0.5)).toBe(`${space}(from red a b c / 0.5)`);
+  });
+
+  it('supports calc() inside components', () => {
+    expect(from('oklch', 'var(--primary)', 'calc(l - 0.1) c h')).toBe(
+      'oklch(from var(--primary) calc(l - 0.1) c h)',
+    );
+  });
+});
+
+describe('rgbFrom', () => {
+  it('passes through channel keywords', () => {
+    expect(rgbFrom('var(--primary)', 'r', 'g', 'b')).toBe('rgb(from var(--primary) r g b)');
+  });
+
+  it('supports numeric channels and alpha', () => {
+    expect(rgbFrom('#0066ff', 0, 102, 255, 0.5)).toBe('rgb(from #0066ff 0 102 255 / 0.5)');
+  });
+
+  it('supports calc() on a channel', () => {
+    expect(rgbFrom('var(--primary)', 'calc(r * 0.9)', 'g', 'b')).toBe(
+      'rgb(from var(--primary) calc(r * 0.9) g b)',
+    );
+  });
+});
+
+describe('oklchFrom', () => {
+  it('passes through channel keywords', () => {
+    expect(oklchFrom('var(--primary)', 'l', 'c', 'h')).toBe('oklch(from var(--primary) l c h)');
+  });
+
+  it('supports calc() on lightness', () => {
+    expect(oklchFrom('var(--primary)', 'calc(l - 0.1)', 'c', 'h')).toBe(
+      'oklch(from var(--primary) calc(l - 0.1) c h)',
+    );
+  });
+
+  it('supports alpha', () => {
+    expect(oklchFrom('var(--primary)', 'l', 'c', 'h', 0.5)).toBe(
+      'oklch(from var(--primary) l c h / 0.5)',
+    );
+  });
+});
+
+describe('OKLCH manipulation sugar', () => {
+  const token = 'var(--theme-primary)';
+
+  it('lighten', () => {
+    expect(lighten(token, 0.1)).toBe('oklch(from var(--theme-primary) calc(l + 0.1) c h)');
+    expect(lighten(token, '10%')).toBe('oklch(from var(--theme-primary) calc(l + 10%) c h)');
+  });
+
+  it('darken', () => {
+    expect(darken(token, 0.1)).toBe('oklch(from var(--theme-primary) calc(l - 0.1) c h)');
+    expect(darken(token, '10%')).toBe('oklch(from var(--theme-primary) calc(l - 10%) c h)');
+  });
+
+  it('saturate', () => {
+    expect(saturate(token, 1.2)).toBe('oklch(from var(--theme-primary) l calc(c * 1.2) h)');
+  });
+
+  it('desaturate', () => {
+    expect(desaturate(token, 0.5)).toBe('oklch(from var(--theme-primary) l calc(c * 0.5) h)');
+  });
+
+  it('rotate', () => {
+    expect(rotate(token, 30)).toBe('oklch(from var(--theme-primary) l c calc(h + 30))');
+    expect(rotate(token, '30deg')).toBe('oklch(from var(--theme-primary) l c calc(h + 30deg))');
+  });
+
+  it('grayscale', () => {
+    expect(grayscale(token)).toBe('oklch(from var(--theme-primary) l 0 h)');
   });
 });

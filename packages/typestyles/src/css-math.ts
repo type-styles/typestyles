@@ -39,3 +39,87 @@ export function calc(strings: TemplateStringsArray, ...values: CssMathValue[]): 
 export function clamp(min: CssMathValue, preferred: CssMathValue, max: CssMathValue): string {
   return `clamp(${min}, ${preferred}, ${max})`;
 }
+
+/**
+ * CSS `sin(value)`.
+ *
+ * @example
+ * ```ts
+ * sin('45deg') // "sin(45deg)"
+ * ```
+ */
+export function sin(value: CssMathValue): string {
+  return `sin(${value})`;
+}
+
+/**
+ * CSS `cos(value)`.
+ *
+ * @example
+ * ```ts
+ * cos('45deg') // "cos(45deg)"
+ * ```
+ */
+export function cos(value: CssMathValue): string {
+  return `cos(${value})`;
+}
+
+/**
+ * CSS `tan(value)`.
+ *
+ * @example
+ * ```ts
+ * tan('45deg') // "tan(45deg)"
+ * ```
+ */
+export function tan(value: CssMathValue): string {
+  return `tan(${value})`;
+}
+
+/**
+ * CSS `atan2(y, x)`.
+ *
+ * @example
+ * ```ts
+ * atan2('1', '1') // "atan2(1, 1)"
+ * ```
+ */
+export function atan2(y: CssMathValue, x: CssMathValue): string {
+  return `atan2(${y}, ${x})`;
+}
+
+/**
+ * CSS `pow(base, exponent)`.
+ *
+ * @example
+ * ```ts
+ * pow('2', '8') // "pow(2, 8)"
+ * ```
+ */
+export function pow(base: CssMathValue, exponent: CssMathValue): string {
+  return `pow(${base}, ${exponent})`;
+}
+
+/**
+ * CSS `sqrt(value)`.
+ *
+ * @example
+ * ```ts
+ * sqrt('16') // "sqrt(16)"
+ * ```
+ */
+export function sqrt(value: CssMathValue): string {
+  return `sqrt(${value})`;
+}
+
+/**
+ * CSS `hypot(...values)`.
+ *
+ * @example
+ * ```ts
+ * hypot('3px', '4px') // "hypot(3px, 4px)"
+ * ```
+ */
+export function hypot(...values: CssMathValue[]): string {
+  return `hypot(${values.join(', ')})`;
+}

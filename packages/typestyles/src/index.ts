@@ -18,7 +18,7 @@ import { cx } from './cx';
 import { container, createContainerRef } from './container';
 import { atRuleBlock } from './at-rule-block';
 import { has, is, where } from './relational-pseudo';
-import { calc, clamp } from './css-math';
+import { atan2, calc, clamp, cos, hypot, pow, sin, sqrt, tan } from './css-math';
 import { content } from './css-content';
 
 export type {
@@ -103,7 +103,7 @@ export { container, createContainerRef, atRuleBlock, has, is, where };
 export { atProperty } from './at-property';
 export type { AtPropertyPreset, AtPropertyPresetName } from './at-property';
 
-export { calc, clamp, content };
+export { atan2, calc, clamp, content, cos, hypot, pow, sin, sqrt, tan };
 
 export type { CssMathValue } from './css-math';
 

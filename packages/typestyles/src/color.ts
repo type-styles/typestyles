@@ -7,6 +7,9 @@
 
 type ColorValue = string | number;
 
+/** Relative-color function names — intentionally not the same union as `ColorMixSpace` (`srgb`, `display-p3`, …). */
+export type RelativeColorSpace = 'rgb' | 'hsl' | 'hwb' | 'lab' | 'lch' | 'oklab' | 'oklch';
+
 /** Color spaces supported by color-mix(). */
 export type ColorMixSpace =
   | 'srgb'
@@ -179,4 +182,153 @@ export function alpha(
 ): string {
   const percentage = Math.round(opacity * 100);
   return `color-mix(in ${colorSpace}, ${colorValue} ${percentage}%, transparent)`;
+}
+
+/**
+ * Relative color syntax — manipulate channels from a source color.
+ *
+ * Blends two colors with {@link mix}; changes opacity only with {@link alpha}.
+ * Use `from` when you need the same hue/chroma with different lightness, or
+ * other single-source channel tweaks.
+ *
+ * @example
+ * ```ts
+ * color.from('oklch', theme.primary, 'l c h');
+ * // "oklch(from var(--theme-primary) l c h)"
+ *
+ * color.from('oklch', theme.primary, 'calc(l - 0.1) c h');
+ * // "oklch(from var(--theme-primary) calc(l - 0.1) c h)"
+ *
+ * color.from('rgb', '#0066ff', 'r g b', 0.5);
+ * // "rgb(from #0066ff r g b / 0.5)"
+ * ```
+ */
+export function from(
+  space: RelativeColorSpace,
+  source: string,
+  components: string,
+  alpha?: ColorValue,
+): string {
+  if (alpha != null) return `${space}(from ${source} ${components} / ${alpha})`;
+  return `${space}(from ${source} ${components})`;
+}
+
+/**
+ * `rgb(from source r g b)` relative color syntax.
+ *
+ * @example
+ * ```ts
+ * rgbFrom(theme.primary, 'r', 'g', 'b', 0.5);
+ * // "rgb(from var(--theme-primary) r g b / 0.5)"
+ * ```
+ */
+export function rgbFrom(
+  source: string,
+  r: ColorValue | 'r',
+  g: ColorValue | 'g',
+  b: ColorValue | 'b',
+  alpha?: ColorValue | 'alpha',
+): string {
+  if (alpha != null) return `rgb(from ${source} ${r} ${g} ${b} / ${alpha})`;
+  return `rgb(from ${source} ${r} ${g} ${b})`;
+}
+
+/**
+ * `oklch(from source l c h)` relative color syntax.
+ *
+ * @example
+ * ```ts
+ * oklchFrom(theme.primary, 'calc(l - 0.1)', 'c', 'h');
+ * // "oklch(from var(--theme-primary) calc(l - 0.1) c h)"
+ * ```
+ */
+export function oklchFrom(
+  source: string,
+  l: ColorValue | 'l',
+  c: ColorValue | 'c',
+  h: ColorValue | 'h',
+  alpha?: ColorValue | 'alpha',
+): string {
+  if (alpha != null) return `oklch(from ${source} ${l} ${c} ${h} / ${alpha})`;
+  return `oklch(from ${source} ${l} ${c} ${h})`;
+}
+
+/**
+ * Lighten a color by adding to its OKLCH lightness channel.
+ *
+ * Not Sass-compatible — this is an OKLCH channel delta, not HSL `lighten()`.
+ *
+ * @example
+ * ```ts
+ * lighten(theme.primary, 0.1);
+ * // "oklch(from var(--theme-primary) calc(l + 0.1) c h)"
+ * ```
+ */
+export function lighten(source: string, amount: ColorValue): string {
+  return oklchFrom(source, `calc(l + ${amount})`, 'c', 'h');
+}
+
+/**
+ * Darken a color by subtracting from its OKLCH lightness channel.
+ *
+ * @example
+ * ```ts
+ * darken(theme.primary, '10%');
+ * // "oklch(from var(--theme-primary) calc(l - 10%) c h)"
+ * ```
+ */
+export function darken(source: string, amount: ColorValue): string {
+  return oklchFrom(source, `calc(l - ${amount})`, 'c', 'h');
+}
+
+/**
+ * Increase chroma multiplicatively in OKLCH.
+ *
+ * @example
+ * ```ts
+ * saturate(theme.primary, 1.2);
+ * // "oklch(from var(--theme-primary) l calc(c * 1.2) h)"
+ * ```
+ */
+export function saturate(source: string, factor: ColorValue): string {
+  return oklchFrom(source, 'l', `calc(c * ${factor})`, 'h');
+}
+
+/**
+ * Decrease chroma multiplicatively in OKLCH (symmetrical with {@link saturate}).
+ *
+ * @example
+ * ```ts
+ * desaturate(theme.primary, 0.5);
+ * // "oklch(from var(--theme-primary) l calc(c * 0.5) h)"
+ * ```
+ */
+export function desaturate(source: string, factor: ColorValue): string {
+  return oklchFrom(source, 'l', `calc(c * ${factor})`, 'h');
+}
+
+/**
+ * Rotate hue in OKLCH (browser normalizes the result).
+ *
+ * @example
+ * ```ts
+ * rotate(theme.primary, 30);
+ * // "oklch(from var(--theme-primary) l c calc(h + 30))"
+ * ```
+ */
+export function rotate(source: string, degrees: ColorValue): string {
+  return oklchFrom(source, 'l', 'c', `calc(h + ${degrees})`);
+}
+
+/**
+ * Zero chroma while preserving OKLCH lightness and hue.
+ *
+ * @example
+ * ```ts
+ * grayscale(theme.primary);
+ * // "oklch(from var(--theme-primary) l 0 h)"
+ * ```
+ */
+export function grayscale(source: string): string {
+  return oklchFrom(source, 'l', 0, 'h');
 }

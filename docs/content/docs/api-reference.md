@@ -149,6 +149,22 @@ Helpers for CSS `calc()` and `clamp()` that always emit balanced outer parenthes
 - **`calc`** — tagged template: `` calc`100vh - ${token}` `` → `calc(100vh - …)`
 - **`clamp(min, preferred, max)`** — three arguments → `clamp(min, preferred, max)`
 
+### Trigonometric and exponential functions
+
+Thin wrappers for CSS math functions, same "no validation of inner syntax" stance as `calc` / `clamp`:
+
+- **`sin(value)`**, **`cos(value)`**, **`tan(value)`**
+- **`atan2(y, x)`**
+- **`pow(base, exponent)`**, **`sqrt(value)`**, **`hypot(...values)`**
+
+```ts
+import { sin, pow, hypot } from 'typestyles';
+
+sin('45deg'); // "sin(45deg)"
+pow('2', '8'); // "pow(2, 8)"
+hypot('3px', '4px'); // "hypot(3px, 4px)"
+```
+
 See [TypeScript Tips — Complex CSS values](/docs/typescript-tips).
 
 ### `createTypeStyles(options)`
