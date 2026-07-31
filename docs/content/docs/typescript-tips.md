@@ -482,6 +482,18 @@ styles.class('sidebar', {
 
 You still need valid syntax inside the template (for example balanced parentheses in nested `min()` / `max()`), but you won’t forget the closing `)` of `calc` itself.
 
+### Trigonometric and exponential functions
+
+TypeStyles also exports **`sin`**, **`cos`**, **`tan`**, **`atan2`**, **`pow`**, **`sqrt`**, and **`hypot`** — thin wrappers that emit the corresponding CSS function call:
+
+```ts
+import { sin, pow, hypot, calc } from 'typestyles';
+
+calc`${sin('45deg')} * 100px`; // "calc(sin(45deg) * 100px)"
+pow('2', '8'); // "pow(2, 8)"
+hypot('3px', '4px'); // "hypot(3px, 4px)"
+```
+
 ### Other patterns
 
 1. **Manual template literals** — keep `calc(` and `)` in one literal and interpolate only the middle if you prefer not to use the tag:

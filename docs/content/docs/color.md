@@ -101,6 +101,8 @@ color.mix(theme.primary, 'white', 20);
 // "color-mix(in srgb, var(--theme-primary) 20%, white)"
 ```
 
+To darken or tweak a single source color's channels (same hue, different lightness), see [relative color syntax](#relative-color-syntax) instead of mixing with another color.
+
 ### alpha
 
 Adjust the opacity of any color:
@@ -112,6 +114,8 @@ color.alpha('#0066ff', 0.8, 'oklch'); // "color-mix(in oklch, #0066ff 80%, trans
 ```
 
 This is a convenience wrapper around `color.mix()` that mixes any color with transparent.
+
+To manipulate channels from a single source color (e.g. darker hover state), use [relative color syntax](#relative-color-syntax) instead.
 
 ### lightDark
 
@@ -127,6 +131,45 @@ color.lightDark(theme.textLight, theme.textDark);
 ```
 
 Note: This requires the browser to support `light-dark()` and the element to have an appropriate `color-scheme` value.
+
+## Relative color syntax
+
+CSS relative color syntax lets you derive a new color from a source by reusing or modifying individual channels — for example, a darker hover state from one brand color without blending in a second color.
+
+| Task                                              | API                                          |
+| ------------------------------------------------- | -------------------------------------------- |
+| Blend two colors                                  | `color.mix()`                                |
+| Change opacity only                               | `color.alpha()`                              |
+| Same hue, different lightness/chroma (one source) | `color.from()` / `rgbFrom()` / `oklchFrom()` |
+
+### from
+
+```ts
+color.from('oklch', theme.primary, 'l c h');
+// "oklch(from var(--theme-primary) l c h)"
+
+color.from('oklch', theme.primary, 'calc(l - 0.1) c h');
+// darker variant — calc() inside components, channel keywords unchanged
+
+color.from('rgb', '#0066ff', 'r g b', 0.5);
+// "rgb(from #0066ff r g b / 0.5)"
+```
+
+Supported spaces: `rgb`, `hsl`, `hwb`, `lab`, `lch`, `oklab`, `oklch`.
+
+### rgbFrom and oklchFrom
+
+Convenience wrappers for the most common cases:
+
+```ts
+rgbFrom(theme.primary, 'r', 'g', 'b', 0.5);
+// "rgb(from var(--theme-primary) r g b / 0.5)"
+
+oklchFrom(theme.primary, 'calc(l - 0.1)', 'c', 'h');
+// "oklch(from var(--theme-primary) calc(l - 0.1) c h)"
+```
+
+Values work in token custom properties as plain `<color>` strings — no `@property` changes needed.
 
 ## Using with tokens
 
