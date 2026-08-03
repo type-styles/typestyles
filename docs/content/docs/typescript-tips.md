@@ -514,13 +514,14 @@ hypot('3px', '4px'); // "hypot(3px, 4px)"
 
 4. **Validate in the browser** (devtools → computed / rules) when you touch tricky values; there is no full compile-time substitute today.
 
-## Nested keys: `container()`, `has()`, `is()`, `where()`
+## Nested keys: `container()`, `supports()`, `has()`, `is()`, `where()`
 
 Style objects allow nested keys that start with **`&`** (pseudos, descendants), **`[`** (attributes), or **`@`** (at-rules). When you use a **computed** key next to normal longhands (`color`, `padding`, …), TypeScript must keep that key as a **narrow template literal**. If it widens to plain `string`, the object no longer matches `CSSProperties` and you might be tempted to use `as CSSProperties`.
 
 TypeStyles narrows keys when you use the builders with **literal** inputs:
 
 - **`styles.container({ minWidth: 400 })`**, **`styles.container('sidebar', { minWidth: 300 })`**, and **`styles.container('(min-width: 1px)')`** infer a concrete `` `@container …` `` key.
+- **`styles.supports({ display: 'grid' })`** and **`styles.supports('(backdrop-filter: blur(4px))')`** infer a concrete `` `@supports …` `` key.
 - **`styles.has('.active')`**, **`styles.is(':hover', ':focus-visible')`**, **`styles.where('.nav')`** infer a concrete `` `&:…` `` key.
 
 So this pattern type-checks without casting:
@@ -531,6 +532,7 @@ import { styles } from 'typestyles';
 styles.class('card', {
   color: 'inherit',
   [styles.container({ minWidth: 400 })]: { display: 'grid' },
+  [styles.supports({ display: 'grid' })]: { gap: 16 },
   [styles.has('.expanded')]: { borderColor: 'blue' },
 });
 ```

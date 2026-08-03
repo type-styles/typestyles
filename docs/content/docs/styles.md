@@ -131,7 +131,7 @@ const trigger = styles.component('trigger', {
 
 ### `:has()`, `:is()`, and `:where()` helpers
 
-For grouped or low-specificity pseudos, use **`styles.has`**, **`styles.is`**, and **`styles.where`** (or import `has`, `is`, `where` from `typestyles`). They mirror the ergonomics of **`styles.container()`** for container queries: small builders that return `&`-prefixed keys and infer **literal** templates from your arguments, so you can mix them with ordinary properties without `as CSSProperties`.
+For grouped or low-specificity pseudos, use **`styles.has`**, **`styles.is`**, and **`styles.where`** (or import `has`, `is`, `where` from `typestyles`). They mirror the ergonomics of **`styles.container()`** and **`styles.supports()`** for at-rule queries: small builders that return typed nested keys and infer **literal** templates from your arguments, so you can mix them with ordinary properties without `as CSSProperties`.
 
 ```ts
 const nav = styles.class('nav', {

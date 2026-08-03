@@ -43,6 +43,7 @@ import {
   createContainerRef,
   type ContainerNameRef,
 } from './container';
+import { supports as supportsQuery } from './supports';
 import { atRuleBlock as atRuleBlockFn } from './at-rule-block';
 import {
   createBreakpointMediaFn,
@@ -271,6 +272,11 @@ export type StylesApi = {
    * Same as `createContainerRef(label, { scopeId, prefix })` from this instance’s naming config.
    */
   readonly containerRef: (label: string) => ContainerNameRef;
+  /**
+   * Typed `@supports` object keys for nested styles (declaration features or raw conditions).
+   * Same function as the named export `supports` from `typestyles`.
+   */
+  readonly supports: typeof supportsQuery;
   /**
    * Build a spreadable `{ [ @key ]: nested }` so computed `@…` keys stay typed (see `atRuleBlock` export).
    */
@@ -629,6 +635,7 @@ function buildStylesRuntimeApi(
       classNaming,
       container: containerQuery,
       containerRef,
+      supports: supportsQuery,
       atRuleBlock: atRuleBlockFn,
       breakpoint,
       media,
@@ -657,6 +664,7 @@ function buildStylesRuntimeApi(
     classNaming,
     container: containerQuery,
     containerRef,
+    supports: supportsQuery,
     atRuleBlock: atRuleBlockFn,
     breakpoint,
     media,
@@ -686,6 +694,7 @@ function buildStylesRuntimeApi(
 export type StylesWithUtilsApi<U extends StyleUtils> = {
   readonly container: typeof containerQuery;
   readonly containerRef: (label: string) => ContainerNameRef;
+  readonly supports: typeof supportsQuery;
   readonly atRuleBlock: typeof atRuleBlockFn;
   readonly breakpoint: BreakpointMediaFn;
   readonly media: MediaFn;
@@ -841,6 +850,7 @@ export function createStylesWithUtils<U extends StyleUtils>(
   return {
     container: containerQuery,
     containerRef,
+    supports: supportsQuery,
     atRuleBlock: atRuleBlockFn,
     breakpoint,
     media,
@@ -907,6 +917,7 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
   return {
     container: containerQuery,
     containerRef,
+    supports: supportsQuery,
     atRuleBlock: atRuleBlockFn,
     breakpoint,
     media,

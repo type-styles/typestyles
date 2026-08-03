@@ -520,21 +520,26 @@ const card = styles.class('card', {
 
 ## Supports queries
 
-Feature detection with `@supports`:
+Feature detection with `@supports`. You can write plain `'@supports …'` keys (they serialize like `@media`), or use **`styles.supports()`** / **`supports()`** for typed declaration features and raw conditions.
+
+### Typed keys with `styles.supports()`
 
 ```ts
 const backdrop = styles.component('backdrop', {
   base: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
 
-    // Use backdrop-filter if supported
-    '@supports (backdrop-filter: blur(4px))': {
+    [styles.supports({ backdropFilter: 'blur(4px)' })]: {
       backdropFilter: 'blur(4px)',
       backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
   },
 });
 ```
+
+`supports({ … })` accepts camelCase CSS properties (`display`, `backdropFilter`, `gridTemplateColumns`, …). Multiple declarations compile to one condition joined with `and`.
+
+**TypeScript:** single-declaration object forms and string-literal raw conditions infer a **literal** `` `@supports …` `` template, so **`[styles.supports(…)]`** can sit next to longhands without `as CSSProperties`. When the `@supports` text is only known as a generic **`string`** at compile time, spread **`styles.atRuleBlock(key, nested)`** instead.
 
 ### Complex supports queries
 
@@ -546,17 +551,23 @@ const grid = styles.component('grid', {
     flexWrap: 'wrap',
 
     // Use grid if supported
-    '@supports (display: grid)': {
+    [styles.supports({ display: 'grid' })]: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     },
 
     // Use subgrid if supported
-    '@supports (grid-template-columns: subgrid)': {
+    [styles.supports({ gridTemplateColumns: 'subgrid' })]: {
       gridTemplateColumns: 'subgrid',
     },
   },
 });
+```
+
+For `not`, `selector()`, or other syntax that does not map to a single declaration object, pass a raw condition string:
+
+```ts
+[styles.supports('not (display: grid)')]: { display: 'flex' },
 ```
 
 ## Layer (cascade layers)

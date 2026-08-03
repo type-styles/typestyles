@@ -37,12 +37,10 @@ export type CSSValue = string | number;
  * custom-property keys inside nested blocks.
  *
  * For `@…` keys, **`container()`** / **`styles.container()`** infer a **literal** `@container …` template so
- * `[container({ minWidth: 400 })]` mixes with longhands without casting. For **dynamic** `@…` strings, spread
+ * `[container({ minWidth: 400 })]` mixes with longhands without casting. **`supports()`** / **`styles.supports()`**
+ * do the same for `@supports` feature queries. For **dynamic** `@…` strings, spread
  * **`atRuleBlock` / `styles.atRuleBlock`**. Same idea for **`has` / `is` / `where`**: variadic literals narrow
  * to `&:…` keys; if the key is only known as `string`, spread a one-key object or use `atRuleBlock`.
- *
- * **`@supports`** uses the same `` `@${string}` `` / `atRuleBlock` path; a first-class **`supports()`** helper
- * (mirroring `container()`) would improve literals and authoring ergonomics for feature queries.
  */
 type CSSPropertiesBase = {
   [K in keyof CSS.Properties<CSSValue>]?: CSSPropertyValue<K>;
