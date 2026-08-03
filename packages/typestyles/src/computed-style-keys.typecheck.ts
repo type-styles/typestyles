@@ -3,7 +3,7 @@
  * Ensures `[container(…)]`, `[has(…)]`, etc. mix with longhands without `as CSSProperties`.
  */
 import type { CSSProperties } from './types';
-import { container, createStyles, has, is, where } from './index';
+import { container, createStyles, has, is, supports, where } from './index';
 
 const styles = createStyles();
 
@@ -28,6 +28,14 @@ export function _rawContainerLiteral(): CSSProperties {
   return {
     padding: 8,
     [container('(min-width: 1px)')]: { display: 'flex' },
+  };
+}
+
+export function _supportsAndLonghands(): CSSProperties {
+  return {
+    display: 'flex',
+    [supports({ display: 'grid' })]: { display: 'grid' },
+    [styles.supports('(backdrop-filter: blur(4px))')]: { backdropFilter: 'blur(4px)' },
   };
 }
 

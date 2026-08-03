@@ -17,6 +17,7 @@ per package or micro-frontend for isolation.
 - `styles.component(namespace, config)`: Create multi-variant component styles (CVA-style)
 - `styles.class(name, properties)`: Create a single class
 - `styles.container(…)`: Build typed `@container` keys for nested styles (also exported as `container`). Object/two-arg forms infer a **literal** `@container …` string, so `[container({ minWidth: 400 })]: { … }` works next to longhands without casting; use `atRuleBlock` when the key is only known as a generic `string`.
+- `styles.supports(…)`: Build typed `@supports` keys for nested styles (also exported as `supports`). Single-declaration object forms and string-literal raw conditions infer a **literal** `@supports …` string, so `[supports({ display: 'grid' })]: { … }` works next to longhands without casting; use `atRuleBlock` when the key is only known as a generic `string`.
 - `styles.has(…)`, `styles.is(…)`, `styles.where(…)`: Build nested `&`-keys for `:has()`, `:is()`, and `:where()` (same as the `has` / `is` / `where` exports). Literal arguments narrow to a concrete `&:…` key so you can mix them with longhands as `[has('.x')]: { … }` without `as CSSProperties`. `:where()` keeps **zero specificity**; raw `'&:has(…)'` strings still work.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
 - `styles.breakpoint(name, feature?)`: Build typed `@media` keys from configured viewport breakpoints (also `createBreakpointMediaFn`)
@@ -32,7 +33,7 @@ per package or micro-frontend for isolation.
 - `styles.override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta` (see [Theming patterns](/docs/theming-patterns#typed-component-overrides))
 - `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
 
-**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `atRuleBlock`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
+**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `supports`, `atRuleBlock`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
 
 **Helpers:** `getComponentMeta(component)` — read public component metadata attached by `styles.component()`.
 

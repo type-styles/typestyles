@@ -6,7 +6,7 @@ import type { CSSProperties } from './types';
  * TypeScript widens **computed** `[someFn()]` keys to `string`, which clashes with {@link CSSProperties}’s
  * `` `@${string}` `` index signature. Spreading `Record<@${string}, CSSProperties>` preserves a narrow key type.
  *
- * Works for keys from `container()`, literal `'@media (…)'`, `'@supports (…)'`, etc.
+ * Works for keys from `container()`, `supports()`, literal `'@media (…)'`, `'@supports (…)'`, etc.
  *
  * @example
  * ```ts

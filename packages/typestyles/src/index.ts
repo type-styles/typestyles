@@ -16,6 +16,7 @@ import { globalStyle, globalFontFace, globalApply } from './global';
 import { createVar, assignVars } from './vars';
 import { cx } from './cx';
 import { container, createContainerRef } from './container';
+import { supports } from './supports';
 import { atRuleBlock } from './at-rule-block';
 import { has, is, where } from './relational-pseudo';
 import { atan2, calc, clamp, cos, hypot, pow, sin, sqrt, tan } from './css-math';
@@ -99,7 +100,7 @@ export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';
 
 export type { GlobalStyleTuple } from './global-style-tuple';
 
-export { container, createContainerRef, atRuleBlock, has, is, where };
+export { container, createContainerRef, supports, atRuleBlock, has, is, where };
 export { atProperty } from './at-property';
 export type { AtPropertyPreset, AtPropertyPresetName } from './at-property';
 
@@ -115,6 +116,8 @@ export type {
   ContainerNameRef,
   CreateContainerRefOptions,
 } from './container';
+
+export type { SupportsQueryKey, SupportsQueryFeatures, SupportsObjectKey } from './supports';
 
 export type { HasNestedKey, IsNestedKey, WhereNestedKey, IsPseudoArg } from './relational-pseudo';
 
