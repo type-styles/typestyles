@@ -1,5 +1,15 @@
 # typestyles
 
+## 0.21.0
+
+### Minor Changes
+
+- [#196](https://github.com/type-styles/typestyles/pull/196) [`c749aaf`](https://github.com/type-styles/typestyles/commit/c749aafd602d3b6e55eb45977d93c387987af490) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `supports()` and `styles.supports()` helpers for typed `@supports` feature-query keys, mirroring the `container()` pattern. Object forms accept camelCase declaration features (joined with `and`); string forms pass through raw conditions including `not` and `selector()`. Raise main-entry gzip budget (+200 B) for the new helper runtime.
+
+### Patch Changes
+
+- [#197](https://github.com/type-styles/typestyles/pull/197) [`bf6614f`](https://github.com/type-styles/typestyles/commit/bf6614f5efa7d0edfffe024cd4c0d2640067d674) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix slot+variant components not emitting `c.vars()` default assignments when both `slots` and dimensioned `variants` are used together.
+
 ## 0.20.0
 
 ### Minor Changes
