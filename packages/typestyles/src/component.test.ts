@@ -912,6 +912,42 @@ describe('createComponent — function config & internal vars', () => {
     expect(css).toContain('background-color: var(--fn-dialog-backdrop)');
   });
 
+  it('emits c.vars() defaults on the root slot when slots and variants are combined', () => {
+    const select = createComponent(defaultClassNamingConfig, 'fn-slot-var', (c) => {
+      const v = c.vars({
+        triggerBackground: {
+          value: 'var(--demo-color-surface)',
+          syntax: '<color>',
+        },
+      });
+      return {
+        slots: ['root', 'trigger'],
+        base: {
+          root: { display: 'grid' },
+          trigger: { backgroundColor: v.triggerBackground.var },
+        },
+        variants: {
+          tone: {
+            neutral: {},
+            danger: {
+              trigger: { [v.triggerBackground.name]: '#f00' },
+            },
+          },
+        },
+        defaultVariants: { tone: 'neutral' },
+      };
+    });
+
+    select();
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('@property --fn-slot-var-triggerbackground');
+    expect(css).toContain('.fn-slot-var {');
+    expect(css).toContain('--fn-slot-var-triggerbackground: var(--demo-color-surface)');
+    expect(css).toContain('.fn-slot-var__trigger');
+    expect(css).toContain('background-color: var(--fn-slot-var-triggerbackground)');
+  });
+
   it('supports nested vars object like tokens.create', () => {
     createComponent(defaultClassNamingConfig, 'nestv', (c) => {
       const v = c.vars({
