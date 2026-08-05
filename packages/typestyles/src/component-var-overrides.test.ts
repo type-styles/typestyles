@@ -4,6 +4,7 @@ import {
   resolveVarOverrides,
   resolveVarHostSlot,
   resolveVarHostClass,
+  expandVarOverrideDeclarations,
 } from './component-var-overrides';
 import type { ComponentVarRegistry } from './component-meta';
 import type { DimensionedComponentMeta, SlotComponentMeta } from './component-meta';
@@ -99,6 +100,28 @@ describe('resolveVarOverrides', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(resolveVarOverrides(registry, { missing: 'x' })).toEqual({});
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('Unknown component var "missing"'));
+  });
+});
+
+describe('expandVarOverrideDeclarations', () => {
+  it('compiles color-compatible pairs to light-dark()', () => {
+    const { expanded, darkOnly } = expandVarOverrideDeclarations(
+      { '--nav-border': { light: '#fff', dark: '#111' } },
+      ['light', 'dark'],
+    );
+    expect(expanded).toEqual({ '--nav-border': 'light-dark(#fff, #111)' });
+    expect(darkOnly).toBeNull();
+  });
+
+  it('splits incompatible pairs into darkOnly', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { expanded, darkOnly } = expandVarOverrideDeclarations(
+      { '--nav-glow': { light: '0 0 0 3px blue', dark: '0 0 16px navy' } },
+      ['light', 'dark'],
+    );
+    expect(expanded).toEqual({ '--nav-glow': '0 0 0 3px blue' });
+    expect(darkOnly).toEqual({ '--nav-glow': '0 0 16px navy' });
+    warn.mockRestore();
   });
 });
 

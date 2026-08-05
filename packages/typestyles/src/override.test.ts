@@ -3,6 +3,7 @@ import { reset, flushSync, getRegisteredCss } from './sheet';
 import { createStyles } from './styles';
 import { getComponentMeta } from './component-meta';
 import { registeredNamespaces } from './registry';
+import { colorModes } from './color-modes';
 
 describe('styles.override() + __tsMeta', () => {
   beforeEach(() => {
@@ -869,6 +870,40 @@ describe('styles.override() + __tsMeta', () => {
       expect(css).toContain('@layer overrides');
       expect(css).toContain('.theme-acme .ov-vars-layer {');
       expect(css).toContain('--ov-vars-layer-accent: green');
+    });
+
+    it('compiles mode-aware var overrides to light-dark() when colorModes is configured', () => {
+      const styles = createStyles({ colorModes });
+      const chip = styles.component('ov-vars-mode', (c) => {
+        const v = c.vars({ border: { value: '#ccc', syntax: '<color>' as const } });
+        return { base: { borderColor: v.border.var } };
+      });
+
+      styles.override(chip, {
+        vars: { border: { light: '#fff', dark: '#111' } },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-vars-mode-border: light-dark(#fff, #111)');
+    });
+
+    it('emits prefers-dark override for incompatible mode-aware var values', () => {
+      const styles = createStyles({ colorModes });
+      const card = styles.component('ov-vars-mode-shadow', (c) => {
+        const v = c.vars({ glow: '0 0 0 3px blue' });
+        return { base: { boxShadow: v.glow.var } };
+      });
+
+      styles.override(card, {
+        vars: { glow: { light: '0 0 0 3px blue', dark: '0 0 16px navy' } },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-vars-mode-shadow-glow: 0 0 0 3px blue');
+      expect(css).toContain('@media (prefers-color-scheme: dark)');
+      expect(css).toContain('--ov-vars-mode-shadow-glow: 0 0 16px navy');
     });
 
     it('warns when vars is set on a component with no registry', () => {

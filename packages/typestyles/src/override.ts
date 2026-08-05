@@ -8,11 +8,16 @@ import {
   type SlotComponentMeta,
   type VariantSelectorMap,
 } from './component-meta';
-import { resolveVarHostClass, resolveVarOverrides } from './component-var-overrides';
+import {
+  expandVarOverrideDeclarations,
+  resolveVarHostClass,
+  resolveVarOverrides,
+} from './component-var-overrides';
 import { serializeStyle } from './serialize-style';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { insertRules } from './sheet';
 import { joinSelectorAlternatives } from './compound-selector';
+import { when } from './theme';
 import {
   compileThemeCondition,
   buildSelectorForContext,
@@ -422,13 +427,30 @@ function emitVarOverrides(
   const declarations = resolveVarOverrides(registry, varsInput as Record<string, unknown>);
   if (Object.keys(declarations).length === 0) return;
 
+  const { expanded, darkOnly } = expandVarOverrideDeclarations(
+    declarations,
+    classNaming.colorModes,
+  );
+
   emitUnconditionalRules(
     classNaming,
     `.${hostClass}`,
-    declarations as VariantOptionStyle,
+    expanded as VariantOptionStyle,
     options,
     'vars',
   );
+
+  if (darkOnly && Object.keys(darkOnly).length > 0) {
+    emitStyledSelector(
+      classNaming,
+      `.${hostClass}`,
+      {
+        conditions: [conditional(when.prefersDark, darkOnly as VariantOptionStyle, 'vars-dark')],
+      },
+      options,
+      'vars-dark',
+    );
+  }
 }
 
 /**

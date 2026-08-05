@@ -1,5 +1,9 @@
+import { lightDark } from './color';
+import type { ColorModeMap } from './color-modes';
+import { validateColorModeObject } from './color-modes';
 import type { ComponentMeta } from './component-meta';
 import type { RegisteredComponentVar, ComponentVarRegistry } from './component-meta';
+import { canUseLightDarkForTokenValue } from './token-color-modes';
 import type { CSSVarRef } from './types';
 
 export type ComponentVarAssignValue = string | number | CSSVarRef | { light: string; dark: string };
@@ -117,6 +121,61 @@ export function resolveVarOverrides(
   }
 
   return declarations;
+}
+
+/**
+ * Expand `{ light, dark }` var override values to `light-dark()` where possible.
+ * Incompatible pairs return `darkOnly` for a prefers-dark follow-up rule.
+ */
+export function expandVarOverrideDeclarations(
+  declarations: Record<string, string | { light: string; dark: string }>,
+  colorModes: ColorModeMap | undefined,
+): { expanded: Record<string, string>; darkOnly: Record<string, string> | null } {
+  const expanded: Record<string, string> = {};
+  const darkOnly: Record<string, string> = {};
+  let hasDarkOnly = false;
+
+  for (const [name, value] of Object.entries(declarations)) {
+    if (typeof value === 'string') {
+      expanded[name] = value;
+      continue;
+    }
+
+    if (!isColorModePair(value)) {
+      expanded[name] = String(value);
+      continue;
+    }
+
+    if (!colorModes) {
+      expanded[name] = value.light ?? value.dark;
+      continue;
+    }
+
+    validateColorModeObject(name, value, colorModes);
+    const { light, dark } = value;
+
+    if (light === dark) {
+      expanded[name] = light;
+      continue;
+    }
+
+    if (canUseLightDarkForTokenValue(light) && canUseLightDarkForTokenValue(dark)) {
+      expanded[name] = lightDark(light, dark);
+      continue;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[typestyles] Component var "${name}" cannot use \`light-dark()\` — ` +
+          `emitting a dark-mode override rule instead.`,
+      );
+    }
+    expanded[name] = light;
+    darkOnly[name] = dark;
+    hasDarkOnly = true;
+  }
+
+  return { expanded, darkOnly: hasDarkOnly ? darkOnly : null };
 }
 
 /** Reuse host-slot resolution from `mergeComponentVarDefaultsInto`. */

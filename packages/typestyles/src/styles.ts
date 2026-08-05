@@ -1151,6 +1151,7 @@ function makeTransformComponentConfigWithUtils<U extends StyleUtils>(
       } else if (
         key !== 'defaultVariants' &&
         key !== 'slots' &&
+        key !== 'vars' &&
         value &&
         typeof value === 'object' &&
         !Array.isArray(value)
