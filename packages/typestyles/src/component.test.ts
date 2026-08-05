@@ -1041,6 +1041,43 @@ describe('createComponent — function config & internal vars', () => {
     expect(badge.vars?.paper.name).toBe('--ret-vars-only-paper');
   });
 
+  it('auto-stamps __varDefinitions from c.vars() when recipe omits vars key', () => {
+    const defs = {
+      border: { value: '#ccc', syntax: '<color>' as const },
+      headingColor: '#111',
+    } as const;
+
+    const sideNav = createComponent(defaultClassNamingConfig, 'ret-auto-stamp', (c) => {
+      const v = c.vars(defs);
+      return {
+        slots: ['root', 'heading'] as const,
+        base: {
+          root: { borderColor: v.border.var },
+          heading: { color: v.headingColor.var },
+        },
+      };
+    });
+
+    expect((sideNav as { __varDefinitions?: typeof defs }).__varDefinitions).toEqual(defs);
+  });
+
+  it('accepts vars: v (ref tree) in recipe config without re-registering paths', () => {
+    const badge = createComponent(defaultClassNamingConfig, 'ret-vars-ref-tree', (c) => {
+      const v = c.vars({ ink: '#111', paper: '#fff' });
+      return {
+        vars: v,
+        base: { color: v.ink.var, backgroundColor: v.paper.var },
+      };
+    });
+
+    badge();
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--ret-vars-ref-tree-ink: #111');
+    expect(css).toContain('--ret-vars-ref-tree-paper: #fff');
+    expect(css.match(/--ret-vars-ref-tree-ink: #111/g)?.length).toBe(1);
+  });
+
   it('vars.declare registers @property without base defaults; values set in variants', () => {
     const badge = createComponent(defaultClassNamingConfig, 'cb-declare', (c) => {
       const v = c.vars.declare({

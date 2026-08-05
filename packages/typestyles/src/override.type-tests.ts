@@ -324,7 +324,7 @@ const multiBad: OverrideConfigFor<typeof multi> = {
 };
 void multiBad;
 
-// Typed override vars (Pattern A — explicit var definitions generic)
+// Typed override vars — auto-stamped from c.vars(); use vars: v for override typing
 const sideNavVarDefinitions = {
   border: { value: '1px solid #ccc', syntax: '<color>' as const },
   headingColor: { value: '#111', syntax: '<color>' as const },
@@ -333,13 +333,14 @@ const sideNavVarDefinitions = {
 const sideNav = styles.component('ov-type-vars-nav', (c) => {
   const v = c.vars(sideNavVarDefinitions);
   return {
+    vars: v,
     slots: ['root'] as const,
     base: { root: { borderColor: v.border.var, color: v.headingColor.var } },
   };
 });
 void sideNav;
 
-type SideNavOverride = OverrideConfigFor<typeof sideNav, typeof sideNavVarDefinitions>;
+type SideNavOverride = OverrideConfigFor<typeof sideNav>;
 const sideNavVarsOk: SideNavOverride = {
   vars: { border: 'transparent', headingColor: 'var(--brand-heading)' },
   base: { root: { margin: '8px' } },
@@ -354,6 +355,22 @@ const sideNavVarsBad: SideNavOverride = {
 };
 void sideNavVarsBad;
 
+// Auto-stamp at runtime when vars is omitted — override typing still needs vars: v or Pattern B
+const sideNavAutoStamp = styles.component('ov-type-vars-auto', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
+  return {
+    slots: ['root'] as const,
+    base: { root: { borderColor: v.border.var } },
+  };
+});
+void sideNavAutoStamp;
+
+type SideNavAutoOverride = OverrideConfigFor<typeof sideNavAutoStamp, typeof sideNavVarDefinitions>;
+const sideNavAutoOk: SideNavAutoOverride = {
+  vars: { border: 'transparent' },
+};
+void sideNavAutoOk;
+
 const layoutVarDefinitions = {
   padding: { outer: { x: '8px', y: '8px' } },
 } as const;
@@ -361,6 +378,7 @@ const layoutVarDefinitions = {
 const layoutRecipe = styles.component('ov-type-vars-layout', (c) => {
   const v = c.vars(layoutVarDefinitions);
   return {
+    vars: v,
     base: {
       paddingInline: v.padding.outer.x.var,
       paddingBlock: v.padding.outer.y.var,
@@ -369,24 +387,21 @@ const layoutRecipe = styles.component('ov-type-vars-layout', (c) => {
 });
 void layoutRecipe;
 
-type LayoutOverride = OverrideConfigFor<typeof layoutRecipe, typeof layoutVarDefinitions>;
+type LayoutOverride = OverrideConfigFor<typeof layoutRecipe>;
 const layoutVarsOk: LayoutOverride = {
   vars: { padding: { outer: { x: '24px' } } },
 };
 void layoutVarsOk;
 
 // Pattern B — varDefinitions option stamps __varDefinitions for inference
-const brandedNav = styles.component(
-  'ov-type-branded-nav',
-  (c) => {
-    const v = c.vars(sideNavVarDefinitions);
-    return {
-      slots: ['root'] as const,
-      base: { root: { borderColor: v.border.var } },
-    };
-  },
-  { varDefinitions: sideNavVarDefinitions },
-);
+const brandedNav = styles.component('ov-type-branded-nav', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
+  return {
+    vars: v,
+    slots: ['root'] as const,
+    base: { root: { borderColor: v.border.var } },
+  };
+});
 void brandedNav;
 
 const brandedVarsOk: OverrideConfigFor<typeof brandedNav> = {

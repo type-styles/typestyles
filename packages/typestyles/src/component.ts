@@ -172,8 +172,13 @@ function resolveComponentConfig(
   varRefTree?: object;
   varDefinitions?: ComponentVarDefinitions;
 } {
-  const { ctx, mergeVarDefaultsInto, buildVarRegistry, buildVarRefTree } =
-    createComponentConfigContextPair(classNaming, namespace);
+  const {
+    ctx,
+    mergeVarDefaultsInto,
+    buildVarRegistry,
+    buildVarRefTree,
+    buildCapturedVarDefinitions,
+  } = createComponentConfigContextPair(classNaming, namespace);
 
   if (typeof config === 'function') {
     const raw = config(ctx) as Record<string, unknown>;
@@ -186,7 +191,7 @@ function resolveComponentConfig(
       config: resolved,
       varRegistry: buildVarRegistry(resolved),
       varRefTree: buildVarRefTree(),
-      varDefinitions: defsFromConfig,
+      varDefinitions: defsFromConfig ?? buildCapturedVarDefinitions(),
     };
   }
 

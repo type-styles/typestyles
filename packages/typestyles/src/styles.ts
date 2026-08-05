@@ -20,6 +20,8 @@ import type {
   MultiSlotConfig,
   MultiSlotReturn,
   ComponentVarDefinitions,
+  ComponentVarRefTree,
+  componentVarDefinitionsKey,
   StylesPropertyFn,
 } from './types';
 import { serializeStyle } from './serialize-style';
@@ -334,6 +336,16 @@ export type StylesApi = {
       config: SlotComponentConfigInput<Slots, V>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
     ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
+    <
+      const Slots extends readonly string[],
+      V extends SlotVariantDefinitions<Slots[number]>,
+      const Vars extends ComponentVarDefinitions,
+    >(
+      namespace: string,
+      config: (ctx: ComponentConfigContext) => Omit<SlotComponentConfig<Slots, V>, 'vars'> & {
+        vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+      },
+    ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
     <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
       namespace: string,
       config: SlotComponentConfigInput<Slots, V>,
@@ -360,6 +372,12 @@ export type StylesApi = {
       config: ComponentConfigInput<V>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
     ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
+    <const V extends VariantDefinitions, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: (ctx: ComponentConfigContext) => Omit<ComponentConfig<V>, 'vars'> & {
+        vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+      },
+    ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
     <const V extends VariantDefinitions>(
       namespace: string,
       config: ComponentConfigInput<V>,
@@ -372,6 +390,12 @@ export type StylesApi = {
       namespace: string,
       config: FlatComponentConfigInput<K>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
+    ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
+    <const K extends string, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: (ctx: ComponentConfigContext) => Omit<FlatComponentConfig<K>, 'vars'> & {
+        vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+      },
     ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
     <const K extends string>(
       namespace: string,

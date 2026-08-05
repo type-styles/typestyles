@@ -1035,10 +1035,7 @@ const sideNav = styles.component('side-nav', (c) => {
     headingColor: '#111',
   });
   return {
-    vars: {
-      border: { value: '#ccc', syntax: '<color>' as const },
-      headingColor: '#111',
-    },
+    vars: v,
     slots: ['root', 'heading'] as const,
     base: {
       root: { borderColor: v.border.var },
@@ -1059,7 +1056,8 @@ styles.override(
 // => .theme-acme .side-nav { --side-nav-border: transparent; …; margin: 8px; … }
 ```
 
-Export `*VarDefinitions` or declare top-level config `vars` so `OverrideConfigFor<typeof recipe>` autocomplete theme keys. Full author + consumer guidance: [Components — override internal vars](/docs/components#override-internal-vars-in-themes).
+Use `vars: v` so `OverrideConfigFor<typeof sideNav>` infers theme keys — no need to repeat
+the definition object. `c.vars()` alone auto-stamps runtime metadata when you omit `vars`.
 
 Var overrides emit on the **var host class** (same element that owns default var
 declarations from the recipe). They compose with `base` slot overrides on that host;
