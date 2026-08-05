@@ -675,15 +675,51 @@ export type ComponentVarOptions = {
  */
 export type ComponentInternalVarRef = RegisteredPropertyRef;
 
+/** Runtime key stamped on `ctx.vars()` ref trees (also used for override typing). */
+export const componentVarDefinitionsKey = '__typestylesVarDefinitions' as const;
+
+/** Input accepted on recipe `vars` — plain definitions or a `ctx.vars()` ref tree. */
+export type ComponentVarConfigInput =
+  | ComponentVarDefinitions
+  | ComponentVarRefTree<ComponentVarDefinitions>;
+
+/** Extract definition tree from a `ctx.vars()` ref tree brand. */
+export type InferComponentVarRefTreeDefinitions<T> = T extends {
+  readonly [componentVarDefinitionsKey]: infer D extends ComponentVarDefinitions;
+}
+  ? D
+  : never;
+
 /**
  * Context passed to `styles.component(namespace, (ctx) => { ... })` to declare internal custom properties.
  */
 /** Proxy tree returned by `ctx.vars({ … })` — leaves are `{ name, var }`, nested objects are sub-trees. */
-export type ComponentVarRefTree<T> = {
+export type ComponentVarRefTree<T> = (T extends ComponentVarDefinitions
+  ? { readonly [componentVarDefinitionsKey]: T }
+  : Record<never, never>) & {
   [K in keyof T]: T[K] extends ComponentVarDescriptor | string | number
     ? ComponentInternalVarRef
     : ComponentVarRefTree<T[K]>;
 };
+
+/** Infer override var definitions from a component config or callback return shape. */
+export type InferComponentVarDefinitionsFromConfig<C> = C extends (
+  ctx: ComponentConfigContext,
+) => infer R
+  ? InferComponentVarDefinitionsFromRecipe<R>
+  : C extends { vars: infer Vars }
+    ? InferComponentVarDefinitionsFromRecipe<{ vars: Vars }>
+    : never;
+
+type InferComponentVarDefinitionsFromRecipe<R> = R extends { vars: infer Vars }
+  ? Vars extends { readonly [componentVarDefinitionsKey]: infer D }
+    ? D extends ComponentVarDefinitions
+      ? D
+      : never
+    : Vars extends ComponentVarDefinitions
+      ? Vars
+      : never
+  : never;
 
 /** Schema for `ctx.vars.declare` — same shape as token declare schemas. */
 export type ComponentVarSchema = TokenSchema;
@@ -707,6 +743,8 @@ export type ComponentConfigContext = {
  */
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarConfigInput;
   variants?: V;
   compoundVariants?: Array<{
     variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
@@ -737,6 +775,8 @@ export type ComponentConfig<V extends VariantDefinitions> = {
  */
 export type FlatComponentConfig<K extends string> = {
   base?: CSSProperties;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarConfigInput;
   variants?: never;
   defaultVariants?: never;
   compoundVariants?: never;
@@ -776,6 +816,9 @@ export type ComponentReturn<V extends VariantDefinitions> = {
 } & {
   /** Individual variant class strings, keyed as `{dimension}-{option}`. */
   readonly [K in DimensionedVariantKeys<V>]: string;
+} & {
+  /** Ref tree for internal vars declared on this recipe (`vars` config or `c.vars()`). */
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 /**
@@ -789,6 +832,8 @@ export type ComponentAttrsReturn<V extends VariantDefinitions> = {
 } & {
   /** The base class string. */
   readonly base: string;
+} & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 /** Attribute-mode return for slot recipes, with attrs repeated on each declared slot. */
@@ -810,6 +855,8 @@ export type FlatComponentReturn<K extends string> = {
 } & {
   /** Individual variant class strings. */
   readonly [P in Exclude<K, 'base'>]: string;
+} & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 // ---------------------------------------------------------------------------
@@ -818,6 +865,8 @@ export type FlatComponentReturn<K extends string> = {
 
 export type MultiSlotConfig<Slots extends readonly string[]> = {
   slots: Slots;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarConfigInput;
   /**
    * Forbidden recipe keys — same idea as {@link FlatComponentConfig}. Without these, a
    * slot-with-variants config that fails {@link VariantOptionStyle} assignability (e.g. widened
@@ -840,6 +889,8 @@ export type MultiSlotReturn<Slots extends readonly string[]> = {
   readonly __tsMultiSlot: true;
 } & {
   readonly [K in Slots[number]]: string;
+} & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 // ---------------------------------------------------------------------------
@@ -851,6 +902,8 @@ export type SlotComponentConfig<
   V extends SlotVariantDefinitions<Slots[number]>,
 > = {
   slots: Slots;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarConfigInput;
   base?: SlotStyles<Slots[number]>;
   variants?: V;
   compoundVariants?: Array<{
@@ -863,7 +916,9 @@ export type SlotComponentConfig<
 export type SlotComponentFunction<
   Slots extends readonly string[],
   V extends SlotVariantDefinitions<Slots[number]>,
-> = (selections?: ComponentSelections<V>) => Record<Slots[number], string>;
+> = ((selections?: ComponentSelections<V>) => Record<Slots[number], string>) & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
+};
 
 /**
  * Config for `styles.component` may be a plain object or a function that receives {@link ComponentConfigContext}.

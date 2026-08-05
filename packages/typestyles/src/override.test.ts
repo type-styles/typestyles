@@ -3,6 +3,7 @@ import { reset, flushSync, getRegisteredCss } from './sheet';
 import { createStyles } from './styles';
 import { getComponentMeta } from './component-meta';
 import { registeredNamespaces } from './registry';
+import { colorModes } from './color-modes';
 
 describe('styles.override() + __tsMeta', () => {
   beforeEach(() => {
@@ -744,6 +745,227 @@ describe('styles.override() + __tsMeta', () => {
       expect(() =>
         styles.override(button, { base: { color: 'red' } }, { layer: 'overrides' }),
       ).toThrow(/requires `createStyles\(\{ layers:/);
+    });
+  });
+
+  describe('vars overrides', () => {
+    it('emits typed vars on the var host class for dimensioned recipes', () => {
+      const styles = createStyles();
+      const button = styles.component('ov-vars-btn', (c) => {
+        const v = c.vars({
+          background: { value: 'blue', syntax: '<color>' as const },
+          foreground: '#fff',
+        });
+        return {
+          base: {
+            backgroundColor: v.background.var,
+            color: v.foreground.var,
+          },
+        };
+      });
+
+      styles.override(button, {
+        vars: { background: 'crimson', foreground: 'white' },
+        base: { borderRadius: '999px' },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('.ov-vars-btn {');
+      expect(css).toContain('--ov-vars-btn-background: crimson');
+      expect(css).toContain('--ov-vars-btn-foreground: white');
+      expect(css).toContain('border-radius: 999px');
+    });
+
+    it('emits vars on the root slot for slotted recipes', () => {
+      const styles = createStyles();
+      const sideNav = styles.component('ov-vars-nav', (c) => {
+        const v = c.vars({
+          border: { value: '#ccc', syntax: '<color>' as const },
+          headingColor: '#111',
+        });
+        return {
+          slots: ['root', 'heading'] as const,
+          base: {
+            root: { borderColor: v.border.var },
+            heading: { color: v.headingColor.var },
+          },
+        };
+      });
+
+      styles.override(sideNav, {
+        vars: { border: 'transparent', headingColor: 'var(--brand-heading)' },
+        base: { root: { margin: '8px' } },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('.ov-vars-nav {');
+      expect(css).toContain('--ov-vars-nav-border: transparent');
+      expect(css).toContain('--ov-vars-nav-headingcolor: var(--brand-heading)');
+      expect(css).toContain('margin: 8px');
+    });
+
+    it('supports nested vars paths and dotted keys', () => {
+      const styles = createStyles();
+      const layout = styles.component('ov-vars-layout', (c) => {
+        const v = c.vars({
+          padding: { outer: { x: '8px', y: '8px' } },
+        });
+        return {
+          base: { paddingInline: v.padding.outer.x.var, paddingBlock: v.padding.outer.y.var },
+        };
+      });
+
+      styles.override(layout, {
+        vars: {
+          padding: { outer: { x: '24px', y: '16px' } },
+        },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-vars-layout-padding-outer-x: 24px');
+      expect(css).toContain('--ov-vars-layout-padding-outer-y: 16px');
+    });
+
+    it('lets base override the same custom property when both set vars', () => {
+      const styles = createStyles();
+      const chip = styles.component('ov-vars-collision', (c) => {
+        const v = c.vars({ border: '#ccc' });
+        return { base: { borderColor: v.border.var } };
+      });
+
+      styles.override(chip, {
+        vars: { border: 'transparent' },
+        base: { '--ov-vars-collision-border': 'red' },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-vars-collision-border: red');
+      expect(css).toContain('--ov-vars-collision-border: transparent');
+      expect(css.lastIndexOf('--ov-vars-collision-border: red')).toBeGreaterThan(
+        css.lastIndexOf('--ov-vars-collision-border: transparent'),
+      );
+    });
+
+    it('respects selectorPrefix and default overrides layer', () => {
+      const styles = createStyles({
+        layers: ['components', 'overrides'] as const,
+      });
+      const button = styles.component(
+        'ov-vars-layer',
+        (c) => {
+          const v = c.vars({ accent: 'blue' });
+          return { base: { color: v.accent.var } };
+        },
+        { layer: 'components' },
+      );
+
+      styles.override(button, { vars: { accent: 'green' } }, { selectorPrefix: '.theme-acme' });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('@layer overrides');
+      expect(css).toContain('.theme-acme .ov-vars-layer {');
+      expect(css).toContain('--ov-vars-layer-accent: green');
+    });
+
+    it('compiles mode-aware var overrides to light-dark() when colorModes is configured', () => {
+      const styles = createStyles({ colorModes });
+      const chip = styles.component('ov-vars-mode', (c) => {
+        const v = c.vars({ border: { value: '#ccc', syntax: '<color>' as const } });
+        return { base: { borderColor: v.border.var } };
+      });
+
+      styles.override(chip, {
+        vars: { border: { light: '#fff', dark: '#111' } },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-vars-mode-border: light-dark(#fff, #111)');
+    });
+
+    it('emits prefers-dark override for incompatible mode-aware var values', () => {
+      const styles = createStyles({ colorModes });
+      const card = styles.component('ov-vars-mode-shadow', (c) => {
+        const v = c.vars({ glow: '0 0 0 3px blue' });
+        return { base: { boxShadow: v.glow.var } };
+      });
+
+      styles.override(card, {
+        vars: { glow: { light: '0 0 0 3px blue', dark: '0 0 16px navy' } },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-vars-mode-shadow-glow: 0 0 0 3px blue');
+      expect(css).toContain('@media (prefers-color-scheme: dark)');
+      expect(css).toContain('--ov-vars-mode-shadow-glow: 0 0 16px navy');
+    });
+
+    it('warns when vars is set on a component with no registry', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const styles = createStyles();
+      const plain = styles.component('ov-no-vars', { base: { color: 'black' } });
+
+      styles.override(plain, { vars: { border: 'red' } });
+      flushSync();
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('no registered internal vars'));
+      warn.mockRestore();
+    });
+
+    it('attaches varRegistry to component meta from c.vars()', () => {
+      const styles = createStyles();
+      const nav = styles.component('ov-meta-vars', (c) => {
+        c.vars({ border: '#ccc' });
+        return { slots: ['root'] as const, base: { root: { display: 'flex' } } };
+      });
+
+      const meta = getComponentMeta(nav);
+      expect(meta?.varRegistry?.hostSlot).toBe('root');
+      expect(meta?.varRegistry?.byPath.has('border')).toBe(true);
+      expect(meta?.varRegistry?.byPath.get('border')?.name).toBe('--ov-meta-vars-border');
+    });
+
+    it('resolves c.var() paths with the authoring id (not sanitized registry key)', () => {
+      const styles = createStyles();
+      const chip = styles.component('ov-var-path', (c) => {
+        const v = c.var('headingColor', { value: '#111', syntax: '<color>' as const });
+        return { base: { color: v.var } };
+      });
+
+      styles.override(chip, { vars: { headingColor: '#222' } });
+      flushSync();
+
+      expect(getRegisteredCss()).toContain('--ov-var-path-headingcolor: #222');
+    });
+
+    it('overrides split surface-light / surface-dark vars instead of a color-mode pair', () => {
+      const styles = createStyles();
+      const card = styles.component('ov-split-surface', (c) => {
+        const v = c.vars({
+          surface: { light: '#fff', dark: '#111' },
+        });
+        return {
+          base: {
+            backgroundColor: v.surface.light.var,
+            color: v.surface.dark.var,
+          },
+        };
+      });
+
+      styles.override(card, {
+        vars: { surface: { light: '#eee', dark: '#222' } },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-split-surface-surface-light: #eee');
+      expect(css).toContain('--ov-split-surface-surface-dark: #222');
     });
   });
 

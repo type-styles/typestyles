@@ -361,6 +361,56 @@ describe('createStylesWithUtils', () => {
     expect(hiRule.style.getPropertyValue('padding-top')).toBe('20px');
   });
 
+  it('preserves top-level config vars through withUtils component()', () => {
+    const u = createStylesWithUtils({
+      padY: (value: string | number) => ({ paddingTop: value, paddingBottom: value }),
+    });
+
+    const chip = u.component('util-config-vars', {
+      vars: {
+        background: { value: '#fff', syntax: '<color>' as const },
+      },
+      base: {
+        backgroundColor: 'var(--util-config-vars-background)',
+        padY: 8,
+      },
+    });
+
+    expect(chip.vars.background.var).toBe('var(--util-config-vars-background)');
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-config-vars',
+    ) as CSSStyleRule;
+    expect(rule.style.getPropertyValue('padding-top')).toBe('8px');
+    expect(rule.style.getPropertyValue('--util-config-vars-background')).toBe('#fff');
+  });
+
+  it('preserves callback vars: v through withUtils component()', () => {
+    const u = createStylesWithUtils({
+      padY: (value: string | number) => ({ paddingTop: value, paddingBottom: value }),
+    });
+
+    const card = u.component('util-cb-vars', (c) => {
+      const v = c.vars({ accent: 'blue' });
+      return {
+        vars: v,
+        base: { color: v.accent.var, padY: 12 },
+      };
+    });
+
+    expect(card.vars.accent.var).toBe('var(--util-cb-vars-accent)');
+    flushSync();
+
+    const style = document.getElementById('typestyles') as HTMLStyleElement;
+    const rule = Array.from(style.sheet?.cssRules ?? []).find(
+      (r) => r instanceof CSSStyleRule && r.selectorText === '.util-cb-vars',
+    ) as CSSStyleRule;
+    expect(rule.style.getPropertyValue('padding-top')).toBe('12px');
+    expect(rule.style.getPropertyValue('--util-cb-vars-accent')).toBe('blue');
+  });
+
   it('expands utility keys in component() with flat variants', () => {
     const u = createStylesWithUtils({
       marginX: (value: string | number) => ({ marginLeft: value, marginRight: value }),

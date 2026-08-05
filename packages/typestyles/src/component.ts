@@ -7,6 +7,7 @@ import type {
   ComponentConfigContext,
   ComponentConfigInput,
   ComponentReturn,
+  ComponentVarDefinitions,
   FlatComponentConfig,
   FlatComponentConfigInput,
   FlatComponentReturn,
@@ -31,12 +32,19 @@ import {
 } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
 import { serializeStyle } from './serialize-style';
-import { createComponentConfigContextPair } from './component-config-context';
+import {
+  createComponentConfigContextPair,
+  stripAndRegisterConfigVars,
+} from './component-config-context';
 import { attachComposeMeta } from './compose-meta';
 import {
   attachComponentMeta,
+  attachComponentVars,
+  attachVarRegistry,
   buildClassVariantSelectorMap,
   firstClassToken,
+  stampVarDefinitionsBrand,
+  type ComponentVarRegistry,
   type SlotVariantSelectorMap,
   type VariantSelectorMap,
 } from './component-meta';
@@ -44,7 +52,14 @@ import {
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
 // ---------------------------------------------------------------------------
-const RESERVED_KEYS = new Set(['base', 'variants', 'compoundVariants', 'defaultVariants', 'slots']);
+const RESERVED_KEYS = new Set([
+  'base',
+  'variants',
+  'compoundVariants',
+  'defaultVariants',
+  'slots',
+  'vars',
+]);
 
 function devWarnUnknownVariantDimensions(
   namespace: string,
@@ -151,13 +166,62 @@ function resolveComponentConfig(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
-): Record<string, unknown> {
+): {
+  config: Record<string, unknown>;
+  varRegistry?: ComponentVarRegistry;
+  varRefTree?: object;
+  varDefinitions?: ComponentVarDefinitions;
+} {
+  const {
+    ctx,
+    mergeVarDefaultsInto,
+    buildVarRegistry,
+    buildVarRefTree,
+    buildCapturedVarDefinitions,
+  } = createComponentConfigContextPair(classNaming, namespace);
+
   if (typeof config === 'function') {
-    const { ctx, mergeVarDefaultsInto } = createComponentConfigContextPair(classNaming, namespace);
-    const resolved = config(ctx) as Record<string, unknown>;
-    return mergeVarDefaultsInto(resolved);
+    const raw = config(ctx) as Record<string, unknown>;
+    const { config: withoutVars, varDefinitions: defsFromConfig } = stripAndRegisterConfigVars(
+      raw,
+      ctx.vars,
+    );
+    const resolved = mergeVarDefaultsInto(withoutVars);
+    return {
+      config: resolved,
+      varRegistry: buildVarRegistry(resolved),
+      varRefTree: buildVarRefTree(),
+      varDefinitions: defsFromConfig ?? buildCapturedVarDefinitions(),
+    };
   }
-  return config;
+
+  const { config: withoutVars, varDefinitions: defsFromConfig } = stripAndRegisterConfigVars(
+    config,
+    ctx.vars,
+  );
+  if (defsFromConfig) {
+    const resolved = mergeVarDefaultsInto(withoutVars);
+    return {
+      config: resolved,
+      varRegistry: buildVarRegistry(resolved),
+      varRefTree: buildVarRefTree(),
+      varDefinitions: defsFromConfig,
+    };
+  }
+
+  return { config };
+}
+
+function finishComponentResult<T extends object>(
+  result: T,
+  varRegistry?: ComponentVarRegistry,
+  varDefinitions?: ComponentVarDefinitions,
+  varRefTree?: object,
+): T {
+  attachVarRegistry(result, varRegistry);
+  attachComponentVars(result, varRefTree);
+  stampVarDefinitionsBrand(result, varDefinitions);
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -268,6 +332,11 @@ function resolveComponentConfig(
  * Slot recipes return an attrs result for every declared slot; flat configs continue to return
  * plain class strings. See `specs/semantic-and-attribute-mode.md`.
  */
+export type ComponentBuildOptions = {
+  layer?: string;
+  varDefinitions?: ComponentVarDefinitions;
+};
+
 export function createComponent<
   const Slots extends readonly string[],
   V extends SlotVariantDefinitions<Slots[number]>,
@@ -275,36 +344,40 @@ export function createComponent<
   classNaming: ClassNamingConfig,
   namespace: string,
   config: SlotComponentConfigInput<Slots, V>,
-  layer?: string,
+  buildOptions?: ComponentBuildOptions | string,
 ): SlotComponentFunction<Slots, V>;
 
 export function createComponent<const Slots extends readonly string[]>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: MultiSlotConfigInput<Slots>,
-  layer?: string,
+  buildOptions?: ComponentBuildOptions | string,
 ): MultiSlotReturn<Slots>;
 
 export function createComponent<const V extends VariantDefinitions>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: ComponentConfigInput<V>,
-  layer?: string,
+  buildOptions?: ComponentBuildOptions | string,
 ): ComponentReturn<V>;
 
 export function createComponent<const K extends string>(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: FlatComponentConfigInput<K>,
-  layer?: string,
+  buildOptions?: ComponentBuildOptions | string,
 ): FlatComponentReturn<K>;
 
 export function createComponent(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
-  layer?: string,
+  buildOptions?: ComponentBuildOptions | string,
 ): unknown {
+  const options: ComponentBuildOptions =
+    typeof buildOptions === 'string' ? { layer: buildOptions } : (buildOptions ?? {});
+  const { layer, varDefinitions } = options;
+
   if (classNaming.cascadeLayers) {
     if (layer == null || layer === '') {
       throw new Error(
@@ -315,7 +388,15 @@ export function createComponent(
     assertOwnLayer(classNaming.cascadeLayers, layer, `styles.component('${namespace}', …)`);
   }
 
-  const resolved = resolveComponentConfig(classNaming, namespace, config);
+  const {
+    config: resolved,
+    varRegistry,
+    varRefTree,
+    varDefinitions: configVarDefinitions,
+  } = resolveComponentConfig(classNaming, namespace, config);
+  const recipeVarDefinitions = varDefinitions ?? configVarDefinitions;
+  const finish = <T extends object>(result: T) =>
+    finishComponentResult(result, varRegistry, recipeVarDefinitions, varRefTree);
   if (isMultiSlotConfig(resolved)) {
     claimComponentNamespace(classNaming, namespace);
     if (
@@ -324,28 +405,34 @@ export function createComponent(
       classNaming.mode === 'attribute' ||
       classNaming.mode === 'template'
     ) {
-      return createTemplateMultiSlotComponent(
+      return finish(
+        createTemplateMultiSlotComponent(
+          classNaming,
+          namespace,
+          resolved as MultiSlotConfig<readonly string[]>,
+          layer,
+        ),
+      );
+    }
+    return finish(
+      createMultiSlotComponent(
         classNaming,
         namespace,
         resolved as MultiSlotConfig<readonly string[]>,
         layer,
-      );
-    }
-    return createMultiSlotComponent(
-      classNaming,
-      namespace,
-      resolved as MultiSlotConfig<readonly string[]>,
-      layer,
+      ),
     );
   }
   if (isSlotWithVariantsConfig(resolved)) {
     claimComponentNamespace(classNaming, namespace);
     if (classNaming.mode === 'attribute') {
-      return createAttributeSlotComponent(
-        classNaming,
-        namespace,
-        resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
-        layer,
+      return finish(
+        createAttributeSlotComponent(
+          classNaming,
+          namespace,
+          resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
+          layer,
+        ),
       );
     }
     if (
@@ -353,49 +440,56 @@ export function createComponent(
       classNaming.mode === 'semantic' ||
       classNaming.mode === 'template'
     ) {
-      return createTemplateSlotComponent(
+      return finish(
+        createTemplateSlotComponent(
+          classNaming,
+          namespace,
+          resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
+          layer,
+        ),
+      );
+    }
+    return finish(
+      createSlotComponent(
         classNaming,
         namespace,
         resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
         layer,
-      );
-    }
-    return createSlotComponent(
-      classNaming,
-      namespace,
-      resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
-      layer,
+      ),
     );
   }
   if (isDimensionedConfig(resolved)) {
     claimComponentNamespace(classNaming, namespace);
     const dimensionedConfig = resolved as ComponentConfig<VariantDefinitions>;
     if (classNaming.mode === 'attribute') {
-      return createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
+      return finish(
+        createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer),
+      );
     }
     if (
       classNaming.mode === 'bem' ||
       classNaming.mode === 'semantic' ||
       classNaming.mode === 'template'
     ) {
-      return createTemplateDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
+      return finish(
+        createTemplateDimensionedComponent(classNaming, namespace, dimensionedConfig, layer),
+      );
     }
-    return createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer);
+    return finish(createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer));
   }
   claimComponentNamespace(classNaming, namespace);
   if (classNaming.mode === 'semantic' || classNaming.mode === 'attribute') {
-    return createSemanticFlatComponent(
-      classNaming,
-      namespace,
-      resolved as FlatComponentConfig<string>,
-      layer,
+    return finish(
+      createSemanticFlatComponent(
+        classNaming,
+        namespace,
+        resolved as FlatComponentConfig<string>,
+        layer,
+      ),
     );
   }
-  return createFlatComponent(
-    classNaming,
-    namespace,
-    resolved as FlatComponentConfig<string>,
-    layer,
+  return finish(
+    createFlatComponent(classNaming, namespace, resolved as FlatComponentConfig<string>, layer),
   );
 }
 

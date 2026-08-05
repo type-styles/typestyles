@@ -1,4 +1,6 @@
 import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
+import type { ComponentVarRegistry, RegisteredComponentVar } from './component-meta';
+import { finalizeVarRegistry } from './component-var-overrides';
 import {
   createRegisteredPropertyRef,
   registerAtPropertyRule,
@@ -17,6 +19,7 @@ import type {
   InferFromSchema,
   PropertyRegistration,
 } from './types';
+import { componentVarDefinitionsKey } from './types';
 
 function isVarDescriptor(o: unknown): o is ComponentVarDescriptor {
   return (
@@ -134,6 +137,108 @@ function createVarRefsProxy(
   return new Proxy({}, handler);
 }
 
+/** Build the ref tree for all vars registered on this component context so far. */
+export function buildVarRefTreeFromRegistry(
+  refByPath: Map<string, ComponentInternalVarRef>,
+  pathKeys?: Set<string>,
+): ComponentVarRefTree<ComponentVarDefinitions> | undefined {
+  if (refByPath.size === 0) return undefined;
+  const allPathKeys = pathKeys ?? new Set<string>();
+  if (!pathKeys) {
+    for (const path of refByPath.keys()) {
+      for (const p of pathPrefixes(path)) {
+        allPathKeys.add(p);
+      }
+    }
+  }
+  return createVarRefsProxy(
+    refByPath,
+    allPathKeys,
+    '',
+  ) as ComponentVarRefTree<ComponentVarDefinitions>;
+}
+
+function mergeComponentVarDefinitions(
+  a: ComponentVarDefinitions,
+  b: ComponentVarDefinitions,
+): ComponentVarDefinitions {
+  const result: ComponentVarDefinitions = { ...a };
+
+  for (const [key, value] of Object.entries(b)) {
+    const existing = result[key];
+    if (
+      existing != null &&
+      typeof existing === 'object' &&
+      !Array.isArray(existing) &&
+      !isVarDescriptor(existing) &&
+      typeof value === 'object' &&
+      value != null &&
+      !Array.isArray(value) &&
+      !isVarDescriptor(value)
+    ) {
+      result[key] = mergeComponentVarDefinitions(
+        existing as ComponentVarDefinitions,
+        value as ComponentVarDefinitions,
+      );
+    } else {
+      result[key] = value as ComponentVarNode;
+    }
+  }
+
+  return result;
+}
+
+function attachVarDefinitionsBrand<T extends ComponentVarDefinitions>(
+  tree: ComponentVarRefTree<T>,
+  definitions: T,
+): ComponentVarRefTree<T> {
+  Object.defineProperty(tree, componentVarDefinitionsKey, {
+    value: definitions,
+    enumerable: false,
+    writable: false,
+    configurable: true,
+  });
+  return tree;
+}
+
+/** Read definitions stamped on a `ctx.vars()` ref tree. */
+export function getComponentVarDefinitionsFromInput(
+  input: unknown,
+): ComponentVarDefinitions | undefined {
+  if (input == null || typeof input !== 'object' || Array.isArray(input)) return undefined;
+  const branded = (input as Record<string, unknown>)[componentVarDefinitionsKey];
+  if (branded == null || typeof branded !== 'object' || Array.isArray(branded)) return undefined;
+  return branded as ComponentVarDefinitions;
+}
+
+/**
+ * Register a top-level `vars` block from a component config and return the recipe without `vars`.
+ */
+export function stripAndRegisterConfigVars(
+  config: Record<string, unknown>,
+  registerVars: ComponentConfigContext['vars'],
+): {
+  config: Record<string, unknown>;
+  varRefTree?: ComponentVarRefTree<ComponentVarDefinitions>;
+  varDefinitions?: ComponentVarDefinitions;
+} {
+  const varsInput = config.vars;
+  if (varsInput == null || typeof varsInput !== 'object' || Array.isArray(varsInput)) {
+    return { config };
+  }
+
+  const defsFromRefTree = getComponentVarDefinitionsFromInput(varsInput);
+  if (defsFromRefTree) {
+    const { vars: _vars, ...rest } = config;
+    return { config: rest, varDefinitions: defsFromRefTree };
+  }
+
+  const varDefinitions = varsInput as ComponentVarDefinitions;
+  const varRefTree = registerVars(varDefinitions);
+  const { vars: _vars, ...rest } = config;
+  return { config: rest, varRefTree, varDefinitions };
+}
+
 function declareVarSchema(
   schema: ComponentVarSchema,
   registerRef: (logicalPath: string) => ComponentInternalVarRef,
@@ -182,6 +287,9 @@ export function createComponentConfigContextPair(
 ): {
   ctx: ComponentConfigContext;
   mergeVarDefaultsInto: (config: Record<string, unknown>) => Record<string, unknown>;
+  buildVarRegistry: (config: Record<string, unknown>) => ComponentVarRegistry | undefined;
+  buildVarRefTree: () => ComponentVarRefTree<ComponentVarDefinitions> | undefined;
+  buildCapturedVarDefinitions: () => ComponentVarDefinitions | undefined;
 } {
   const seen = new Set<string>();
   const ns = scopedTokenNamespace(
@@ -190,6 +298,38 @@ export function createComponentConfigContextPair(
   );
 
   const varBaseDefaults: Record<string, string> = {};
+  const registeredVars: RegisteredComponentVar[] = [];
+  const byPath = new Map<string, RegisteredComponentVar>();
+  const varRefByPath = new Map<string, ComponentInternalVarRef>();
+  let capturedVarDefinitions: ComponentVarDefinitions | undefined;
+
+  function captureVarDefinitions<const T extends ComponentVarDefinitions>(definitions: T): T {
+    capturedVarDefinitions = capturedVarDefinitions
+      ? mergeComponentVarDefinitions(capturedVarDefinitions, definitions)
+      : definitions;
+    return definitions;
+  }
+
+  function trackVarRef(logicalPath: string, ref: ComponentInternalVarRef): void {
+    varRefByPath.set(logicalPath, ref);
+  }
+
+  function trackRegisteredVar(
+    logicalPath: string,
+    name: string,
+    entry?: { syntax?: string; defaultValue?: string },
+  ): void {
+    const reg: RegisteredComponentVar = {
+      path: logicalPath,
+      name,
+      syntax: entry?.syntax,
+      defaultValue: entry?.defaultValue,
+    };
+    if (!byPath.has(logicalPath)) {
+      registeredVars.push(reg);
+    }
+    byPath.set(logicalPath, reg);
+  }
 
   function trackSeen(safeId: string, label: string): void {
     if (seen.has(safeId)) {
@@ -204,15 +344,47 @@ export function createComponentConfigContextPair(
     }
   }
 
+  function mergeVarValueOntoExisting(
+    logicalPath: string,
+    name: string,
+    entry: { value: string; syntax?: string; inherits?: boolean; initial?: string | number },
+  ): void {
+    varBaseDefaults[name] = entry.value;
+    const reg = byPath.get(logicalPath);
+    if (reg) {
+      reg.defaultValue = entry.value;
+      if (entry.syntax != null) reg.syntax = entry.syntax;
+    }
+    if (entry.syntax != null) {
+      registerAtPropertyRule(name, {
+        value: entry.value,
+        syntax: entry.syntax,
+        inherits: entry.inherits ?? true,
+        initial: entry.initial,
+      });
+    }
+  }
+
   function registerVarValue(
     logicalPath: string,
     entry: { value: string; syntax?: string; inherits?: boolean; initial?: string | number },
   ): ComponentInternalVarRef {
     const safeId = sanitizeClassSegment(logicalPath);
+    const name = `--${ns}-${safeId}`;
+
+    const existing = varRefByPath.get(logicalPath);
+    if (existing) {
+      mergeVarValueOntoExisting(logicalPath, name, entry);
+      return existing;
+    }
+
     trackSeen(safeId, `internal var path "${logicalPath}"`);
 
-    const name = `--${ns}-${safeId}`;
     varBaseDefaults[name] = entry.value;
+    trackRegisteredVar(logicalPath, name, {
+      syntax: entry.syntax,
+      defaultValue: entry.value,
+    });
 
     if (entry.syntax != null) {
       registerAtPropertyRule(name, {
@@ -223,7 +395,9 @@ export function createComponentConfigContextPair(
       });
     }
 
-    return createRegisteredPropertyRef(name);
+    const ref = createRegisteredPropertyRef(name);
+    trackVarRef(logicalPath, ref);
+    return ref;
   }
 
   function declareVarFn(id: string, registration: PropertyRegistration): ComponentInternalVarRef {
@@ -234,7 +408,10 @@ export function createComponentConfigContextPair(
       ...registration,
       inherits: registration.inherits ?? true,
     });
-    return createRegisteredPropertyRef(name);
+    trackRegisteredVar(id, name);
+    const ref = createRegisteredPropertyRef(name);
+    trackVarRef(id, ref);
+    return ref;
   }
 
   function varFn(id: string, options?: ComponentVarOptions): ComponentInternalVarRef {
@@ -243,7 +420,7 @@ export function createComponentConfigContextPair(
       options?.value !== undefined && options?.value !== null ? String(options.value) : undefined;
 
     if (valueStr !== undefined) {
-      return registerVarValue(safePath, {
+      return registerVarValue(id, {
         value: valueStr,
         syntax: options?.syntax,
         inherits: options?.inherits,
@@ -253,19 +430,22 @@ export function createComponentConfigContextPair(
 
     trackSeen(safePath, `internal var "${id}"`);
     const name = `--${ns}-${safePath}`;
-    return createRegisteredPropertyRef(name);
+    trackRegisteredVar(id, name);
+    const ref = createRegisteredPropertyRef(name);
+    trackVarRef(id, ref);
+    return ref;
   }
 
   function varsFn<const T extends ComponentVarDefinitions>(definitions: T): ComponentVarRefTree<T> {
     const entries = flattenComponentVars(definitions);
-    const refByPath = new Map<string, ComponentInternalVarRef>();
     const allPathKeys = collectPathKeys(entries);
 
     for (const e of entries) {
-      refByPath.set(e.path, registerVarValue(e.path, e));
+      registerVarValue(e.path, e);
     }
 
-    return createVarRefsProxy(refByPath, allPathKeys, '') as ComponentVarRefTree<T>;
+    const tree = buildVarRefTreeFromRegistry(varRefByPath, allPathKeys)! as ComponentVarRefTree<T>;
+    return attachVarDefinitionsBrand(tree, captureVarDefinitions(definitions));
   }
 
   function varsDeclareFn<const T extends ComponentVarSchema>(
@@ -279,7 +459,10 @@ export function createComponentConfigContextPair(
       const safeId = sanitizeClassSegment(path);
       trackSeen(safeId, `internal var path "${path}"`);
       const name = `--${ns}-${safeId}`;
-      refByPath.set(path, createRegisteredPropertyRef(name));
+      trackRegisteredVar(path, name);
+      const ref = createRegisteredPropertyRef(name);
+      trackVarRef(path, ref);
+      refByPath.set(path, ref);
     }
 
     declareVarSchema(schema, (logicalPath) => {
@@ -288,7 +471,7 @@ export function createComponentConfigContextPair(
       return ref;
     });
 
-    return createVarRefsProxy(refByPath, allPathKeys, '') as ComponentVarRefTree<
+    return buildVarRefTreeFromRegistry(refByPath, allPathKeys)! as unknown as ComponentVarRefTree<
       InferFromSchema<T>
     >;
   }
@@ -301,5 +484,9 @@ export function createComponentConfigContextPair(
     ctx,
     mergeVarDefaultsInto: (config: Record<string, unknown>) =>
       mergeComponentVarDefaultsInto(config, varBaseDefaults),
+    buildVarRegistry: (config: Record<string, unknown>) =>
+      finalizeVarRegistry(registeredVars, byPath, config),
+    buildVarRefTree: () => buildVarRefTreeFromRegistry(varRefByPath),
+    buildCapturedVarDefinitions: () => capturedVarDefinitions,
   };
 }

@@ -8,10 +8,16 @@ import {
   type SlotComponentMeta,
   type VariantSelectorMap,
 } from './component-meta';
+import {
+  expandVarOverrideDeclarations,
+  resolveVarHostClass,
+  resolveVarOverrides,
+} from './component-var-overrides';
 import { serializeStyle } from './serialize-style';
 import { applyLayerToRules, assertOwnLayer } from './layers';
 import { insertRules } from './sheet';
 import { joinSelectorAlternatives } from './compound-selector';
+import { when } from './theme';
 import {
   compileThemeCondition,
   buildSelectorForContext,
@@ -21,9 +27,13 @@ import {
 import type {
   ComponentAttrsReturn,
   ComponentReturn,
+  ComponentVarDefinitions,
+  ComponentVarDescriptor,
+  ComponentVarNode,
   CompoundSelectionValue,
   ConditionalOverride,
   CSSProperties,
+  CSSVarRef,
   FlatComponentReturn,
   MultiSlotReturn,
   SlotAttrsReturn,
@@ -49,20 +59,35 @@ export type OverrideOptions<L extends string = string> = {
   layer?: L;
 };
 
-export type OverrideConfig<V extends VariantDefinitions> = {
+/** Leaf values assignable to a component internal var in `styles.override({ vars })`. */
+export type ComponentVarAssignValue = string | number | CSSVarRef | { light: string; dark: string };
+
+/** Map logical definition tree → partial assignment tree for override `vars`. */
+export type ComponentVarValues<T extends ComponentVarDefinitions> = {
+  [K in keyof T]?: T[K] extends ComponentVarDescriptor | string | number
+    ? ComponentVarAssignValue
+    : T[K] extends { [key: string]: ComponentVarNode }
+      ? ComponentVarValues<{ [P in keyof T[K]]: T[K][P] }>
+      : never;
+};
+
+export type OverrideConfig<
+  V extends VariantDefinitions,
+  Vars extends ComponentVarDefinitions = never,
+> = {
   base?: StylableOverride;
   variants?: { [K in keyof V]?: { [O in keyof V[K]]?: StylableOverride } };
   compoundVariants?: Array<{
     variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
     style: StylableOverride;
   }>;
-  /** Reserved for phase 2 — typed component vars. */
-  vars?: never;
+  vars?: Vars extends never ? never : Partial<ComponentVarValues<Vars>>;
 };
 
 export type SlotOverrideConfig<
   Slots extends readonly string[],
   V extends SlotVariantDefinitions<Slots[number]>,
+  Vars extends ComponentVarDefinitions = never,
 > = {
   base?: Partial<Record<Slots[number], StylableOverride>>;
   variants?: {
@@ -74,17 +99,23 @@ export type SlotOverrideConfig<
     variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
     style: Partial<Record<Slots[number], StylableOverride>>;
   }>;
+  vars?: Vars extends never ? never : Partial<ComponentVarValues<Vars>>;
 };
 
-export type MultiSlotOverrideConfig<Slots extends readonly string[]> = {
+export type MultiSlotOverrideConfig<
+  Slots extends readonly string[],
+  Vars extends ComponentVarDefinitions = never,
+> = {
   base?: Partial<Record<Slots[number], StylableOverride>>;
   /** Multi-slot recipes have no variants — forbidden so excess keys type-error. */
   variants?: never;
   compoundVariants?: never;
+  vars?: Vars extends never ? never : Partial<ComponentVarValues<Vars>>;
 };
 
-export type FlatOverrideConfig<K extends string> = {
+export type FlatOverrideConfig<K extends string, Vars extends ComponentVarDefinitions = never> = {
   base?: StylableOverride;
+  vars?: Vars extends never ? never : Partial<ComponentVarValues<Vars>>;
 } & Partial<Record<Exclude<K, 'base'>, StylableOverride>>;
 
 type AnyOverrideConfig =
@@ -368,6 +399,60 @@ function warnDev(message: string): void {
   console.warn(`[typestyles] ${message}`);
 }
 
+function emitVarOverrides(
+  classNaming: ClassNamingConfig,
+  meta: ComponentMeta,
+  config: Record<string, unknown>,
+  options: OverrideOptions<string> | undefined,
+): void {
+  const varsInput = config.vars;
+  if (varsInput == null || typeof varsInput !== 'object' || Array.isArray(varsInput)) return;
+  if (Object.keys(varsInput).length === 0) return;
+
+  const registry = meta.varRegistry;
+  if (!registry) {
+    warnDev(
+      'styles.override() `vars` was set but the component has no registered internal vars ' +
+        '(declare them with top-level config `vars` or `c.vars()` in the recipe).',
+    );
+    return;
+  }
+
+  const hostClass = resolveVarHostClass(meta, registry);
+  if (!hostClass) {
+    warnDev('styles.override() `vars` requires a resolvable var host class on the component.');
+    return;
+  }
+
+  const declarations = resolveVarOverrides(registry, varsInput as Record<string, unknown>);
+  if (Object.keys(declarations).length === 0) return;
+
+  const { expanded, darkOnly } = expandVarOverrideDeclarations(
+    declarations,
+    classNaming.colorModes,
+  );
+
+  emitUnconditionalRules(
+    classNaming,
+    `.${hostClass}`,
+    expanded as VariantOptionStyle,
+    options,
+    'vars',
+  );
+
+  if (darkOnly && Object.keys(darkOnly).length > 0) {
+    emitStyledSelector(
+      classNaming,
+      `.${hostClass}`,
+      {
+        conditions: [conditional(when.prefersDark, darkOnly as VariantOptionStyle, 'vars-dark')],
+      },
+      options,
+      'vars-dark',
+    );
+  }
+}
+
 /**
  * Resolve the cascade layer for an override emission.
  * When the instance has layers and callers omit `layer`, default to `"overrides"`
@@ -604,6 +689,9 @@ export function createOverride(
   const resolvedOptions: OverrideOptions<string> | undefined =
     layer != null ? { ...options, layer } : options;
 
+  const configRecord = config as Record<string, unknown>;
+  emitVarOverrides(classNaming, meta, configRecord, resolvedOptions);
+
   switch (meta.kind) {
     case 'dimensioned':
       emitDimensionedOverride(
@@ -636,25 +724,41 @@ export function createOverride(
 }
 
 /**
+ * Infer var definitions stamped on a component return (`varDefinitions` option or Pattern A export).
+ */
+export type InferVarDefinitions<C> = C extends {
+  readonly __varDefinitions: infer D extends ComponentVarDefinitions;
+}
+  ? D
+  : never;
+
+/**
  * Infer the `styles.override()` config shape from a component return type.
  * Branches mirror {@link OverrideFn}.
  */
-export type OverrideConfigFor<C> = C extends
-  | ComponentReturn<infer V>
-  | ComponentAttrsReturn<infer V>
-  ? OverrideConfig<V>
+export type OverrideConfigFor<
+  C,
+  Vars extends ComponentVarDefinitions = InferVarDefinitions<C>,
+> = C extends ComponentReturn<infer V> | ComponentAttrsReturn<infer V>
+  ? OverrideConfig<V, Vars>
   : C extends FlatComponentReturn<infer K>
-    ? FlatOverrideConfig<K>
+    ? FlatOverrideConfig<K, Vars>
     : C extends MultiSlotReturn<infer Slots>
-      ? MultiSlotOverrideConfig<Slots>
+      ? MultiSlotOverrideConfig<Slots, Vars>
       : C extends
             | SlotComponentFunction<infer Slots, infer V>
             | SlotAttrsReturn<infer Slots, infer V>
-        ? SlotOverrideConfig<Slots, V>
+        ? SlotOverrideConfig<Slots, V, Vars>
         : never;
 
 /** Overload surface mirrored on `styles.override`. */
 export type OverrideFn<L extends string = string> = {
+  /** Recipes with stamped `__varDefinitions` (config `vars` or `{ varDefinitions }` option). */
+  <C extends { readonly __varDefinitions: ComponentVarDefinitions }>(
+    component: C,
+    config: OverrideConfigFor<C>,
+    options?: OverrideOptions<L>,
+  ): void;
   <const V extends VariantDefinitions>(
     component: ComponentReturn<V> | ComponentAttrsReturn<V>,
     config: OverrideConfig<NoInfer<V>>,

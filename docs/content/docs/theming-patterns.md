@@ -1022,6 +1022,47 @@ beat recipe CSS without fighting specificity. When `createStyles({ layers })`
 includes an `"overrides"` layer, omitting `{ layer }` defaults to that name —
 custom stacks without `"overrides"` must pass `{ layer }` explicitly.
 
+#### Override component internal vars
+
+When a recipe exposes themeable surfaces with `c.vars()` or top-level config **`vars`**,
+consumers override them with the matching top-level **`vars`** block on
+`styles.override()` (typed logical keys) or token/theme CSS on the var host.
+
+```ts
+const sideNav = styles.component('side-nav', (c) => {
+  const v = c.vars({
+    border: { value: '#ccc', syntax: '<color>' as const },
+    headingColor: '#111',
+  });
+  return {
+    vars: v,
+    slots: ['root', 'heading'] as const,
+    base: {
+      root: { borderColor: v.border.var },
+      heading: { color: v.headingColor.var },
+    },
+  };
+});
+
+// sideNav.vars.border.var — same paths consumers override below
+styles.override(
+  sideNav,
+  {
+    vars: { border: 'transparent', headingColor: 'var(--brand-heading)' },
+    base: { root: { margin: '8px', borderRadius: '12px' } },
+  },
+  { selectorPrefix: '.theme-acme', layer: 'overrides' },
+);
+// => .theme-acme .side-nav { --side-nav-border: transparent; …; margin: 8px; … }
+```
+
+Use `vars: v` so `OverrideConfigFor<typeof sideNav>` infers theme keys — no need to repeat
+the definition object. `c.vars()` alone auto-stamps runtime metadata when you omit `vars`.
+
+Var overrides emit on the **var host class** (same element that owns default var
+declarations from the recipe). They compose with `base` slot overrides on that host;
+if both set the same custom property, **`base` wins**.
+
 #### Mode-aware property values (`colorModes`)
 
 Register color modes once on the styles instance, then use `{ light, dark }` on color
@@ -1086,11 +1127,12 @@ footgun as plain descendant CSS — use Tier 1 vars or [`styles.scope()`](#tier-
 ### Tier 1 — component-scoped CSS custom properties (preferred)
 
 If a component author exposed a property as a CSS custom property (`ctx.vars` /
-`c.vars`), consumers override it per theme with ordinary token or theme CSS. Custom
-properties inherit down the DOM and reset at each `.theme-*` boundary, so nested
-themes stay proximity-correct with no extra tooling.
+`c.vars`), consumers override it per theme with **`styles.override({ vars })`** (typed
+logical keys) or ordinary token/theme CSS on the var host. Custom properties inherit
+down the DOM and reset at each `.theme-*` boundary, so nested themes stay
+proximity-correct with no extra tooling.
 
-See [Components — expose themeable properties as vars](/docs/components#expose-themeable-properties-as-vars).
+See [Components — expose themeable properties as vars](/docs/components#expose-themeable-properties-as-vars) and [override internal vars in themes](/docs/components#override-internal-vars-in-themes).
 
 ### Tier 2 — plain CSS against semantic class names
 

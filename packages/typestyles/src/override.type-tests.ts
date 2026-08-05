@@ -323,3 +323,118 @@ const multiBad: OverrideConfigFor<typeof multi> = {
   variants: { tone: { danger: { root: { color: 'red' } } } },
 };
 void multiBad;
+
+// Typed override vars — auto-stamped from c.vars(); use vars: v for override typing
+const sideNavVarDefinitions = {
+  border: { value: '1px solid #ccc', syntax: '<color>' as const },
+  headingColor: { value: '#111', syntax: '<color>' as const },
+} as const;
+
+const sideNav = styles.component('ov-type-vars-nav', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
+  return {
+    vars: v,
+    slots: ['root'] as const,
+    base: { root: { borderColor: v.border.var, color: v.headingColor.var } },
+  };
+});
+void sideNav;
+
+type SideNavOverride = OverrideConfigFor<typeof sideNav>;
+const sideNavVarsOk: SideNavOverride = {
+  vars: { border: 'transparent', headingColor: 'var(--brand-heading)' },
+  base: { root: { margin: '8px' } },
+};
+void sideNavVarsOk;
+
+const sideNavVarsBad: SideNavOverride = {
+  vars: {
+    // @ts-expect-error — unknown var key
+    missing: 'x',
+  },
+};
+void sideNavVarsBad;
+
+// Auto-stamp at runtime when vars is omitted — override typing still needs vars: v or Pattern B
+const sideNavAutoStamp = styles.component('ov-type-vars-auto', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
+  return {
+    slots: ['root'] as const,
+    base: { root: { borderColor: v.border.var } },
+  };
+});
+void sideNavAutoStamp;
+
+type SideNavAutoOverride = OverrideConfigFor<typeof sideNavAutoStamp, typeof sideNavVarDefinitions>;
+const sideNavAutoOk: SideNavAutoOverride = {
+  vars: { border: 'transparent' },
+};
+void sideNavAutoOk;
+
+const layoutVarDefinitions = {
+  padding: { outer: { x: '8px', y: '8px' } },
+} as const;
+
+const layoutRecipe = styles.component('ov-type-vars-layout', (c) => {
+  const v = c.vars(layoutVarDefinitions);
+  return {
+    vars: v,
+    base: {
+      paddingInline: v.padding.outer.x.var,
+      paddingBlock: v.padding.outer.y.var,
+    },
+  };
+});
+void layoutRecipe;
+
+type LayoutOverride = OverrideConfigFor<typeof layoutRecipe>;
+const layoutVarsOk: LayoutOverride = {
+  vars: { padding: { outer: { x: '24px' } } },
+};
+void layoutVarsOk;
+
+// Pattern B — varDefinitions option stamps __varDefinitions for inference
+const brandedNav = styles.component('ov-type-branded-nav', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
+  return {
+    vars: v,
+    slots: ['root'] as const,
+    base: { root: { borderColor: v.border.var } },
+  };
+});
+void brandedNav;
+
+const brandedVarsOk: OverrideConfigFor<typeof brandedNav> = {
+  vars: { border: 'transparent' },
+};
+void brandedVarsOk;
+
+// Call-site typing for Pattern B
+styles.override(brandedNav, { vars: { border: 'transparent' } });
+// @ts-expect-error — unknown var key
+styles.override(brandedNav, { vars: { missing: 'x' } });
+
+// Top-level config vars stamp __varDefinitions — OverrideConfigFor infers without a second generic
+const configVarsNav = styles.component('ov-config-vars-nav', {
+  vars: sideNavVarDefinitions,
+  slots: ['root'] as const,
+  base: { root: { display: 'flex' } },
+});
+void configVarsNav;
+
+const configVarsOk: OverrideConfigFor<typeof configVarsNav> = {
+  vars: { border: 'transparent' },
+};
+void configVarsOk;
+
+styles.override(configVarsNav, { vars: { border: 'transparent' } });
+// @ts-expect-error — unknown var key
+styles.override(configVarsNav, { vars: { missing: 'x' } });
+
+// Recipes without var schema forbid vars on OverrideConfigFor
+const noVarsOverride: OverrideConfigFor<typeof button> = {
+  base: { color: 'red' },
+  // @ts-expect-error — component has no varDefinitions / __varDefinitions brand
+  vars: { background: 'crimson' },
+};
+void noVarsOverride;
