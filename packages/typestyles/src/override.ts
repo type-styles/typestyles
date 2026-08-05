@@ -408,7 +408,7 @@ function emitVarOverrides(
   if (!registry) {
     warnDev(
       'styles.override() `vars` was set but the component has no registered internal vars ' +
-        '(declare them with c.vars() in the recipe factory).',
+        '(declare them with top-level config `vars` or `c.vars()` in the recipe).',
     );
     return;
   }
@@ -731,6 +731,12 @@ export type OverrideConfigFor<
 
 /** Overload surface mirrored on `styles.override`. */
 export type OverrideFn<L extends string = string> = {
+  /** Recipes with stamped `__varDefinitions` (config `vars` or `{ varDefinitions }` option). */
+  <C extends { readonly __varDefinitions: ComponentVarDefinitions }>(
+    component: C,
+    config: OverrideConfigFor<C>,
+    options?: OverrideOptions<L>,
+  ): void;
   <const V extends VariantDefinitions>(
     component: ComponentReturn<V> | ComponentAttrsReturn<V>,
     config: OverrideConfig<NoInfer<V>>,

@@ -394,6 +394,11 @@ const brandedVarsOk: OverrideConfigFor<typeof brandedNav> = {
 };
 void brandedVarsOk;
 
+// Call-site typing for Pattern B
+styles.override(brandedNav, { vars: { border: 'transparent' } });
+// @ts-expect-error — unknown var key
+styles.override(brandedNav, { vars: { missing: 'x' } });
+
 // Top-level config vars stamp __varDefinitions — OverrideConfigFor infers without a second generic
 const configVarsNav = styles.component('ov-config-vars-nav', {
   vars: sideNavVarDefinitions,
@@ -402,10 +407,14 @@ const configVarsNav = styles.component('ov-config-vars-nav', {
 });
 void configVarsNav;
 
-const configVarsOk: OverrideConfigFor<typeof configVarsNav, typeof sideNavVarDefinitions> = {
+const configVarsOk: OverrideConfigFor<typeof configVarsNav> = {
   vars: { border: 'transparent' },
 };
 void configVarsOk;
+
+styles.override(configVarsNav, { vars: { border: 'transparent' } });
+// @ts-expect-error — unknown var key
+styles.override(configVarsNav, { vars: { missing: 'x' } });
 
 // Recipes without var schema forbid vars on OverrideConfigFor
 const noVarsOverride: OverrideConfigFor<typeof button> = {

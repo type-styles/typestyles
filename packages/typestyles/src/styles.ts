@@ -10,11 +10,14 @@ import type {
   ComponentConfigInput,
   ComponentReturn,
   FlatComponentConfigInput,
+  FlatComponentConfig,
   FlatComponentReturn,
   SlotVariantDefinitions,
+  SlotComponentConfig,
   SlotComponentConfigInput,
   SlotComponentFunction,
   MultiSlotConfigInput,
+  MultiSlotConfig,
   MultiSlotReturn,
   ComponentVarDefinitions,
   StylesPropertyFn,
@@ -314,10 +317,14 @@ export type StylesApi = {
   class: (name: string, properties: CSSProperties) => string;
   hashClass: (properties: CSSProperties, label?: string) => string;
   component: {
-    <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
+    <
+      const Slots extends readonly string[],
+      V extends SlotVariantDefinitions<Slots[number]>,
+      const Vars extends ComponentVarDefinitions,
+    >(
       namespace: string,
-      config: SlotComponentConfigInput<Slots, V>,
-    ): SlotComponentFunction<Slots, V>;
+      config: SlotComponentConfig<Slots, V> & { vars: Vars },
+    ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
     <
       const Slots extends readonly string[],
       V extends SlotVariantDefinitions<Slots[number]>,
@@ -327,33 +334,49 @@ export type StylesApi = {
       config: SlotComponentConfigInput<Slots, V>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
     ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
-    <const Slots extends readonly string[]>(
+    <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
       namespace: string,
-      config: MultiSlotConfigInput<Slots>,
-    ): MultiSlotReturn<Slots>;
+      config: SlotComponentConfigInput<Slots, V>,
+    ): SlotComponentFunction<Slots, V>;
+    <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: MultiSlotConfig<Slots> & { vars: Vars },
+    ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
     <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
       namespace: string,
       config: MultiSlotConfigInput<Slots>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
     ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
-    <const V extends VariantDefinitions>(
+    <const Slots extends readonly string[]>(
       namespace: string,
-      config: ComponentConfigInput<V>,
-    ): ComponentReturn<V>;
+      config: MultiSlotConfigInput<Slots>,
+    ): MultiSlotReturn<Slots>;
+    <const V extends VariantDefinitions, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: ComponentConfig<V> & { vars: Vars },
+    ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
     <const V extends VariantDefinitions, const Vars extends ComponentVarDefinitions>(
       namespace: string,
       config: ComponentConfigInput<V>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
     ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
-    <const K extends string>(
+    <const V extends VariantDefinitions>(
       namespace: string,
-      config: FlatComponentConfigInput<K>,
-    ): FlatComponentReturn<K>;
+      config: ComponentConfigInput<V>,
+    ): ComponentReturn<V>;
+    <const K extends string, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: FlatComponentConfig<K> & { vars: Vars },
+    ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
     <const K extends string, const Vars extends ComponentVarDefinitions>(
       namespace: string,
       config: FlatComponentConfigInput<K>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
     ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
+    <const K extends string>(
+      namespace: string,
+      config: FlatComponentConfigInput<K>,
+    ): FlatComponentReturn<K>;
   };
   withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApi<U>;
   compose: typeof compose;
@@ -405,21 +428,45 @@ export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>
 };
 
 export type LayeredComponentFn<L extends string> = {
+  <
+    const Slots extends readonly string[],
+    V extends SlotVariantDefinitions<Slots[number]>,
+    const Vars extends ComponentVarDefinitions,
+  >(
+    namespace: string,
+    config: SlotComponentConfig<Slots, V> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
   <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
     namespace: string,
     config: SlotComponentConfigInput<Slots, V>,
     options: LayerOption<L>,
   ): SlotComponentFunction<Slots, V>;
+  <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: MultiSlotConfig<Slots> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
   <const Slots extends readonly string[]>(
     namespace: string,
     config: MultiSlotConfigInput<Slots>,
     options: LayerOption<L>,
   ): MultiSlotReturn<Slots>;
+  <const V extends VariantDefinitions, const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: ComponentConfig<V> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
   <const V extends VariantDefinitions>(
     namespace: string,
     config: ComponentConfigInput<V>,
     options: LayerOption<L>,
   ): ComponentReturn<V>;
+  <const K extends string, const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: FlatComponentConfig<K> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
   <const K extends string>(
     namespace: string,
     config: FlatComponentConfigInput<K>,
@@ -428,21 +475,45 @@ export type LayeredComponentFn<L extends string> = {
 };
 
 export type LayeredComponentFnWithUtils<L extends string> = {
+  <
+    const Slots extends readonly string[],
+    V extends SlotVariantDefinitions<Slots[number]>,
+    const Vars extends ComponentVarDefinitions,
+  >(
+    namespace: string,
+    config: SlotComponentConfig<Slots, V> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
   <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
     namespace: string,
     config: SlotComponentConfigInput<Slots, V>,
     options: LayerOption<L>,
   ): SlotComponentFunction<Slots, V>;
+  <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: MultiSlotConfig<Slots> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
   <const Slots extends readonly string[]>(
     namespace: string,
     config: MultiSlotConfigInput<Slots>,
     options: LayerOption<L>,
   ): MultiSlotReturn<Slots>;
+  <const V extends VariantDefinitions, const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: ComponentConfig<V> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
   <const V extends VariantDefinitions>(
     namespace: string,
     config: ComponentConfigInput<V>,
     options: LayerOption<L>,
   ): ComponentReturn<V>;
+  <const K extends string, const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: FlatComponentConfig<K> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
   <const K extends string>(
     namespace: string,
     config: FlatComponentConfigInput<K>,
@@ -740,18 +811,38 @@ export type StylesWithUtilsApi<U extends StyleUtils> = {
   class: (name: string, properties: CSSPropertiesWithUtils<U>) => string;
   hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) => string;
   component: {
+    <
+      const Slots extends readonly string[],
+      V extends SlotVariantDefinitions<Slots[number]>,
+      const Vars extends ComponentVarDefinitions,
+    >(
+      namespace: string,
+      config: SlotComponentConfig<Slots, V> & { vars: Vars },
+    ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
     <const Slots extends readonly string[], V extends SlotVariantDefinitions<Slots[number]>>(
       namespace: string,
       config: SlotComponentConfigInput<Slots, V>,
     ): SlotComponentFunction<Slots, V>;
+    <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: MultiSlotConfig<Slots> & { vars: Vars },
+    ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
     <const Slots extends readonly string[]>(
       namespace: string,
       config: MultiSlotConfigInput<Slots>,
     ): MultiSlotReturn<Slots>;
+    <const V extends VariantDefinitions, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: ComponentConfig<V> & { vars: Vars },
+    ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
     <const V extends VariantDefinitions>(
       namespace: string,
       config: ComponentConfigInput<V>,
     ): ComponentReturn<V>;
+    <const K extends string, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: FlatComponentConfig<K> & { vars: Vars },
+    ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
     <const K extends string>(
       namespace: string,
       config: FlatComponentConfigInput<K>,
