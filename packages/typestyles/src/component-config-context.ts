@@ -1,4 +1,6 @@
 import { sanitizeClassSegment, scopedTokenNamespace, type ClassNamingConfig } from './class-naming';
+import type { ComponentVarRegistry, RegisteredComponentVar } from './component-meta';
+import { finalizeVarRegistry } from './component-var-overrides';
 import {
   createRegisteredPropertyRef,
   registerAtPropertyRule,
@@ -182,6 +184,7 @@ export function createComponentConfigContextPair(
 ): {
   ctx: ComponentConfigContext;
   mergeVarDefaultsInto: (config: Record<string, unknown>) => Record<string, unknown>;
+  buildVarRegistry: (config: Record<string, unknown>) => ComponentVarRegistry | undefined;
 } {
   const seen = new Set<string>();
   const ns = scopedTokenNamespace(
@@ -190,6 +193,25 @@ export function createComponentConfigContextPair(
   );
 
   const varBaseDefaults: Record<string, string> = {};
+  const registeredVars: RegisteredComponentVar[] = [];
+  const byPath = new Map<string, RegisteredComponentVar>();
+
+  function trackRegisteredVar(
+    logicalPath: string,
+    name: string,
+    entry?: { syntax?: string; defaultValue?: string },
+  ): void {
+    const reg: RegisteredComponentVar = {
+      path: logicalPath,
+      name,
+      syntax: entry?.syntax,
+      defaultValue: entry?.defaultValue,
+    };
+    if (!byPath.has(logicalPath)) {
+      registeredVars.push(reg);
+    }
+    byPath.set(logicalPath, reg);
+  }
 
   function trackSeen(safeId: string, label: string): void {
     if (seen.has(safeId)) {
@@ -213,6 +235,10 @@ export function createComponentConfigContextPair(
 
     const name = `--${ns}-${safeId}`;
     varBaseDefaults[name] = entry.value;
+    trackRegisteredVar(logicalPath, name, {
+      syntax: entry.syntax,
+      defaultValue: entry.value,
+    });
 
     if (entry.syntax != null) {
       registerAtPropertyRule(name, {
@@ -234,6 +260,7 @@ export function createComponentConfigContextPair(
       ...registration,
       inherits: registration.inherits ?? true,
     });
+    trackRegisteredVar(safePath, name);
     return createRegisteredPropertyRef(name);
   }
 
@@ -253,6 +280,7 @@ export function createComponentConfigContextPair(
 
     trackSeen(safePath, `internal var "${id}"`);
     const name = `--${ns}-${safePath}`;
+    trackRegisteredVar(safePath, name);
     return createRegisteredPropertyRef(name);
   }
 
@@ -279,6 +307,7 @@ export function createComponentConfigContextPair(
       const safeId = sanitizeClassSegment(path);
       trackSeen(safeId, `internal var path "${path}"`);
       const name = `--${ns}-${safeId}`;
+      trackRegisteredVar(path, name);
       refByPath.set(path, createRegisteredPropertyRef(name));
     }
 
@@ -301,5 +330,7 @@ export function createComponentConfigContextPair(
     ctx,
     mergeVarDefaultsInto: (config: Record<string, unknown>) =>
       mergeComponentVarDefaultsInto(config, varBaseDefaults),
+    buildVarRegistry: (config: Record<string, unknown>) =>
+      finalizeVarRegistry(registeredVars, byPath, config),
   };
 }

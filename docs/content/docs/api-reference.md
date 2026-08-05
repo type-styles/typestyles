@@ -30,7 +30,7 @@ per package or micro-frontend for isolation.
 - `styles.compose(...fns)`: Compose multiple style functions
 - `styles.withUtils(utils)`: Create a utility-aware styles API (prefer `createStyles({ utils })` for a single instance)
 - `styles.scope(opts, className, overrides)`: Proximity-correct overrides via CSS `@scope` (nested themes)
-- `styles.override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta` (see [Theming patterns](/docs/theming-patterns#typed-component-overrides))
+- `styles.override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta`, including typed **`vars`** for internal component custom properties (see [Theming patterns](/docs/theming-patterns#override-component-internal-vars))
 - `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
 
 **Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `supports`, `atRuleBlock`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
@@ -39,7 +39,7 @@ per package or micro-frontend for isolation.
 
 **Related exports:** `colorModes` (`['light', 'dark']`), `conditional(when, style, id?)`, `StylableOverride`, `ConditionalOverride`, `ModeAwareValue`.
 
-**Related types:** `OverrideConfig`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
+**Related types:** `OverrideConfig`, `OverrideConfigFor`, `InferVarDefinitions`, `ComponentVarValues`, `ComponentVarAssignValue`, `ComponentCreateOptions`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `ComponentVarRegistry`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
 
 ### `createStyles(options?)`
 

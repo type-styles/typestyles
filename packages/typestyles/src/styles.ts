@@ -16,6 +16,7 @@ import type {
   SlotComponentFunction,
   MultiSlotConfigInput,
   MultiSlotReturn,
+  ComponentVarDefinitions,
   StylesPropertyFn,
 } from './types';
 import { serializeStyle } from './serialize-style';
@@ -259,6 +260,10 @@ export function compose<const S extends readonly ComposeSelectorInput[]>(
 // withUtils
 // ---------------------------------------------------------------------------
 
+type ComponentWithVarDefinitions<R, Vars extends ComponentVarDefinitions> = R & {
+  readonly __varDefinitions: Vars;
+};
+
 export type StylesApi = {
   /** Resolved naming config for this instance (useful for debugging). */
   readonly classNaming: Readonly<ClassNamingConfig>;
@@ -313,18 +318,42 @@ export type StylesApi = {
       namespace: string,
       config: SlotComponentConfigInput<Slots, V>,
     ): SlotComponentFunction<Slots, V>;
+    <
+      const Slots extends readonly string[],
+      V extends SlotVariantDefinitions<Slots[number]>,
+      const Vars extends ComponentVarDefinitions,
+    >(
+      namespace: string,
+      config: SlotComponentConfigInput<Slots, V>,
+      options: ComponentCreateOptions & { readonly varDefinitions: Vars },
+    ): ComponentWithVarDefinitions<SlotComponentFunction<Slots, V>, Vars>;
     <const Slots extends readonly string[]>(
       namespace: string,
       config: MultiSlotConfigInput<Slots>,
     ): MultiSlotReturn<Slots>;
+    <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: MultiSlotConfigInput<Slots>,
+      options: ComponentCreateOptions & { readonly varDefinitions: Vars },
+    ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
     <const V extends VariantDefinitions>(
       namespace: string,
       config: ComponentConfigInput<V>,
     ): ComponentReturn<V>;
+    <const V extends VariantDefinitions, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: ComponentConfigInput<V>,
+      options: ComponentCreateOptions & { readonly varDefinitions: Vars },
+    ): ComponentWithVarDefinitions<ComponentReturn<V>, Vars>;
     <const K extends string>(
       namespace: string,
       config: FlatComponentConfigInput<K>,
     ): FlatComponentReturn<K>;
+    <const K extends string, const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: FlatComponentConfigInput<K>,
+      options: ComponentCreateOptions & { readonly varDefinitions: Vars },
+    ): ComponentWithVarDefinitions<FlatComponentReturn<K>, Vars>;
   };
   withUtils: <U extends StyleUtils>(utils: U) => StylesWithUtilsApi<U>;
   compose: typeof compose;
@@ -342,7 +371,13 @@ export type StylesApi = {
   override: OverrideFn;
 };
 
-/** Options argument for styles when `createStyles({ layers })` is used. */
+/** Options argument for `styles.component()` — `layer` required when `createStyles({ layers })` is used. */
+export type ComponentCreateOptions<L extends string = string> = {
+  readonly layer?: L;
+  readonly varDefinitions?: ComponentVarDefinitions;
+};
+
+/** @deprecated Use {@link ComponentCreateOptions} — kept as alias for `layer`-only call sites. */
 export type LayerOption<L extends string = string> = { readonly layer: L };
 
 export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>> & {
@@ -609,8 +644,8 @@ function buildStylesRuntimeApi(
   const componentImpl = (
     namespace: string,
     config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
-    options?: LayerOption<string>,
-  ) => createComponent(classNaming, namespace, config, options?.layer);
+    options?: ComponentCreateOptions<string>,
+  ) => createComponent(classNaming, namespace, config, options);
 
   const containerRef = (label: string): ContainerNameRef =>
     createContainerRef(label, {
@@ -675,13 +710,14 @@ function buildStylesRuntimeApi(
     class: (name: string, properties: CSSProperties) => createClass(classNaming, name, properties),
     hashClass: (properties: CSSProperties, label?: string) =>
       createHashClass(classNaming, properties, label),
-    component: ((namespace: string, config: unknown) =>
+    component: ((namespace: string, config: unknown, options?: ComponentCreateOptions<string>) =>
       createComponent(
         classNaming,
         namespace,
         config as
           | Record<string, unknown>
           | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+        options,
       )) as StylesApi['component'],
     withUtils: (utils) => createStylesWithUtils(utils, classNaming),
     compose,
@@ -834,16 +870,21 @@ export function createStylesWithUtils<U extends StyleUtils>(
   function component(
     namespace: string,
     config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
+    options?: ComponentCreateOptions<string>,
   ): unknown {
     if (typeof config === 'function') {
-      return createComponent(classNaming, namespace, (ctx) =>
-        transformComponentConfigWithUtils(config(ctx) as Record<string, unknown>),
+      return createComponent(
+        classNaming,
+        namespace,
+        (ctx) => transformComponentConfigWithUtils(config(ctx) as Record<string, unknown>),
+        options,
       );
     }
     return createComponent(
       classNaming,
       namespace,
       transformComponentConfigWithUtils(config) as ComponentConfig<VariantDefinitions>,
+      options,
     );
   }
 
@@ -895,22 +936,21 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
   function component(
     namespace: string,
     config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
-    options?: LayerOption<string>,
+    options?: ComponentCreateOptions<string>,
   ): unknown {
-    const layer = options?.layer;
     if (typeof config === 'function') {
       return createComponent(
         classNaming,
         namespace,
         (ctx) => transformComponentConfigWithUtils(config(ctx) as Record<string, unknown>),
-        layer,
+        options,
       );
     }
     return createComponent(
       classNaming,
       namespace,
       transformComponentConfigWithUtils(config) as ComponentConfig<VariantDefinitions>,
-      layer,
+      options,
     );
   }
 

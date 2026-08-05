@@ -449,6 +449,87 @@ const badge = styles.component('badge', (c) => {
 
 See [CSS primitives](/docs/css-primitives) for the full progressive-disclosure ladder.
 
+### Override internal vars in themes
+
+When consumers restyle a component per theme, prefer the top-level **`vars`** key on
+`styles.override()` instead of raw `--{scope}-{recipe}-{var}` strings in `base`.
+Typestyles maps logical keys (`border`, `padding.outer.x`) to the same custom
+properties the recipe registered with `c.vars()`.
+
+**Authors:** export a `*VarDefinitions` const alongside themeable recipes so
+consumers get autocomplete (Pattern A), or pass `varDefinitions` on
+`styles.component(…, { varDefinitions })` (Pattern B).
+
+```ts
+export const sideNavVarDefinitions = {
+  border: { value: '1px solid #ccc', syntax: '<color>' as const },
+  headingColor: { value: '#111', syntax: '<color>' as const },
+} as const;
+
+export const sideNav = styles.component('side-nav', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
+  return {
+    slots: ['root', 'heading'] as const,
+    base: {
+      root: { borderColor: v.border.var },
+      heading: { color: v.headingColor.var },
+    },
+  };
+});
+
+// Pattern A — second generic on OverrideConfigFor
+import type { OverrideConfigFor } from 'typestyles';
+
+export type SideNavThemeOverride = OverrideConfigFor<typeof sideNav, typeof sideNavVarDefinitions>;
+
+// Pattern B — stamp definitions on the return type
+const sideNavBranded = styles.component(
+  'side-nav',
+  (c) => {
+    const v = c.vars(sideNavVarDefinitions);
+    return { slots: ['root'] as const, base: { root: { borderColor: v.border.var } } };
+  },
+  { varDefinitions: sideNavVarDefinitions },
+);
+
+type BrandedOverride = OverrideConfigFor<typeof sideNavBranded>;
+```
+
+Consumer theme setup:
+
+```ts
+styles.override(
+  sideNav,
+  {
+    vars: {
+      border: 'transparent',
+      headingColor: tokens.color.text.primary,
+      padding: { outer: { x: '24px', y: '16px' } },
+    },
+    base: {
+      root: { margin: tokens.space[2].var, borderRadius: tokens.radius.lg.var },
+    },
+  },
+  { selectorPrefix: '.theme-forest', layer: 'overrides' },
+);
+```
+
+Notes:
+
+- **`vars` always targets the var host slot** — `base` for dimensioned/flat recipes,
+  `root` (or the first slot when there is no `root`) for slotted recipes. Layout
+  overrides stay in `base` / slot blocks.
+- **Nested paths** flatten with the same rules as `c.vars()` (`padding.outer.x` →
+  `padding-outer-x`). Dotted keys (`'padding.outer.x'`) are also accepted.
+- **Values:** strings, numbers, `var(--…)` refs, and `{ light, dark }` when
+  `colorModes` is configured — same as other override style blocks.
+- **Collisions:** if `vars.border` and `base['--…-border']` both set the same
+  property, **`base` wins** (emitted later).
+- Unknown var keys log a dev warning and are skipped; recipes with no `c.vars()`
+  registry warn when `vars` is set.
+
+See [Theming patterns — override vars](/docs/theming-patterns#override-component-internal-vars).
+
 ## Responsive property values
 
 Register breakpoints once on your styles instance, then use `{ base, md, lg }` shorthand on individual CSS properties instead of repeating full `@media` keys beside every property.

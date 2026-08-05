@@ -11,6 +11,21 @@ export type SlotVariantSelectorMap = {
   [slot: string]: VariantSelectorMap;
 };
 
+export type RegisteredComponentVar = {
+  /** Logical path: `border`, `padding-outer-x` */
+  path: string;
+  /** Full custom property name: `--var-ui-side-nav-border` */
+  name: string;
+  syntax?: string;
+  defaultValue?: string;
+};
+
+export type ComponentVarRegistry = {
+  hostSlot: string;
+  vars: RegisteredComponentVar[];
+  byPath: Map<string, RegisteredComponentVar>;
+};
+
 export type ComponentMetaBase = {
   namespace: string;
   /**
@@ -18,6 +33,8 @@ export type ComponentMetaBase = {
    * (class conjunction vs attribute conjunction).
    */
   namingMode: ClassNamingMode;
+  /** Internal vars registered via `c.var()` / `c.vars()` during recipe definition. */
+  varRegistry?: ComponentVarRegistry;
 };
 
 /** Class modes: full class name without dot. Attribute: attr fragment only. */
@@ -99,4 +116,34 @@ export function attachComponentMeta(target: object, meta: ComponentMeta): void {
  */
 export function getComponentMeta(component: object): ComponentMeta | undefined {
   return (component as MetaCarrier)[COMPONENT_META];
+}
+
+/** Attach or merge `varRegistry` onto an existing component metadata blob. */
+export function attachVarRegistry(
+  target: object,
+  varRegistry: ComponentVarRegistry | undefined,
+): void {
+  if (!varRegistry) return;
+  const existing = getComponentMeta(target);
+  if (!existing) return;
+  Object.defineProperty(target, COMPONENT_META, {
+    value: { ...existing, varRegistry },
+    enumerable: false,
+    writable: false,
+    configurable: true,
+  });
+}
+
+/** Stamp `__varDefinitions` for `OverrideConfigFor` inference (Pattern B). */
+export function stampVarDefinitionsBrand(
+  target: object,
+  definitions: Record<string, unknown> | undefined,
+): void {
+  if (!definitions) return;
+  Object.defineProperty(target, '__varDefinitions', {
+    value: definitions,
+    enumerable: false,
+    writable: false,
+    configurable: true,
+  });
 }

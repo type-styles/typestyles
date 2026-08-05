@@ -323,3 +323,81 @@ const multiBad: OverrideConfigFor<typeof multi> = {
   variants: { tone: { danger: { root: { color: 'red' } } } },
 };
 void multiBad;
+
+// Typed override vars (Pattern A — explicit var definitions generic)
+const sideNavVarDefinitions = {
+  border: { value: '1px solid #ccc', syntax: '<color>' as const },
+  headingColor: { value: '#111', syntax: '<color>' as const },
+} as const;
+
+const sideNav = styles.component('ov-type-vars-nav', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
+  return {
+    slots: ['root'] as const,
+    base: { root: { borderColor: v.border.var, color: v.headingColor.var } },
+  };
+});
+void sideNav;
+
+type SideNavOverride = OverrideConfigFor<typeof sideNav, typeof sideNavVarDefinitions>;
+const sideNavVarsOk: SideNavOverride = {
+  vars: { border: 'transparent', headingColor: 'var(--brand-heading)' },
+  base: { root: { margin: '8px' } },
+};
+void sideNavVarsOk;
+
+const sideNavVarsBad: SideNavOverride = {
+  vars: {
+    // @ts-expect-error — unknown var key
+    missing: 'x',
+  },
+};
+void sideNavVarsBad;
+
+const layoutVarDefinitions = {
+  padding: { outer: { x: '8px', y: '8px' } },
+} as const;
+
+const layoutRecipe = styles.component('ov-type-vars-layout', (c) => {
+  const v = c.vars(layoutVarDefinitions);
+  return {
+    base: {
+      paddingInline: v.padding.outer.x.var,
+      paddingBlock: v.padding.outer.y.var,
+    },
+  };
+});
+void layoutRecipe;
+
+type LayoutOverride = OverrideConfigFor<typeof layoutRecipe, typeof layoutVarDefinitions>;
+const layoutVarsOk: LayoutOverride = {
+  vars: { padding: { outer: { x: '24px' } } },
+};
+void layoutVarsOk;
+
+// Pattern B — varDefinitions option stamps __varDefinitions for inference
+const brandedNav = styles.component(
+  'ov-type-branded-nav',
+  (c) => {
+    const v = c.vars(sideNavVarDefinitions);
+    return {
+      slots: ['root'] as const,
+      base: { root: { borderColor: v.border.var } },
+    };
+  },
+  { varDefinitions: sideNavVarDefinitions },
+);
+void brandedNav;
+
+const brandedVarsOk: OverrideConfigFor<typeof brandedNav> = {
+  vars: { border: 'transparent' },
+};
+void brandedVarsOk;
+
+// Recipes without var schema forbid vars on OverrideConfigFor
+const noVarsOverride: OverrideConfigFor<typeof button> = {
+  base: { color: 'red' },
+  // @ts-expect-error — component has no varDefinitions / __varDefinitions brand
+  vars: { background: 'crimson' },
+};
+void noVarsOverride;

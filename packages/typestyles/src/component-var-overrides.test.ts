@@ -1,0 +1,133 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  flattenVarValues,
+  resolveVarOverrides,
+  resolveVarHostSlot,
+  resolveVarHostClass,
+} from './component-var-overrides';
+import type { ComponentVarRegistry } from './component-meta';
+import type { DimensionedComponentMeta, SlotComponentMeta } from './component-meta';
+
+describe('flattenVarValues', () => {
+  it('flattens nested objects to dashed paths', () => {
+    const entries = flattenVarValues({
+      padding: { outer: { x: '24px', y: '16px' } },
+      content: { width: '1200px' },
+    });
+    expect(entries).toEqual([
+      { path: 'padding-outer-x', value: '24px' },
+      { path: 'padding-outer-y', value: '16px' },
+      { path: 'content-width', value: '1200px' },
+    ]);
+  });
+
+  it('accepts dotted top-level keys', () => {
+    const entries = flattenVarValues({ 'padding.outer.x': '24px' });
+    expect(entries).toEqual([{ path: 'padding-outer-x', value: '24px' }]);
+  });
+
+  it('preserves CSSVarRef and color-mode pairs', () => {
+    const entries = flattenVarValues({
+      border: 'transparent',
+      headingColor: 'var(--brand-heading)',
+      surface: { light: '#fff', dark: '#111' },
+    });
+    expect(entries).toEqual([
+      { path: 'border', value: 'transparent' },
+      { path: 'headingColor', value: 'var(--brand-heading)' },
+      { path: 'surface', value: { light: '#fff', dark: '#111' } },
+    ]);
+  });
+});
+
+describe('resolveVarOverrides', () => {
+  const registry: ComponentVarRegistry = {
+    hostSlot: 'root',
+    vars: [
+      { path: 'border', name: '--nav-border', defaultValue: '#ccc' },
+      { path: 'padding-outer-x', name: '--nav-padding-outer-x', defaultValue: '8px' },
+    ],
+    byPath: new Map([
+      ['border', { path: 'border', name: '--nav-border', defaultValue: '#ccc' }],
+      [
+        'padding-outer-x',
+        { path: 'padding-outer-x', name: '--nav-padding-outer-x', defaultValue: '8px' },
+      ],
+    ]),
+  };
+
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'development');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('maps logical paths to registered custom property names', () => {
+    expect(
+      resolveVarOverrides(registry, {
+        border: 'transparent',
+        padding: { outer: { x: '24px' } },
+      }),
+    ).toEqual({
+      '--nav-border': 'transparent',
+      '--nav-padding-outer-x': '24px',
+    });
+  });
+
+  it('warns and skips unknown keys in development', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(resolveVarOverrides(registry, { missing: 'x' })).toEqual({});
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('Unknown component var "missing"'));
+  });
+});
+
+describe('resolveVarHostSlot', () => {
+  it('uses root when present in slots', () => {
+    expect(resolveVarHostSlot({ slots: ['icon', 'root'] })).toBe('root');
+  });
+
+  it('uses first slot when root is absent', () => {
+    expect(resolveVarHostSlot({ slots: ['stickyTop', 'content'] })).toBe('stickyTop');
+  });
+
+  it('defaults to base for dimensioned recipes', () => {
+    expect(resolveVarHostSlot({ base: { color: 'red' } })).toBe('base');
+  });
+});
+
+describe('resolveVarHostClass', () => {
+  it('resolves dimensioned host from meta.base', () => {
+    const meta: DimensionedComponentMeta = {
+      namespace: 'btn',
+      kind: 'dimensioned',
+      namingMode: 'semantic',
+      base: 'btn',
+      variants: {},
+    };
+    const registry: ComponentVarRegistry = {
+      hostSlot: 'base',
+      vars: [],
+      byPath: new Map(),
+    };
+    expect(resolveVarHostClass(meta, registry)).toBe('btn');
+  });
+
+  it('resolves slotted host from meta.base[slot]', () => {
+    const meta: SlotComponentMeta = {
+      namespace: 'nav',
+      kind: 'slot',
+      namingMode: 'semantic',
+      slots: ['root', 'icon'],
+      base: { root: 'nav', icon: 'nav__icon' },
+      variants: {},
+    };
+    const registry: ComponentVarRegistry = {
+      hostSlot: 'root',
+      vars: [],
+      byPath: new Map(),
+    };
+    expect(resolveVarHostClass(meta, registry)).toBe('nav');
+  });
+});
