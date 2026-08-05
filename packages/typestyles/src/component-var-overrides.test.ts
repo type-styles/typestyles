@@ -38,6 +38,25 @@ describe('flattenVarValues', () => {
       { path: 'surface', value: { light: '#fff', dark: '#111' } },
     ]);
   });
+
+  it('recurses light/dark children when registry has split paths', () => {
+    const registry: ComponentVarRegistry = {
+      hostSlot: 'base',
+      vars: [
+        { path: 'surface-light', name: '--x-surface-light' },
+        { path: 'surface-dark', name: '--x-surface-dark' },
+      ],
+      byPath: new Map([
+        ['surface-light', { path: 'surface-light', name: '--x-surface-light' }],
+        ['surface-dark', { path: 'surface-dark', name: '--x-surface-dark' }],
+      ]),
+    };
+    const entries = flattenVarValues({ surface: { light: '#eee', dark: '#222' } }, '', registry);
+    expect(entries).toEqual([
+      { path: 'surface-light', value: '#eee' },
+      { path: 'surface-dark', value: '#222' },
+    ]);
+  });
 });
 
 describe('resolveVarOverrides', () => {

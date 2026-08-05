@@ -23,13 +23,27 @@ function isPlainVarValue(value: unknown): value is ComponentVarAssignValue {
   );
 }
 
+function shouldRecurseLightDarkChildren(
+  path: string,
+  value: Record<string, unknown>,
+  registry?: ComponentVarRegistry,
+): boolean {
+  if (!registry || !isColorModePair(value)) return false;
+  if (registry.byPath.has(path)) return false;
+  return registry.byPath.has(`${path}-light`) && registry.byPath.has(`${path}-dark`);
+}
+
 /**
  * Flatten nested consumer `vars` input to logical dashed paths (same as `c.vars()` definitions).
  * Supports dotted keys at the top level (`padding.outer.x`).
+ *
+ * When `registry` is provided, `{ light, dark }` objects recurse into `path-light` / `path-dark`
+ * if those paths are registered and `path` itself is not.
  */
 export function flattenVarValues(
   input: Record<string, unknown>,
   prefix = '',
+  registry?: ComponentVarRegistry,
 ): Array<{ path: string; value: ComponentVarAssignValue }> {
   const out: Array<{ path: string; value: ComponentVarAssignValue }> = [];
 
@@ -45,13 +59,23 @@ export function flattenVarValues(
 
     const path = prefix ? `${prefix}-${key}` : key;
 
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value) &&
+      shouldRecurseLightDarkChildren(path, value as Record<string, unknown>, registry)
+    ) {
+      out.push(...flattenVarValues(value as Record<string, unknown>, path, registry));
+      continue;
+    }
+
     if (isPlainVarValue(value)) {
       out.push({ path, value });
       continue;
     }
 
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      out.push(...flattenVarValues(value as Record<string, unknown>, path));
+      out.push(...flattenVarValues(value as Record<string, unknown>, path, registry));
     }
   }
 
@@ -78,7 +102,7 @@ export function resolveVarOverrides(
   varsInput: Record<string, unknown>,
 ): Record<string, string | { light: string; dark: string }> {
   const declarations: Record<string, string | { light: string; dark: string }> = {};
-  const entries = flattenVarValues(varsInput);
+  const entries = flattenVarValues(varsInput, '', registry);
 
   for (const { path, value } of entries) {
     const registered = registry.byPath.get(path);

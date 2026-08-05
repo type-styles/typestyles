@@ -1011,6 +1011,24 @@ describe('createComponent — function config & internal vars', () => {
     expect(css).toContain('background-color: var(--cfg-vars-btn-background)');
   });
 
+  it('applies top-level config vars after value-less c.var() in a factory', () => {
+    const badge = createComponent(defaultClassNamingConfig, 'cfg-after-var', (c) => {
+      c.var('border');
+      return {
+        vars: {
+          border: { value: '#ccc', syntax: '<color>' as const },
+        },
+        base: { borderColor: 'var(--cfg-after-var-border)' },
+      };
+    });
+
+    badge();
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--cfg-after-var-border: #ccc');
+    expect(css).toContain('@property --cfg-after-var-border');
+  });
+
   it('exposes c.vars() registrations on the component return when config has no vars key', () => {
     const badge = createComponent(defaultClassNamingConfig, 'ret-vars-only', (c) => {
       const v = c.vars({ ink: '#111', paper: '#fff' });

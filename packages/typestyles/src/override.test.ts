@@ -895,6 +895,43 @@ describe('styles.override() + __tsMeta', () => {
       expect(meta?.varRegistry?.byPath.has('border')).toBe(true);
       expect(meta?.varRegistry?.byPath.get('border')?.name).toBe('--ov-meta-vars-border');
     });
+
+    it('resolves c.var() paths with the authoring id (not sanitized registry key)', () => {
+      const styles = createStyles();
+      const chip = styles.component('ov-var-path', (c) => {
+        const v = c.var('headingColor', { value: '#111', syntax: '<color>' as const });
+        return { base: { color: v.var } };
+      });
+
+      styles.override(chip, { vars: { headingColor: '#222' } });
+      flushSync();
+
+      expect(getRegisteredCss()).toContain('--ov-var-path-headingcolor: #222');
+    });
+
+    it('overrides split surface-light / surface-dark vars instead of a color-mode pair', () => {
+      const styles = createStyles();
+      const card = styles.component('ov-split-surface', (c) => {
+        const v = c.vars({
+          surface: { light: '#fff', dark: '#111' },
+        });
+        return {
+          base: {
+            backgroundColor: v.surface.light.var,
+            color: v.surface.dark.var,
+          },
+        };
+      });
+
+      styles.override(card, {
+        vars: { surface: { light: '#eee', dark: '#222' } },
+      });
+      flushSync();
+
+      const css = getRegisteredCss();
+      expect(css).toContain('--ov-split-surface-surface-light: #eee');
+      expect(css).toContain('--ov-split-surface-surface-dark: #222');
+    });
   });
 
   describe('typing', () => {

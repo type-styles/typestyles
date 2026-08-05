@@ -275,17 +275,42 @@ export function createComponentConfigContextPair(
     }
   }
 
+  function mergeVarValueOntoExisting(
+    logicalPath: string,
+    name: string,
+    entry: { value: string; syntax?: string; inherits?: boolean; initial?: string | number },
+  ): void {
+    varBaseDefaults[name] = entry.value;
+    const reg = byPath.get(logicalPath);
+    if (reg) {
+      reg.defaultValue = entry.value;
+      if (entry.syntax != null) reg.syntax = entry.syntax;
+    }
+    if (entry.syntax != null) {
+      registerAtPropertyRule(name, {
+        value: entry.value,
+        syntax: entry.syntax,
+        inherits: entry.inherits ?? true,
+        initial: entry.initial,
+      });
+    }
+  }
+
   function registerVarValue(
     logicalPath: string,
     entry: { value: string; syntax?: string; inherits?: boolean; initial?: string | number },
   ): ComponentInternalVarRef {
-    const existing = varRefByPath.get(logicalPath);
-    if (existing) return existing;
-
     const safeId = sanitizeClassSegment(logicalPath);
+    const name = `--${ns}-${safeId}`;
+
+    const existing = varRefByPath.get(logicalPath);
+    if (existing) {
+      mergeVarValueOntoExisting(logicalPath, name, entry);
+      return existing;
+    }
+
     trackSeen(safeId, `internal var path "${logicalPath}"`);
 
-    const name = `--${ns}-${safeId}`;
     varBaseDefaults[name] = entry.value;
     trackRegisteredVar(logicalPath, name, {
       syntax: entry.syntax,
@@ -314,9 +339,9 @@ export function createComponentConfigContextPair(
       ...registration,
       inherits: registration.inherits ?? true,
     });
-    trackRegisteredVar(safePath, name);
+    trackRegisteredVar(id, name);
     const ref = createRegisteredPropertyRef(name);
-    trackVarRef(safePath, ref);
+    trackVarRef(id, ref);
     return ref;
   }
 
@@ -326,7 +351,7 @@ export function createComponentConfigContextPair(
       options?.value !== undefined && options?.value !== null ? String(options.value) : undefined;
 
     if (valueStr !== undefined) {
-      return registerVarValue(safePath, {
+      return registerVarValue(id, {
         value: valueStr,
         syntax: options?.syntax,
         inherits: options?.inherits,
@@ -336,9 +361,9 @@ export function createComponentConfigContextPair(
 
     trackSeen(safePath, `internal var "${id}"`);
     const name = `--${ns}-${safePath}`;
-    trackRegisteredVar(safePath, name);
+    trackRegisteredVar(id, name);
     const ref = createRegisteredPropertyRef(name);
-    trackVarRef(safePath, ref);
+    trackVarRef(id, ref);
     return ref;
   }
 
