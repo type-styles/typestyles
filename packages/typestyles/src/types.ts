@@ -707,6 +707,8 @@ export type ComponentConfigContext = {
  */
 export type ComponentConfig<V extends VariantDefinitions> = {
   base?: CSSProperties;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarDefinitions;
   variants?: V;
   compoundVariants?: Array<{
     variants: { [K in keyof V]?: CompoundSelectionValue<VariantOptionKey<V, K>> };
@@ -737,6 +739,8 @@ export type ComponentConfig<V extends VariantDefinitions> = {
  */
 export type FlatComponentConfig<K extends string> = {
   base?: CSSProperties;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarDefinitions;
   variants?: never;
   defaultVariants?: never;
   compoundVariants?: never;
@@ -776,6 +780,9 @@ export type ComponentReturn<V extends VariantDefinitions> = {
 } & {
   /** Individual variant class strings, keyed as `{dimension}-{option}`. */
   readonly [K in DimensionedVariantKeys<V>]: string;
+} & {
+  /** Ref tree for internal vars declared on this recipe (`vars` config or `c.vars()`). */
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 /**
@@ -789,6 +796,8 @@ export type ComponentAttrsReturn<V extends VariantDefinitions> = {
 } & {
   /** The base class string. */
   readonly base: string;
+} & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 /** Attribute-mode return for slot recipes, with attrs repeated on each declared slot. */
@@ -810,6 +819,8 @@ export type FlatComponentReturn<K extends string> = {
 } & {
   /** Individual variant class strings. */
   readonly [P in Exclude<K, 'base'>]: string;
+} & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 // ---------------------------------------------------------------------------
@@ -818,6 +829,8 @@ export type FlatComponentReturn<K extends string> = {
 
 export type MultiSlotConfig<Slots extends readonly string[]> = {
   slots: Slots;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarDefinitions;
   /**
    * Forbidden recipe keys — same idea as {@link FlatComponentConfig}. Without these, a
    * slot-with-variants config that fails {@link VariantOptionStyle} assignability (e.g. widened
@@ -840,6 +853,8 @@ export type MultiSlotReturn<Slots extends readonly string[]> = {
   readonly __tsMultiSlot: true;
 } & {
   readonly [K in Slots[number]]: string;
+} & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
 };
 
 // ---------------------------------------------------------------------------
@@ -851,6 +866,8 @@ export type SlotComponentConfig<
   V extends SlotVariantDefinitions<Slots[number]>,
 > = {
   slots: Slots;
+  /** Component-internal custom properties — registered on the var host slot; exposed on the return as `.vars`. */
+  vars?: ComponentVarDefinitions;
   base?: SlotStyles<Slots[number]>;
   variants?: V;
   compoundVariants?: Array<{
@@ -863,7 +880,9 @@ export type SlotComponentConfig<
 export type SlotComponentFunction<
   Slots extends readonly string[],
   V extends SlotVariantDefinitions<Slots[number]>,
-> = (selections?: ComponentSelections<V>) => Record<Slots[number], string>;
+> = ((selections?: ComponentSelections<V>) => Record<Slots[number], string>) & {
+  readonly vars?: ComponentVarRefTree<ComponentVarDefinitions>;
+};
 
 /**
  * Config for `styles.component` may be a plain object or a function that receives {@link ComponentConfigContext}.

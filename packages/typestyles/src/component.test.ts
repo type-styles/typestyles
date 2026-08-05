@@ -968,6 +968,61 @@ describe('createComponent — function config & internal vars', () => {
     expect(css).toContain('color: var(--nestv-text-primary)');
   });
 
+  it('registers top-level config vars and exposes sideNav.vars on the return', () => {
+    const sideNav = createComponent(defaultClassNamingConfig, 'cfg-vars-nav', {
+      vars: {
+        border: { value: '#ccc', syntax: '<color>' as const },
+        headingColor: '#111',
+      },
+      slots: ['root', 'heading'] as const,
+      base: {
+        root: { borderColor: 'var(--cfg-vars-nav-border)' },
+        heading: { color: 'var(--cfg-vars-nav-headingcolor)' },
+      },
+    });
+
+    expect(sideNav.vars?.border.var).toBe('var(--cfg-vars-nav-border)');
+    expect(sideNav.vars?.headingColor.name).toBe('--cfg-vars-nav-headingcolor');
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--cfg-vars-nav-border: #ccc');
+    expect(css).toContain('--cfg-vars-nav-headingcolor: #111');
+  });
+
+  it('registers top-level vars on object configs and exposes refs on the return', () => {
+    const button = createComponent(defaultClassNamingConfig, 'cfg-vars-btn', {
+      vars: {
+        background: { value: 'blue', syntax: '<color>' as const },
+        foreground: '#fff',
+      },
+      base: {
+        backgroundColor: 'var(--cfg-vars-btn-background)',
+        color: 'var(--cfg-vars-btn-foreground)',
+      },
+    });
+
+    expect(button.vars?.background.var).toBe('var(--cfg-vars-btn-background)');
+    expect(button.vars?.foreground.var).toBe('var(--cfg-vars-btn-foreground)');
+
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('--cfg-vars-btn-background: blue');
+    expect(css).toContain('background-color: var(--cfg-vars-btn-background)');
+  });
+
+  it('exposes c.vars() registrations on the component return when config has no vars key', () => {
+    const badge = createComponent(defaultClassNamingConfig, 'ret-vars-only', (c) => {
+      const v = c.vars({ ink: '#111', paper: '#fff' });
+      return {
+        base: { color: v.ink.var, backgroundColor: v.paper.var },
+      };
+    });
+
+    expect(badge.vars?.ink.var).toBe('var(--ret-vars-only-ink)');
+    expect(badge.vars?.paper.name).toBe('--ret-vars-only-paper');
+  });
+
   it('vars.declare registers @property without base defaults; values set in variants', () => {
     const badge = createComponent(defaultClassNamingConfig, 'cb-declare', (c) => {
       const v = c.vars.declare({

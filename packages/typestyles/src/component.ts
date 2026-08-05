@@ -32,10 +32,14 @@ import {
 } from './class-naming';
 import { classNamesAndRulesForProperties } from './atomic-decompose';
 import { serializeStyle } from './serialize-style';
-import { createComponentConfigContextPair } from './component-config-context';
+import {
+  createComponentConfigContextPair,
+  stripAndRegisterConfigVars,
+} from './component-config-context';
 import { attachComposeMeta } from './compose-meta';
 import {
   attachComponentMeta,
+  attachComponentVars,
   attachVarRegistry,
   buildClassVariantSelectorMap,
   firstClassToken,
@@ -48,7 +52,14 @@ import {
 // ---------------------------------------------------------------------------
 // Reserved keys that signal a dimensioned config (not flat variant keys)
 // ---------------------------------------------------------------------------
-const RESERVED_KEYS = new Set(['base', 'variants', 'compoundVariants', 'defaultVariants', 'slots']);
+const RESERVED_KEYS = new Set([
+  'base',
+  'variants',
+  'compoundVariants',
+  'defaultVariants',
+  'slots',
+  'vars',
+]);
 
 function devWarnUnknownVariantDimensions(
   namespace: string,
@@ -155,16 +166,44 @@ function resolveComponentConfig(
   classNaming: ClassNamingConfig,
   namespace: string,
   config: Record<string, unknown> | ((ctx: ComponentConfigContext) => Record<string, unknown>),
-): { config: Record<string, unknown>; varRegistry?: ComponentVarRegistry } {
+): {
+  config: Record<string, unknown>;
+  varRegistry?: ComponentVarRegistry;
+  varRefTree?: object;
+  varDefinitions?: ComponentVarDefinitions;
+} {
+  const { ctx, mergeVarDefaultsInto, buildVarRegistry, buildVarRefTree } =
+    createComponentConfigContextPair(classNaming, namespace);
+
   if (typeof config === 'function') {
-    const { ctx, mergeVarDefaultsInto, buildVarRegistry } = createComponentConfigContextPair(
-      classNaming,
-      namespace,
-    );
     const raw = config(ctx) as Record<string, unknown>;
-    const resolved = mergeVarDefaultsInto(raw);
-    return { config: resolved, varRegistry: buildVarRegistry(resolved) };
+    const { config: withoutVars, varDefinitions: defsFromConfig } = stripAndRegisterConfigVars(
+      raw,
+      ctx.vars,
+    );
+    const resolved = mergeVarDefaultsInto(withoutVars);
+    return {
+      config: resolved,
+      varRegistry: buildVarRegistry(resolved),
+      varRefTree: buildVarRefTree(),
+      varDefinitions: defsFromConfig,
+    };
   }
+
+  const { config: withoutVars, varDefinitions: defsFromConfig } = stripAndRegisterConfigVars(
+    config,
+    ctx.vars,
+  );
+  if (defsFromConfig) {
+    const resolved = mergeVarDefaultsInto(withoutVars);
+    return {
+      config: resolved,
+      varRegistry: buildVarRegistry(resolved),
+      varRefTree: buildVarRefTree(),
+      varDefinitions: defsFromConfig,
+    };
+  }
+
   return { config };
 }
 
@@ -172,8 +211,10 @@ function finishComponentResult<T extends object>(
   result: T,
   varRegistry?: ComponentVarRegistry,
   varDefinitions?: ComponentVarDefinitions,
+  varRefTree?: object,
 ): T {
   attachVarRegistry(result, varRegistry);
+  attachComponentVars(result, varRefTree);
   stampVarDefinitionsBrand(result, varDefinitions);
   return result;
 }
@@ -342,7 +383,15 @@ export function createComponent(
     assertOwnLayer(classNaming.cascadeLayers, layer, `styles.component('${namespace}', …)`);
   }
 
-  const { config: resolved, varRegistry } = resolveComponentConfig(classNaming, namespace, config);
+  const {
+    config: resolved,
+    varRegistry,
+    varRefTree,
+    varDefinitions: configVarDefinitions,
+  } = resolveComponentConfig(classNaming, namespace, config);
+  const recipeVarDefinitions = varDefinitions ?? configVarDefinitions;
+  const finish = <T extends object>(result: T) =>
+    finishComponentResult(result, varRegistry, recipeVarDefinitions, varRefTree);
   if (isMultiSlotConfig(resolved)) {
     claimComponentNamespace(classNaming, namespace);
     if (
@@ -351,40 +400,34 @@ export function createComponent(
       classNaming.mode === 'attribute' ||
       classNaming.mode === 'template'
     ) {
-      return finishComponentResult(
+      return finish(
         createTemplateMultiSlotComponent(
           classNaming,
           namespace,
           resolved as MultiSlotConfig<readonly string[]>,
           layer,
         ),
-        varRegistry,
-        varDefinitions,
       );
     }
-    return finishComponentResult(
+    return finish(
       createMultiSlotComponent(
         classNaming,
         namespace,
         resolved as MultiSlotConfig<readonly string[]>,
         layer,
       ),
-      varRegistry,
-      varDefinitions,
     );
   }
   if (isSlotWithVariantsConfig(resolved)) {
     claimComponentNamespace(classNaming, namespace);
     if (classNaming.mode === 'attribute') {
-      return finishComponentResult(
+      return finish(
         createAttributeSlotComponent(
           classNaming,
           namespace,
           resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
           layer,
         ),
-        varRegistry,
-        varDefinitions,
       );
     }
     if (
@@ -392,36 +435,30 @@ export function createComponent(
       classNaming.mode === 'semantic' ||
       classNaming.mode === 'template'
     ) {
-      return finishComponentResult(
+      return finish(
         createTemplateSlotComponent(
           classNaming,
           namespace,
           resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
           layer,
         ),
-        varRegistry,
-        varDefinitions,
       );
     }
-    return finishComponentResult(
+    return finish(
       createSlotComponent(
         classNaming,
         namespace,
         resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
         layer,
       ),
-      varRegistry,
-      varDefinitions,
     );
   }
   if (isDimensionedConfig(resolved)) {
     claimComponentNamespace(classNaming, namespace);
     const dimensionedConfig = resolved as ComponentConfig<VariantDefinitions>;
     if (classNaming.mode === 'attribute') {
-      return finishComponentResult(
+      return finish(
         createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer),
-        varRegistry,
-        varDefinitions,
       );
     }
     if (
@@ -429,35 +466,25 @@ export function createComponent(
       classNaming.mode === 'semantic' ||
       classNaming.mode === 'template'
     ) {
-      return finishComponentResult(
+      return finish(
         createTemplateDimensionedComponent(classNaming, namespace, dimensionedConfig, layer),
-        varRegistry,
-        varDefinitions,
       );
     }
-    return finishComponentResult(
-      createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer),
-      varRegistry,
-      varDefinitions,
-    );
+    return finish(createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer));
   }
   claimComponentNamespace(classNaming, namespace);
   if (classNaming.mode === 'semantic' || classNaming.mode === 'attribute') {
-    return finishComponentResult(
+    return finish(
       createSemanticFlatComponent(
         classNaming,
         namespace,
         resolved as FlatComponentConfig<string>,
         layer,
       ),
-      varRegistry,
-      varDefinitions,
     );
   }
-  return finishComponentResult(
+  return finish(
     createFlatComponent(classNaming, namespace, resolved as FlatComponentConfig<string>, layer),
-    varRegistry,
-    varDefinitions,
   );
 }
 

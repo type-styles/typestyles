@@ -394,6 +394,19 @@ const brandedVarsOk: OverrideConfigFor<typeof brandedNav> = {
 };
 void brandedVarsOk;
 
+// Top-level config vars stamp __varDefinitions — OverrideConfigFor infers without a second generic
+const configVarsNav = styles.component('ov-config-vars-nav', {
+  vars: sideNavVarDefinitions,
+  slots: ['root'] as const,
+  base: { root: { display: 'flex' } },
+});
+void configVarsNav;
+
+const configVarsOk: OverrideConfigFor<typeof configVarsNav, typeof sideNavVarDefinitions> = {
+  vars: { border: 'transparent' },
+};
+void configVarsOk;
+
 // Recipes without var schema forbid vars on OverrideConfigFor
 const noVarsOverride: OverrideConfigFor<typeof button> = {
   base: { color: 'red' },

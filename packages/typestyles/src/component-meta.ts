@@ -147,3 +147,14 @@ export function stampVarDefinitionsBrand(
     configurable: true,
   });
 }
+
+/** Expose registered var refs on the component return (`sideNav.vars.border.var`). */
+export function attachComponentVars(target: object, vars: object | undefined): void {
+  if (!vars) return;
+  Object.defineProperty(target, 'vars', {
+    value: vars,
+    enumerable: true,
+    writable: false,
+    configurable: true,
+  });
+}

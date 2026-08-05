@@ -2,4 +2,4 @@
 'typestyles': minor
 ---
 
-Add typed `vars` on `styles.override()` for component-internal CSS custom properties declared with `c.vars()`. Consumers use logical keys (`border`, `padding.outer.x`) with full TypeScript inference via `OverrideConfigFor` and optional `varDefinitions` on `styles.component()`.
+Add typed `vars` on `styles.override()` and symmetric top-level `vars` on component configs. Recipes expose a `recipe.vars` ref tree; theme consumers override with the same logical keys on `styles.override({ vars })`.

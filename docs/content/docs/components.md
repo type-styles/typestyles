@@ -391,32 +391,55 @@ See the [Migration Guide](/docs/migration) for library-specific examples.
 ## Expose themeable properties as vars
 
 If you expect a property to vary by theme region, expose it as a component-scoped CSS
-custom property instead of hard-coding the value in `base` or variant styles. Token
-and theme overrides then stay on [Tier 1](/docs/theming-patterns#tier-1--component-scoped-css-custom-properties-preferred)
-and consumers rarely need plain class overrides or `@scope`.
+custom property instead of hard-coding the value in `base` or variant styles. Declare
+vars on a top-level **`vars`** key (same shape consumers use in `styles.override({ vars })`,
+but with descriptor leaves). The recipe return exposes refs at **`recipe.vars`**.
 
 ```ts
-const button = styles.component('button', (c) => {
-  const v = c.vars({
-    background: { value: '#fff', syntax: '<color>', inherits: false },
-    foreground: { value: '#111', syntax: '<color>', inherits: false },
-  });
+export const sideNavVarDefinitions = {
+  border: { value: '1px solid #ccc', syntax: '<color>' as const },
+  headingColor: { value: '#111', syntax: '<color>' as const },
+} as const;
+
+export const sideNav = styles.component('side-nav', (c) => {
+  const v = c.vars(sideNavVarDefinitions);
   return {
+    vars: sideNavVarDefinitions,
+    slots: ['root', 'heading'] as const,
     base: {
-      backgroundColor: v.background.var,
-      color: v.foreground.var,
-    },
-    variants: {
-      intent: {
-        primary: {
-          [v.background.name]: '#0066ff',
-          [v.foreground.name]: '#fff',
-        },
-      },
+      root: { borderColor: v.border.var },
+      heading: { color: v.headingColor.var },
     },
   };
 });
+
+// After creation — same logical tree as override `vars`, but `.var` / `.name` refs:
+sideNav.vars.border.var; // "var(--side-nav-border)"
+sideNav.vars.headingColor.name; // "--side-nav-heading-color"
 ```
+
+Object configs work too when you wire styles with `var(--…)` literals or register
+matching defs in a callback:
+
+```ts
+const chip = styles.component('chip', {
+  vars: {
+    background: { value: '#fff', syntax: '<color>' as const },
+    foreground: { value: '#111', syntax: '<color>' as const },
+  },
+  base: {
+    backgroundColor: 'var(--chip-background)',
+    color: 'var(--chip-foreground)',
+  },
+});
+
+chip.vars.background.var; // "var(--chip-background)"
+```
+
+Inside a callback, `c.vars()` and a top-level `vars` key register the same paths
+(deduplicated). Prefer **`sideNav.vars`** after creation or **`c.vars()`** while
+building `base` / `variants` — the top-level `vars` key is the schema surface for
+typing and theme overrides.
 
 The [design-system example](/docs/design-system) uses this pattern throughout
 (`examples/design-system/src/components/button.ts`).
@@ -451,51 +474,8 @@ See [CSS primitives](/docs/css-primitives) for the full progressive-disclosure l
 
 ### Override internal vars in themes
 
-When consumers restyle a component per theme, prefer the top-level **`vars`** key on
-`styles.override()` instead of raw `--{scope}-{recipe}-{var}` strings in `base`.
-Typestyles maps logical keys (`border`, `padding.outer.x`) to the same custom
-properties the recipe registered with `c.vars()`.
-
-**Authors:** export a `*VarDefinitions` const alongside themeable recipes so
-consumers get autocomplete (Pattern A), or pass `varDefinitions` on
-`styles.component(…, { varDefinitions })` (Pattern B).
-
-```ts
-export const sideNavVarDefinitions = {
-  border: { value: '1px solid #ccc', syntax: '<color>' as const },
-  headingColor: { value: '#111', syntax: '<color>' as const },
-} as const;
-
-export const sideNav = styles.component('side-nav', (c) => {
-  const v = c.vars(sideNavVarDefinitions);
-  return {
-    slots: ['root', 'heading'] as const,
-    base: {
-      root: { borderColor: v.border.var },
-      heading: { color: v.headingColor.var },
-    },
-  };
-});
-
-// Pattern A — second generic on OverrideConfigFor
-import type { OverrideConfigFor } from 'typestyles';
-
-export type SideNavThemeOverride = OverrideConfigFor<typeof sideNav, typeof sideNavVarDefinitions>;
-
-// Pattern B — stamp definitions on the return type
-const sideNavBranded = styles.component(
-  'side-nav',
-  (c) => {
-    const v = c.vars(sideNavVarDefinitions);
-    return { slots: ['root'] as const, base: { root: { borderColor: v.border.var } } };
-  },
-  { varDefinitions: sideNavVarDefinitions },
-);
-
-type BrandedOverride = OverrideConfigFor<typeof sideNavBranded>;
-```
-
-Consumer theme setup:
+Theme consumers use the same top-level **`vars`** key on `styles.override()` — assignment
+leaves instead of descriptor leaves.
 
 ```ts
 styles.override(
@@ -514,6 +494,15 @@ styles.override(
 );
 ```
 
+**Typing:** when the recipe declares top-level `vars`, `OverrideConfigFor<typeof sideNav>`
+infers allowed keys automatically.
+
+```ts
+import type { OverrideConfigFor } from 'typestyles';
+
+export type SideNavThemeOverride = OverrideConfigFor<typeof sideNav>;
+```
+
 Notes:
 
 - **`vars` always targets the var host slot** — `base` for dimensioned/flat recipes,
@@ -525,8 +514,8 @@ Notes:
   `colorModes` is configured — same as other override style blocks.
 - **Collisions:** if `vars.border` and `base['--…-border']` both set the same
   property, **`base` wins** (emitted later).
-- Unknown var keys log a dev warning and are skipped; recipes with no `c.vars()`
-  registry warn when `vars` is set.
+- Unknown var keys log a dev warning and are skipped; recipes with no registered
+  vars warn when override `vars` is set.
 
 See [Theming patterns — override vars](/docs/theming-patterns#override-component-internal-vars).
 

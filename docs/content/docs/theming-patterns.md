@@ -1024,9 +1024,9 @@ custom stacks without `"overrides"` must pass `{ layer }` explicitly.
 
 #### Override component internal vars
 
-When a recipe exposes themeable surfaces with `c.vars()`, consumers can set them
-with a top-level **`vars`** block on `styles.override()` — typed logical keys
-instead of hand-written `--{scope}-{recipe}-{var}` strings mixed into `base`.
+When a recipe exposes themeable surfaces with `c.vars()` or top-level config **`vars`**,
+consumers override them with the matching top-level **`vars`** block on
+`styles.override()` (typed logical keys) or token/theme CSS on the var host.
 
 ```ts
 const sideNav = styles.component('side-nav', (c) => {
@@ -1035,6 +1035,10 @@ const sideNav = styles.component('side-nav', (c) => {
     headingColor: '#111',
   });
   return {
+    vars: {
+      border: { value: '#ccc', syntax: '<color>' as const },
+      headingColor: '#111',
+    },
     slots: ['root', 'heading'] as const,
     base: {
       root: { borderColor: v.border.var },
@@ -1043,6 +1047,7 @@ const sideNav = styles.component('side-nav', (c) => {
   };
 });
 
+// sideNav.vars.border.var — same paths consumers override below
 styles.override(
   sideNav,
   {
@@ -1054,7 +1059,7 @@ styles.override(
 // => .theme-acme .side-nav { --side-nav-border: transparent; …; margin: 8px; … }
 ```
 
-Export `*VarDefinitions` from your design system and use `OverrideConfigFor<typeof recipe, typeof definitions>` (or pass `varDefinitions` on `styles.component`) so theme configs autocomplete var keys. Full author + consumer guidance: [Components — override internal vars](/docs/components#override-internal-vars-in-themes).
+Export `*VarDefinitions` or declare top-level config `vars` so `OverrideConfigFor<typeof recipe>` autocomplete theme keys. Full author + consumer guidance: [Components — override internal vars](/docs/components#override-internal-vars-in-themes).
 
 Var overrides emit on the **var host class** (same element that owns default var
 declarations from the recipe). They compose with `base` slot overrides on that host;
