@@ -425,8 +425,7 @@ section is the authoritative tracker for the items themselves.
 - [ ] **P7.3 — Harden build-parity tests against silent skip**
   - `describe.skipIf(!existsSync(dist))` in the per-bundler parity tests (vite, rollup, esbuild,
     webpack, next, astro) means a parity test silently vanishes if run outside turbo's
-    dependency graph. Make the skip loud (log a warning naming the missing dist) or assert the
-    dist exists explicitly in CI.
+    dependency graph. Make the skip loud (log a warning naming the missing dist) or assert the dist exists explicitly in CI.
 
 - [ ] **P7.4 — Visual regression baseline**
   - No Playwright/Cypress anywhere in the repo despite `docs/content/docs/testing.md`
