@@ -359,6 +359,12 @@ export type StylesApi = {
       config: MultiSlotConfigInput<Slots>,
       options: ComponentCreateOptions & { readonly varDefinitions: Vars },
     ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
+    <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+      namespace: string,
+      config: (ctx: ComponentConfigContext) => Omit<MultiSlotConfig<Slots>, 'vars'> & {
+        vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+      },
+    ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
     <const Slots extends readonly string[]>(
       namespace: string,
       config: MultiSlotConfigInput<Slots>,
@@ -471,6 +477,13 @@ export type LayeredComponentFn<L extends string> = {
     config: MultiSlotConfig<Slots> & { vars: Vars },
     options: LayerOption<L>,
   ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
+  <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: (ctx: ComponentConfigContext) => Omit<MultiSlotConfig<Slots>, 'vars'> & {
+      vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+    },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
   <const Slots extends readonly string[]>(
     namespace: string,
     config: MultiSlotConfigInput<Slots>,
@@ -516,6 +529,13 @@ export type LayeredComponentFnWithUtils<L extends string> = {
   <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
     namespace: string,
     config: MultiSlotConfig<Slots> & { vars: Vars },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
+  <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: (ctx: ComponentConfigContext) => Omit<MultiSlotConfig<Slots>, 'vars'> & {
+      vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+    },
     options: LayerOption<L>,
   ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
   <const Slots extends readonly string[]>(
@@ -887,6 +907,12 @@ export type AttributeComponentFn = {
     namespace: string,
     config: SlotComponentConfigInput<Slots, V>,
   ): SlotAttrsReturn<Slots, V>;
+  <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: (ctx: ComponentConfigContext) => Omit<MultiSlotConfig<Slots>, 'vars'> & {
+      vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+    },
+  ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
   <const Slots extends readonly string[]>(
     namespace: string,
     config: MultiSlotConfigInput<Slots>,
@@ -907,6 +933,13 @@ export type LayeredAttributeComponentFn<L extends string> = {
     config: SlotComponentConfigInput<Slots, V>,
     options: LayerOption<L>,
   ): SlotAttrsReturn<Slots, V>;
+  <const Slots extends readonly string[], const Vars extends ComponentVarDefinitions>(
+    namespace: string,
+    config: (ctx: ComponentConfigContext) => Omit<MultiSlotConfig<Slots>, 'vars'> & {
+      vars: ComponentVarRefTree<Vars> & { readonly [componentVarDefinitionsKey]: Vars };
+    },
+    options: LayerOption<L>,
+  ): ComponentWithVarDefinitions<MultiSlotReturn<Slots>, Vars>;
   <const Slots extends readonly string[]>(
     namespace: string,
     config: MultiSlotConfigInput<Slots>,
