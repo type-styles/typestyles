@@ -117,6 +117,19 @@ const card = styles.component('card', {
 void card().root;
 void card.header;
 
+// Multi-slot callback with vars: v (code-block pattern) — must not match FlatComponentConfig callback
+const codeBlock = styles.component('code-block', (c) => {
+  const v = c.vars({ border: '#ccc', background: '#fff' });
+  return {
+    vars: v,
+    slots: ['root', 'header', 'body'] as const,
+    root: { borderColor: v.border.var, backgroundColor: v.background.var },
+    header: { borderBottomColor: v.border.var },
+    body: { padding: '8px' },
+  };
+});
+void codeBlock().root;
+
 void avatar;
 void avatarCb;
 void layeredAvatar;
@@ -124,6 +137,113 @@ void pinned;
 void badge;
 void button;
 void card;
+void codeBlock;
+
+// Layered attribute mode (var-ui createTypeStyles) — multi-slot callback vars: v + layer option
+const layeredAttr = createStyles({ mode: 'attribute', layers: ['components'] as const });
+const layeredCodeBlock = layeredAttr.component(
+  'layered-code-block',
+  (c) => {
+    const v = c.vars({ border: '#ccc', background: '#fff' });
+    return {
+      vars: v,
+      slots: ['root', 'header'] as const,
+      root: { borderColor: v.border.var, backgroundColor: v.background.var },
+      header: { borderBottomColor: v.border.var },
+    };
+  },
+  { layer: 'components' },
+);
+void layeredCodeBlock().root;
+void layeredCodeBlock;
+
+// Full slot map (code-block scale) — every declared slot has a style block
+const layeredCodeBlockFull = layeredAttr.component(
+  'layered-code-block-full',
+  (c) => {
+    const v = c.vars({ border: '#ccc', background: '#fff' });
+    return {
+      vars: v,
+      slots: [
+        'root',
+        'rootDefault',
+        'rootInline',
+        'rootDiff',
+        'rootTerminal',
+        'header',
+        'headerTerminal',
+        'title',
+        'filename',
+        'language',
+        'languageTerminal',
+        'actions',
+        'copyButton',
+        'copyButtonIdle',
+        'copyButtonCopied',
+        'copyButtonError',
+        'feedback',
+        'feedbackInline',
+        'feedbackToast',
+        'feedbackSuccess',
+        'feedbackError',
+        'body',
+        'bodyTerminal',
+        'bodyScrollable',
+        'pre',
+        'preTerminal',
+        'preWrap',
+        'preScrollX',
+        'code',
+        'lines',
+        'line',
+        'lineNumber',
+        'lineContent',
+        'lineHighlighted',
+        'lineAdded',
+        'lineDeleted',
+      ] as const,
+      root: { borderColor: v.border.var },
+      rootDefault: {},
+      rootInline: {},
+      rootDiff: {},
+      rootTerminal: {},
+      header: {},
+      headerTerminal: {},
+      title: {},
+      filename: {},
+      language: {},
+      languageTerminal: {},
+      actions: {},
+      copyButton: {},
+      copyButtonIdle: {},
+      copyButtonCopied: {},
+      copyButtonError: {},
+      feedback: {},
+      feedbackInline: {},
+      feedbackToast: {},
+      feedbackSuccess: {},
+      feedbackError: {},
+      body: {},
+      bodyTerminal: {},
+      bodyScrollable: {},
+      pre: {},
+      preTerminal: {},
+      preWrap: {},
+      preScrollX: {},
+      code: {},
+      lines: {},
+      line: {},
+      lineNumber: {},
+      lineContent: {},
+      lineHighlighted: {},
+      lineAdded: {},
+      lineDeleted: {},
+    };
+  },
+  { layer: 'components' },
+);
+void layeredCodeBlockFull().root;
+void layeredCodeBlockFull;
 
 // Mode-aware `{ light, dark }` values (Issue #169) — must type-check in recipe authoring,
 // matching what color-modes.ts already compiles to `light-dark()` at runtime.
