@@ -1,5 +1,0 @@
----
-'typestyles': patch
----
-
-Update README

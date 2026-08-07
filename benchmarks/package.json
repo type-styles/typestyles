@@ -1,7 +1,7 @@
 {
   "name": "@typestyles/benchmarks",
   "private": true,
-  "version": "0.0.22",
+  "version": "0.0.23",
   "type": "module",
   "scripts": {
     "bench": "node --expose-gc --import tsx run.ts",
