@@ -202,7 +202,9 @@ import { cx, styles } from 'typestyles';
 const card = styles.class('card', { padding: '16px' });
 
 // Combine TypeStyles classes with external classes, conditionally
-<div className={cx(card, text('base', 'muted'), isActive && 'active', externalClassName)} />;
+const { base: textBase, muted } = text;
+
+<div className={cx(card, textBase, muted, isActive && 'active', externalClassName)} />;
 ```
 
 ### Selectors and Nesting
@@ -311,6 +313,8 @@ const { html, css } = collectStyles(() => renderToString(<App />));
 // Inject `css` into the <head> of the HTML document
 ```
 
+Sync and async render functions are supported — `collectStyles` returns a `Promise` when the render callback is async.
+
 ## API Reference
 
 ### `styles.component(namespace, config)`
@@ -396,9 +400,25 @@ const dark = tokens.createTheme('dark', {
 
 See `tokens.createDarkMode`, `tokens.when`, and `tokens.colorMode` for layered light/dark/system behavior.
 
+### `createTypeStyles(options?)`
+
+For **libraries, design systems, or micro-frontends**, create a scoped **`styles` + `tokens` pair** so class names and CSS variables stay isolated—no global configuration:
+
+```tsx
+import { createTypeStyles } from 'typestyles';
+
+export const { styles, tokens } = createTypeStyles({
+  scopeId: 'my-ui',
+  mode: 'hashed',
+  prefix: 'ui',
+});
+```
+
+Supports the same options as `createStyles` and `createTokens`, plus optional **`layers`** for cascade layer wiring across both APIs. Pass optional **`utils`** to attach shorthand style expanders on the styles instance.
+
 ### `createStyles(options?)` and `createTokens(options?)`
 
-For **libraries, design systems, or micro-frontends**, create your own instances so class names and CSS variables stay isolated—no global configuration:
+Configure **`styles`** and **`tokens`** separately when you need different options on each:
 
 ```tsx
 import { createStyles, createTokens } from 'typestyles';
@@ -406,8 +426,6 @@ import { createStyles, createTokens } from 'typestyles';
 export const styles = createStyles({ scopeId: 'my-ui', mode: 'hashed', prefix: 'ui' });
 export const tokens = createTokens({ scopeId: 'my-ui' });
 ```
-
-Pass optional **`utils`** on `createStyles` to attach shorthand style expanders (same idea as `styles.withUtils` on the default export) on that single instance.
 
 The default `import { styles, tokens } from 'typestyles'` remains `createStyles()` / `createTokens()` with default options for single-app use.
 
@@ -435,9 +453,9 @@ High-level tradeoffs (details and nuance: [docs — framework comparison](./docs
 | Zero-runtime path          | Yes (opt-in build plugins)   | Compiler default   | Varies                      | Build output | Always           | Always      | Build output    |
 | SSR support                | Yes                          | Yes                | Yes                         | Yes          | Yes              | Yes         | Yes             |
 | Runtime overhead           | Minimal (off when extracted) | None               | Moderate                    | Low–none     | None             | None        | None            |
-| Main entry size (gzip)     | ~15.6 KB                     | N/A (compile-time) | ~12 KB+ (varies)            | Build output | N/A              | N/A         | N/A             |
+| Main entry size (gzip)     | ~35 KB                       | N/A (compile-time) | ~12 KB+ (varies)            | Build output | N/A              | N/A         | N/A             |
 
-Color helpers (`rgb`, `oklch`, `mix`, …) live on `typestyles/color` so the common import path stays smaller. CI enforces a gzip budget on `dist/index.js`.
+Color helpers (`rgb`, `oklch`, `mix`, …) live on `typestyles/color` so the common import path stays smaller. CI enforces a gzip budget on `dist/index.js` (~35 KB).
 
 ## Installation
 
@@ -504,6 +522,8 @@ Documentation for each published npm package lives in its README — these are t
 | [`@typestyles/open-props`](./packages/open-props)       | Open Props tokens for typestyles                              |
 | [`@typestyles/migrate`](./packages/migrate)             | Codemods from styled-components / Emotion                     |
 | [`@typestyles/eslint-plugin`](./packages/eslint-plugin) | ESLint rules for style objects                                |
+| [`@typestyles/react`](./packages/react)                 | React integration — `styled` API and `css` prop               |
+| [`@typestyles/cli`](./packages/cli)                     | CLI — class snapshots and verification                        |
 
 Site docs: [typestyles.dev](https://typestyles.dev) · Docs site source: [`docs/README.md`](./docs/README.md)
 
