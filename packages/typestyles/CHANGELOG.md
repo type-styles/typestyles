@@ -1,5 +1,15 @@
 # typestyles
 
+## 0.23.0
+
+### Minor Changes
+
+- [#202](https://github.com/type-styles/typestyles/pull/202) [`42fb13d`](https://github.com/type-styles/typestyles/commit/42fb13df8c1a8325bfdaa984233ca8c2d8cc7e85) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add typed `vars` on `styles.override()` and symmetric top-level `vars` on component configs. Recipes expose a `recipe.vars` ref tree; theme consumers override with the same logical keys on `styles.override({ vars })`. `c.vars()` auto-stamps override typing metadata — pass `vars: v` in the recipe return (no duplicate definition object).
+
+### Patch Changes
+
+- [#205](https://github.com/type-styles/typestyles/pull/205) [`9806e53`](https://github.com/type-styles/typestyles/commit/9806e53c77f6eb5dac890934ac495448a1f2c03e) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Update README
+
 ## 0.22.0
 
 ### Minor Changes
