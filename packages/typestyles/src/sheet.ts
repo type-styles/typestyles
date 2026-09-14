@@ -372,24 +372,89 @@ function cssRegistrationMatchesRule(registeredCss: string, rule: CSSRule): boole
   return false;
 }
 
-/**
- * Drop live CSSOM rules whose text exactly matches a just-invalidated registration.
- */
-function removeCssomRulesMatching(removedCss: ReadonlySet<string>): void {
-  if (!isBrowser || removedCss.size === 0) return;
-  const el = styleElement;
-  if (!el?.sheet) return;
-  const sheet = el.sheet;
-  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    const rule = sheet.cssRules[i];
-    let shouldRemove = false;
-    for (const css of removedCss) {
-      if (cssRegistrationMatchesRule(css, rule)) {
-        shouldRemove = true;
-        break;
-      }
+function cssTextMatchesRemoved(css: string, removedCss: ReadonlySet<string>): boolean {
+  const normalized = normalizeCssForMatch(css);
+  for (const registered of removedCss) {
+    if (normalized === normalizeCssForMatch(registered)) return true;
+    const inner = unwrapSingleLayerBlock(registered);
+    if (inner != null && normalized === normalizeCssForMatch(inner)) return true;
+  }
+  return false;
+}
+
+function ruleMatchesRemovedCss(rule: CSSRule, removedCss: ReadonlySet<string>): boolean {
+  for (const css of removedCss) {
+    if (cssRegistrationMatchesRule(css, rule)) return true;
+  }
+  return false;
+}
+
+function isLayerBlockRule(rule: CSSRule): boolean {
+  return 'cssRules' in rule && rule.cssText.trimStart().startsWith('@layer');
+}
+
+function removeMatchingCssomRules(
+  list: CSSRuleList,
+  owner: { deleteRule(index: number): void },
+  removedCss: ReadonlySet<string>,
+  prefixes: readonly string[],
+  keys: readonly string[],
+): void {
+  for (let i = list.length - 1; i >= 0; i--) {
+    const rule = list[i];
+    if (ruleMatchesRemovedCss(rule, removedCss)) {
+      owner.deleteRule(i);
+      continue;
     }
-    if (shouldRemove) sheet.deleteRule(i);
+    if (isLayerBlockRule(rule)) {
+      removeMatchingCssomRules(
+        (rule as CSSGroupingRule).cssRules,
+        rule as CSSGroupingRule,
+        removedCss,
+        prefixes,
+        keys,
+      );
+      continue;
+    }
+    if (prefixes.some((prefix) => ruleMatchesPrefix(rule, prefix))) {
+      owner.deleteRule(i);
+      continue;
+    }
+    if (keys.some((key) => ruleMatchesKey(rule.cssText, key))) {
+      owner.deleteRule(i);
+    }
+  }
+}
+
+/**
+ * Drop live injected rules for an invalidation: exact registered CSS in CSSOM
+ * and `#typestyles-fallback`, plus selector/key matches on non-`@layer` rules.
+ * Inner `@layer` rules are deleted individually so a sibling theme in the same
+ * layer is not swept away.
+ */
+function removeCssomRulesMatching(
+  removedCss: ReadonlySet<string>,
+  options: { prefixes?: readonly string[]; keys?: readonly string[] } = {},
+): void {
+  if (!isBrowser) return;
+  const prefixes = options.prefixes ?? [];
+  const keys = options.keys ?? [];
+  if (removedCss.size === 0 && prefixes.length === 0 && keys.length === 0) return;
+
+  const sheet = styleElement?.sheet;
+  if (sheet) {
+    removeMatchingCssomRules(sheet.cssRules, sheet, removedCss, prefixes, keys);
+  }
+
+  if (removedCss.size === 0) return;
+  const fallback =
+    fallbackStyleElement ??
+    (document.getElementById(FALLBACK_STYLE_ELEMENT_ID) as HTMLStyleElement | null);
+  if (!fallback) return;
+  for (const node of Array.from(fallback.childNodes)) {
+    if (cssTextMatchesRemoved(node.textContent ?? '', removedCss)) {
+      fallback.removeChild(node);
+    }
   }
 }
 
@@ -628,19 +693,7 @@ export function invalidatePrefix(prefix: string): void {
 
   releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes([prefix]));
 
-  if (!isBrowser) return;
-
-  const el = styleElement;
-  if (!el) return;
-  const sheet = el.sheet;
-  if (!sheet) return;
-
-  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    const rule = sheet.cssRules[i];
-    if (ruleMatchesPrefix(rule, prefix)) {
-      sheet.deleteRule(i);
-    }
-  }
+  removeCssomRulesMatching(removedCss, { prefixes: [prefix] });
 }
 
 /**
@@ -672,41 +725,7 @@ export function invalidateKeys(keys: string[], prefixes: string[]): void {
 
   releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes(prefixes));
 
-  if (!isBrowser) return;
-
-  const el = styleElement;
-  if (!el) return;
-  const sheet = el.sheet;
-  if (!sheet) return;
-
-  const keySet = new Set(keys);
-  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    const rule = sheet.cssRules[i];
-    let shouldRemove = false;
-
-    for (const prefix of prefixes) {
-      if (ruleMatchesPrefix(rule, prefix)) {
-        shouldRemove = true;
-        break;
-      }
-    }
-
-    if (!shouldRemove) {
-      // Check exact key matches — for tokens/themes/keyframes,
-      // we match based on rule content patterns
-      const ruleText = rule.cssText;
-      for (const key of keySet) {
-        if (ruleMatchesKey(ruleText, key)) {
-          shouldRemove = true;
-          break;
-        }
-      }
-    }
-
-    if (shouldRemove) {
-      sheet.deleteRule(i);
-    }
-  }
+  removeCssomRulesMatching(removedCss, { prefixes, keys });
 }
 
 /** Whether a selector key belongs to a component class family at boundaries. */

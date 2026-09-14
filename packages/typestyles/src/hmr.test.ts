@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { invalidatePrefix, invalidateKeys, createOverrideHmrSlot } from './hmr';
 import { createStyles } from './styles';
+import { createTokens } from './tokens';
 import { registeredNamespaces } from './registry';
 import {
   insertRule,
@@ -9,7 +10,31 @@ import {
   invalidateComponentNamespaceForDev,
   invalidateClassNamespaceForDev,
   getRegisteredCss,
+  TYPESTYLES_FALLBACK_STYLE_ID,
 } from './sheet';
+
+/** Live injected CSS: CSSOM on `#typestyles` plus text fallback (jsdom rejects `@layer`). */
+function cssomFullText(): string {
+  const style = document.getElementById('typestyles') as HTMLStyleElement | null;
+  const fallback = document.getElementById(TYPESTYLES_FALLBACK_STYLE_ID);
+  const fromRules = Array.from(style?.sheet?.cssRules ?? [])
+    .map((rule) => rule.cssText)
+    .join('\n');
+  return [fromRules, style?.textContent ?? '', fallback?.textContent ?? ''].join('\n');
+}
+
+function countInCssom(needle: string): number {
+  const text = cssomFullText();
+  let count = 0;
+  let from = 0;
+  while (from < text.length) {
+    const found = text.indexOf(needle, from);
+    if (found === -1) return count;
+    count += 1;
+    from = found + needle.length;
+  }
+  return count;
+}
 
 describe('invalidatePrefix', () => {
   beforeEach(() => {
@@ -112,6 +137,48 @@ describe('invalidateKeys', () => {
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;
     expect(style.sheet?.cssRules.length).toBe(1);
+  });
+
+  it('drops layered theme CSSOM rules by sheet-key prefix without deleting sibling themes', () => {
+    const tokens = createTokens({
+      scopeId: 'var-ui',
+      layers: ['tokens', 'overrides'] as const,
+      tokenLayer: 'tokens',
+    });
+    tokens.createTheme('live-edit', { base: { fontSize: { md: '16px' } } });
+    tokens.createTheme('keep', { base: { fontSize: { md: '12px' } } });
+    flushSync();
+
+    const before = cssomFullText();
+    expect(before).toContain('.theme-var-ui-live-edit');
+    expect(before).toContain('16px');
+    expect(before).toContain('.theme-var-ui-keep');
+
+    invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:', 'theme:var-ui-live-edit:']);
+
+    const after = cssomFullText();
+    expect(after).not.toContain('.theme-var-ui-live-edit');
+    expect(after).not.toContain('16px');
+    expect(after).toContain('.theme-var-ui-keep');
+    expect(after).toContain('12px');
+  });
+
+  it('replaces a layered theme in CSSOM without leaving the previous value', () => {
+    const tokens = createTokens({
+      scopeId: 'var-ui',
+      layers: ['tokens'] as const,
+      tokenLayer: 'tokens',
+    });
+    tokens.createTheme('live-edit', { base: { fontSize: { md: '16px' } } });
+    flushSync();
+    invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:', 'theme:var-ui-live-edit:']);
+    tokens.createTheme('live-edit', { base: { fontSize: { md: '19px' } } });
+    flushSync();
+
+    const text = cssomFullText();
+    expect(text).toContain('19px');
+    expect(text).not.toContain('16px');
+    expect(countInCssom('.theme-var-ui-live-edit')).toBe(1);
   });
 
   it('invalidates semantic class family at boundaries without touching prefix siblings', () => {
