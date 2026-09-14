@@ -20,6 +20,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       slug: 'getting-started',
       items: [
         { slug: 'getting-started', title: 'Getting Started' },
+        { href: '/playground', title: 'Playground' },
         { slug: 'zero-runtime', title: 'Zero-runtime extraction' },
         { slug: 'vite-plugin', title: 'Vite Plugin' },
         { slug: 'framework-comparison', title: 'Framework comparison' },

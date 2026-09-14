@@ -1,0 +1,150 @@
+---
+import PlaygroundLayout from '../layouts/PlaygroundLayout.astro';
+import { defaultPresetId, getPresetSource, playgroundPresets } from '../playground/presets';
+import { playground } from '../styles/playground';
+
+const bootstrap = {
+  presets: playgroundPresets,
+  defaultPresetId,
+  defaultSource: getPresetSource(defaultPresetId),
+};
+---
+
+<PlaygroundLayout title="Playground — typestyles">
+  <div class={playground.toolbar}>
+    <div class={playground.toolbarLeft}>
+      <label class={playground.presetLabel}>
+        Starter
+        <select class={playground.presetSelect} data-playground-preset>
+          {
+            playgroundPresets.map((preset) => (
+              <option value={preset.id}>{preset.label}</option>
+            ))
+          }
+        </select>
+      </label>
+    </div>
+    <div class={playground.toolbarRight}>
+      <button type="button" class={playground.shareButton} data-playground-share>
+        Share
+      </button>
+    </div>
+  </div>
+
+  <script type="application/json" data-playground-bootstrap set:html={JSON.stringify(bootstrap)} />
+
+  <div class={playground.workspace}>
+    <section class={playground.editorPane} aria-label="Editor">
+      <div class={playground.editorTabBar}>App.tsx</div>
+      <div class={playground.editorHost} data-playground-editor></div>
+    </section>
+
+    <section class={playground.outputPane} aria-label="Output">
+      <div class={playground.tabBar} role="tablist" aria-label="Output panels">
+        <button
+          type="button"
+          class={playground.tab}
+          data-playground-tab="result"
+          role="tab"
+          aria-selected="true"
+          data-active="true"
+        >
+          Result
+        </button>
+        <button
+          type="button"
+          class={playground.tab}
+          data-playground-tab="css"
+          role="tab"
+          aria-selected="false"
+          data-active="false"
+        >
+          CSS
+        </button>
+        <button
+          type="button"
+          class={playground.tab}
+          data-playground-tab="errors"
+          role="tab"
+          aria-selected="false"
+          data-active="false"
+        >
+          Errors
+        </button>
+      </div>
+
+      <div
+        class={playground.panel}
+        data-playground-panel="result"
+        data-active="true"
+        role="tabpanel"
+      >
+        <iframe
+          class={playground.previewFrame}
+          data-playground-frame
+          title="Playground preview"
+          sandbox="allow-scripts allow-same-origin"
+          src="/playground/iframe.html"
+        />
+      </div>
+
+      <div
+        class={playground.panel}
+        data-playground-panel="css"
+        data-active="false"
+        hidden
+        role="tabpanel"
+      >
+        <div class={playground.cssEditorHost} data-playground-css></div>
+      </div>
+
+      <div
+        class={playground.panel}
+        data-playground-panel="errors"
+        data-active="false"
+        hidden
+        role="tabpanel"
+      >
+        <pre class={playground.errorPanel} data-playground-errors>No errors</pre>
+      </div>
+
+      <div class={playground.console}>
+        <div class={playground.consoleHeader}>
+          <span>Console</span>
+        </div>
+        <pre class={playground.consoleBody} data-playground-console>Ready</pre>
+      </div>
+    </section>
+  </div>
+</PlaygroundLayout>
+
+<script>
+  async function boot(): Promise<void> {
+    const { initPlaygrounds } = await import('../components/Playground/playgroundClient');
+    initPlaygrounds();
+  }
+
+  // Eager boot covers the soft-nav case where this script first evaluates after
+  // `astro:page-load` already fired; the page-load listener covers return visits
+  // when Astro does not re-execute the module. WeakSet/state guards prevent double bind.
+  void boot();
+  document.addEventListener('astro:page-load', () => {
+    void boot();
+  });
+</script>
+
+<style is:global>
+  [data-playground-tab][data-active='true'] {
+    color: inherit;
+    border-bottom: 2px solid currentColor;
+    opacity: 1;
+  }
+
+  [data-playground-panel][data-active='true'] {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+</style>

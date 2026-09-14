@@ -7,6 +7,8 @@ TypeStyles is **CSS in TypeScript**: style objects (selectors, media queries, ps
 
 In production, TypeStyles extracts styles at build time into a **static CSS file** with zero runtime overhead — the same approach as StyleX and Vanilla Extract. During development, the runtime injects styles for instant feedback with HMR.
 
+> **Try it live:** Edit React + TypeStyles in the browser on the [Playground](/playground).
+
 ## Installation
 
 <!-- doc-install-tabs -->
