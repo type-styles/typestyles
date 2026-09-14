@@ -348,38 +348,63 @@ function normalizeCssForMatch(css: string): string {
 }
 
 /**
- * Unwrap a single `@layer name { … }` registration to its inner rule text.
- * Layered inserts are one style rule per `@layer` block — not multi-rule bags.
+ * Peel one outer `@layer` / `@media` / `@supports` wrapper. Layered theme modes
+ * register `@layer { @media { .theme-… } }`; live CSSOM often exposes the inner
+ * style rule, whose `cssText` must still match.
  */
-function unwrapSingleLayerBlock(css: string): string | null {
-  const match = css.match(/^@layer\s+[\w-]+\s*\{\s*([\s\S]*?)\s*\}\s*$/);
-  return match?.[1]?.trim() ? match[1].trim() : null;
+function unwrapOuterAtRuleBlock(css: string): string | null {
+  const trimmed = css.trim();
+  const layer = trimmed.match(/^@layer\s+[\w.-]+\s*\{\s*([\s\S]*?)\s*\}\s*$/);
+  if (layer?.[1]?.trim()) return layer[1].trim();
+  const media = trimmed.match(/^@media\b[^{]*\{\s*([\s\S]*?)\s*\}\s*$/);
+  if (media?.[1]?.trim()) return media[1].trim();
+  const supports = trimmed.match(/^@supports\b[^{]*\{\s*([\s\S]*?)\s*\}\s*$/);
+  if (supports?.[1]?.trim()) return supports[1].trim();
+  return null;
+}
+
+function registrationCssCandidates(registeredCss: string): string[] {
+  const out = [registeredCss];
+  let current = registeredCss;
+  for (;;) {
+    const inner = unwrapOuterAtRuleBlock(current);
+    if (inner == null) break;
+    out.push(inner);
+    current = inner;
+  }
+  return out;
 }
 
 /**
- * True when a live CSSOM rule is exactly one of the registered CSS strings.
+ * True when a live CSSOM rule is exactly one of the registered CSS strings
+ * (or an at-rule wrapper peeled off that string).
  * No substring `includes` — those false-positive across attribute selectors and
  * shared declaration blocks (recipe vs override with the same props).
  */
 function cssRegistrationMatchesRule(registeredCss: string, rule: CSSRule): boolean {
   const ruleText = normalizeCssForMatch(rule.cssText);
-  const registered = normalizeCssForMatch(registeredCss);
-  if (ruleText === registered) return true;
-
-  const inner = unwrapSingleLayerBlock(registeredCss);
-  if (inner != null && ruleText === normalizeCssForMatch(inner)) return true;
-
+  for (const candidate of registrationCssCandidates(registeredCss)) {
+    if (ruleText === normalizeCssForMatch(candidate)) return true;
+  }
   return false;
 }
 
 function cssTextMatchesRemoved(css: string, removedCss: ReadonlySet<string>): boolean {
   const normalized = normalizeCssForMatch(css);
   for (const registered of removedCss) {
-    if (normalized === normalizeCssForMatch(registered)) return true;
-    const inner = unwrapSingleLayerBlock(registered);
-    if (inner != null && normalized === normalizeCssForMatch(inner)) return true;
+    for (const candidate of registrationCssCandidates(registered)) {
+      if (normalized === normalizeCssForMatch(candidate)) return true;
+    }
   }
   return false;
+}
+
+function stripExactRegisteredCss(text: string, removedCss: ReadonlySet<string>): string {
+  let remaining = text;
+  for (const registered of removedCss) {
+    remaining = remaining.split(registered).join('');
+  }
+  return remaining;
 }
 
 function ruleMatchesRemovedCss(rule: CSSRule, removedCss: ReadonlySet<string>): boolean {
@@ -389,8 +414,8 @@ function ruleMatchesRemovedCss(rule: CSSRule, removedCss: ReadonlySet<string>): 
   return false;
 }
 
-function isLayerBlockRule(rule: CSSRule): boolean {
-  return 'cssRules' in rule && rule.cssText.trimStart().startsWith('@layer');
+function isGroupingRule(rule: CSSRule): rule is CSSGroupingRule {
+  return 'cssRules' in rule && typeof (rule as CSSGroupingRule).deleteRule === 'function';
 }
 
 function removeMatchingCssomRules(
@@ -406,14 +431,9 @@ function removeMatchingCssomRules(
       owner.deleteRule(i);
       continue;
     }
-    if (isLayerBlockRule(rule)) {
-      removeMatchingCssomRules(
-        (rule as CSSGroupingRule).cssRules,
-        rule as CSSGroupingRule,
-        removedCss,
-        prefixes,
-        keys,
-      );
+    if (isGroupingRule(rule)) {
+      removeMatchingCssomRules(rule.cssRules, rule, removedCss, prefixes, keys);
+      if (rule.cssRules.length === 0) owner.deleteRule(i);
       continue;
     }
     if (prefixes.some((prefix) => ruleMatchesPrefix(rule, prefix))) {
@@ -428,9 +448,9 @@ function removeMatchingCssomRules(
 
 /**
  * Drop live injected rules for an invalidation: exact registered CSS in CSSOM
- * and `#typestyles-fallback`, plus selector/key matches on non-`@layer` rules.
- * Inner `@layer` rules are deleted individually so a sibling theme in the same
- * layer is not swept away.
+ * and `#typestyles-fallback`, plus selector/key matches on style rules.
+ * Inner grouping rules are deleted individually so a sibling in the same
+ * `@layer` / `@media` is not swept away.
  */
 function removeCssomRulesMatching(
   removedCss: ReadonlySet<string>,
@@ -452,8 +472,17 @@ function removeCssomRulesMatching(
     (document.getElementById(FALLBACK_STYLE_ELEMENT_ID) as HTMLStyleElement | null);
   if (!fallback) return;
   for (const node of Array.from(fallback.childNodes)) {
-    if (cssTextMatchesRemoved(node.textContent ?? '', removedCss)) {
+    const text = node.textContent ?? '';
+    if (cssTextMatchesRemoved(text, removedCss)) {
       fallback.removeChild(node);
+      continue;
+    }
+    const next = stripExactRegisteredCss(text, removedCss);
+    if (next === text) continue;
+    if (!next.trim()) {
+      fallback.removeChild(node);
+    } else {
+      node.textContent = next;
     }
   }
 }

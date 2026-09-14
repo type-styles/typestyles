@@ -13,14 +13,75 @@ import {
   TYPESTYLES_FALLBACK_STYLE_ID,
 } from './sheet';
 
+function sheetCssText(): string {
+  const style = document.getElementById('typestyles') as HTMLStyleElement | null;
+  return Array.from(style?.sheet?.cssRules ?? [])
+    .map((rule) => rule.cssText)
+    .join('\n');
+}
+
+function fallbackCssText(): string {
+  return document.getElementById(TYPESTYLES_FALLBACK_STYLE_ID)?.textContent ?? '';
+}
+
 /** Live injected CSS: CSSOM on `#typestyles` plus text fallback (jsdom rejects `@layer`). */
 function cssomFullText(): string {
   const style = document.getElementById('typestyles') as HTMLStyleElement | null;
-  const fallback = document.getElementById(TYPESTYLES_FALLBACK_STYLE_ID);
-  const fromRules = Array.from(style?.sheet?.cssRules ?? [])
-    .map((rule) => rule.cssText)
-    .join('\n');
-  return [fromRules, style?.textContent ?? '', fallback?.textContent ?? ''].join('\n');
+  return [sheetCssText(), style?.textContent ?? '', fallbackCssText()].join('\n');
+}
+
+/** Minimal CSSOM stand-in: jsdom cannot parse `@layer` into grouping rules. */
+type FakeCssRule = {
+  cssText: string;
+  selectorText?: string;
+  cssRules?: FakeCssRule[];
+  deleteRule?: (index: number) => void;
+};
+
+function fakeStyleRule(cssText: string, selectorText: string): FakeCssRule {
+  return { cssText, selectorText };
+}
+
+function fakeGrouping(cssText: string, children: FakeCssRule[]): FakeCssRule {
+  const inner = children;
+  return {
+    cssText,
+    get cssRules() {
+      return inner;
+    },
+    deleteRule(index: number) {
+      inner.splice(index, 1);
+    },
+  };
+}
+
+function fakeSheet(rules: FakeCssRule[]): {
+  cssRules: FakeCssRule[];
+  deleteRule: (index: number) => void;
+} {
+  const list = rules;
+  return {
+    get cssRules() {
+      return list;
+    },
+    deleteRule(index: number) {
+      list.splice(index, 1);
+    },
+  };
+}
+
+function installFakeSheet(sheet: {
+  cssRules: FakeCssRule[];
+  deleteRule: (index: number) => void;
+}): void {
+  const el = document.getElementById('typestyles');
+  if (!el) throw new Error('expected #typestyles');
+  Object.defineProperty(el, 'sheet', {
+    configurable: true,
+    get() {
+      return sheet;
+    },
+  });
 }
 
 function countInCssom(needle: string): number {
@@ -149,18 +210,85 @@ describe('invalidateKeys', () => {
     tokens.createTheme('keep', { base: { fontSize: { md: '12px' } } });
     flushSync();
 
-    const before = cssomFullText();
-    expect(before).toContain('.theme-var-ui-live-edit');
-    expect(before).toContain('16px');
-    expect(before).toContain('.theme-var-ui-keep');
+    expect(fallbackCssText()).toContain('.theme-var-ui-live-edit');
+    expect(fallbackCssText()).toContain('16px');
+    expect(fallbackCssText()).toContain('.theme-var-ui-keep');
+    expect(sheetCssText()).not.toContain('.theme-var-ui-live-edit');
 
     invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:', 'theme:var-ui-live-edit:']);
 
-    const after = cssomFullText();
-    expect(after).not.toContain('.theme-var-ui-live-edit');
-    expect(after).not.toContain('16px');
-    expect(after).toContain('.theme-var-ui-keep');
-    expect(after).toContain('12px');
+    expect(fallbackCssText()).not.toContain('.theme-var-ui-live-edit');
+    expect(fallbackCssText()).not.toContain('16px');
+    expect(fallbackCssText()).toContain('.theme-var-ui-keep');
+    expect(fallbackCssText()).toContain('12px');
+  });
+
+  it('strips a layered theme from a concatenated fallback text node without dropping the sibling', () => {
+    const liveEdit = `@layer tokens {\n.theme-var-ui-live-edit { --font-size-md: 16px; }\n}`;
+    const keep = `@layer tokens {\n.theme-var-ui-keep { --font-size-md: 12px; }\n}`;
+    insertRule('layer:tokens:theme:var-ui-live-edit:base', liveEdit);
+    insertRule('layer:tokens:theme:var-ui-keep:base', keep);
+    flushSync();
+
+    const fallback = document.getElementById(TYPESTYLES_FALLBACK_STYLE_ID);
+    if (!fallback) throw new Error('expected #typestyles-fallback');
+    fallback.replaceChildren(document.createTextNode(`${liveEdit}\n${keep}\n`));
+
+    invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:']);
+
+    expect(fallbackCssText()).not.toContain('.theme-var-ui-live-edit');
+    expect(fallbackCssText()).toContain('.theme-var-ui-keep');
+  });
+
+  it('deletes a nested @media theme from a fake CSSOM layer without removing the sibling', () => {
+    const liveEdit = `@layer tokens {\n@media (prefers-color-scheme: dark) { .theme-var-ui-live-edit { --font-size-md: 16px; } }\n}`;
+    const keep = `@layer tokens {\n.theme-var-ui-keep { --font-size-md: 12px; }\n}`;
+    insertRule('layer:tokens:theme:var-ui-live-edit:mode:dark:branch:0', liveEdit);
+    insertRule('layer:tokens:theme:var-ui-keep:base', keep);
+    flushSync();
+
+    const keepRule = fakeStyleRule(
+      '.theme-var-ui-keep { --font-size-md: 12px; }',
+      '.theme-var-ui-keep',
+    );
+    const media = fakeGrouping(
+      // Browser-like serialization: missing trailing semicolon so it does not equal registered CSS.
+      '@media (prefers-color-scheme: dark) { .theme-var-ui-live-edit { --font-size-md: 16px } }',
+      [
+        fakeStyleRule(
+          '.theme-var-ui-live-edit { --font-size-md: 16px; }',
+          '.theme-var-ui-live-edit',
+        ),
+      ],
+    );
+    const layer = fakeGrouping('@layer tokens { /* merged */ }', [media, keepRule]);
+    const sheet = fakeSheet([layer]);
+    installFakeSheet(sheet);
+
+    invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:']);
+
+    expect(sheet.cssRules).toHaveLength(1);
+    expect(sheet.cssRules[0].cssRules).toHaveLength(1);
+    expect(sheet.cssRules[0].cssRules?.[0].selectorText).toBe('.theme-var-ui-keep');
+  });
+
+  it('removes an emptied @layer grouping from fake CSSOM after deleting its last inner rule', () => {
+    const liveEdit = `@layer tokens {\n.theme-var-ui-live-edit { --font-size-md: 16px; }\n}`;
+    insertRule('layer:tokens:theme:var-ui-live-edit:base', liveEdit);
+    flushSync();
+
+    const inner = fakeStyleRule(
+      '.theme-var-ui-live-edit { --font-size-md: 16px; }',
+      '.theme-var-ui-live-edit',
+    );
+    // Grouping cssText does not equal registered CSS, so the walker must recurse.
+    const layer = fakeGrouping('@layer tokens { /* serialized */ }', [inner]);
+    const sheet = fakeSheet([layer]);
+    installFakeSheet(sheet);
+
+    invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:']);
+
+    expect(sheet.cssRules).toHaveLength(0);
   });
 
   it('replaces a layered theme in CSSOM without leaving the previous value', () => {
@@ -175,9 +303,8 @@ describe('invalidateKeys', () => {
     tokens.createTheme('live-edit', { base: { fontSize: { md: '19px' } } });
     flushSync();
 
-    const text = cssomFullText();
-    expect(text).toContain('19px');
-    expect(text).not.toContain('16px');
+    expect(fallbackCssText()).toContain('19px');
+    expect(fallbackCssText()).not.toContain('16px');
     expect(countInCssom('.theme-var-ui-live-edit')).toBe(1);
   });
 
