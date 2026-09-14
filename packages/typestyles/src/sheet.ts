@@ -348,48 +348,142 @@ function normalizeCssForMatch(css: string): string {
 }
 
 /**
- * Unwrap a single `@layer name { … }` registration to its inner rule text.
- * Layered inserts are one style rule per `@layer` block — not multi-rule bags.
+ * Peel one outer `@layer` / `@media` / `@supports` wrapper. Layered theme modes
+ * register `@layer { @media { .theme-… } }`; live CSSOM often exposes the inner
+ * style rule, whose `cssText` must still match.
  */
-function unwrapSingleLayerBlock(css: string): string | null {
-  const match = css.match(/^@layer\s+[\w-]+\s*\{\s*([\s\S]*?)\s*\}\s*$/);
-  return match?.[1]?.trim() ? match[1].trim() : null;
+function unwrapOuterAtRuleBlock(css: string): string | null {
+  const trimmed = css.trim();
+  const layer = trimmed.match(/^@layer\s+[\w.-]+\s*\{\s*([\s\S]*?)\s*\}\s*$/);
+  if (layer?.[1]?.trim()) return layer[1].trim();
+  const media = trimmed.match(/^@media\b[^{]*\{\s*([\s\S]*?)\s*\}\s*$/);
+  if (media?.[1]?.trim()) return media[1].trim();
+  const supports = trimmed.match(/^@supports\b[^{]*\{\s*([\s\S]*?)\s*\}\s*$/);
+  if (supports?.[1]?.trim()) return supports[1].trim();
+  return null;
+}
+
+function registrationCssCandidates(registeredCss: string): string[] {
+  const out = [registeredCss];
+  let current = registeredCss;
+  for (;;) {
+    const inner = unwrapOuterAtRuleBlock(current);
+    if (inner == null) break;
+    out.push(inner);
+    current = inner;
+  }
+  return out;
 }
 
 /**
- * True when a live CSSOM rule is exactly one of the registered CSS strings.
+ * True when a live CSSOM rule is exactly one of the registered CSS strings
+ * (or an at-rule wrapper peeled off that string).
  * No substring `includes` — those false-positive across attribute selectors and
  * shared declaration blocks (recipe vs override with the same props).
  */
 function cssRegistrationMatchesRule(registeredCss: string, rule: CSSRule): boolean {
   const ruleText = normalizeCssForMatch(rule.cssText);
-  const registered = normalizeCssForMatch(registeredCss);
-  if (ruleText === registered) return true;
-
-  const inner = unwrapSingleLayerBlock(registeredCss);
-  if (inner != null && ruleText === normalizeCssForMatch(inner)) return true;
-
+  for (const candidate of registrationCssCandidates(registeredCss)) {
+    if (ruleText === normalizeCssForMatch(candidate)) return true;
+  }
   return false;
 }
 
-/**
- * Drop live CSSOM rules whose text exactly matches a just-invalidated registration.
- */
-function removeCssomRulesMatching(removedCss: ReadonlySet<string>): void {
-  if (!isBrowser || removedCss.size === 0) return;
-  const el = styleElement;
-  if (!el?.sheet) return;
-  const sheet = el.sheet;
-  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    const rule = sheet.cssRules[i];
-    let shouldRemove = false;
-    for (const css of removedCss) {
-      if (cssRegistrationMatchesRule(css, rule)) {
-        shouldRemove = true;
-        break;
-      }
+function cssTextMatchesRemoved(css: string, removedCss: ReadonlySet<string>): boolean {
+  const normalized = normalizeCssForMatch(css);
+  for (const registered of removedCss) {
+    for (const candidate of registrationCssCandidates(registered)) {
+      if (normalized === normalizeCssForMatch(candidate)) return true;
     }
-    if (shouldRemove) sheet.deleteRule(i);
+  }
+  return false;
+}
+
+function stripExactRegisteredCss(text: string, removedCss: ReadonlySet<string>): string {
+  let remaining = text;
+  for (const registered of removedCss) {
+    remaining = remaining.split(registered).join('');
+  }
+  return remaining;
+}
+
+function ruleMatchesRemovedCss(rule: CSSRule, removedCss: ReadonlySet<string>): boolean {
+  for (const css of removedCss) {
+    if (cssRegistrationMatchesRule(css, rule)) return true;
+  }
+  return false;
+}
+
+function isGroupingRule(rule: CSSRule): rule is CSSGroupingRule {
+  return 'cssRules' in rule && typeof (rule as CSSGroupingRule).deleteRule === 'function';
+}
+
+function removeMatchingCssomRules(
+  list: CSSRuleList,
+  owner: { deleteRule(index: number): void },
+  removedCss: ReadonlySet<string>,
+  prefixes: readonly string[],
+  keys: readonly string[],
+): void {
+  for (let i = list.length - 1; i >= 0; i--) {
+    const rule = list[i];
+    if (ruleMatchesRemovedCss(rule, removedCss)) {
+      owner.deleteRule(i);
+      continue;
+    }
+    if (isGroupingRule(rule)) {
+      removeMatchingCssomRules(rule.cssRules, rule, removedCss, prefixes, keys);
+      if (rule.cssRules.length === 0) owner.deleteRule(i);
+      continue;
+    }
+    if (prefixes.some((prefix) => ruleMatchesPrefix(rule, prefix))) {
+      owner.deleteRule(i);
+      continue;
+    }
+    if (keys.some((key) => ruleMatchesKey(rule.cssText, key))) {
+      owner.deleteRule(i);
+    }
+  }
+}
+
+/**
+ * Drop live injected rules for an invalidation: exact registered CSS in CSSOM
+ * and `#typestyles-fallback`, plus selector/key matches on style rules.
+ * Inner grouping rules are deleted individually so a sibling in the same
+ * `@layer` / `@media` is not swept away.
+ */
+function removeCssomRulesMatching(
+  removedCss: ReadonlySet<string>,
+  options: { prefixes?: readonly string[]; keys?: readonly string[] } = {},
+): void {
+  if (!isBrowser) return;
+  const prefixes = options.prefixes ?? [];
+  const keys = options.keys ?? [];
+  if (removedCss.size === 0 && prefixes.length === 0 && keys.length === 0) return;
+
+  const sheet = styleElement?.sheet;
+  if (sheet) {
+    removeMatchingCssomRules(sheet.cssRules, sheet, removedCss, prefixes, keys);
+  }
+
+  if (removedCss.size === 0) return;
+  const fallback =
+    fallbackStyleElement ??
+    (document.getElementById(FALLBACK_STYLE_ELEMENT_ID) as HTMLStyleElement | null);
+  if (!fallback) return;
+  for (const node of Array.from(fallback.childNodes)) {
+    const text = node.textContent ?? '';
+    if (cssTextMatchesRemoved(text, removedCss)) {
+      fallback.removeChild(node);
+      continue;
+    }
+    const next = stripExactRegisteredCss(text, removedCss);
+    if (next === text) continue;
+    if (!next.trim()) {
+      fallback.removeChild(node);
+    } else {
+      node.textContent = next;
+    }
   }
 }
 
@@ -628,19 +722,7 @@ export function invalidatePrefix(prefix: string): void {
 
   releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes([prefix]));
 
-  if (!isBrowser) return;
-
-  const el = styleElement;
-  if (!el) return;
-  const sheet = el.sheet;
-  if (!sheet) return;
-
-  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    const rule = sheet.cssRules[i];
-    if (ruleMatchesPrefix(rule, prefix)) {
-      sheet.deleteRule(i);
-    }
-  }
+  removeCssomRulesMatching(removedCss, { prefixes: [prefix] });
 }
 
 /**
@@ -672,41 +754,7 @@ export function invalidateKeys(keys: string[], prefixes: string[]): void {
 
   releaseReservedNamespacesForComponentOrClassNames(namespacesFromTypestylesHmrPrefixes(prefixes));
 
-  if (!isBrowser) return;
-
-  const el = styleElement;
-  if (!el) return;
-  const sheet = el.sheet;
-  if (!sheet) return;
-
-  const keySet = new Set(keys);
-  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    const rule = sheet.cssRules[i];
-    let shouldRemove = false;
-
-    for (const prefix of prefixes) {
-      if (ruleMatchesPrefix(rule, prefix)) {
-        shouldRemove = true;
-        break;
-      }
-    }
-
-    if (!shouldRemove) {
-      // Check exact key matches — for tokens/themes/keyframes,
-      // we match based on rule content patterns
-      const ruleText = rule.cssText;
-      for (const key of keySet) {
-        if (ruleMatchesKey(ruleText, key)) {
-          shouldRemove = true;
-          break;
-        }
-      }
-    }
-
-    if (shouldRemove) {
-      sheet.deleteRule(i);
-    }
-  }
+  removeCssomRulesMatching(removedCss, { prefixes, keys });
 }
 
 /** Whether a selector key belongs to a component class family at boundaries. */
