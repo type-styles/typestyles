@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.23.1
+
+### Patch Changes
+
+- [#208](https://github.com/type-styles/typestyles/pull/208) [`b51907a`](https://github.com/type-styles/typestyles/commit/b51907a4a2f11360b478fa0e9d18ded4bd7648cb) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix `invalidateKeys` / `invalidatePrefix` so layered theme rules are dropped from the live stylesheet (CSSOM and `#typestyles-fallback`) without deleting sibling themes in the same `@layer`. Nested `@media` / `@supports` groupings are walked the same way, emptied groupings are removed, and concatenated fallback text is pruned by registered CSS.
+
 ## 0.23.0
 
 ### Minor Changes
