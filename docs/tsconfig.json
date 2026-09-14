@@ -10,6 +10,13 @@
     }
   },
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "src/routeTree.gen.ts", "src/router.tsx", "src/routes/**/*.tsx"],
+  "exclude": [
+    "dist",
+    "playground-templates",
+    "public/playground",
+    "src/routeTree.gen.ts",
+    "src/router.tsx",
+    "src/routes/**/*.tsx"
+  ],
   "references": []
 }
