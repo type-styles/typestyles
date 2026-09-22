@@ -41,16 +41,16 @@ export function resetBindingDevWarnings(): void {
  *
  * @example
  * ```ts
- * import { cx } from 'typestyles';
+ * import { cx, mergeProps } from 'typestyles';
  *
  * cx('card', isActive && 'active', className);
  * // => "card active my-external-class"
  *
- * cx(button('base', 'primary'), 'extra');
- * // => "button-base button-primary extra"
+ * cx(button({ intent: 'primary' }), button({ intent: 'ghost' }), 'extra');
+ * // => "button-primary button-ghost extra" (semantic / BEM class strings)
  *
- * cx(attrButton({ variant: 'primary' }), 'extra');
- * // => "button-base extra" — ComponentAttrsResult coerces via toString()
+ * // Attribute mode: use mergeProps() or combine() — cx() drops variant attrs.
+ * mergeProps(attrButton({ variant: 'primary' }), 'extra');
  * ```
  */
 export function cx(

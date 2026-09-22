@@ -1,6 +1,6 @@
 # Spec: Attribute-mode binding helpers
 
-> **Status:** Draft (Var UI → TypeStyles)  
+> **Status:** Implemented  
 > **Target repo path:** `specs/attribute-mode-binding-helpers.md`  
 > **Motivation:** Var UI runs TypeStyles in global `mode: 'attribute'`. Framework bindings currently ship duplicate helpers (`recipeProps`, `recipeClassName`) in four places. Native `.props` covers most cases; these helpers close the remaining gaps and make attribute mode the obvious integration path.
 

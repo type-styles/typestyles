@@ -350,3 +350,4 @@ export { reset, flushSync, ensureDocumentStylesAttached };
  * ```
  */
 export { cx, mergeProps, combine };
+export type { RecipeInput } from './binding';
