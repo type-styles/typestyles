@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { cx } from './cx';
+import { resetBindingDevWarnings } from './cx';
 
 describe('cx', () => {
   it('joins multiple class strings', () => {
@@ -48,5 +49,52 @@ describe('cx', () => {
   it('preserves spaces within individual class strings', () => {
     // If someone passes a pre-joined string, it passes through unchanged
     expect(cx('btn-base btn-primary', 'extra')).toBe('btn-base btn-primary extra');
+  });
+
+  describe('dev warnings', () => {
+    const originalEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+      process.env.NODE_ENV = 'development';
+      resetBindingDevWarnings();
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalEnv;
+      vi.restoreAllMocks();
+    });
+
+    it('warns when a ComponentAttrsResult is passed in development', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const result = {
+        className: 'btn',
+        attrs: { 'data-tone': 'accent' },
+        props: { className: 'btn', 'data-tone': 'accent' },
+        toString: () => 'btn',
+      };
+
+      expect(cx(result, 'extra')).toBe('btn extra');
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('cx() dropped attrs on "btn"'));
+    });
+
+    it('does not warn for plain strings', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      expect(cx('a', 'b')).toBe('a b');
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('does not warn in production', () => {
+      process.env.NODE_ENV = 'production';
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const result = {
+        className: 'btn',
+        attrs: { 'data-tone': 'accent' },
+        props: { className: 'btn', 'data-tone': 'accent' },
+        toString: () => 'btn',
+      };
+
+      expect(cx(result)).toBe('btn');
+      expect(warn).not.toHaveBeenCalled();
+    });
   });
 });
