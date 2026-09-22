@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.24.0
+
+### Minor Changes
+
+- [#210](https://github.com/type-styles/typestyles/pull/210) [`4b1f40d`](https://github.com/type-styles/typestyles/commit/4b1f40dade837f5281824a2e7d8a6f65220baefd) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `mergeProps` and `combine` helpers for attribute-mode DOM binding, and dev warnings when `cx()` drops variant attrs. Raise main-entry gzip budget (+800 B) for the new runtime.
+
 ## 0.23.1
 
 ### Patch Changes
