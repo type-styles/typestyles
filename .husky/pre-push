@@ -4,6 +4,12 @@ if [ "$branch" = "main" ]; then
   exit 0
 fi
 
+changed_files=$(git diff --name-only origin/main...HEAD 2>/dev/null || true)
+
+if [ -n "$changed_files" ] && [ -z "$(echo "$changed_files" | grep -Ev '^(\.github/|\.husky/|\.changeset/|\.vscode/|AGENTS\.md|README\.md|specs/)' || true)" ]; then
+  exit 0
+fi
+
 changesets=$(git diff --name-only origin/main...HEAD -- '.changeset/*.md' 2>/dev/null | grep -v 'README.md' || true)
 
 if [ -z "$changesets" ]; then
