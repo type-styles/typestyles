@@ -14,7 +14,7 @@ pnpm add typestyles @typestyles/vite   # Vite + zero-runtime
 ## Core patterns
 
 ```ts
-import { createTypeStyles, cx } from 'typestyles';
+import { combine, createTypeStyles, cx, mergeProps } from 'typestyles';
 
 export const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
 
@@ -50,7 +50,9 @@ export const button = styles.component('button', {
 - `styles.class(name, properties)` — single class
 - `tokens.create(namespace, values)` — CSS custom properties (`--{scopeId}-…`)
 - `tokens.createTheme(name, config)` — theme class overrides
-- `cx(...classes)` — join class names (handles falsy values)
+- `cx(...classes)` — join class names (handles falsy values); warns in dev on attribute-mode recipe results
+- `mergeProps(result, ...classNames)` — spread recipe attrs + merged `className` (attribute mode default binding)
+- `combine(...parts)` — merge multiple recipe slots onto one element (class union + compatible attrs)
 - `styles.compose(...fns)` — compose style functions
 
 Detailed API: https://typestyles.dev/docs/api-reference.md
@@ -85,5 +87,6 @@ Guide: https://typestyles.dev/docs/zero-runtime.md
 
 - Getting started: https://typestyles.dev/docs/getting-started.md
 - React: https://typestyles.dev/docs/react-integration.md
+- Attribute mode (React & Astro): https://typestyles.dev/docs/attribute-mode-react.md
 - Tokens: https://typestyles.dev/docs/tokens.md
 - Troubleshooting: https://typestyles.dev/docs/troubleshooting.md

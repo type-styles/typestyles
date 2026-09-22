@@ -78,6 +78,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
       slug: 'examples',
       items: [
         { slug: 'react-integration', title: 'React Integration' },
+        { slug: 'attribute-mode-react', title: 'Attribute mode (React & Astro)' },
         { slug: 'component-library', title: 'Component Library' },
         { slug: 'design-system', title: 'Design System' },
         { slug: 'animation-patterns', title: 'Animation Patterns' },

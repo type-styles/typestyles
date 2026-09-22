@@ -191,6 +191,8 @@ Joins class name parts into a single string, filtering out falsy values (`false`
 
 Use `cx` to combine TypeStyles classes with external class strings and conditional expressions.
 
+In development, passing a `ComponentAttrsResult` from attribute mode logs a warning — variant attrs are not applied. Use [`mergeProps`](#mergepropsresult-classnames) or [`combine`](#combineparts) instead. See [Attribute mode — React & Astro](/docs/attribute-mode-react).
+
 ```ts
 import { cx, styles } from 'typestyles';
 
@@ -201,6 +203,31 @@ const card = styles.component('card', {
 
 cx(card(), isElevated && card.elevated, externalClassName);
 ```
+
+### `mergeProps(result, ...classNames)`
+
+Merge a recipe result (or plain class string) with optional extra class names, returning a flat props bag for DOM spread.
+
+```ts
+import { mergeProps } from 'typestyles';
+
+const s = button({ tone: 'accent' });
+<button {...mergeProps(s, className)}>Save</button>;
+```
+
+See [Attribute mode — React & Astro](/docs/attribute-mode-react).
+
+### `combine(...parts)`
+
+Merge multiple recipe results onto one element — union of class names and compatible attrs. Accepts an optional trailing `{ className }` for consumer overrides.
+
+```ts
+import { combine } from 'typestyles';
+
+<a {...combine(c.root, c.linkRoot, className)} href={href}>…</a>
+```
+
+See [Attribute mode — React & Astro](/docs/attribute-mode-react).
 
 ### CSS variables (dynamic styling)
 

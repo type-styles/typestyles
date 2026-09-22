@@ -15,6 +15,7 @@ import {
 import { globalStyle, globalFontFace, globalApply } from './global';
 import { createVar, assignVars } from './vars';
 import { cx } from './cx';
+import { mergeProps, combine } from './binding';
 import { container, createContainerRef } from './container';
 import { supports } from './supports';
 import { atRuleBlock } from './at-rule-block';
@@ -348,4 +349,5 @@ export { reset, flushSync, ensureDocumentStylesAttached };
  * // => "card-root active my-external-class"
  * ```
  */
-export { cx };
+export { cx, mergeProps, combine };
+export type { RecipeInput } from './binding';
