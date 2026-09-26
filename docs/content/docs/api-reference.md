@@ -37,6 +37,8 @@ per package or micro-frontend for isolation.
 
 **Helpers:** `getComponentMeta(component)` — read public component metadata attached by `styles.component()`.
 
+**Component registry (per `createStyles` / `createTypeStyles` instance):** `getComponent(namespace)`, `getThemeableComponents()`, `listComponentNamespaces()`. Recipes register on `styles.component()`; pass `{ themeable: false }` to exclude utilities from theme override maps.
+
 **Related exports:** `colorModes` (`['light', 'dark']`), `conditional(when, style, id?)`, `StylableOverride`, `ConditionalOverride`, `ModeAwareValue`.
 
 **Related types:** `OverrideConfig`, `OverrideConfigFor`, `InferVarDefinitions`, `ComponentVarValues`, `ComponentVarAssignValue`, `ComponentCreateOptions`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `ComponentVarRegistry`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
