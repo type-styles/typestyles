@@ -50,6 +50,10 @@ import { isColorModeObject } from './color-modes';
 import { expandModeAwareTokenValues } from './token-color-modes';
 import { compileThemeCondition, buildSelectorForContext } from './condition-compile';
 import { disposeThemeByName } from './theme-dispose';
+import {
+  applyThemeComponentOverrides,
+  type ThemeComponentsBridge,
+} from './theme-component-overrides';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -112,6 +116,11 @@ export type CreateTokensOptions = {
    * Override per call: `tokens.create('color', { … }, { layer: '…' })`.
    */
   tokenLayer?: string;
+  /**
+   * Styles instance from the same `createTypeStyles` call — required for
+   * `createTheme({ components })` recipe overrides (#216).
+   */
+  themeStyles?: ThemeComponentsBridge;
 };
 
 /**
@@ -363,6 +372,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   options: CreateTokensOptions = {},
 ): TokensApi<R> {
   const scopeId = options.scopeId?.trim() || undefined;
+  const themeStyles = options.themeStyles;
   const colorModes = options.colorModes;
   const themeOptions: CreateThemeOptions = {
     colorModes,
@@ -799,10 +809,16 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
     createTheme: (name, config, callOptions) => {
+      if (config.components && !themeStyles) {
+        throw new Error(
+          '[typestyles] createTheme({ components }) requires createTypeStyles — ' +
+            'component overrides need the styles registry from the same instance.',
+        );
+      }
       if (callOptions?.replace !== false) {
         disposeThemeByName(scopeId, name, { tokenLayer, removeLiveCss: true });
       }
-      return createTheme(
+      const surface = createTheme(
         name,
         config,
         scopeId,
@@ -810,6 +826,10 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
         customNamingActive ? themeTokenNaming : undefined,
         themeOptions,
       );
+      if (config.components && themeStyles) {
+        applyThemeComponentOverrides(surface, config.components, { use }, themeStyles);
+      }
+      return surface;
     },
     disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
     createDarkMode: (name, darkOverrides) =>

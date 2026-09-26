@@ -61,6 +61,7 @@ bundles share a page.
 - `tokens.use(namespace | createdRef | declRef)`: References existing tokens; infers types from a `tokens.create()` return value, a `tokens.declare()` return value (`SyntaxRef` brands preserved), or a `createTokens<Registry>()` generic
 - `tokens.createTheme(name, config, options?)`: Registers a theme class that overrides token custom properties. By default `options.replace` is `true`, so reusing a name disposes the previous theme first. `config.colorMode` accepts optional `{ light?, dark? }` patches; `config.modes` accepts conditional layers and `tokens.colorMode.*` preset arrays.
 - `tokens.disposeTheme(name, options?)`: Unregister a theme by name (dedupe keys + live CSSOM). HMR prefixes: `theme:{segment}:*` and, with layers, `layer:{tokenLayer}:theme:{segment}:*`.
+- `createTheme` config **`components`**: map of component **namespace** → override config (or `(ctx) => config` with `ctx.tokens.use` and `ctx.theme`). Requires `createTypeStyles` so the styles registry is available.
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
 - `tokens.when` / `tokens.colorMode`: Condition helpers for themes
 - `tokens.scopeId`: The scope passed to `createTokens`, if any

@@ -168,6 +168,7 @@ export function createTypeStyles(
       layers,
       tokenLayer,
       colorModes: rest.colorModes,
+      themeStyles: styles,
     });
     const global = createGlobal({
       layers,
@@ -191,7 +192,11 @@ export function createTypeStyles(
   }
 
   const styles = utils !== undefined ? createStyles({ ...rest, utils }) : createStyles(rest);
-  const tokens = createTokens({ scopeId: rest.scopeId, colorModes: rest.colorModes });
+  const tokens = createTokens({
+    scopeId: rest.scopeId,
+    colorModes: rest.colorModes,
+    themeStyles: styles,
+  });
   const global = createGlobal({ scopeId: rest.scopeId, breakpoints: rest.breakpoints });
   return { styles, tokens, global };
 }
