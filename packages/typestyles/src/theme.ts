@@ -39,6 +39,11 @@ export type CreateThemeOptions = {
    * Defaults to explicit `data-mode="dark"` or system dark when not pinned to light.
    */
   resolvedDarkWhen?: ThemeCondition;
+  /**
+   * When `true` (default), unregister any existing theme with the same name before emitting CSS.
+   * Set `false` to stack duplicate names (legacy behavior).
+   */
+  replace?: boolean;
 };
 
 // ---------------------------------------------------------------------------
