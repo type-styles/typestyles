@@ -242,6 +242,8 @@ export {
   normalizeModeAwareOverrides,
   normalizeThemeConfig,
 } from './token-color-modes';
+export { mergeThemePresetConfig, resolveThemeFromPatchConfig } from './theme-preset-merge';
+export type { ThemePreset } from './types';
 
 export type { ThemeEmitLayerContext } from './theme';
 

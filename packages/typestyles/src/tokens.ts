@@ -55,6 +55,7 @@ import {
   type ThemeComponentsBridge,
 } from './theme-component-overrides';
 import { applyThemeExtendToConfig } from './theme-extend';
+import { resolveThemeFromPatchConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
@@ -823,7 +824,9 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   }
 
   function emitTheme(name: string, config: ThemeConfig, callOptions?: { replace?: boolean }) {
-    if (config.components && !themeStyles) {
+    const resolved = resolveThemeFromPatchConfig(config, colorModes);
+
+    if (resolved.components && !themeStyles) {
       throw new Error(
         '[typestyles] createTheme({ components }) requires createTypeStyles — ' +
           'component overrides need the styles registry from the same instance.',
@@ -834,7 +837,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     }
 
     const tokenContext = createThemeTokenContext(use);
-    const prepared = applyThemeExtendToConfig(config, (namespace, values) => {
+    const prepared = applyThemeExtendToConfig(resolved, (namespace, values) => {
       create(namespace, values);
     });
 
@@ -849,8 +852,9 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     const withTokens: ThemeSurface = { ...surface, tokens: tokenContext };
 
-    if (config.components && themeStyles) {
-      applyThemeComponentOverrides(withTokens, config.components, tokenContext, themeStyles);
+    const components = resolved.components;
+    if (components && themeStyles) {
+      applyThemeComponentOverrides(withTokens, components, tokenContext, themeStyles);
     }
 
     return withTokens;
