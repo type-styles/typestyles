@@ -52,7 +52,7 @@ export function disposeThemeByName(
   const className = resolveThemeClassName(scopeId, name);
   const prefixes = themeInvalidationKeyPrefixes(scopeId, name, options?.tokenLayer);
   const overrideKeys = collectThemeOverrideKeys(className);
-  invalidateKeys(overrideKeys, prefixes);
+  invalidateKeys(overrideKeys, [...prefixes]);
   if (options?.removeLiveCss !== false) {
     removeCssomRulesForExactThemeClass(className);
   }
