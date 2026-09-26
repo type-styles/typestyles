@@ -1,12 +1,13 @@
 import { useContext, type ElementType, type ReactNode } from 'react';
 import { jsx as reactJsx, jsxs as reactJsxs, Fragment as ReactFragment } from 'react/jsx-runtime';
+import type { CSSProperties } from 'typestyles';
 import { resolveCssPropClass } from './css-prop';
 import { TypeStylesContext } from './context';
 import type { WithCssProp } from './types';
 
 function processCssProp<P extends Record<string, unknown>>(
   props: WithCssProp<P>,
-  styles: NonNullable<React.ContextType<typeof TypeStylesContext>>,
+  hashClass: (properties: CSSProperties, label?: string) => string,
 ): P {
   if (props.css == null) {
     return props as P;
@@ -15,7 +16,7 @@ function processCssProp<P extends Record<string, unknown>>(
   const { css, className, ...rest } = props;
   const nextProps = {
     ...rest,
-    className: resolveCssPropClass(styles.hashClass, css, className),
+    className: resolveCssPropClass(hashClass, css, className),
   } as unknown as P;
 
   return nextProps;
@@ -36,7 +37,7 @@ function wrapJsx<P extends Record<string, unknown>>(
     );
   }
 
-  const nextProps = styles ? processCssProp(props, styles) : (props as P);
+  const nextProps = styles ? processCssProp(props, styles.hashClass) : (props as P);
   return factory(type, nextProps, key);
 }
 
