@@ -502,7 +502,7 @@ export type ThemeComponentOverrideEntry = Record<string, unknown>;
 
 /** Passed to theme `components` factory functions (#216). */
 export type ThemeOverrideContext = {
-  readonly tokens: { use: (...args: never[]) => unknown };
+  readonly tokens: import('./theme-token-context').ThemeTokenContext;
   readonly theme: ThemeSurface;
 };
 
@@ -521,6 +521,11 @@ export type ThemeConfig = {
     string,
     ThemeComponentOverrideEntry | ((ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry)
   >;
+  /**
+   * Extra token namespaces to register (via `tokens.create`) and merge into this theme's
+   * `base` overrides. Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
+   */
+  extend?: Record<string, CreateTokenValues>;
 };
 
 /**
@@ -533,6 +538,11 @@ export type ThemeConfig = {
 export interface ThemeSurface {
   readonly className: string;
   readonly name: string;
+  /**
+   * Token refs for override factories — `tokens.use` plus namespace shortcuts (`tokens.color`, …).
+   * Present on surfaces from `tokens.createTheme()` / `createTypeStyles`.
+   */
+  readonly tokens?: import('./theme-token-context').ThemeTokenContext;
   toString(): string;
   [Symbol.toPrimitive](hint: string): string;
 }

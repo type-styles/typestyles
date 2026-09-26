@@ -36,6 +36,7 @@ export type {
   LayeredAttributeComponentFn,
 } from './styles';
 export type { CreateTokensOptions, TokensApi } from './tokens';
+export type { ThemeTokenContext } from './theme-token-context';
 export type { BreakpointMap, BreakpointsConfig, ResponsiveValue } from './breakpoints';
 export { resolveBreakpoints, toMediaAtRuleKey } from './breakpoints';
 export type {

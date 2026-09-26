@@ -1,7 +1,7 @@
-import type { ThemeConfig, ThemeOverrideContext } from './types';
+import type { ThemeConfig, ThemeOverrideContext, ThemeSurface } from './types';
 import type { ComponentRegistryApi } from './component-registry';
 import type { OverrideFn } from './override';
-import type { TokensApi } from './tokens';
+import type { ThemeTokenContext } from './theme-token-context';
 
 export type { ThemeOverrideContext };
 
@@ -14,7 +14,7 @@ export type ThemeComponentsBridge = ComponentRegistryApi & {
 export function applyThemeComponentOverrides(
   surface: ThemeSurface,
   components: ThemeComponentOverrides | undefined,
-  tokens: Pick<TokensApi, 'use'>,
+  tokens: ThemeTokenContext,
   styles: ThemeComponentsBridge,
 ): void {
   if (!components) return;
