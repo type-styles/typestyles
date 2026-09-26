@@ -801,6 +801,37 @@ function ruleMatchesComponentClassFamily(rule: CSSRule, blockPrefix: string): bo
 }
 
 /**
+ * Remove live CSSOM rules whose selector references the theme class token exactly
+ * (`.theme-acme`, not `.theme-acme-extra` when disposing `theme-acme`).
+ */
+export function removeCssomRulesForExactThemeClass(className: string): void {
+  if (!isBrowser) return;
+
+  const purge = (list: CSSRuleList, owner: { deleteRule(index: number): void }): void => {
+    for (let i = list.length - 1; i >= 0; i--) {
+      const rule = list[i];
+      if (ruleMatchesComponentClassFamily(rule, className)) {
+        owner.deleteRule(i);
+        continue;
+      }
+      if (isGroupingRule(rule)) {
+        purge(rule.cssRules, rule);
+        if (rule.cssRules.length === 0) owner.deleteRule(i);
+      }
+    }
+  };
+
+  const sheet = styleElement?.sheet;
+  if (sheet) purge(sheet.cssRules, sheet);
+
+  const fallback =
+    fallbackStyleElement ??
+    (document.getElementById(FALLBACK_STYLE_ELEMENT_ID) as HTMLStyleElement | null);
+  if (!fallback?.sheet) return;
+  purge(fallback.sheet.cssRules, fallback.sheet);
+}
+
+/**
  * `styles.override()` keys are `override:…` (or `layer:…:override:…` when layered).
  * Component HMR must not drop them — theme modules own those rules and are not
  * re-executed when the recipe module hot-reloads.
