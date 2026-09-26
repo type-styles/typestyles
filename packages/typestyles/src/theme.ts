@@ -24,7 +24,11 @@ import {
   type CompiledCondition,
 } from './condition-compile';
 import type { ColorModeMap } from './color-modes';
-import { expandThemeOverrides, mergeThemeColorModePatches } from './token-color-modes';
+import {
+  expandThemeOverrides,
+  mergeThemeColorModePatches,
+  normalizeThemeConfig,
+} from './token-color-modes';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {
@@ -417,6 +421,8 @@ export function createTheme(
   const segment = themeSegment(scopeId, name);
   const className = `theme-${segment}`;
 
+  const prepared = normalizeThemeConfig(config, colorModes);
+
   const emitRule = (key: string, css: string): void => {
     if (layerContext) {
       insertRules(applyLayerToRules([{ key, css }], layerContext.layer, layerContext.stack));
@@ -425,14 +431,14 @@ export function createTheme(
     }
   };
 
-  let resolvedBase = config.base ?? {};
+  let resolvedBase = prepared.base ?? {};
   let darkOnlyFallback: ThemeOverrides | null = null;
 
-  if (config.colorMode) {
+  if (prepared.colorMode) {
     const merged = mergeThemeColorModePatches(
       resolvedBase,
-      config.colorMode.light,
-      config.colorMode.dark,
+      prepared.colorMode.light,
+      prepared.colorMode.dark,
       colorModes,
     );
     resolvedBase = merged.merged;
@@ -453,7 +459,7 @@ export function createTheme(
     emitRule(`theme:${segment}:base`, `.${className} { }`);
   }
 
-  const modes: ThemeModeDefinition[] = [...(config.modes ?? [])];
+  const modes: ThemeModeDefinition[] = [...(prepared.modes ?? [])];
   if (darkOnlyFallback && Object.keys(darkOnlyFallback).length > 0) {
     modes.push({
       id: 'token-dark-fallback',
