@@ -499,6 +499,14 @@ export type ThemeColorModePatches = {
  * `colorMode` merges light/dark patches into `light-dark()` on custom properties.
  * `modes` adds conditional override layers (presets, shadow fallbacks, etc.).
  */
+export type ThemeComponentOverrideEntry = Record<string, unknown>;
+
+/** Passed to theme `components` factory functions (#216). */
+export type ThemeOverrideContext = {
+  readonly tokens: { use: (...args: never[]) => unknown };
+  readonly theme: ThemeSurface;
+};
+
 export type ThemeConfig = {
   /** Base token overrides — emitted as `.theme-{name} { … }`. */
   base?: ThemeOverrides;
@@ -506,6 +514,14 @@ export type ThemeConfig = {
   colorMode?: ThemeColorModePatches;
   /** Conditional mode layers with explicit `when` conditions. */
   modes?: ThemeModeDefinition[];
+  /**
+   * Recipe overrides scoped to the theme class. Keys are component namespaces from
+   * `styles.component(namespace, …)` on the same `createTypeStyles` instance.
+   */
+  components?: Record<
+    string,
+    ThemeComponentOverrideEntry | ((ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry)
+  >;
 };
 
 /**
