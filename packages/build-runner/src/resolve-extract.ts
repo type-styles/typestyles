@@ -12,6 +12,18 @@ export interface TypestylesExtractOptions {
    * Output CSS filename. Defaults to `typestyles.css`.
    */
   fileName?: string;
+  /**
+   * Additional module that re-exports {@link getRegisteredComponentRefs} (or an
+   * equivalent object of every themeable recipe handle) so extract bundles retain
+   * full design-system CSS without a hand-maintained registry file.
+   */
+  registeredComponentsModule?: string;
+  /**
+   * When `"allRegisteredComponents"`, same as setting
+   * {@link registeredComponentsModule} to the first resolved extract module
+   * (typically your `createTypeStyles` entry).
+   */
+  include?: 'allRegisteredComponents';
 }
 
 /**
@@ -21,10 +33,21 @@ export function resolveExtractModules(
   root: string,
   extract: TypestylesExtractOptions | undefined,
 ): string[] {
+  let modules: string[];
   if (extract?.modules !== undefined) {
-    return extract.modules;
+    modules = [...extract.modules];
+  } else {
+    modules = discoverDefaultExtractModules(root);
   }
-  return discoverDefaultExtractModules(root);
+
+  const registered =
+    extract?.registeredComponentsModule ??
+    (extract?.include === 'allRegisteredComponents' ? modules[0] : undefined);
+  if (registered && !modules.includes(registered)) {
+    modules.push(registered);
+  }
+
+  return modules;
 }
 
 /**

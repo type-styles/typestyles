@@ -54,3 +54,13 @@ export function attachComponentRegistryMethods<T extends object>(
     listComponentNamespaces: registry.listComponentNamespaces.bind(registry),
   });
 }
+
+/**
+ * Plain object of themeable recipe handles keyed by namespace — import or re-export
+ * from CSS extract entries so bundlers retain every registered component's CSS (#219).
+ */
+export function getRegisteredComponentRefs(
+  styles: ComponentRegistryApi,
+): Readonly<Record<string, object>> {
+  return Object.fromEntries(styles.getThemeableComponents());
+}

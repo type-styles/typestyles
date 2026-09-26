@@ -3,6 +3,7 @@ import { reset } from './sheet';
 import { createStyles } from './styles';
 import { createTypeStyles } from './create-type-styles';
 import { getComponentMeta } from './component-meta';
+import { getRegisteredComponentRefs } from './component-registry';
 
 describe('component registry', () => {
   beforeEach(() => {
@@ -34,6 +35,13 @@ describe('component registry', () => {
     b.styles.component('card', { base: { padding: '2rem' } });
 
     expect(a.styles.getComponent('card')).not.toBe(b.styles.getComponent('card'));
+  });
+
+  it('getRegisteredComponentRefs returns themeable handles keyed by namespace', () => {
+    const styles = createStyles({ scopeId: 'refs' });
+    const button = styles.component('button', { base: { color: 'blue' } });
+    styles.component('util', { base: { display: 'none' } }, { themeable: false });
+    expect(getRegisteredComponentRefs(styles)).toEqual({ button });
   });
 
   it('replaces duplicate namespace on the same instance', () => {
