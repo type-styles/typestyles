@@ -29,6 +29,7 @@ import {
   mergeThemeColorModePatches,
   normalizeThemeConfig,
 } from './token-color-modes';
+import { resolveThemeFromPatchConfig } from './theme-preset-merge';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {
@@ -421,7 +422,10 @@ export function createTheme(
   const segment = themeSegment(scopeId, name);
   const className = `theme-${segment}`;
 
-  const prepared = normalizeThemeConfig(config, colorModes);
+  const prepared = normalizeThemeConfig(
+    resolveThemeFromPatchConfig(config, colorModes),
+    colorModes,
+  );
 
   const emitRule = (key: string, css: string): void => {
     if (layerContext) {

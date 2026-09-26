@@ -506,6 +506,14 @@ export type ThemeOverrideContext = {
   readonly theme: ThemeSurface;
 };
 
+/** Preset slice merged via `from` / `patch` on {@link ThemeConfig}. */
+export type ThemePreset = {
+  base?: ThemeOverrides;
+  colorMode?: ThemeColorModePatches;
+  modes?: ThemeModeDefinition[];
+  extend?: Record<string, CreateTokenValues>;
+};
+
 export type ThemeConfig = {
   /** Base token overrides — emitted as `.theme-{name} { … }`. */
   base?: ThemeOverrides;
@@ -526,6 +534,12 @@ export type ThemeConfig = {
    * `base` overrides. Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
    */
   extend?: Record<string, CreateTokenValues>;
+  /** Preset defaults — deep-merged with `patch` before compile (#220). */
+  from?: ThemePreset;
+  /** Overrides merged onto `from`. */
+  patch?: ThemePreset & {
+    components?: ThemeConfig['components'];
+  };
 };
 
 /**
