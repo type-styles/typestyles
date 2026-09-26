@@ -1,5 +1,17 @@
 # typestyles
 
+## 0.25.0
+
+### Minor Changes
+
+- [#221](https://github.com/type-styles/typestyles/pull/221) [`f8e1bb4`](https://github.com/type-styles/typestyles/commit/f8e1bb499db91492770625e2c598bcd6a62692a4) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add per-instance component registry (`getComponent`, `getThemeableComponents`, `listComponentNamespaces`) and `themeable` opt-out on `styles.component()` ([#214](https://github.com/type-styles/typestyles/issues/214)). Raise main-entry gzip budget (+300 B) for registry runtime.
+
+- [#223](https://github.com/type-styles/typestyles/pull/223) [`5e4858e`](https://github.com/type-styles/typestyles/commit/5e4858efecfcedaebe78c7f9b0bb6c53625818e5) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `createTheme({ components })` for namespace-keyed recipe overrides on the same `createTypeStyles` instance ([#216](https://github.com/type-styles/typestyles/issues/216)). Raise main-entry gzip budget (+400 B) for theme component override runtime.
+
+- [#222](https://github.com/type-styles/typestyles/pull/222) [`40ae70b`](https://github.com/type-styles/typestyles/commit/40ae70b51939ff7d56e9c859c6701d0378a7a91c) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `tokens.disposeTheme()` and replace-by-default `createTheme` ([#215](https://github.com/type-styles/typestyles/issues/215)). Raise main-entry gzip budget (+600 B cumulative with registry work) for theme disposal runtime.
+
+- [#224](https://github.com/type-styles/typestyles/pull/224) [`457d7b0`](https://github.com/type-styles/typestyles/commit/457d7b07ca8df3c5074d5613712b4ed3ef9134fc) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Accept inline `{ light, dark }` token leaves in theme overrides with automatic normalization ([#217](https://github.com/type-styles/typestyles/issues/217)). Export `normalizeModeAwareOverrides` and `normalizeThemeConfig`. Raise main-entry gzip budget (+600 B) for normalization runtime.
+
 ## 0.24.0
 
 ### Minor Changes
