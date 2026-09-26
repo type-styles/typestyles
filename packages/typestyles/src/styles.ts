@@ -753,17 +753,15 @@ export function createStyles(
       return attachComponentRegistryMethods(
         createStylesWithUtilsLayered(utils, classNaming, registry),
         registry,
-      ) as StylesWithUtilsApiLayered<StyleUtils, string>;
+      ) as unknown as StylesWithUtilsApiLayered<StyleUtils, string>;
     }
     return attachComponentRegistryMethods(
       createStylesWithUtils(utils, classNaming, registry),
       registry,
-    ) as StylesWithUtilsApi<StyleUtils>;
+    ) as unknown as StylesWithUtilsApi<StyleUtils>;
   }
 
-  return attachComponentRegistryMethods(buildStylesRuntimeApi(classNaming, registry), registry) as
-    | StylesApi
-    | StylesApiWithLayers<string>;
+  return buildStylesRuntimeApi(classNaming, registry);
 }
 
 function registerComponentFromOptions(
@@ -816,7 +814,47 @@ function buildStylesRuntimeApi(
     )) as OverrideFn;
 
   if (layered) {
-    return {
+    return attachComponentRegistryMethods(
+      {
+        classNaming,
+        container: containerQuery,
+        containerRef,
+        supports: supportsQuery,
+        atRuleBlock: atRuleBlockFn,
+        breakpoint,
+        media,
+        has: hasNested,
+        is: isNested,
+        where: whereNested,
+        property,
+        class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
+          const layer = options.layer;
+          return createClass(classNaming, name, properties, layer);
+        },
+        hashClass: (
+          properties: CSSProperties,
+          options: LayerOption<string> & { label?: string },
+        ) => {
+          const { layer, label } = options;
+          return createHashClass(classNaming, properties, label, layer);
+        },
+        component: componentImpl as unknown as LayeredComponentFn<string>,
+        withUtils: <U extends StyleUtils>(utils: U) =>
+          attachComponentRegistryMethods(
+            createStylesWithUtilsLayered(utils, classNaming, registry),
+            registry,
+          ) as unknown as StylesWithUtilsApiLayered<U, string>,
+        compose,
+        scope,
+        override,
+        // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
+      },
+      registry,
+    ) as unknown as StylesApiWithLayers<string>;
+  }
+
+  return attachComponentRegistryMethods(
+    {
       classNaming,
       container: containerQuery,
       containerRef,
@@ -828,53 +866,26 @@ function buildStylesRuntimeApi(
       is: isNested,
       where: whereNested,
       property,
-      class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
-        const layer = options.layer;
-        return createClass(classNaming, name, properties, layer);
-      },
-      hashClass: (properties: CSSProperties, options: LayerOption<string> & { label?: string }) => {
-        const { layer, label } = options;
-        return createHashClass(classNaming, properties, label, layer);
-      },
-      component: componentImpl as unknown as LayeredComponentFn<string>,
-      withUtils: (utils) =>
+      class: (name: string, properties: CSSProperties) =>
+        createClass(classNaming, name, properties),
+      hashClass: (properties: CSSProperties, label?: string) =>
+        createHashClass(classNaming, properties, label),
+      component: componentImpl as StylesApi['component'],
+      withUtils: <U extends StyleUtils>(utils: U) =>
         attachComponentRegistryMethods(
-          createStylesWithUtilsLayered(utils, classNaming, registry),
+          createStylesWithUtils(utils, classNaming, registry),
           registry,
-        ),
+        ) as unknown as StylesWithUtilsApi<U>,
       compose,
       scope,
       override,
       // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
-    } as StylesApiWithLayers<string>;
-  }
-
-  return {
-    classNaming,
-    container: containerQuery,
-    containerRef,
-    supports: supportsQuery,
-    atRuleBlock: atRuleBlockFn,
-    breakpoint,
-    media,
-    has: hasNested,
-    is: isNested,
-    where: whereNested,
-    property,
-    class: (name: string, properties: CSSProperties) => createClass(classNaming, name, properties),
-    hashClass: (properties: CSSProperties, label?: string) =>
-      createHashClass(classNaming, properties, label),
-    component: componentImpl as StylesApi['component'],
-    withUtils: (utils) =>
-      attachComponentRegistryMethods(createStylesWithUtils(utils, classNaming, registry), registry),
-    compose,
-    scope,
-    override,
-    // `as` (not `satisfies`): checking `typeof container` overloads with conditional literal returns hits TS2589.
-  } as StylesApi;
+    },
+    registry,
+  ) as unknown as StylesApi;
 }
 
-export type StylesWithUtilsApi<U extends StyleUtils> = {
+export type StylesWithUtilsApi<U extends StyleUtils> = ComponentRegistryApi & {
   readonly container: typeof containerQuery;
   readonly containerRef: (label: string) => ContainerNameRef;
   readonly supports: typeof supportsQuery;
@@ -1073,33 +1084,38 @@ export function createStylesWithUtils<U extends StyleUtils>(
     return handle;
   }
 
-  return {
-    container: containerQuery,
-    containerRef,
-    supports: supportsQuery,
-    atRuleBlock: atRuleBlockFn,
-    breakpoint,
-    media,
-    has: hasNested,
-    is: isNested,
-    where: whereNested,
-    class: (name, properties) => createClass(classNaming, name, apply(properties)),
-    hashClass: (properties, label) => createHashClass(classNaming, apply(properties), label),
-    component: component as StylesWithUtilsApi<U>['component'],
-    compose,
-    scope: (opts, className, overrides) =>
-      createScope(classNaming, opts, className, apply(overrides)),
-    override: ((component: object, config: unknown, options?: OverrideOptions<string>) => {
-      const meta = getComponentMeta(component);
-      const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
-      return createOverride(
-        classNaming,
-        component,
-        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply, hasSlots),
-        options,
-      );
-    }) as OverrideFn,
-  };
+  return attachComponentRegistryMethods(
+    {
+      container: containerQuery,
+      containerRef,
+      supports: supportsQuery,
+      atRuleBlock: atRuleBlockFn,
+      breakpoint,
+      media,
+      has: hasNested,
+      is: isNested,
+      where: whereNested,
+      class: (name: string, properties: CSSPropertiesWithUtils<U>) =>
+        createClass(classNaming, name, apply(properties)),
+      hashClass: (properties: CSSPropertiesWithUtils<U>, label?: string) =>
+        createHashClass(classNaming, apply(properties), label),
+      component: component as StylesWithUtilsApi<U>['component'],
+      compose,
+      scope: (opts: ScopeOptions, className: string, overrides: CSSPropertiesWithUtils<U>) =>
+        createScope(classNaming, opts, className, apply(overrides)),
+      override: ((component: object, config: unknown, options?: OverrideOptions<string>) => {
+        const meta = getComponentMeta(component);
+        const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
+        return createOverride(
+          classNaming,
+          component,
+          transformOverrideConfigWithUtils(config as Record<string, unknown>, apply, hasSlots),
+          options,
+        );
+      }) as OverrideFn,
+    },
+    registry,
+  ) as unknown as StylesWithUtilsApi<U>;
 }
 
 function createStylesWithUtilsLayered<U extends StyleUtils>(
@@ -1144,37 +1160,43 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
     return handle;
   }
 
-  return {
-    container: containerQuery,
-    containerRef,
-    supports: supportsQuery,
-    atRuleBlock: atRuleBlockFn,
-    breakpoint,
-    media,
-    has: hasNested,
-    is: isNested,
-    where: whereNested,
-    class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<string>) =>
-      createClass(classNaming, name, apply(properties), options.layer),
-    hashClass: (
-      properties: CSSPropertiesWithUtils<U>,
-      options: LayerOption<string> & { label?: string },
-    ) => createHashClass(classNaming, apply(properties), options.label, options.layer),
-    component: component as unknown as LayeredComponentFnWithUtils<string>,
-    compose,
-    scope: (opts, className, overrides) =>
-      createScope(classNaming, opts, className, apply(overrides)),
-    override: ((componentObj: object, config: unknown, options?: OverrideOptions<string>) => {
-      const meta = getComponentMeta(componentObj);
-      const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
-      return createOverride(
-        classNaming,
-        componentObj,
-        transformOverrideConfigWithUtils(config as Record<string, unknown>, apply, hasSlots),
-        options,
-      );
-    }) as OverrideFn,
-  };
+  return attachComponentRegistryMethods(
+    {
+      container: containerQuery,
+      containerRef,
+      supports: supportsQuery,
+      atRuleBlock: atRuleBlockFn,
+      breakpoint,
+      media,
+      has: hasNested,
+      is: isNested,
+      where: whereNested,
+      class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<string>) =>
+        createClass(classNaming, name, apply(properties), options.layer),
+      hashClass: (
+        properties: CSSPropertiesWithUtils<U>,
+        options: LayerOption<string> & { label?: string },
+      ) => createHashClass(classNaming, apply(properties), options.label, options.layer),
+      component: component as unknown as LayeredComponentFnWithUtils<string>,
+      compose,
+      scope: (
+        opts: ScopeOptions & { layer?: string },
+        className: string,
+        overrides: CSSPropertiesWithUtils<U>,
+      ) => createScope(classNaming, opts, className, apply(overrides)),
+      override: ((componentObj: object, config: unknown, options?: OverrideOptions<string>) => {
+        const meta = getComponentMeta(componentObj);
+        const hasSlots = meta?.kind === 'slot' || meta?.kind === 'multi-slot';
+        return createOverride(
+          classNaming,
+          componentObj,
+          transformOverrideConfigWithUtils(config as Record<string, unknown>, apply, hasSlots),
+          options,
+        );
+      }) as OverrideFn,
+    },
+    registry,
+  ) as unknown as StylesWithUtilsApiLayered<U, string>;
 }
 
 function makeTransformComponentConfigWithUtils<U extends StyleUtils>(
