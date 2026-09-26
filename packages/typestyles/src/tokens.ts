@@ -54,6 +54,8 @@ import {
   applyThemeComponentOverrides,
   type ThemeComponentsBridge,
 } from './theme-component-overrides';
+import { applyThemeExtendToConfig } from './theme-extend';
+import { createThemeTokenContext } from './theme-token-context';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -184,6 +186,13 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
   };
   createTheme: (name: string, config: ThemeConfig, options?: { replace?: boolean }) => ThemeSurface;
   disposeTheme: (name: string, options?: { removeLiveCss?: boolean }) => void;
+  /**
+   * Register a namespace when missing, then return `tokens.use(namespace)`.
+   */
+  ensureNamespace: <const T extends CreateTokenValues, N extends string>(
+    namespace: N,
+    values: T,
+  ) => TokenRefTree<T>;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
   when: typeof when;
   colorMode: typeof colorMode;
@@ -803,44 +812,70 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return ref;
   }
 
+  function ensureNamespace<const T extends CreateTokenValues, N extends string>(
+    namespace: N,
+    values: T,
+  ): TokenRefTree<T> {
+    if (!registeredNamespaces.has(namespace)) {
+      create(namespace, values);
+    }
+    return use(namespace) as TokenRefTree<T>;
+  }
+
+  function emitTheme(name: string, config: ThemeConfig, callOptions?: { replace?: boolean }) {
+    if (config.components && !themeStyles) {
+      throw new Error(
+        '[typestyles] createTheme({ components }) requires createTypeStyles — ' +
+          'component overrides need the styles registry from the same instance.',
+      );
+    }
+    if (callOptions?.replace !== false) {
+      disposeThemeByName(scopeId, name, { tokenLayer, removeLiveCss: true });
+    }
+
+    const tokenContext = createThemeTokenContext(use);
+    const prepared = applyThemeExtendToConfig(config, (namespace, values) => {
+      create(namespace, values);
+    });
+
+    const surface = createTheme(
+      name,
+      prepared,
+      scopeId,
+      themeLayerContext,
+      customNamingActive ? themeTokenNaming : undefined,
+      themeOptions,
+    );
+
+    const withTokens: ThemeSurface = { ...surface, tokens: tokenContext };
+
+    if (config.components && themeStyles) {
+      applyThemeComponentOverrides(withTokens, config.components, tokenContext, themeStyles);
+    }
+
+    return withTokens;
+  }
+
   return {
     scopeId,
     create: create as TokensApi<R>['create'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
-    createTheme: (name, config, callOptions) => {
-      if (config.components && !themeStyles) {
-        throw new Error(
-          '[typestyles] createTheme({ components }) requires createTypeStyles — ' +
-            'component overrides need the styles registry from the same instance.',
-        );
-      }
-      if (callOptions?.replace !== false) {
-        disposeThemeByName(scopeId, name, { tokenLayer, removeLiveCss: true });
-      }
-      const surface = createTheme(
-        name,
-        config,
-        scopeId,
-        themeLayerContext,
-        customNamingActive ? themeTokenNaming : undefined,
-        themeOptions,
-      );
-      if (config.components && themeStyles) {
-        applyThemeComponentOverrides(surface, config.components, { use }, themeStyles);
-      }
-      return surface;
-    },
+    createTheme: (name, config, callOptions) => emitTheme(name, config, callOptions),
+    ensureNamespace,
     disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
-    createDarkMode: (name, darkOverrides) =>
-      createDarkMode(
+    createDarkMode: (name, darkOverrides) => {
+      const tokenContext = createThemeTokenContext(use);
+      const surface = createDarkMode(
         name,
         darkOverrides,
         scopeId,
         themeLayerContext,
         customNamingActive ? themeTokenNaming : undefined,
         themeOptions,
-      ),
+      );
+      return { ...surface, tokens: tokenContext };
+    },
     when,
     colorMode,
   };
