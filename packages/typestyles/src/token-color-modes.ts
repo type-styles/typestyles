@@ -6,7 +6,7 @@ import {
   type ColorModeMap,
 } from './color-modes';
 import { isPlainObject } from './breakpoints';
-import type { ThemeOverrides, TokenValues, RegisteredPropertyRef } from './types';
+import type { ThemeConfig, ThemeOverrides, TokenValues, RegisteredPropertyRef } from './types';
 
 const defaultModeMap: ColorModeMap = ['light', 'dark'];
 
@@ -383,6 +383,135 @@ export function coerceUnexpandedModeLeaves(values: TokenValues): TokenValues {
     out[key] = child;
   }
   return out as TokenValues;
+}
+
+type SplitTokenValuesResult = {
+  base: TokenValues | undefined;
+  darkPatch: TokenValues | undefined;
+};
+
+function splitTokenValues(value: TokenValues, colorModes: ColorModeMap): SplitTokenValuesResult {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return { base: value, darkPatch: undefined };
+  }
+  if (!isNestedTokenObject(value)) {
+    return { base: value, darkPatch: undefined };
+  }
+
+  if (isColorModeObject(value, colorModes)) {
+    validateColorModeObject('', value, colorModes);
+    const lightKey = colorModes[0];
+    const darkKey = colorModes[1] ?? colorModes.find((m) => m !== lightKey);
+    const lightVal = value[lightKey];
+    const darkVal = darkKey != null ? value[darkKey] : undefined;
+    const baseScalar =
+      lightVal !== undefined ? lightVal : darkVal !== undefined ? darkVal : undefined;
+    if (baseScalar === undefined) {
+      return { base: undefined, darkPatch: undefined };
+    }
+    const darkScalar =
+      darkVal !== undefined && String(darkVal) !== String(lightVal ?? darkVal)
+        ? darkVal
+        : undefined;
+    return {
+      base: baseScalar,
+      darkPatch: darkScalar,
+    };
+  }
+
+  const baseObj: Record<string, unknown> = {};
+  const darkObj: Record<string, unknown> = {};
+  let hasBase = false;
+  let hasDark = false;
+
+  for (const [key, child] of Object.entries(value)) {
+    const split = splitTokenValues(child as TokenValues, colorModes);
+    if (split.base !== undefined) {
+      baseObj[key] = split.base;
+      hasBase = true;
+    }
+    if (split.darkPatch !== undefined) {
+      darkObj[key] = split.darkPatch;
+      hasDark = true;
+    }
+  }
+
+  return {
+    base: hasBase ? (baseObj as TokenValues) : undefined,
+    darkPatch: hasDark ? (darkObj as TokenValues) : undefined,
+  };
+}
+
+function mergeThemeOverridePatches(
+  ...patches: (ThemeOverrides | undefined)[]
+): ThemeOverrides | undefined {
+  let out: ThemeOverrides | undefined;
+  for (const patch of patches) {
+    if (!patch || Object.keys(patch).length === 0) continue;
+    out = out ? mergeThemeOverrides(out, patch) : patch;
+  }
+  return out;
+}
+
+/**
+ * Split nested `{ light, dark }` leaves into light-first base values and a dark patch tree.
+ * Used before `colorMode` merging so inline mode leaves compose with explicit `colorMode` patches.
+ */
+export function normalizeModeAwareOverrides(
+  overrides: ThemeOverrides,
+  colorModes: ColorModeMap = defaultModeMap,
+): { base: ThemeOverrides; darkPatch: ThemeOverrides } {
+  const base: Record<string, unknown> = {};
+  const darkPatch: Record<string, unknown> = {};
+
+  for (const [namespace, values] of Object.entries(overrides)) {
+    if (values == null) continue;
+    const split = splitTokenValues(values as TokenValues, colorModes);
+    if (split.base !== undefined) base[namespace] = split.base;
+    if (split.darkPatch !== undefined) darkPatch[namespace] = split.darkPatch;
+  }
+
+  return { base: base as ThemeOverrides, darkPatch: darkPatch as ThemeOverrides };
+}
+
+/** Normalize theme config: split mode-aware leaves in `base` / `colorMode` before compile. */
+export function normalizeThemeConfig(
+  config: ThemeConfig,
+  colorModes: ColorModeMap | undefined,
+): ThemeConfig {
+  if (!colorModes) return config;
+
+  const { base, darkPatch: baseDarkPatch } = normalizeModeAwareOverrides(
+    config.base ?? {},
+    colorModes,
+  );
+
+  let colorMode = config.colorMode;
+
+  const lightSplit = colorMode?.light
+    ? normalizeModeAwareOverrides(colorMode.light, colorModes)
+    : undefined;
+  const darkSplit = colorMode?.dark
+    ? normalizeModeAwareOverrides(colorMode.dark, colorModes)
+    : undefined;
+
+  const mergedDark = mergeThemeOverridePatches(
+    baseDarkPatch,
+    lightSplit?.darkPatch,
+    darkSplit?.base,
+    darkSplit?.darkPatch,
+  );
+
+  colorMode = {
+    light: lightSplit?.base ?? colorMode?.light,
+    dark: mergedDark ?? colorMode?.dark,
+  };
+
+  if (colorMode.light === undefined && colorMode.dark === undefined) {
+    colorMode = undefined;
+  }
+
+  return { ...config, base, colorMode };
 }
 
 /** Expand mode-aware values inside each namespace of theme overrides. */

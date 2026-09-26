@@ -11,6 +11,7 @@ TypeStyles uses CSS custom properties for theming, making it flexible and powerf
 
 - **`config.base`** — Token overrides always applied on `.theme-{name}` (your usual light / brand default).
 - **`config.colorMode`** — Optional `{ light?, dark? }` patches deep-merged into `base` and compiled to `light-dark()` when `colorModes` is configured (see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves)).
+- **Inline `{ light, dark }` leaves** — On scalar token paths in `base`, `colorMode`, or `modes[].overrides`, TypeStyles splits light-first values into `base` and dark values into the dark patch (same as pre-processing in design-system helpers). No consumer-side tree splitting required when `colorModes` is set. Use `normalizeModeAwareOverrides()` from `typestyles` for tests or debugging.
 - **`config.modes`** — Manual list of `{ id, overrides, when }` layers (see `tokens.when.*`), including spreads of `tokens.colorMode.*` preset arrays.
 
 Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).

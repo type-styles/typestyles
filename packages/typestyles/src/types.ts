@@ -393,11 +393,10 @@ export type TokenRegistry = Record<string, TokenValues>;
  * Nested token values where any object level may omit keys (for mode layers that
  * only tweak a subtree of `base`).
  */
-export type DeepPartialTokenValues =
-  | string
-  | number
+export type DeepPartialTokenValues<M extends ColorModeMap = LightDarkColorModes> =
+  | ModeAwareTokenLeaf<M>
   | {
-      [key: string]: DeepPartialTokenValues | undefined;
+      [key: string]: DeepPartialTokenValues<M> | undefined;
     };
 
 /**

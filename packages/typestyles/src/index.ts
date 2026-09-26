@@ -233,6 +233,8 @@ export {
   canUseLightDarkForTokenValue,
   cloneThemeValues,
   mergeThemeOverrides,
+  normalizeModeAwareOverrides,
+  normalizeThemeConfig,
 } from './token-color-modes';
 
 export type { ThemeEmitLayerContext } from './theme';
