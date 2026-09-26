@@ -49,6 +49,7 @@ import type { ColorModeMap } from './color-modes';
 import { isColorModeObject } from './color-modes';
 import { expandModeAwareTokenValues } from './token-color-modes';
 import { compileThemeCondition, buildSelectorForContext } from './condition-compile';
+import { disposeThemeByName } from './theme-dispose';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -172,7 +173,8 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
       options?: { nameTemplate?: TokenNameTemplate },
     ): DeclaredTokenRef<TSchema, N>;
   };
-  createTheme: (name: string, config: ThemeConfig) => ThemeSurface;
+  createTheme: (name: string, config: ThemeConfig, options?: { replace?: boolean }) => ThemeSurface;
+  disposeTheme: (name: string, options?: { removeLiveCss?: boolean }) => void;
   createDarkMode: (name: string, darkOverrides: ThemeOverrides) => ThemeSurface;
   when: typeof when;
   colorMode: typeof colorMode;
@@ -796,15 +798,20 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     create: create as TokensApi<R>['create'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
-    createTheme: (name, config) =>
-      createTheme(
+    createTheme: (name, config, callOptions) => {
+      if (callOptions?.replace !== false) {
+        disposeThemeByName(scopeId, name, { tokenLayer, removeLiveCss: true });
+      }
+      return createTheme(
         name,
         config,
         scopeId,
         themeLayerContext,
         customNamingActive ? themeTokenNaming : undefined,
         themeOptions,
-      ),
+      );
+    },
+    disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
     createDarkMode: (name, darkOverrides) =>
       createDarkMode(
         name,
