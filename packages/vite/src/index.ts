@@ -6,6 +6,7 @@ import {
   reportDuplicateNamespaces,
   resolveExtractMode,
   resolveExtractModules,
+  resolveRegisteredComponentsFrom,
   runTypestylesBuild,
   type TypestylesExtractOptions,
   type TypestylesIntegrationMode,
@@ -116,6 +117,7 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
   /** Effective module list after optional convention discovery; set in `config`. */
   let resolvedExtractModules: string[] = [];
+  let resolvedRegisteredComponentsFrom: string | undefined;
   let resolvedMode: TypestylesIntegrationMode = 'runtime';
 
   // Track namespaces per module for duplicate detection
@@ -138,6 +140,10 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
 
       const root = resolvePath(config.root ?? process.cwd());
       resolvedExtractModules = resolveExtractModulesForVite(root, extract);
+      resolvedRegisteredComponentsFrom = resolveRegisteredComponentsFrom(
+        extract,
+        resolvedExtractModules,
+      );
       resolvedMode = resolveExtractMode(options.mode, resolvedExtractModules);
 
       if (env.command === 'build' && (resolvedMode === 'build' || resolvedMode === 'hybrid')) {
@@ -208,6 +214,7 @@ export default function typestylesPlugin(options: TypestylesPluginOptions = {}):
             devExtractInFlight = runTypestylesBuild({
               root,
               modules: resolvedExtractModules,
+              registeredComponentsFrom: resolvedRegisteredComponentsFrom,
             })
               .then((css) => {
                 devExtractCss = css;
@@ -331,6 +338,7 @@ if (import.meta.hot) {
         const css = await runTypestylesBuild({
           root,
           modules: resolvedExtractModules,
+          registeredComponentsFrom: resolvedRegisteredComponentsFrom,
         });
         this.emitFile({
           type: 'asset',

@@ -4,6 +4,7 @@ import {
   reportDuplicateNamespaces,
   resolveExtractMode,
   resolveExtractModules,
+  resolveRegisteredComponentsFrom,
   runTypestylesBuild,
   TYPESTYLES_IMPORT_RE,
   type TypestylesExtractOptions,
@@ -35,6 +36,7 @@ export default class TypestylesWebpackPlugin implements WebpackPluginInstance {
   private readonly root: string;
   private readonly moduleNamespaces = new Map<string, { keys: string[]; prefixes: string[] }>();
   private readonly resolvedExtractModules: string[];
+  private readonly resolvedRegisteredComponentsFrom: string | undefined;
   private readonly resolvedMode: TypestylesIntegrationMode;
 
   constructor(options: TypestylesWebpackPluginOptions = {}) {
@@ -43,6 +45,10 @@ export default class TypestylesWebpackPlugin implements WebpackPluginInstance {
     this.extract = options.extract;
     this.root = options.root ?? process.cwd();
     this.resolvedExtractModules = resolveExtractModules(this.root, this.extract);
+    this.resolvedRegisteredComponentsFrom = resolveRegisteredComponentsFrom(
+      this.extract,
+      this.resolvedExtractModules,
+    );
     this.resolvedMode = resolveExtractMode(this.mode, this.resolvedExtractModules);
   }
 
@@ -96,6 +102,7 @@ export default class TypestylesWebpackPlugin implements WebpackPluginInstance {
               cssPromise = runTypestylesBuild({
                 root: this.root,
                 modules: this.resolvedExtractModules,
+                registeredComponentsFrom: this.resolvedRegisteredComponentsFrom,
               });
             }
             const css = await cssPromise;

@@ -74,7 +74,7 @@ This means TypeStyles never needs a "did you forget to build your theme" runtime
 
 The one thing to get right is the same as for component styles: the modules calling `tokens.create` / `createTheme` must be reachable from your [convention entry](#vite) (or explicit `extract.modules`).
 
-**Design systems with many recipes:** export `getRegisteredComponentRefs(styles)` from your `createTypeStyles` entry (or a sibling module) and add it to the extract graph — e.g. Vite `extract.registeredComponentsModule: 'src/themeable-refs.ts'` or `extract.include: 'allRegisteredComponents'` (uses the first extract module). That keeps every namespace registered via `styles.component()` in the bundle without a hand-maintained registry object.
+**Design systems with many recipes:** export `getRegisteredComponentRefs(styles)` from your `createTypeStyles` entry (or a sibling module) and add it to the extract graph — e.g. Vite `extract.registeredComponentsModule: 'src/themeable-refs.ts'`. Or set `extract.include: 'allRegisteredComponents'` to run that helper against the **`styles` named export** of the first extract module (usually your `createTypeStyles` entry). That keeps every namespace registered via `styles.component()` in the bundle without a hand-maintained registry object.
 
 To guard against a theme module dropping out of the entry graph, assert on a token variable or theme class with `verifyTypestylesBuild()` (see [Verify extraction in CI](#verify-extraction-in-ci)):
 

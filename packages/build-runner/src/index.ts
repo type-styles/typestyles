@@ -9,6 +9,7 @@ export {
 export {
   resolveExtractMode,
   resolveExtractModules,
+  resolveRegisteredComponentsFrom,
   type TypestylesExtractOptions,
   type TypestylesIntegrationMode,
 } from './resolve-extract';
@@ -55,6 +56,11 @@ export interface RunTypestylesBuildOptions {
    * Module paths (relative to root) that register typestyles styles.
    */
   modules: string[];
+  /**
+   * When set, import this module's `styles` export and call `getRegisteredComponentRefs`
+   * so themeable recipes registered on that instance are kept in the extract graph.
+   */
+  registeredComponentsFrom?: string;
 }
 
 function toImportPath(modulePath: string): string {
@@ -71,15 +77,26 @@ function toImportPath(modulePath: string): string {
  * This is shared by integrations (Vite, Rollup, Rolldown, etc.) so app code
  * does not need an external TS runtime loader like tsx.
  */
+function registeredComponentsBootstrap(modulePath: string): string {
+  const importPath = toImportPath(modulePath);
+  return [
+    `import { getRegisteredComponentRefs } from 'typestyles';`,
+    `import { styles as __typestyles_extract_styles__ } from ${JSON.stringify(importPath)};`,
+    'void getRegisteredComponentRefs(__typestyles_extract_styles__);',
+  ].join('\n');
+}
+
 export async function runTypestylesBuild({
   root,
   modules,
+  registeredComponentsFrom,
 }: RunTypestylesBuildOptions): Promise<string> {
   if (!modules.length) return '';
 
-  const importLines = modules
-    .map((mod) => `import ${JSON.stringify(toImportPath(mod))};`)
-    .join('\n');
+  const importLines = [
+    ...modules.map((mod) => `import ${JSON.stringify(toImportPath(mod))};`),
+    ...(registeredComponentsFrom ? [registeredComponentsBootstrap(registeredComponentsFrom)] : []),
+  ].join('\n');
   const bundleResult = await esbuildBuild({
     write: false,
     bundle: true,

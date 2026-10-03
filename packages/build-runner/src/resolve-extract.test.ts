@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { resolveExtractModules } from './resolve-extract';
+import { resolveExtractModules, resolveRegisteredComponentsFrom } from './resolve-extract';
 
 describe('resolveExtractModules', () => {
-  it('appends registeredComponentsModule when include allRegisteredComponents', () => {
+  it('does not duplicate modules when include is allRegisteredComponents', () => {
     const modules = resolveExtractModules('/tmp', {
       modules: ['src/styles.ts', 'src/recipes/index.ts'],
       include: 'allRegisteredComponents',
@@ -16,5 +16,20 @@ describe('resolveExtractModules', () => {
       registeredComponentsModule: 'src/themeable-refs.ts',
     });
     expect(modules).toEqual(['src/entry.ts', 'src/themeable-refs.ts']);
+  });
+});
+
+describe('resolveRegisteredComponentsFrom', () => {
+  it('returns the first extract module for allRegisteredComponents', () => {
+    expect(
+      resolveRegisteredComponentsFrom({ include: 'allRegisteredComponents' }, [
+        'src/typestyles-entry.ts',
+        'src/recipes/index.ts',
+      ]),
+    ).toBe('src/typestyles-entry.ts');
+  });
+
+  it('returns undefined when include is not set', () => {
+    expect(resolveRegisteredComponentsFrom(undefined, ['src/entry.ts'])).toBeUndefined();
   });
 });

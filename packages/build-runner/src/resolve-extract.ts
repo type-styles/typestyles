@@ -19,9 +19,9 @@ export interface TypestylesExtractOptions {
    */
   registeredComponentsModule?: string;
   /**
-   * When `"allRegisteredComponents"`, same as setting
-   * {@link registeredComponentsModule} to the first resolved extract module
-   * (typically your `createTypeStyles` entry).
+   * When `"allRegisteredComponents"`, extraction runs `getRegisteredComponentRefs(styles)`
+   * against the **`styles` named export** of the first resolved extract module (typically
+   * your `createTypeStyles` entry) so every registry namespace is retained in the bundle.
    */
   include?: 'allRegisteredComponents';
 }
@@ -40,14 +40,26 @@ export function resolveExtractModules(
     modules = discoverDefaultExtractModules(root);
   }
 
-  const registered =
-    extract?.registeredComponentsModule ??
-    (extract?.include === 'allRegisteredComponents' ? modules[0] : undefined);
-  if (registered && !modules.includes(registered)) {
-    modules.push(registered);
+  const registeredModule = extract?.registeredComponentsModule;
+  if (registeredModule && !modules.includes(registeredModule)) {
+    modules.push(registeredModule);
   }
 
   return modules;
+}
+
+/**
+ * Entry module whose `styles` export is passed to `getRegisteredComponentRefs` during extract
+ * when {@link TypestylesExtractOptions.include} is `"allRegisteredComponents"`.
+ */
+export function resolveRegisteredComponentsFrom(
+  extract: TypestylesExtractOptions | undefined,
+  modules: string[],
+): string | undefined {
+  if (extract?.include !== 'allRegisteredComponents' || modules.length === 0) {
+    return undefined;
+  }
+  return modules[0];
 }
 
 /**
