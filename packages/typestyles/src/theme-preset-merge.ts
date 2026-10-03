@@ -15,7 +15,7 @@ function mergeExtendMaps(
     const a = from?.[key];
     const b = patch?.[key];
     if (a !== undefined && b !== undefined) {
-      out[key] = mergeTokenValues(a, b);
+      out[key] = mergeTokenValues(a, b) as CreateTokenValues;
     } else {
       out[key] = (b ?? a)!;
     }
