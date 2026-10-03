@@ -12,7 +12,7 @@ describe('component registry', () => {
   it('registers components by namespace on createStyles', () => {
     const styles = createStyles({ scopeId: 'reg' });
     const button = styles.component('button', { base: { color: 'red' } });
-    const hidden = styles.component(
+    styles.component(
       'visually-hidden',
       { base: { clip: 'rect(0,0,0,0)' } },
       {

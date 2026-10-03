@@ -1,17 +1,17 @@
-import type { TokenValues } from './types';
-import type { TokensApi } from './tokens';
+/** Runtime `tokens.use` on theme surfaces (keeps DTS independent of generic `TokensApi<R>`). */
+export type ThemeTokenUseFn = (namespaceOrRef: string) => unknown;
 
 /** Token bag on {@link ThemeSurface} — `use()` plus `tokens.color`-style namespace refs. */
 export type ThemeTokenContext = {
-  use: TokensApi['use'];
-} & Record<string, ReturnType<TokensApi['use']>>;
+  use: ThemeTokenUseFn;
+} & Record<string, unknown>;
 
-export function createThemeTokenContext(use: TokensApi['use']): ThemeTokenContext {
+export function createThemeTokenContext(use: ThemeTokenUseFn): ThemeTokenContext {
   return new Proxy({ use } as ThemeTokenContext, {
     get(target, prop, receiver) {
       if (prop === 'use') return use;
       if (typeof prop === 'string') {
-        return use(prop as keyof TokenValues & string);
+        return use(prop);
       }
       return Reflect.get(target, prop, receiver);
     },

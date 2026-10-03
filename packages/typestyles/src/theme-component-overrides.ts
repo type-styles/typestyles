@@ -1,4 +1,9 @@
-import type { ThemeConfig, ThemeOverrideContext, ThemeSurface } from './types';
+import type {
+  ThemeComponentOverrideEntry,
+  ThemeConfig,
+  ThemeOverrideContext,
+  ThemeSurface,
+} from './types';
 import type { ComponentRegistryApi } from './component-registry';
 import type { OverrideFn } from './override';
 import type { ThemeTokenContext } from './theme-token-context';
@@ -44,7 +49,12 @@ export function applyThemeComponentOverrides(
     }
 
     const config = typeof entry === 'function' ? entry(ctx) : entry;
-    styles.override(handle, config, {
+    const overrideForTheme = styles.override as (
+      component: object,
+      config: ThemeComponentOverrideEntry,
+      options?: { selectorPrefix?: string },
+    ) => void;
+    overrideForTheme(handle, config, {
       selectorPrefix: `.${surface.className}`,
     });
   }

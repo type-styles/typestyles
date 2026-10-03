@@ -1,6 +1,7 @@
 import type * as CSS from 'csstype';
 import type { ColorModeMap, LightDarkColorModes } from './color-modes';
 import type { CreateValueForSyntax, CssSyntax, CSSPropertyValue, SyntaxRef } from './types-syntax';
+import type { ThemeTokenContext } from './theme-token-context';
 
 export type {
   CompatibleSourceSyntax,
@@ -502,7 +503,7 @@ export type ThemeComponentOverrideEntry = Record<string, unknown>;
 
 /** Passed to theme `components` factory functions (#216). */
 export type ThemeOverrideContext = {
-  readonly tokens: import('./theme-token-context').ThemeTokenContext;
+  readonly tokens: ThemeTokenContext;
   readonly theme: ThemeSurface;
 };
 
@@ -542,7 +543,7 @@ export interface ThemeSurface {
    * Token refs for override factories — `tokens.use` plus namespace shortcuts (`tokens.color`, …).
    * Present on surfaces from `tokens.createTheme()` / `createTypeStyles`.
    */
-  readonly tokens?: import('./theme-token-context').ThemeTokenContext;
+  readonly tokens?: ThemeTokenContext;
   toString(): string;
   [Symbol.toPrimitive](hint: string): string;
 }
