@@ -64,6 +64,7 @@ bundles share a page.
 - `createTheme` config **`components`**: map of component **namespace** → override config (or `(ctx) => config` with `ctx.tokens.use` and `ctx.theme`). Requires `createTypeStyles` so the styles registry is available.
 - `createTheme` config **`extend`**: register extra token namespaces (`tokens.create`) and merge values into the theme's `base` overrides. Returned `ThemeSurface.tokens` exposes `use()` plus namespace shortcuts (`surface.tokens.brand`, …).
 - `tokens.ensureNamespace(namespace, values)`: create-if-absent, then return `tokens.use(namespace)`.
+- `createTheme` **`from` / `patch`**: deep-merge preset slices (`base`, `colorMode`, `modes`, `extend`) before compile; put recipe overrides on `patch.components`.
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
 - `tokens.when` / `tokens.colorMode`: Condition helpers for themes
 - `tokens.scopeId`: The scope passed to `createTokens`, if any

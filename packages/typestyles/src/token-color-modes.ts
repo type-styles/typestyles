@@ -195,7 +195,7 @@ export function cloneThemeValues<T>(values: T): T {
   return out as T;
 }
 
-function mergeTokenValues(base: TokenValues, patch: TokenValues): TokenValues {
+export function mergeTokenValues(base: TokenValues, patch: TokenValues): TokenValues {
   if (!isPlainObject(base) || !isPlainObject(patch)) return cloneThemeValues(patch);
 
   const out = cloneThemeValues(base) as Record<string, TokenValues>;
