@@ -6,6 +6,8 @@ import type {
 } from './types';
 import type { ComponentRegistryApi } from './component-registry';
 import type { OverrideFn } from './override';
+import type { ThemeTokenContext } from './theme-token-context';
+
 export type { ThemeOverrideContext };
 
 export type ThemeComponentOverrides = NonNullable<ThemeConfig['components']>;
@@ -17,7 +19,7 @@ export type ThemeComponentsBridge = ComponentRegistryApi & {
 export function applyThemeComponentOverrides(
   surface: ThemeSurface,
   components: ThemeComponentOverrides | undefined,
-  tokens: ThemeOverrideContext['tokens'],
+  tokens: ThemeTokenContext,
   styles: ThemeComponentsBridge,
 ): void {
   if (!components) return;
