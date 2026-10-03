@@ -101,6 +101,11 @@ export type {
   SlotVariantSelectorMap,
 } from './component-meta';
 export { getComponentMeta } from './component-meta';
+export { getRegisteredComponentRefs } from './component-registry';
+export type {
+  ThemeComponentsOverrideMap,
+  OverrideConfigForNamespace,
+} from './theme-component-types';
 
 export { createStyles, createTokens, createTypeStyles, createGlobal };
 

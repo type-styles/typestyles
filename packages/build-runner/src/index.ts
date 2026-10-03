@@ -1,4 +1,9 @@
-export { DEFAULT_EXTRACT_MODULE_CANDIDATES, discoverDefaultExtractModules } from './discover';
+export {
+  DEFAULT_EXTRACT_MODULE_CANDIDATES,
+  DEFAULT_REGISTERED_COMPONENTS_MODULE_BASES,
+  discoverDefaultExtractModules,
+  discoverRegisteredComponentsModule,
+} from './discover';
 export {
   extractNamespaces,
   moduleNeedsOverrideHmr,

@@ -72,7 +72,11 @@ createTheme('dark', { base: { color: { primary: '#66aaff', surface: '#111111' } 
 
 This means TypeStyles never needs a "did you forget to build your theme" runtime warning. Some zero-runtime libraries treat themes as a separate compilation unit — Astryx, for example, falls back to runtime theme evaluation and warns when a theme wasn't pre-built with `astryx theme build`. In TypeStyles there is no unbuilt-theme state to fall back from: if your entry module reaches the theme, the theme is in the CSS file.
 
-The one thing to get right is the same as for component styles: the modules calling `tokens.create` / `createTheme` must be reachable from your [convention entry](#vite) (or explicit `extract.modules`). To guard against a theme module dropping out of the entry graph, assert on a token variable or theme class with `verifyTypestylesBuild()` (see [Verify extraction in CI](#verify-extraction-in-ci)):
+The one thing to get right is the same as for component styles: the modules calling `tokens.create` / `createTheme` must be reachable from your [convention entry](#vite) (or explicit `extract.modules`).
+
+**Design systems with many recipes:** add a registry module (for example `src/themeable-refs.ts`) that side-effect-imports every recipe file and exports `getRegisteredComponentRefs(styles)` from your `createTypeStyles` runtime. Wire it with Vite `extract.registeredComponentsModule: 'src/themeable-refs.ts'`, or set `extract.include: 'allRegisteredComponents'` to auto-append a convention registry file when present (`src/themeable-refs.ts`, `src/typestyles/themeable-refs.ts`, …). The plain `typestyles-entry` side-effect imports are not enough on their own — the registry module must pull in each recipe so `styles.component()` runs during extract.
+
+To guard against a theme module dropping out of the entry graph, assert on a token variable or theme class with `verifyTypestylesBuild()` (see [Verify extraction in CI](#verify-extraction-in-ci)):
 
 ```ts
 verifyTypestylesBuild({

@@ -1,4 +1,4 @@
-import { discoverDefaultExtractModules } from './discover';
+import { discoverDefaultExtractModules, discoverRegisteredComponentsModule } from './discover';
 
 export type TypestylesIntegrationMode = 'runtime' | 'build' | 'hybrid';
 
@@ -12,6 +12,19 @@ export interface TypestylesExtractOptions {
    * Output CSS filename. Defaults to `typestyles.css`.
    */
   fileName?: string;
+  /**
+   * Additional module that re-exports {@link getRegisteredComponentRefs} (or an
+   * equivalent object of every themeable recipe handle) so extract bundles retain
+   * full design-system CSS without a hand-maintained registry object.
+   */
+  registeredComponentsModule?: string;
+  /**
+   * When `"allRegisteredComponents"`, appends a convention registry module if present
+   * ({@link discoverRegisteredComponentsModule}) or {@link registeredComponentsModule}
+   * when set. That file must side-effect-import every recipe and reference
+   * `getRegisteredComponentRefs(styles)` — the extract entry alone is not enough.
+   */
+  include?: 'allRegisteredComponents';
 }
 
 /**
@@ -21,10 +34,22 @@ export function resolveExtractModules(
   root: string,
   extract: TypestylesExtractOptions | undefined,
 ): string[] {
+  let modules: string[];
   if (extract?.modules !== undefined) {
-    return extract.modules;
+    modules = [...extract.modules];
+  } else {
+    modules = discoverDefaultExtractModules(root);
   }
-  return discoverDefaultExtractModules(root);
+
+  let registeredModule = extract?.registeredComponentsModule;
+  if (!registeredModule && extract?.include === 'allRegisteredComponents') {
+    registeredModule = discoverRegisteredComponentsModule(root);
+  }
+  if (registeredModule && !modules.includes(registeredModule)) {
+    modules.push(registeredModule);
+  }
+
+  return modules;
 }
 
 /**

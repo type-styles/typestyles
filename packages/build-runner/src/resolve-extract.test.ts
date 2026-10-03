@@ -1,33 +1,37 @@
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { describe, expect, it } from 'vitest';
-import { resolveExtractMode, resolveExtractModules } from './resolve-extract';
+import { describe, it, expect } from 'vitest';
+import { resolveExtractModules } from './resolve-extract';
 
 describe('resolveExtractModules', () => {
-  it('returns explicit modules when configured', () => {
-    const root = mkdtempSync(join(tmpdir(), 'typestyles-resolve-'));
-    expect(resolveExtractModules(root, { modules: ['a.ts', 'b.ts'] })).toEqual(['a.ts', 'b.ts']);
-  });
-
-  it('discovers convention entries when modules are omitted', () => {
-    const root = mkdtempSync(join(tmpdir(), 'typestyles-resolve-'));
+  it('appends discovered themeable-refs when include is allRegisteredComponents', () => {
+    const root = mkdtempSync(join(tmpdir(), 'typestyles-extract-'));
     mkdirSync(join(root, 'src'), { recursive: true });
-    writeFileSync(join(root, 'src/typestyles-entry.ts'), "import 'typestyles';\n");
-    expect(resolveExtractModules(root, undefined)).toEqual(['src/typestyles-entry.ts']);
-  });
-});
+    writeFileSync(join(root, 'src/typestyles-entry.ts'), "import './site';\n");
+    writeFileSync(join(root, 'src/themeable-refs.ts'), "import { styles } from './runtime';\n");
 
-describe('resolveExtractMode', () => {
-  it('defaults to build when modules resolve', () => {
-    expect(resolveExtractMode(undefined, ['src/typestyles-entry.ts'])).toBe('build');
-  });
-
-  it('defaults to runtime when no modules resolve', () => {
-    expect(resolveExtractMode(undefined, [])).toBe('runtime');
+    const modules = resolveExtractModules(root, {
+      modules: ['src/typestyles-entry.ts'],
+      include: 'allRegisteredComponents',
+    });
+    expect(modules).toEqual(['src/typestyles-entry.ts', 'src/themeable-refs.ts']);
   });
 
-  it('honors an explicit mode', () => {
-    expect(resolveExtractMode('hybrid', ['src/typestyles-entry.ts'])).toBe('hybrid');
+  it('does not duplicate extract modules when include is set but no registry file exists', () => {
+    const root = mkdtempSync(join(tmpdir(), 'typestyles-extract-'));
+    const modules = resolveExtractModules(root, {
+      modules: ['src/styles.ts', 'src/recipes/index.ts'],
+      include: 'allRegisteredComponents',
+    });
+    expect(modules).toEqual(['src/styles.ts', 'src/recipes/index.ts']);
+  });
+
+  it('adds registeredComponentsModule when not already in modules list', () => {
+    const modules = resolveExtractModules('/tmp', {
+      modules: ['src/entry.ts'],
+      registeredComponentsModule: 'src/themeable-refs.ts',
+    });
+    expect(modules).toEqual(['src/entry.ts', 'src/themeable-refs.ts']);
   });
 });
