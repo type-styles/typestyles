@@ -1,5 +1,23 @@
 # typestyles
 
+## 0.25.0
+
+### Minor Changes
+
+- [#221](https://github.com/type-styles/typestyles/pull/221) [`f8e1bb4`](https://github.com/type-styles/typestyles/commit/f8e1bb499db91492770625e2c598bcd6a62692a4) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add per-instance component registry (`getComponent`, `getThemeableComponents`, `listComponentNamespaces`) and `themeable` opt-out on `styles.component()` ([#214](https://github.com/type-styles/typestyles/issues/214)). Raise main-entry gzip budget (+300 B) for registry runtime.
+
+- [#223](https://github.com/type-styles/typestyles/pull/223) [`5e4858e`](https://github.com/type-styles/typestyles/commit/5e4858efecfcedaebe78c7f9b0bb6c53625818e5) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `createTheme({ components })` for namespace-keyed recipe overrides on the same `createTypeStyles` instance ([#216](https://github.com/type-styles/typestyles/issues/216)). Raise main-entry gzip budget (+400 B) for theme component override runtime.
+
+- [#225](https://github.com/type-styles/typestyles/pull/225) [`5582a83`](https://github.com/type-styles/typestyles/commit/5582a83a7fbcb0734bc01715c6b144dd67bd3663) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `createTheme({ extend })`, `ThemeSurface.tokens`, and `tokens.ensureNamespace()` ([#218](https://github.com/type-styles/typestyles/issues/218)). Raise main-entry gzip budget (+400 B) for extend/token-context runtime.
+
+- [#227](https://github.com/type-styles/typestyles/pull/227) [`b698012`](https://github.com/type-styles/typestyles/commit/b698012f29efa989140f44c68d83ad08264fa057) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `createTheme({ from, patch })` preset merge for design-system themes ([#220](https://github.com/type-styles/typestyles/issues/220)). Raise main-entry gzip budget (+400 B cumulative) for preset merge runtime.
+
+- [#222](https://github.com/type-styles/typestyles/pull/222) [`40ae70b`](https://github.com/type-styles/typestyles/commit/40ae70b51939ff7d56e9c859c6701d0378a7a91c) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `tokens.disposeTheme()` and replace-by-default `createTheme` ([#215](https://github.com/type-styles/typestyles/issues/215)). Raise main-entry gzip budget (+600 B cumulative with registry work) for theme disposal runtime.
+
+- [#224](https://github.com/type-styles/typestyles/pull/224) [`457d7b0`](https://github.com/type-styles/typestyles/commit/457d7b07ca8df3c5074d5613712b4ed3ef9134fc) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Accept inline `{ light, dark }` token leaves in theme overrides with automatic normalization ([#217](https://github.com/type-styles/typestyles/issues/217)). Export `normalizeModeAwareOverrides` and `normalizeThemeConfig`. Raise main-entry gzip budget (+600 B) for normalization runtime.
+
+- [#226](https://github.com/type-styles/typestyles/pull/226) [`cf3f66c`](https://github.com/type-styles/typestyles/commit/cf3f66c93e9b9dfc92444f5f764b8d9e3609a2c1) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add component registry extract helpers and `extract.registeredComponentsModule` / `include: 'allRegisteredComponents'` ([#219](https://github.com/type-styles/typestyles/issues/219)). The include flag appends a convention `themeable-refs` registry module to the extract graph when it exists.
+
 ## 0.24.0
 
 ### Minor Changes

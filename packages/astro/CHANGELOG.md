@@ -1,5 +1,12 @@
 # @typestyles/astro
 
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @typestyles/vite@0.4.5
+
 ## 0.3.5
 
 ### Patch Changes

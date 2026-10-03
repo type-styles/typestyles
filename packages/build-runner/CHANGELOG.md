@@ -1,5 +1,11 @@
 # @typestyles/build-runner
 
+## 0.5.3
+
+### Patch Changes
+
+- [#226](https://github.com/type-styles/typestyles/pull/226) [`cf3f66c`](https://github.com/type-styles/typestyles/commit/cf3f66c93e9b9dfc92444f5f764b8d9e3609a2c1) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add component registry extract helpers and `extract.registeredComponentsModule` / `include: 'allRegisteredComponents'` ([#219](https://github.com/type-styles/typestyles/issues/219)). The include flag appends a convention `themeable-refs` registry module to the extract graph when it exists.
+
 ## 0.5.2
 
 ### Patch Changes
