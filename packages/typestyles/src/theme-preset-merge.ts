@@ -1,4 +1,4 @@
-import type { CreateTokenValues, ThemeConfig, ThemePreset } from './types';
+import type { CreateTokenValues, ThemeConfig, ThemeModeDefinition, ThemePreset } from './types';
 import { mergeThemeOverrides, mergeTokenValues, normalizeThemeConfig } from './token-color-modes';
 import type { ColorModeMap } from './color-modes';
 
@@ -23,6 +23,48 @@ function mergeExtendMaps(
   return out;
 }
 
+/** Merge mode layers by `id`; patch overrides `from` (same as base / colorMode / extend). */
+function mergeThemeModes(
+  from: ThemeModeDefinition[] | undefined,
+  patch: ThemeModeDefinition[] | undefined,
+): ThemeModeDefinition[] | undefined {
+  if (!from?.length && !patch?.length) return undefined;
+  if (!from?.length) return patch ? [...patch] : undefined;
+  if (!patch?.length) return [...from];
+
+  const byId = new Map<string, ThemeModeDefinition>();
+  for (const mode of from) {
+    byId.set(mode.id, mode);
+  }
+  for (const mode of patch) {
+    const existing = byId.get(mode.id);
+    byId.set(
+      mode.id,
+      existing
+        ? {
+            id: mode.id,
+            when: mode.when,
+            overrides: mergeThemeOverrides(existing.overrides, mode.overrides),
+          }
+        : mode,
+    );
+  }
+
+  const out: ThemeModeDefinition[] = [];
+  const seen = new Set<string>();
+  for (const mode of from) {
+    out.push(byId.get(mode.id)!);
+    seen.add(mode.id);
+  }
+  for (const mode of patch) {
+    if (!seen.has(mode.id)) {
+      out.push(byId.get(mode.id)!);
+      seen.add(mode.id);
+    }
+  }
+  return out;
+}
+
 /**
  * Deep-merge `from` + `patch` theme presets (base, colorMode, extend, modes).
  * Does not run mode-aware normalization — call {@link normalizeThemeConfig} after.
@@ -42,7 +84,7 @@ export function mergeThemePresetConfig(
   return {
     base: mergeThemeOverrides(f.base ?? {}, p.base),
     colorMode: hasColorMode ? { light: colorModeLight, dark: colorModeDark } : undefined,
-    modes: [...(f.modes ?? []), ...(p.modes ?? [])],
+    modes: mergeThemeModes(f.modes, p.modes),
     extend: mergeExtendMaps(f.extend, p.extend),
     components: p.components,
   };
