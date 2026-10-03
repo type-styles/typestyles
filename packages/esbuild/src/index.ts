@@ -7,7 +7,6 @@ import {
   reportDuplicateNamespaces,
   resolveExtractMode,
   resolveExtractModules,
-  resolveRegisteredComponentsFrom,
   runTypestylesBuild,
   TYPESTYLES_IMPORT_RE,
   type TypestylesExtractOptions,
@@ -43,20 +42,12 @@ function attachHooks(
     extract: TypestylesExtractOptions | undefined;
     root: string;
     resolvedExtractModules: string[];
-    resolvedRegisteredComponentsFrom: string | undefined;
     resolvedMode: TypestylesIntegrationMode;
     moduleNamespaces: Map<string, { keys: string[]; prefixes: string[] }>;
   },
 ): void {
-  const {
-    warnDuplicates,
-    extract,
-    root,
-    resolvedExtractModules,
-    resolvedRegisteredComponentsFrom,
-    resolvedMode,
-    moduleNamespaces,
-  } = options;
+  const { warnDuplicates, extract, root, resolvedExtractModules, resolvedMode, moduleNamespaces } =
+    options;
 
   build.onLoad({ filter: /\.[jt]sx?$/ }, (args) => {
     if (args.path.includes('node_modules')) return null;
@@ -98,7 +89,6 @@ function attachHooks(
     const css = await runTypestylesBuild({
       root,
       modules: resolvedExtractModules,
-      registeredComponentsFrom: resolvedRegisteredComponentsFrom,
     });
     const fileName = extract?.fileName ?? 'typestyles.css';
     const outdir = build.initialOptions.outdir ?? join(root, 'dist');
@@ -120,10 +110,6 @@ export default function typestylesEsbuildPlugin(
     name: 'typestyles',
     setup(build) {
       const resolvedExtractModules = resolveExtractModules(root, extract);
-      const resolvedRegisteredComponentsFrom = resolveRegisteredComponentsFrom(
-        extract,
-        resolvedExtractModules,
-      );
       const resolvedMode = resolveExtractMode(options.mode, resolvedExtractModules);
 
       if (resolvedMode === 'build' || resolvedMode === 'hybrid') {
@@ -138,7 +124,6 @@ export default function typestylesEsbuildPlugin(
         extract,
         root,
         resolvedExtractModules,
-        resolvedRegisteredComponentsFrom,
         resolvedMode,
         moduleNamespaces,
       });

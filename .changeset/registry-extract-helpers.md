@@ -3,4 +3,4 @@
 '@typestyles/build-runner': patch
 ---
 
-Add component registry extract helpers and `extract.registeredComponentsModule` / `include: 'allRegisteredComponents'` (#219). The include flag bootstraps `getRegisteredComponentRefs(styles)` on the first extract module during `runTypestylesBuild`.
+Add component registry extract helpers and `extract.registeredComponentsModule` / `include: 'allRegisteredComponents'` (#219). The include flag appends a convention `themeable-refs` registry module to the extract graph when it exists.

@@ -4,7 +4,6 @@ import {
   reportDuplicateNamespaces,
   resolveExtractMode,
   resolveExtractModules,
-  resolveRegisteredComponentsFrom,
   runTypestylesBuild,
   TYPESTYLES_IMPORT_RE,
   type TypestylesExtractOptions,
@@ -63,7 +62,6 @@ export default function typestylesRollupPlugin(
   const { warnDuplicates = true, extract, root = process.cwd() } = options;
   const moduleNamespaces = new Map<string, { keys: string[]; prefixes: string[] }>();
   let resolvedExtractModules: string[] = [];
-  let resolvedRegisteredComponentsFrom: string | undefined;
   let resolvedMode: TypestylesIntegrationMode = 'runtime';
 
   return {
@@ -71,10 +69,6 @@ export default function typestylesRollupPlugin(
 
     buildStart() {
       resolvedExtractModules = resolveExtractModules(root, extract);
-      resolvedRegisteredComponentsFrom = resolveRegisteredComponentsFrom(
-        extract,
-        resolvedExtractModules,
-      );
       resolvedMode = resolveExtractMode(options.mode, resolvedExtractModules);
     },
 
@@ -112,7 +106,6 @@ export default function typestylesRollupPlugin(
         const css = await runTypestylesBuild({
           root,
           modules: resolvedExtractModules,
-          registeredComponentsFrom: resolvedRegisteredComponentsFrom,
         });
         this.emitFile({
           type: 'asset',
