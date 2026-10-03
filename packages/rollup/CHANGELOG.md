@@ -1,5 +1,12 @@
 # @typestyles/rollup
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [[`cf3f66c`](https://github.com/type-styles/typestyles/commit/cf3f66c93e9b9dfc92444f5f764b8d9e3609a2c1)]:
+  - @typestyles/build-runner@0.5.3
+
 ## 0.5.2
 
 ### Patch Changes
