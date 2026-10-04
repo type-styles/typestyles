@@ -108,6 +108,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -124,6 +125,17 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Get npm token via OIDC
+        run: |
+          OIDC_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm" | jq -r '.value')
+          NPM_TOKEN=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"type\":\"oidc\",\"oidcToken\":\"$OIDC_TOKEN\"}" \
+            https://registry.npmjs.org/-/npm/v1/security/oidc/token | jq -r '.token')
+          echo "::add-mask::$NPM_TOKEN"
+          echo "NODE_AUTH_TOKEN=$NPM_TOKEN" >> $GITHUB_ENV
 
       - name: Create Release Pull Request or Publish
         id: changesets
@@ -135,7 +147,6 @@ jobs:
           title: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   release-unstable:
     name: Release unstable packages
@@ -147,6 +158,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -164,6 +176,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Get npm token via OIDC
+        run: |
+          OIDC_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm" | jq -r '.value')
+          NPM_TOKEN=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"type\":\"oidc\",\"oidcToken\":\"$OIDC_TOKEN\"}" \
+            https://registry.npmjs.org/-/npm/v1/security/oidc/token | jq -r '.token')
+          echo "::add-mask::$NPM_TOKEN"
+          echo "NODE_AUTH_TOKEN=$NPM_TOKEN" >> $GITHUB_ENV
+
       - name: Build packages
         run: pnpm run build
 
@@ -174,5 +197,3 @@ jobs:
 
       - name: Publish all workspace packages with unstable tag
         run: pnpm -r --filter "./packages/*" publish --tag unstable --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
