@@ -125,8 +125,10 @@ jobs:
           cache: 'pnpm'
           package-manager-cache: false
 
-      - name: Use npm with Trusted Publishing support
-        run: npm install -g npm@latest
+      # Trusted Publishing needs npm >= 11.5.1. Do not use npm@latest: npm 12 rejects
+      # --git-checks, which pnpm forwards when changeset publish runs pnpm publish.
+      - name: Use npm compatible with pnpm publish
+        run: npm install -g 'npm@^11.5.1'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -169,8 +171,10 @@ jobs:
           cache: 'pnpm'
           package-manager-cache: false
 
-      - name: Use npm with Trusted Publishing support
-        run: npm install -g npm@latest
+      # Trusted Publishing needs npm >= 11.5.1. Do not use npm@latest: npm 12 rejects
+      # --git-checks forwarded by pnpm publish --no-git-checks.
+      - name: Use npm compatible with pnpm publish
+        run: npm install -g 'npm@^11.5.1'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
