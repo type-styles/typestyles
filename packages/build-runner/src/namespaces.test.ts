@@ -27,6 +27,11 @@ describe('extractNamespaces', () => {
       'theme:acme',
     ]);
   });
+
+  it('matches typestyles package imports', () => {
+    expect(TYPESTYLES_IMPORT_RE.test("import { styles } from 'typestyles'")).toBe(true);
+    expect(TYPESTYLES_IMPORT_RE.test("import { styles } from './typestyles'")).toBe(false);
+  });
 });
 
 describe('moduleNeedsOverrideHmr', () => {
