@@ -1,6 +1,6 @@
 ---
 title: End-to-end theming
-description: Build and apply a TypeStyles theme — tokens, createTheme, styles.override, and dispose
+description: Build and apply a TypeStyles theme — tokens, createTheme, styles.override, and mount
 ---
 
 A complete theming setup with TypeStyles: design tokens, a theme surface class, recipe overrides, and mounting in the DOM. Consumers can customize with TypeStyles APIs or plain CSS that targets the same class names and custom properties.
@@ -17,10 +17,16 @@ For more patterns (multi-brand, condition scopes, `@property` animation), see [T
 | `styles.override(…, { selectorPrefix })` | `.theme-app-brand .button { … }`                                                  |
 | Plain CSS                                | Same class and `--*` names — consumers can theme without TypeStyles               |
 
-## One module
+## Walkthrough
+
+Defaults live on `:root` via `tokens.create`. Themes only set **what changes** under a theme class — brand accents, theme-local namespaces, recipe overrides. Unchanged paths inherit through the cascade.
+
+Light and dark belong on the **token leaves** (`{ light, dark }`) when you register `colorModes` — not as parallel untyped constants. Passing `{ decl }` types those values against the schema.
+
+### 1. Shared runtime
 
 ```ts
-// theme.ts — design-system or app entry
+// typestyles.ts
 import { colorModes, createTypeStyles } from 'typestyles';
 
 export const { styles, tokens } = createTypeStyles({
@@ -29,25 +35,44 @@ export const { styles, tokens } = createTypeStyles({
   layers: ['tokens', 'components', 'overrides'] as const,
   tokenLayer: 'tokens',
 });
+```
 
-// 1. Contract + defaults (declare optional — useful for cross-file refs)
+### 2. Color tokens
+
+```ts
+// tokens/color.ts
+import { atProperty } from 'typestyles';
+import { tokens } from '../typestyles';
+
 const colorDecl = tokens.declare('color', {
-  text: true,
-  surface: true,
-  accent: { default: true },
+  text: atProperty.color,
+  surface: atProperty.color,
+  accent: { default: atProperty.color },
 });
 
+/** `:root` defaults — mode-aware leaves compile to `light-dark()` when `colorModes` is set. */
 export const color = tokens.create(
   'color',
   {
-    text: '#111827',
-    surface: '#ffffff',
-    accent: { default: '#2563eb' },
+    text: { light: '#111827', dark: '#e5e7eb' },
+    surface: { light: '#ffffff', dark: '#0f172a' },
+    accent: { default: { light: '#2563eb', dark: '#60a5fa' } },
   },
   { decl: colorDecl },
 );
+```
 
-// 2. Recipe consumers will restyle
+`atProperty.color` is `{ syntax: '<color>', initial: 'transparent' }` — spread or override per leaf (`{ ...atProperty.color, inherits: false }`). Same presets exist for `length`, `time`, `angle`, and more; see [CSS primitives — atProperty presets](/docs/css-primitives#atproperty-presets).
+
+`color.text` / `color.accent.default` are typed `var(--…)` refs (syntax-branded). Use them in recipes — do not feed them back into `createTheme({ tokens })` as values.
+
+### 3. Button recipe
+
+```ts
+// components/button.ts
+import { styles } from '../typestyles';
+import { color } from '../tokens/color';
+
 export const button = styles.component(
   'button',
   {
@@ -57,7 +82,7 @@ export const button = styles.component(
       border: 'none',
       cursor: 'pointer',
       backgroundColor: color.accent.default,
-      color: color.surface,
+      color: color.text,
     },
     variants: {
       intent: {
@@ -73,84 +98,72 @@ export const button = styles.component(
   },
   { layer: 'components' },
 );
+```
 
-/** Shared preset — apps deep-merge via `from` (no custom merge helper required). */
-export const designPreset = {
-  tokens: {
-    color: {
-      text: '#111827',
-      surface: '#ffffff',
-      accent: { default: '#2563eb' },
-    },
-  },
-  colorMode: {
-    dark: {
-      color: {
-        text: '#e5e7eb',
-        surface: '#0f172a',
-        accent: { default: '#60a5fa' },
-      },
-    },
-  },
-};
+### 4. Brand theme
 
-// 3. Theme surface — preset + app tweaks + optional recipe overrides
+```ts
+// themes/brand.ts
+import { tokens } from '../typestyles';
+// Recipe must be registered before createTheme({ components })
+import '../components/button';
+
+/**
+ * Theme-class deltas only. Root still supplies text/surface via cascade;
+ * this surface retints accent and adds a theme-local `brand` namespace.
+ */
 export const brand = tokens.createTheme({
   name: 'brand',
-  from: designPreset,
   tokens: {
-    // App / customer overrides (deep-merged onto `from.tokens`)
-    color: { accent: { default: '#7c3aed' } },
-    // Theme-local namespace — also available as brand.tokens.brand.*
-    brand: { glow: { default: '#a78bfa' } },
+    color: {
+      accent: { default: { light: '#7c3aed', dark: '#a78bfa' } },
+    },
+    brand: {
+      glow: { default: '#a78bfa' },
+    },
   },
-  // Same as styles.override(..., { selectorPrefix: `.${brand.className}` })
+  // Same as styles.override(button, …, { selectorPrefix: `.${brand.className}` })
   components: {
     button: ({ tokens: t }) => ({
       base: { boxShadow: `0 0 0 3px ${t.brand.glow.default}` },
     }),
   },
 });
+```
 
-// 4. Manual scoped override (when you are not using `components` on createTheme)
+`brand.className` is something like `theme-app-brand`. `brand.tokens.brand.glow.default` is a `var(--…)` string — the same shape as `tokens.use('color')`. Define additional themes the same way and switch by swapping `className` on a parent — see [Multi-brand theming](/docs/theming-patterns#multi-brand-theming).
+
+Side-effect-import these modules from your [typestyles entry](/docs/zero-runtime) so extraction sees every registration.
+
+### Optional: override without `components`
+
+```ts
+// themes/brand-overrides.ts
+import { styles } from '../typestyles';
+import { button } from '../components/button';
+import { brand } from './brand';
+
 styles.override(
   button,
   { variants: { intent: { ghost: { textDecoration: 'underline' } } } },
   { selectorPrefix: `.${brand.className}`, layer: 'overrides' },
 );
-
-// 5. Optional one-off namespace outside a theme
-export const metrics = tokens.ensureNamespace('metrics', {
-  radius: { sm: '4px', lg: '12px' },
-});
-
-/** Replace a live theme (HMR / brand switcher). Default `replace: true` on createTheme. */
-export function reloadBrand() {
-  tokens.disposeTheme('brand');
-  return tokens.createTheme({
-    name: 'brand',
-    from: designPreset,
-    tokens: {
-      color: { accent: { default: '#db2777' } },
-      brand: { glow: { default: '#f9a8d4' } },
-    },
-  });
-}
 ```
 
-`brand.className` is something like `theme-app-brand`. `brand.tokens.color.accent.default` and `brand.tokens.brand.glow.default` are `var(--…)` strings — the same shape as `tokens.use('color')`.
+Sharing one full theme config across many brand call sites? Optional `from` deep-merge is under [Reusing a theme config slice](/docs/theming-patterns#reusing-a-theme-config-slice-from).
 
 ## Mount (React)
 
-`colorMode` on the theme compiles static light/dark values to `light-dark()` (OS preference + `color-scheme`). For an explicit `data-mode` toggle, add a `modes` layer with `tokens.when.attr` (see [condition scopes](/docs/theming-patterns#condition-scopes-self-ancestor-descendant)) or swap theme classes.
+Root mode-aware tokens compile to `light-dark()`. With `colorModes` configured, `createTheme` also emits `color-scheme: light dark` on the theme class. For an explicit `data-mode` toggle, see [condition scopes](/docs/theming-patterns#condition-scopes-self-ancestor-descendant) or [attribute-driven modes](/docs/theming-patterns#light--dark--system-on-data).
 
 ```tsx
 // App.tsx
-import { brand, button } from './theme';
+import { button } from './components/button';
+import { brand } from './themes/brand';
 
 export function App() {
   return (
-    <div className={brand.className} style={{ colorScheme: 'light dark' }}>
+    <div className={brand.className}>
       <button type="button" className={button()}>
         Primary
       </button>
@@ -162,26 +175,10 @@ export function App() {
 }
 ```
 
-```ts
-// Optional: attribute-driven dark instead of (or in addition to) colorMode patches
-tokens.createTheme({
-  name: 'brand',
-  tokens: designPreset.tokens,
-  modes: tokens.colorMode.attributeOnly({
-    attribute: 'data-mode',
-    values: { light: 'light', dark: 'dark' },
-    scope: 'self',
-    light: designPreset.tokens,
-    dark: designPreset.colorMode!.dark!,
-  }),
-});
-// Then: <div className={brand.className} data-mode={dark ? 'dark' : 'light'}>
-```
-
 ## Mount (HTML)
 
 ```html
-<div class="theme-app-brand" data-mode="light">
+<div class="theme-app-brand">
   <button class="button button--intent-primary">Primary</button>
 </div>
 ```
@@ -219,14 +216,15 @@ Prefer this (or `createTheme({ components })`) over hand-written class strings. 
 | Need                                  | API                                                                                                                                                        |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deep-merge override trees / leaf refs | [`mergeThemeOverrides`](/docs/theming-patterns#optional-mergethemeoverrides-helpers)                                                                       |
+| Reuse a full theme config slice       | [`from` on createTheme](/docs/theming-patterns#reusing-a-theme-config-slice-from)                                                                          |
 | Media / attr / class conditions       | [`tokens.when`](/docs/theming-patterns#condition-scopes-self-ancestor-descendant), [`tokens.colorMode.*`](/docs/tokens#preset-mode-layers-tokenscolormode) |
-| Drop a theme (HMR / switcher)         | `tokens.disposeTheme(name)`                                                                                                                                |
 | Zero-runtime extract of all recipes   | [`getRegisteredComponentRefs`](/docs/zero-runtime#design-systems-with-many-recipes) + Vite `extract.registeredComponentsModule`                            |
 
 ## Checklist for design-system authors
 
-1. Define tokens with `tokens.create` / `declare` and recipes with `styles.component` on a shared `createTypeStyles({ scopeId })`.
-2. Export a **preset** object (`tokens` / `colorMode` / `modes`) apps can pass to `from`.
-3. Document that apps call `tokens.createTheme({ name, from: preset, tokens: { … } })` and apply `surface.className`.
-4. Document `selectorPrefix: \`.${surface.className}\``(or theme`components`) for recipe restyles.
-5. Keep class and `--*` names stable so consumers can also theme from plain CSS.
+1. Export a shared `createTypeStyles({ scopeId, colorModes })` runtime.
+2. `tokens.declare` the schema, then `tokens.create(…, { decl })` with mode-aware `{ light, dark }` leaves for defaults.
+3. Register recipes with `styles.component` on that same runtime.
+4. Document that apps call `tokens.createTheme({ name, tokens, … })` with **overrides only**, then apply `surface.className`.
+5. Document `selectorPrefix: \`.${surface.className}\``(or theme`components`) for recipe restyles.
+6. Keep class and `--*` names stable so consumers can also theme from plain CSS.

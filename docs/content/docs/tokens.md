@@ -367,10 +367,10 @@ or attribute toggles.
 
 Use `tokens.createTheme({ name, … })` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.
 
-- **`tokens`** — Per-namespace values always applied on the surface (typical light / default brand). Same shape as `tokens.create`.
+- **`tokens`** — Per-namespace overrides on the surface (deltas onto `:root` defaults). Same shape as `tokens.create`.
 - **`colorMode`** — Optional `{ light?, dark? }` patches deep-merged into theme tokens and compiled to `light-dark()` when `colorModes` is configured (see [Mode-aware token leaves](#mode-aware-token-leaves)).
 - **`modes`** — Conditional layers with explicit `tokens.when.*` conditions, including spreads of `tokens.colorMode.*` preset arrays.
-- **`from`** — Optional preset; sibling fields deep-merge onto it (see [Theming patterns](/docs/theming-patterns)).
+- **`from`** — Optional deep-merge of a reusable theme config slice (advanced; see [Reusing a theme config slice](/docs/theming-patterns#reusing-a-theme-config-slice-from)).
 
 ```ts
 const dark = tokens.createTheme({
@@ -414,7 +414,7 @@ const brand = tokens.createTheme({
 
 Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`. `attr` and `className` take a `scope` of `'self'`, `'ancestor'`, or `'descendant'` describing where the marker lives relative to the theme root (see [Theming patterns](/docs/theming-patterns#condition-scopes-self-ancestor-descendant)).
 
-For a full app path (declare → theme → override → mount → dispose), see [End-to-end theming](/docs/theming-end-to-end).
+For a full app path (declare → theme → override → mount), see [End-to-end theming](/docs/theming-end-to-end).
 
 See [Theming patterns](/docs/theming-patterns) for preset mode layers, multi-brand setups, and component overrides.
 
