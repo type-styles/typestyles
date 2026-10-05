@@ -23,20 +23,20 @@ describe('ThemeSurface', () => {
   beforeEach(() => reset());
 
   it('has className and name properties', () => {
-    const acme = createTheme('acme', { base: { color: { primary: '#111' } } });
+    const acme = createTheme('acme', { tokens: { color: { primary: '#111' } } });
     expect(acme.className).toBe('theme-acme');
     expect(acme.name).toBe('acme');
   });
 
   it('coerces to className via toString()', () => {
-    const acme = createTheme('acme', { base: { color: { primary: '#111' } } });
+    const acme = createTheme('acme', { tokens: { color: { primary: '#111' } } });
     expect(acme.toString()).toBe('theme-acme');
     expect(`${acme}`).toBe('theme-acme');
     expect(String(acme)).toBe('theme-acme');
   });
 
   it('coerces via Symbol.toPrimitive', () => {
-    const acme = createTheme('acme', { base: { color: { primary: '#111' } } });
+    const acme = createTheme('acme', { tokens: { color: { primary: '#111' } } });
     // Template literal uses Symbol.toPrimitive
     expect(`wrapper ${acme} end`).toBe('wrapper theme-acme end');
   });
@@ -56,7 +56,7 @@ describe('createTheme base rules', () => {
 
   it('emits a base rule with declarations', () => {
     createTheme('brand', {
-      base: {
+      tokens: {
         color: { text: '#111', bg: '#fff' },
         spacing: { sm: '4px' },
       },
@@ -79,7 +79,7 @@ describe('createTheme base rules', () => {
   });
 
   it('emits an empty base rule when base is empty object', () => {
-    createTheme('empty2', { base: {} });
+    createTheme('empty2', { tokens: {} });
     flushSync();
 
     const rule = findRule((t) => t.includes('.theme-empty2'));
@@ -165,7 +165,7 @@ describe('mode layers with media conditions', () => {
 
   it('wraps overrides in @media when using when.media', () => {
     createTheme('t1', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: [
         {
           id: 'dark',
@@ -460,7 +460,7 @@ describe('when.not', () => {
 
   it('negates prefersDark to @media not (prefers-color-scheme: dark)', () => {
     createTheme('n1', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: [
         {
           id: 'non-dark-media',
@@ -514,7 +514,7 @@ describe('when.not', () => {
 
   it('peels paired not at compile time (AST double negation)', () => {
     createTheme('n4', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: [
         {
           id: 'dark',
@@ -577,7 +577,7 @@ describe('when.not', () => {
   it('warns for when.not on a descendant-scoped attr condition and emits no rule', () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     createTheme('n7', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: [
         {
           id: 'bad',
@@ -627,7 +627,7 @@ describe('fixed-tone surface (descendant scope integration)', () => {
 
   it('mixes ambient color modes and a descendant-scoped mode in one modes array', () => {
     createTheme('acme', {
-      base: { color: { bg: '#fff' } },
+      tokens: { color: { bg: '#fff' } },
       modes: [
         ...colorMode.systemWithLightDarkOverride({
           attribute: 'data-color-mode',
@@ -665,7 +665,7 @@ describe('colorMode.mediaOnly', () => {
 
   it('produces a single dark mode under prefers-color-scheme: dark', () => {
     createTheme('m1', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: colorMode.mediaOnly({
         dark: { color: { text: '#fff' } },
       }),
@@ -685,7 +685,7 @@ describe('colorMode.attributeOnly', () => {
 
   it('produces dark mode via attribute only', () => {
     createTheme('a1', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: colorMode.attributeOnly({
         attribute: 'data-theme',
         values: { dark: 'dark' },
@@ -705,7 +705,7 @@ describe('colorMode.attributeOnly', () => {
 
   it('includes optional light override', () => {
     createTheme('a2', {
-      base: { color: { text: '#333' } },
+      tokens: { color: { text: '#333' } },
       modes: colorMode.attributeOnly({
         attribute: 'data-theme',
         values: { dark: 'dark', light: 'light' },
@@ -731,7 +731,7 @@ describe('colorMode.mediaOrAttribute', () => {
 
   it('dark applies under either media or attribute (OR)', () => {
     createTheme('ma1', {
-      base: { color: { bg: '#fff' } },
+      tokens: { color: { bg: '#fff' } },
       modes: colorMode.mediaOrAttribute({
         attribute: 'data-color-mode',
         values: { dark: 'dark' },
@@ -760,7 +760,7 @@ describe('colorMode.systemWithLightDarkOverride', () => {
     const darkTokens = { color: { text: '#eee', bg: '#0f172a' } };
 
     createTheme('sw1', {
-      base: lightTokens,
+      tokens: lightTokens,
       modes: colorMode.systemWithLightDarkOverride({
         attribute: 'data-color-mode',
         values: { light: 'light', dark: 'dark' },
@@ -800,7 +800,7 @@ describe('colorMode.systemWithLightDarkOverride', () => {
 
   it('works with self scope', () => {
     createTheme('sw2', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: colorMode.systemWithLightDarkOverride({
         attribute: 'data-mode',
         values: { light: 'light', dark: 'dark' },
@@ -835,7 +835,7 @@ describe('colorMode patches with modes', () => {
     createTheme(
       'both',
       {
-        base: { color: { text: '#111' } },
+        tokens: { color: { text: '#111' } },
         colorMode: {
           dark: { color: { text: '#eee' } },
         },
@@ -858,7 +858,7 @@ describe('colorMode patches with modes', () => {
     createTheme(
       'shadow-mode',
       {
-        base: { shadow: { glow: '0 0 0 1px #000' } },
+        tokens: { shadow: { glow: '0 0 0 1px #000' } },
         modes: [
           {
             id: 'dark',
@@ -884,7 +884,7 @@ describe('colorMode patches with modes', () => {
     createTheme(
       'fallback-self',
       {
-        base: {
+        tokens: {
           shadow: { glow: { light: '0 0 0 1px #000', dark: '0 0 16px #fff' } },
         },
       },
@@ -937,12 +937,12 @@ describe('deduplication', () => {
 
   it('does not emit duplicate rules on repeated createTheme calls with same name', () => {
     createTheme('dup', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: [{ id: 'dark', overrides: { color: { text: '#fff' } }, when: when.prefersDark }],
     });
     // Call again with same name
     createTheme('dup', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: [{ id: 'dark', overrides: { color: { text: '#fff' } }, when: when.prefersDark }],
     });
     flushSync();
@@ -964,7 +964,7 @@ describe('edge cases', () => {
   it('skips mode rules with empty overrides', () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     createTheme('edge1', {
-      base: { color: { text: '#000' } },
+      tokens: { color: { text: '#000' } },
       modes: [{ id: 'dark', overrides: {}, when: when.prefersDark }],
     });
     flushSync();
@@ -977,7 +977,7 @@ describe('edge cases', () => {
 
   it('handles deeply nested token overrides', () => {
     createTheme('edge2', {
-      base: {
+      tokens: {
         color: {
           brand: { primary: { DEFAULT: '#0066ff', hover: '#0052cc' } },
         },
@@ -992,7 +992,7 @@ describe('edge cases', () => {
 
   it('handles multiple namespaces in overrides', () => {
     createTheme('edge3', {
-      base: {
+      tokens: {
         color: { text: '#000' },
         spacing: { sm: '4px' },
         typography: { size: { body: '16px' } },
@@ -1008,7 +1008,7 @@ describe('edge cases', () => {
 
   it('numeric token values are stringified', () => {
     createTheme('edge4', {
-      base: { spacing: { sm: 4 as unknown as string } },
+      tokens: { spacing: { sm: 4 as unknown as string } },
     });
     flushSync();
 
@@ -1026,12 +1026,12 @@ describe('multiple themes (brand switching)', () => {
 
   it('independent themes do not interfere', () => {
     const acme = createTheme('acme', {
-      base: { color: { primary: '#0066ff' } },
+      tokens: { color: { primary: '#0066ff' } },
       modes: colorMode.mediaOnly({ dark: { color: { primary: '#66b3ff' } } }),
     });
 
     const contoso = createTheme('contoso', {
-      base: { color: { primary: '#ff6600' } },
+      tokens: { color: { primary: '#ff6600' } },
       modes: colorMode.mediaOnly({ dark: { color: { primary: '#ffaa66' } } }),
     });
 
@@ -1049,8 +1049,8 @@ describe('multiple themes (brand switching)', () => {
     const darkTokens = { color: { text: '#eee' } };
     const sharedModes = () => colorMode.mediaOnly({ dark: darkTokens });
 
-    createTheme('brand-a', { base: { color: { text: '#111' } }, modes: sharedModes() });
-    createTheme('brand-b', { base: { color: { text: '#222' } }, modes: sharedModes() });
+    createTheme('brand-a', { tokens: { color: { text: '#111' } }, modes: sharedModes() });
+    createTheme('brand-b', { tokens: { color: { text: '#222' } }, modes: sharedModes() });
 
     flushSync();
 

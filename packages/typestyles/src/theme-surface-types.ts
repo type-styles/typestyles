@@ -5,10 +5,10 @@ import type {
   ThemeOverrideContext,
 } from './types';
 
-type ExtendMap = Record<string, CreateTokenValues>;
+type TokensMap = Record<string, CreateTokenValues>;
 
-/** Empty extend map without a string index signature (avoids `keyof` → `string` in merges). */
-type NoExtend = Record<never, CreateTokenValues>;
+/** Empty tokens map without a string index signature (avoids `keyof` → `string` in merges). */
+type NoTokens = Record<never, CreateTokenValues>;
 
 /** Deep-merge two token value trees at the type level (matches runtime `mergeTokenValues`). */
 export type MergeCreateTokenValues<A, B> =
@@ -26,32 +26,42 @@ export type MergeCreateTokenValues<A, B> =
       : B
     : B;
 
-type MergeTwoExtendMaps<L extends ExtendMap, R extends ExtendMap> = Omit<L, keyof R> & {
+type MergeTwoTokensMaps<L extends TokensMap, R extends TokensMap> = Omit<L, keyof R> & {
   [K in keyof R]: K extends keyof L ? MergeCreateTokenValues<L[K], R[K]> : R[K];
 };
 
-type ExtendFromPreset<P> = P extends { extend: infer E extends ExtendMap } ? E : NoExtend;
+type TokensFromPreset<P> = P extends { tokens: infer T extends TokensMap } ? T : NoTokens;
 
-type ExtendFromOptional<E> = E extends ExtendMap ? E : NoExtend;
+type TokensFromOptional<T> = T extends TokensMap ? T : NoTokens;
 
 /**
- * Merged `extend` namespaces from a `createTheme` config (`extend`, `from.extend`, `patch.extend`).
+ * Merged `tokens` namespaces from a `createTheme` config (`tokens`, `from.tokens`).
  */
-export type InferThemeExtendFromConfig<C extends Pick<ThemeConfig, 'extend' | 'from' | 'patch'>> =
-  MergeTwoExtendMaps<
-    MergeTwoExtendMaps<ExtendFromPreset<C['from']>, ExtendFromPreset<C['patch']>>,
-    ExtendFromOptional<C['extend']>
-  >;
+export type InferThemeTokensFromConfig<C extends Pick<ThemeConfig, 'tokens' | 'from'>> =
+  MergeTwoTokensMaps<TokensFromPreset<C['from']>, TokensFromOptional<C['tokens']>>;
 
-/** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `extend` / presets). */
-export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'extend' | 'from' | 'patch'>> = {
+/** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `tokens` / presets). */
+export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'tokens' | 'from'>> = {
   components?: Record<
     string,
     | ThemeComponentOverrideEntry
-    | ((ctx: ThemeOverrideContext<InferThemeExtendFromConfig<T>>) => ThemeComponentOverrideEntry)
+    | ((ctx: ThemeOverrideContext<InferThemeTokensFromConfig<T>>) => ThemeComponentOverrideEntry)
   >;
 };
 
-export type CreateThemeCallOptions<T extends Omit<ThemeConfig, 'components'>> = {
+type CreateThemeConfigFields = Omit<ThemeConfig, 'components'>;
+
+/**
+ * Single argument to `tokens.createTheme()` — theme name, token layers, optional recipe overrides.
+ *
+ * - **`tokens`** — per-namespace values on `.theme-{name}` (registers namespaces for `surface.tokens` refs).
+ * - **`colorMode` / `modes`** — light/dark and conditional override layers (see theming docs).
+ * - **`from`** — preset; sibling fields deep-merge onto it before compile.
+ * - **`components`** — per-recipe CSS overrides scoped to this theme class.
+ * - **`replace`** — when true (default), reusing `name` replaces the previous theme registration.
+ */
+export type CreateThemeInput<T extends CreateThemeConfigFields = CreateThemeConfigFields> = {
+  name: string;
   replace?: boolean;
-} & ThemeComponentsFor<T>;
+} & T &
+  ThemeComponentsFor<T>;

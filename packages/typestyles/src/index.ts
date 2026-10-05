@@ -242,10 +242,10 @@ export {
   normalizeModeAwareOverrides,
   normalizeThemeConfig,
 } from './token-color-modes';
-export { mergeThemePresetConfig, resolveThemeFromPatchConfig } from './theme-preset-merge';
+export { mergeThemePresetConfig, resolveThemeFromPresetConfig } from './theme-preset-merge';
 export type {
-  CreateThemeCallOptions,
-  InferThemeExtendFromConfig,
+  CreateThemeInput,
+  InferThemeTokensFromConfig,
   ThemeComponentsFor,
 } from './theme-surface-types';
 export type { ThemePreset } from './types';
@@ -301,7 +301,8 @@ export const global = {
  * const color = tokens.create('color', { primary: '#0066ff' });
  * color.primary // "var(--color-primary)"
  *
- * const acme = tokens.createTheme('acme', {
+ * const acme = tokens.createTheme({
+ *   name: 'acme',
  *   base: { color: { primary: '#ff6600' } },
  *   colorMode: tokens.colorMode.mediaOnly({ dark: darkOverrides }),
  * });

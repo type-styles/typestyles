@@ -5,14 +5,38 @@ description: Light/dark mode, multi-brand theming, and advanced theme strategies
 
 TypeStyles uses CSS custom properties for theming, making it flexible and powerful. This guide covers common theming patterns.
 
+Coming from **StyleX**, **Panda**, **vanilla-extract**, or **Stitches**? Start with the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet) — each maps `createTheme` / theme contracts onto `tokens.create` + `tokens.createTheme`.
+
 ## Theme surfaces
 
-`tokens.createTheme(name, config)` registers a **theme surface**: a stable class name `theme-{name}` whose custom properties override token values for that subtree.
+`tokens.createTheme({ name, … })` registers a **theme surface**: a stable class name `theme-{name}` whose custom properties override token values for that subtree. Everything is one **named** object (no positional `name` / `config` / `options` arguments).
 
-- **`config.base`** — Token overrides always applied on `.theme-{name}` (your usual light / brand default).
-- **`config.colorMode`** — Optional `{ light?, dark? }` patches deep-merged into `base` and compiled to `light-dark()` when `colorModes` is configured (see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves)).
-- **Inline `{ light, dark }` leaves** — On scalar token paths in `base`, `colorMode`, or `modes[].overrides`, TypeStyles splits light-first values into `base` and dark values into the dark patch (same as pre-processing in design-system helpers). No consumer-side tree splitting required when `colorModes` is set. Use `normalizeModeAwareOverrides()` from `typestyles` for tests or debugging.
-- **`config.modes`** — Manual list of `{ id, overrides, when }` layers (see `tokens.when.*`), including spreads of `tokens.colorMode.*` preset arrays.
+### What the fields mean
+
+| Field            | Plain language                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                                       |
+| **`tokens`**     | Per-namespace token values on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `surface.tokens.*` refs. |
+| **`colorMode`**  | Optional `{ light?, dark? }` patches merged into theme output and compiled to `light-dark()` when `colorModes` is set.  |
+| **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets).                |
+| **`from`**       | **Preset defaults** (reusable slice: `tokens`, `colorMode`, `modes`).                                                   |
+| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).                            |
+| **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                                |
+
+**`from`** shares a design-system theme recipe; **sibling fields** on the same `createTheme({ … })` call (`tokens`, `colorMode`, `modes`, …) deep-merge onto that preset. Preset **`tokens`** and your **`tokens`** merge by namespace; your values win on conflicts.
+
+```ts
+tokens.createTheme({
+  name: 'app',
+  from: designPreset,
+  tokens: {
+    color: { accent: { default: '#0066ff' } },
+    brand: { glow: { default: '#0066ff' } },
+  },
+});
+```
+
+- **Inline `{ light, dark }` leaves** — On scalar token paths in `tokens`, `colorMode`, or `modes[].overrides`, TypeStyles splits light-first values into the theme surface and dark values into the dark patch. Use `normalizeModeAwareOverrides()` from `typestyles` for tests or debugging.
 
 Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).
 
@@ -23,29 +47,24 @@ The return value is a **`ThemeSurface`**: `{ className, name, tokens? }`, with `
 `tokens.createTheme()` attaches **`surface.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`, without a custom Proxy in your design-system layer.
 
 - **`surface.tokens.use('color')`** — same as `tokens.use('color')` for namespaces created with `tokens.create` / `tokens.declare`.
-- **`surface.tokens.brand`** — shortcuts for namespaces registered via **`config.extend`** (including keys merged from **`from` / `patch`** presets).
+- **`surface.tokens.brand`** — shortcuts for namespaces registered via **`config.tokens`** (including keys merged from **`from.tokens`** on presets).
 
-`extend` registers each namespace with `tokens.create`, merges values into the theme’s `base` overrides, and emits CSS on `.theme-{name}`. Use refs in component code or in theme **`components`** factories:
+`tokens` registers each namespace with `tokens.create`, merges values into the theme’s `base` overrides, and emits CSS on `.theme-{name}`. Use refs in component code or in theme **`components`** factories:
 
 ```ts
-const brand = tokens.createTheme(
-  'brand',
-  {
-    extend: {
-      brand: {
-        glow: { default: '#0066ff' },
-      },
+const brand = tokens.createTheme({
+  name: 'brand',
+  tokens: {
+    brand: {
+      glow: { default: '#0066ff' },
     },
   },
-  {
-    // Pass `components` in the third argument so `t.brand.*` is typed from `extend`.
-    components: {
-      button: ({ tokens: t }) => ({
-        base: { boxShadow: `0 0 12px ${t.brand.glow.default}` },
-      }),
-    },
+  components: {
+    button: ({ tokens: t }) => ({
+      base: { boxShadow: `0 0 12px ${t.brand.glow.default}` },
+    }),
   },
-);
+});
 
 // Elsewhere: brand.tokens!.brand.glow.default → var(--…-brand-glow-default)
 ```

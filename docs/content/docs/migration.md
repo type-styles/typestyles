@@ -1,11 +1,24 @@
 ---
 title: Migration Guide
-description: Migrate to typestyles from other CSS-in-JS libraries
+description: Migrate to typestyles from StyleX, Panda CSS, vanilla-extract, Stitches, and other CSS-in-JS libraries
 ---
 
 Switching to typestyles from other styling solutions is straightforward. This guide covers the most common migration paths.
 
-If you are adopting the variant API, start with [Components](/docs/components).
+If you are adopting the variant API, start with [Components](/docs/components). For tokens and themes, see [Tokens](/docs/tokens) and [Theming patterns](/docs/theming-patterns).
+
+## Coming from… (cheat sheet)
+
+| If you know…                    | Start here                                                                   | Closest TypeStyles concepts                                                                                                     |
+| ------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **StyleX**                      | [From StyleX](#from-stylex)                                                  | `stylex.create` → `styles.component` / `styles.class`; `defineVars` → `tokens.create`; `createTheme` → `tokens.createTheme`     |
+| **Panda CSS**                   | [From Panda CSS](#from-panda-css)                                            | `cva` / recipes → `styles.component`; config tokens → `tokens.create`; semantic / `_dark` → `createTheme` or mode-aware leaves  |
+| **vanilla-extract**             | [From vanilla-extract](#from-vanilla-extract)                                | `recipe` → `styles.component`; `createThemeContract` → `tokens.declare` / `tokens.create`; `createTheme` → `tokens.createTheme` |
+| **Stitches**                    | [From Stitches](#from-stitches)                                              | `styled` + variants → `styles.component`; theme + `$token` → `tokens.create`; `createTheme` → `tokens.createTheme`              |
+| **CVA**                         | [From CVA](#from-cva-class-variance-authority)                               | Same variant shape; TypeStyles emits the CSS                                                                                    |
+| **Emotion / styled-components** | [From Emotion](#from-emotion) / [styled-components](#from-styled-components) | Tagged templates → style objects + recipes                                                                                      |
+
+**Mental model shared across all four:** TypeStyles themes are **CSS custom properties on a stable class** (`.theme-{name}`), not a closed compiler vocabulary. Consumers can override with TypeStyles **or** plain CSS (`--*` / class selectors). Readable recipe classes (`button--intent-primary`) stay targetable outside the framework.
 
 ## Upgrading to 0.10 (semantic + attribute naming)
 
@@ -134,15 +147,20 @@ theme: {
 **After (typestyles):**
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles, colorModes } from 'typestyles';
 
+const { tokens } = createTypeStyles({ scopeId: 'app', colorModes });
+
+// Primitive / semantic scales — same nested shape as your config, without `{ value: … }`
 export const color = tokens.create('color', {
   primary: '#0FEE0F',
-  danger: '#ef4444',
+  danger: { light: '#ef4444', dark: '#fca5a5' }, // mode-aware leaf → light-dark() when colorModes is set
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+// Or a theme class for brand / dark overrides (apply `.theme-app-dark` on a parent):
+export const dark = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       danger: '#fca5a5',
     },
@@ -150,7 +168,16 @@ export const darkTheme = tokens.createTheme('dark', {
 });
 ```
 
-Apply `darkTheme.className` on a parent container to scope dark values.
+| Panda                                 | TypeStyles                                                                        |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `tokens` in `panda.config`            | `tokens.create('color', { … })` — emits `--app-color-…` with `scopeId`            |
+| `semanticTokens` + `_dark`            | Mode-aware `{ light, dark }` leaves, and/or `tokens.createTheme({ tokens })`      |
+| Token strings (`blue.500`) in recipes | Import the ref tree: `color.primary` → `var(--…)`                                 |
+| Codegen + `@pandacss/dev`             | No codegen for tokens; optional [zero-runtime](/docs/zero-runtime) for static CSS |
+
+Apply `dark.className` (or `String(dark)`) on a parent container to scope theme values. Plain CSS can set the same `--app-color-*` variables under `.theme-app-dark`.
+
+See [Theming patterns](/docs/theming-patterns) for `from` presets and `components` recipe overrides.
 
 ### Panda utility props to `@typestyles/props`
 
@@ -476,9 +503,9 @@ button({ size: 'lg' }); // base + primary + lg
 3. You can keep readable deterministic class output (`button--intent-primary`, etc.).
 4. The return is both callable AND destructurable (CVA-style).
 
-## From Stitches variants
+## From Stitches
 
-### Variant migration
+### Variants → `styles.component()`
 
 **Before (Stitches):**
 
@@ -546,9 +573,81 @@ const button = styles.component('button', {
 });
 ```
 
-## From vanilla-extract recipes
+Usage shifts from `<Button intent="primary" />` (styled component) to
+`<button className={button({ intent: 'primary' })} />` (or wrap with your own React component).
+See [React integration](/docs/react-integration).
 
-### `recipe()` migration
+### Theme + `$tokens` → `tokens.create` / `createTheme`
+
+**Before (Stitches):**
+
+```ts
+import { createStitches } from '@stitches/react';
+
+export const { styled, css, theme, createTheme } = createStitches({
+  theme: {
+    colors: {
+      primary: 'blue',
+      text: 'black',
+    },
+  },
+});
+
+const darkTheme = createTheme({
+  colors: {
+    primary: 'lightblue',
+    text: 'white',
+  },
+});
+
+const Button = styled('button', {
+  backgroundColor: '$primary',
+  color: '$text',
+});
+```
+
+**After (typestyles):**
+
+```ts
+import { createTypeStyles } from 'typestyles';
+
+const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+
+const color = tokens.create('color', {
+  primary: 'blue',
+  text: 'black',
+});
+
+const dark = tokens.createTheme({
+  name: 'dark',
+  tokens: {
+    color: {
+      primary: 'lightblue',
+      text: 'white',
+    },
+  },
+});
+
+const button = styles.component('button', {
+  base: {
+    backgroundColor: color.primary, // → var(--app-color-primary)
+    color: color.text,
+  },
+});
+```
+
+| Stitches                            | TypeStyles                                              |
+| ----------------------------------- | ------------------------------------------------------- |
+| `theme.colors.primary` / `$primary` | `tokens.create('color', { primary })` → `color.primary` |
+| `createTheme({ colors })`           | `tokens.createTheme({ name, tokens: { color: … } })`    |
+| Theme class on a provider / wrapper | Apply `dark.className` on a parent (or `String(dark)`)  |
+| `utils` on `createStitches`         | `utils` on [`createStyles`](/docs/styles#utils)         |
+
+Stitches themes are a JS object layered through `$` refs. TypeStyles themes are **CSS custom properties** on `.theme-app-dark` — same nesting shape, but consumers can also override `--app-color-primary` in plain CSS.
+
+## From vanilla-extract
+
+### `recipe()` → `styles.component()`
 
 **Before (vanilla-extract `recipe`):**
 
@@ -592,10 +691,196 @@ export const button = styles.component('button', {
 });
 ```
 
-Main trade-off:
+### Theme contract + `createTheme` → `tokens.create` / `tokens.createTheme`
 
-- vanilla-extract is build-time only
-- typestyles supports runtime + SSR today, with build-mode work in progress
+**Before (vanilla-extract):**
+
+```ts
+import { createThemeContract, createTheme, style } from '@vanilla-extract/css';
+
+export const vars = createThemeContract({
+  color: {
+    brand: null,
+    text: null,
+  },
+});
+
+export const light = createTheme(vars, {
+  color: { brand: 'blue', text: 'black' },
+});
+
+export const dark = createTheme(vars, {
+  color: { brand: 'lightblue', text: 'white' },
+});
+
+export const brandText = style({
+  color: vars.color.brand,
+});
+```
+
+**After (typestyles):**
+
+```ts
+import { createTypeStyles } from 'typestyles';
+
+const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+
+// Contract + default values (like createTheme that also defines the vars)
+const color = tokens.create('color', {
+  brand: 'blue',
+  text: 'black',
+});
+
+// Optional: declare schema first (createThemeContract-like), create later
+// const colorDecl = tokens.declare('color', { brand: true, text: true });
+// tokens.create('color', { brand: 'blue', text: 'black' }, { decl: colorDecl });
+
+const dark = tokens.createTheme({
+  name: 'dark',
+  tokens: {
+    color: { brand: 'lightblue', text: 'white' },
+  },
+});
+
+export const brandText = styles.class('brand-text', {
+  color: color.brand, // → var(--app-color-brand)
+});
+```
+
+| vanilla-extract                  | TypeStyles                                                                          |
+| -------------------------------- | ----------------------------------------------------------------------------------- |
+| `createThemeContract`            | `tokens.declare` (schema) or just `tokens.create` (contract + defaults)             |
+| `createTheme(vars, values)`      | `tokens.createTheme({ name, tokens })` — reuses the same `--*` names                |
+| `vars.color.brand`               | `color.brand` / `tokens.use('color').brand` / `surface.tokens.color.brand`          |
+| Hashed theme class + scoped vars | Readable `.theme-app-dark` + `--app-color-brand` (with `scopeId`)                   |
+| `assignInlineVars`               | [`assignVars`](/docs/dynamic-styles) / inline style for dynamic values              |
+| `.css.ts` only                   | Ordinary `.ts` / `.tsx`; optional [zero-runtime](/docs/zero-runtime) for static CSS |
+
+**Main trade-offs:** vanilla-extract is build-time-only by default; TypeStyles is runtime-friendly in dev with an optional static extract path. VE hashes variable names for isolation; TypeStyles prefers **inspectable, overrideable** names so design-system consumers can theme from TypeStyles **or** plain CSS.
+
+## From StyleX
+
+StyleX is compiler-first (atomic classes, `.stylex.js` vars). TypeStyles keeps the same _ideas_ — style objects, CSS variables, theme classes — without requiring a Babel/SWC plugin on day one.
+
+### `stylex.create` → `styles.class` / `styles.component`
+
+**Before (StyleX):**
+
+```ts
+import * as stylex from '@stylexjs/stylex';
+
+const styles = stylex.create({
+  base: {
+    paddingInline: '16px',
+    paddingBlock: '8px',
+    borderRadius: 6,
+    borderWidth: 0,
+    cursor: 'pointer',
+  },
+  primary: { backgroundColor: '#2563eb', color: '#fff' },
+  ghost: {
+    backgroundColor: 'transparent',
+    color: '#2563eb',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: '#2563eb',
+  },
+});
+```
+
+```tsx
+<button {...stylex.props(styles.base, intent === 'ghost' ? styles.ghost : styles.primary)}>
+  {children}
+</button>
+```
+
+**After (typestyles):**
+
+```ts
+import { styles } from 'typestyles';
+
+const button = styles.component('button', {
+  base: {
+    paddingInline: '16px',
+    paddingBlock: '8px',
+    borderRadius: '6px',
+    border: 'none',
+    cursor: 'pointer',
+  },
+  variants: {
+    intent: {
+      primary: { backgroundColor: '#2563eb', color: '#fff' },
+      ghost: {
+        backgroundColor: 'transparent',
+        color: '#2563eb',
+        border: '1px solid #2563eb',
+      },
+    },
+  },
+  defaultVariants: { intent: 'primary' },
+});
+```
+
+```tsx
+<button type="button" className={button({ intent })}>
+  {children}
+</button>
+```
+
+For one-off style bags without variants, use `styles.class('name', { … })` instead of a recipe.
+
+### `defineVars` + `createTheme` → `tokens.create` + `tokens.createTheme`
+
+**Before (StyleX):**
+
+```ts
+// colors.stylex.ts
+import * as stylex from '@stylexjs/stylex';
+
+export const colors = stylex.defineVars({
+  primary: '#2563eb',
+  text: '#111827',
+});
+
+export const dark = stylex.createTheme(colors, {
+  primary: '#60a5fa',
+  text: '#f9fafb',
+});
+```
+
+**After (typestyles):**
+
+```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+
+export const color = tokens.create('color', {
+  primary: '#2563eb',
+  text: '#111827',
+});
+
+export const dark = tokens.createTheme({
+  name: 'dark',
+  tokens: {
+    color: {
+      primary: '#60a5fa',
+      text: '#f9fafb',
+    },
+  },
+});
+```
+
+| StyleX                                            | TypeStyles                                                      |
+| ------------------------------------------------- | --------------------------------------------------------------- |
+| `defineVars` in `.stylex.js`                      | `tokens.create` in any module (no special file extension)       |
+| Hashed `--x…` names (unless you force `--…` keys) | Predictable `--{scopeId}-{namespace}-…` names                   |
+| `createTheme(vars, values)`                       | `tokens.createTheme({ name, tokens: { … } })`                   |
+| Themes don't merge (last CSS theme wins)          | `from` + sibling `tokens` deep-merge for presets / app patches  |
+| Atomic hashed classes                             | Semantic `button--intent-primary` (or hashed / attribute modes) |
+| Outside overrides need framework escape hatches   | Plain CSS can target classes and `--*` vars                     |
+
+**When StyleX still wins:** you want Meta's compiler guarantees and atomic output as a hard product requirement. **When TypeStyles wins for StyleX migrants:** design-system consumers need to retheme from app CSS, DevTools must stay readable, or you want themes/tokens without a dedicated compiler pipeline. Deeper comparison: [Framework comparison — Theming vs StyleX](/docs/framework-comparison#theming-architecture-typestyles-vs-stylex-and-astryx).
 
 ## From Tailwind CSS
 
@@ -971,15 +1256,14 @@ After migration, your JavaScript bundle may be slightly smaller (no CSS parsing 
 
 ## Common patterns comparison
 
-| Pattern            | styled-components            | Emotion                   | Tailwind            | typestyles                    |
-| ------------------ | ---------------------------- | ------------------------- | ------------------- | ----------------------------- |
-| **Basic styling**  | `styled.div`...`             | `css`...`                 | `className="p-4"`   | `styles.component()`          |
-| **Variants**       | Props + template literals    | Props + template literals | Conditional strings | Variant object or destructure |
-| **Pseudo-classes** | `&:hover` in template        | `&:hover` in template     | `hover:` prefix     | `&:hover` in object           |
-| **Media queries**  | `@media` in template         | `@media` in template      | Responsive prefixes | `@media` in object            |
-| **Theme values**   | `${props => props.theme...}` | `${theme...}`             | Config-based        | Token references              |
-| **Dynamic values** | Template literals            | Template literals         | Arbitrary values    | Inline styles                 |
-| **Class joining**  | `className` props            | `cx()` from emotion       | `clsx()`            | `cx()` from typestyles        |
+| Pattern                  | StyleX                               | Panda                     | vanilla-extract                     | Stitches                    | typestyles                             |
+| ------------------------ | ------------------------------------ | ------------------------- | ----------------------------------- | --------------------------- | -------------------------------------- |
+| **Variants**             | Multiple `create` styles + `props()` | `cva` / recipes           | `recipe`                            | `styled` + `variants`       | `styles.component`                     |
+| **Tokens**               | `defineVars`                         | `theme.tokens` in config  | `createThemeContract` / `createVar` | `theme` on `createStitches` | `tokens.create`                        |
+| **Themes**               | `createTheme`                        | semantic tokens / `_dark` | `createTheme(vars, …)`              | `createTheme`               | `tokens.createTheme({ name, tokens })` |
+| **Token refs in styles** | `vars.color`                         | `blue.500` strings        | `vars.color.brand`                  | `$primary`                  | `color.primary` → `var(--…)`           |
+| **Plain-CSS overrides**  | Hard (hashed)                        | Limited (codegen)         | Awkward (hashed)                    | Not the model               | First-class (`--*` + semantic classes) |
+| **Class joining**        | `stylex.props`                       | `cx` / recipe result      | `clsx`                              | Component props             | `cx()` from typestyles                 |
 
 ## Migration CLI (MVP)
 

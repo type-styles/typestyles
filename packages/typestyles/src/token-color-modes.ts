@@ -474,15 +474,15 @@ export function normalizeModeAwareOverrides(
   return { base: base as ThemeOverrides, darkPatch: darkPatch as ThemeOverrides };
 }
 
-/** Normalize theme config: split mode-aware leaves in `base` / `colorMode` before compile. */
+/** Normalize theme config: split mode-aware leaves in `tokens` / `colorMode` before compile. */
 export function normalizeThemeConfig(
   config: ThemeConfig,
   colorModes: ColorModeMap | undefined,
 ): ThemeConfig {
   if (!colorModes) return config;
 
-  const { base, darkPatch: baseDarkPatch } = normalizeModeAwareOverrides(
-    config.base ?? {},
+  const { base: normalizedTokens, darkPatch: baseDarkPatch } = normalizeModeAwareOverrides(
+    (config.tokens ?? {}) as ThemeOverrides,
     colorModes,
   );
 
@@ -511,7 +511,7 @@ export function normalizeThemeConfig(
     colorMode = undefined;
   }
 
-  return { ...config, base, colorMode };
+  return { ...config, tokens: normalizedTokens as ThemeConfig['tokens'], colorMode };
 }
 
 /** Expand mode-aware values inside each namespace of theme overrides. */

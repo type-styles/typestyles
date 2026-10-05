@@ -1,30 +1,36 @@
-import type { CreateTokenValues, ThemeConfig, ThemeOverrides } from './types';
-import { mergeThemeOverrides } from './token-color-modes';
-
-export type ThemeExtendMap = Record<string, CreateTokenValues>;
+import type { CreateTokenValues, ThemeCompileConfig, ThemeConfig, ThemeOverrides } from './types';
+export type ThemeTokensMap = Record<string, CreateTokenValues>;
 
 /**
- * Register `extend` namespaces and merge their values into theme `base` overrides.
- * Returns config without `extend` for the core theme compiler.
+ * Register `tokens` namespaces and fold them into compiler `base` overrides.
  */
-export function applyThemeExtendToConfig(
+export function applyThemeTokensToConfig(
   config: ThemeConfig,
   registerNamespace: (namespace: string, values: CreateTokenValues) => void,
-): ThemeConfig {
-  const extend = config.extend;
-  if (!extend || Object.keys(extend).length === 0) {
-    return config;
+): ThemeCompileConfig {
+  const tokens = config.tokens;
+  if (!tokens || Object.keys(tokens).length === 0) {
+    const { tokens: _t, from: _f, ...rest } = config;
+    return rest;
   }
 
-  const extendOverrides: ThemeOverrides = {};
-  for (const [namespace, values] of Object.entries(extend)) {
+  const base: ThemeOverrides = {};
+  for (const [namespace, values] of Object.entries(tokens)) {
     registerNamespace(namespace, values);
-    extendOverrides[namespace] = values as ThemeOverrides[string];
+    base[namespace] = values as ThemeOverrides[string];
   }
 
-  const { extend: _omit, ...rest } = config;
-  return {
-    ...rest,
-    base: mergeThemeOverrides(extendOverrides, config.base ?? {}),
-  };
+  const { tokens: _omit, from: _from, ...rest } = config;
+  return { ...rest, base };
+}
+
+/** Fold `tokens` into `base` for the core theme compiler (optional namespace registration). */
+export function themeTokensToCompileConfig(
+  config: ThemeConfig,
+  registerNamespace?: (namespace: string, values: CreateTokenValues) => void,
+): ThemeCompileConfig {
+  if (registerNamespace) {
+    return applyThemeTokensToConfig(config, registerNamespace);
+  }
+  return applyThemeTokensToConfig(config, () => {});
 }

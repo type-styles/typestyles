@@ -517,7 +517,7 @@ describe('tokens.declare', () => {
     const space = api.declare('space', {
       md: atProperty.length,
     });
-    api.createTheme('acme', { base: { space: { md: '14px' } } });
+    api.createTheme({ name: 'acme', tokens: { space: { md: '14px' } } });
     flushSync();
 
     const css = getRegisteredCss();
@@ -613,7 +613,7 @@ describe('tokens.declare', () => {
       },
     });
 
-    api.create('color', { accent: { default: '#0066ff' } }, { decl: color });
+    api.create('color', { accent: { default: '#0066ff' }, decl: color });
     api.create('color', { accent: { subtle: '#aabbcc' } }, { decl: color });
     flushSync();
 
@@ -795,18 +795,14 @@ describe('createTheme', () => {
   });
 
   it('returns a ThemeSurface with className and name', () => {
-    const dark = createTheme('dark', {
-      base: { color: { primary: '#66b3ff' } },
-    });
+    const dark = createTheme('dark', { tokens: { color: { primary: '#66b3ff' } } });
 
     expect(dark.className).toBe('theme-dark');
     expect(dark.name).toBe('dark');
   });
 
   it('coerces to className via toString and Symbol.toPrimitive', () => {
-    const acme = createTheme('acme', {
-      base: { color: { primary: '#111' } },
-    });
+    const acme = createTheme('acme', { tokens: { color: { primary: '#111' } } });
 
     expect(String(acme)).toBe('theme-acme');
     expect(`wrapper ${acme}`).toBe('wrapper theme-acme');
@@ -815,7 +811,7 @@ describe('createTheme', () => {
 
   it('injects a CSS rule with custom property overrides', () => {
     createTheme('high-contrast', {
-      base: {
+      tokens: {
         color: {
           primary: '#0000ff',
           text: '#000000',
@@ -838,7 +834,7 @@ describe('createTheme', () => {
 
   it('supports nested structures in createTheme', () => {
     createTheme('dark', {
-      base: {
+      tokens: {
         color: {
           text: { primary: '#e0e0e0', secondary: '#a1a1aa' },
           background: { surface: '#1a1a2e', subtle: '#262640' },
@@ -869,9 +865,7 @@ describe('createTheme', () => {
       { nameTemplate: ({ path }) => `--ds-color-${path}` },
     );
 
-    api.createTheme('brand', {
-      base: { color: { primary: '#111827' } },
-    });
+    api.createTheme({ name: 'brand', tokens: { color: { primary: '#111827' } } });
 
     flushSync();
 
@@ -956,8 +950,9 @@ describe('tokens.createTheme colorMode patches', () => {
 
   it('compiles colorMode patches to light-dark() on theme class', () => {
     const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
-    api.createTheme('acme', {
-      base: { color: { text: { primary: '#111' } } },
+    api.createTheme({
+      name: 'acme',
+      tokens: { color: { text: { primary: '#111' } } },
       colorMode: {
         dark: { color: { text: { primary: '#eee' } } },
       },
@@ -970,8 +965,9 @@ describe('tokens.createTheme colorMode patches', () => {
 
   it('supports mode-aware leaves directly on base', () => {
     const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
-    api.createTheme('leaf', {
-      base: {
+    api.createTheme({
+      name: 'leaf',
+      tokens: {
         color: {
           accent: { default: { light: '#111', dark: '#eee' } },
         },

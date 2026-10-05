@@ -511,37 +511,34 @@ export type ThemeOverrideContext<
 
 export type ThemeComponentOverrideFn = (ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry;
 
-/** Preset slice merged via `from` / `patch` on {@link ThemeConfig}. */
+/** Preset slice merged via `from` on {@link ThemeConfig}. */
 export type ThemePreset = {
-  base?: ThemeOverrides;
+  /** Per-namespace token values (same shape as `tokens.create` trees). */
+  tokens?: Record<string, CreateTokenValues>;
   colorMode?: ThemeColorModePatches;
   modes?: ThemeModeDefinition[];
-  extend?: Record<string, CreateTokenValues>;
 };
 
 export type ThemeConfig = {
-  /** Base token overrides — emitted as `.theme-{name} { … }`. */
-  base?: ThemeOverrides;
+  /**
+   * Per-namespace token overrides for `.theme-{name}` — registers each namespace via
+   * `tokens.create` (when using `tokens.createTheme`) and emits `--*` variables.
+   * Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
+   * With `from`, deep-merged onto the preset's `tokens`.
+   */
+  tokens?: Record<string, CreateTokenValues>;
   /** Light/dark token patches compiled to `light-dark()` on theme custom properties. */
   colorMode?: ThemeColorModePatches;
   /** Conditional mode layers with explicit `when` conditions. */
   modes?: ThemeModeDefinition[];
-  /**
-   * Extra token namespaces to register (via `tokens.create`) and merge into this theme's
-   * `base` overrides. Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
-   */
-  extend?: Record<string, CreateTokenValues>;
-  /** Preset defaults — deep-merged with `patch` before compile (#220). */
+  /** Preset defaults — deep-merged with sibling fields (`tokens`, `colorMode`, `modes`, …). */
   from?: ThemePreset;
-  /** Overrides merged onto `from`. */
-  patch?: ThemePreset & {
-    components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
-  };
-  /**
-   * Recipe overrides at runtime (`patch.components` or merged from `createTheme` options).
-   * Not accepted on the `createTheme` config argument — use the options bag.
-   */
   components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
+};
+
+/** Theme config after `tokens` namespaces are folded for the CSS compiler. */
+export type ThemeCompileConfig = Omit<ThemeConfig, 'tokens'> & {
+  base?: ThemeOverrides;
 };
 
 /**

@@ -224,4 +224,4 @@ Utility keys are fully typed from your utility definitions and can be mixed with
 
 Use token references (e.g. from `tokens.create()`) in your style values. They compile to `var(--name-key)` and work with themes.
 
-If you are migrating from CVA, Stitches, or vanilla-extract recipes, see [Migration Guide](/docs/migration).
+If you are migrating from CVA, Stitches, vanilla-extract, StyleX, or Panda recipes, see the [Migration Guide](/docs/migration#coming-from-cheat-sheet).

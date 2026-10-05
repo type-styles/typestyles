@@ -206,8 +206,8 @@ describe('invalidateKeys', () => {
       layers: ['tokens', 'overrides'] as const,
       tokenLayer: 'tokens',
     });
-    tokens.createTheme('live-edit', { base: { fontSize: { md: '16px' } } });
-    tokens.createTheme('keep', { base: { fontSize: { md: '12px' } } });
+    tokens.createTheme({ name: 'live-edit', tokens: { fontSize: { md: '16px' } } });
+    tokens.createTheme({ name: 'keep', tokens: { fontSize: { md: '12px' } } });
     flushSync();
 
     expect(fallbackCssText()).toContain('.theme-var-ui-live-edit');
@@ -218,7 +218,7 @@ describe('invalidateKeys', () => {
     invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:', 'theme:var-ui-live-edit:']);
 
     expect(fallbackCssText()).not.toContain('.theme-var-ui-live-edit');
-    expect(fallbackCssText()).not.toContain('16px');
+    expect(fallbackCssText()).not.toMatch(/\.theme-var-ui-live-edit[\s\S]*16px/);
     expect(fallbackCssText()).toContain('.theme-var-ui-keep');
     expect(fallbackCssText()).toContain('12px');
   });
@@ -297,14 +297,14 @@ describe('invalidateKeys', () => {
       layers: ['tokens'] as const,
       tokenLayer: 'tokens',
     });
-    tokens.createTheme('live-edit', { base: { fontSize: { md: '16px' } } });
+    tokens.createTheme({ name: 'live-edit', tokens: { fontSize: { md: '16px' } } });
     flushSync();
     invalidateKeys([], ['layer:tokens:theme:var-ui-live-edit:', 'theme:var-ui-live-edit:']);
-    tokens.createTheme('live-edit', { base: { fontSize: { md: '19px' } } });
+    tokens.createTheme({ name: 'live-edit', tokens: { fontSize: { md: '19px' } } });
     flushSync();
 
     expect(fallbackCssText()).toContain('19px');
-    expect(fallbackCssText()).not.toContain('16px');
+    expect(fallbackCssText()).not.toMatch(/\.theme-var-ui-live-edit[\s\S]*16px/);
     expect(countInCssom('.theme-var-ui-live-edit')).toBe(1);
   });
 

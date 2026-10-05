@@ -5,7 +5,7 @@ export type ThemeTokenUseFn = (namespaceOrRef: string) => unknown;
 
 /**
  * Token bag on {@link ThemeSurface} — `use()` plus namespace shortcuts (`tokens.color`, `tokens.brand`, …).
- * Generic `E` adds typed trees for `createTheme({ extend })` namespaces (#234).
+ * Generic `E` adds typed trees for `createTheme({ tokens })` namespaces (#234).
  */
 export type ThemeTokenContext<E extends Record<string, CreateTokenValues> = Record<string, never>> =
   {

@@ -54,10 +54,14 @@ import {
   applyThemeComponentOverrides,
   type ThemeComponentsBridge,
 } from './theme-component-overrides';
-import { applyThemeExtendToConfig } from './theme-extend';
-import { resolveThemeFromPatchConfig } from './theme-preset-merge';
+import { applyThemeTokensToConfig } from './theme-extend';
+import { resolveThemeFromPresetConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
-import type { CreateThemeCallOptions, InferThemeExtendFromConfig } from './theme-surface-types';
+import type {
+  CreateThemeInput,
+  InferThemeTokensFromConfig,
+  ThemeComponentsFor,
+} from './theme-surface-types';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -187,11 +191,9 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
     ): DeclaredTokenRef<TSchema, N>;
   };
   createTheme: {
-    <const T extends Omit<ThemeConfig, 'components'>>(
-      name: string,
-      config: T,
-      options?: CreateThemeCallOptions<T>,
-    ): ThemeSurface<InferThemeExtendFromConfig<T>>;
+    <const C extends Omit<ThemeConfig, 'components'>>(
+      input: { name: string; replace?: boolean } & C & ThemeComponentsFor<C>,
+    ): ThemeSurface<InferThemeTokensFromConfig<C>>;
   };
   disposeTheme: (name: string, options?: { removeLiveCss?: boolean }) => void;
   /**
@@ -435,8 +437,6 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const declaredSchemaLeaves = new Map<string, Map<string, TokenSchemaLeaf>>();
   const namespaceValueTrees = new Map<string, CreateTokenValues>();
   const instanceDefaultTemplate = options.nameTemplate;
-  let customNamingActive = Boolean(instanceDefaultTemplate);
-
   const themeTokenNaming: ThemeTokenNaming = createThemeTokenNaming(
     scopeId,
     instanceDefaultTemplate,
@@ -541,9 +541,10 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
     const effectiveTemplate =
-      options?.nameTemplate ?? (hasDeclared ? declaredTemplate : instanceDefaultTemplate);
-    if (effectiveTemplate !== undefined) customNamingActive = true;
-
+      options?.nameTemplate ??
+      (hasDeclared ? declaredTemplate : undefined) ??
+      createdTokenTemplates.get(namespace) ??
+      instanceDefaultTemplate;
     let flatEntries: Array<{ path: string; value: string }>;
     const nameByPath = new Map<string, string>();
 
@@ -835,7 +836,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     config: ThemeConfig,
     callOptions?: { replace?: boolean },
   ): ThemeSurface {
-    const resolved = resolveThemeFromPatchConfig(config, colorModes);
+    const resolved = resolveThemeFromPresetConfig(config, colorModes);
 
     if (resolved.components && !themeStyles) {
       throw new Error(
@@ -848,7 +849,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     }
 
     const tokenContext = createThemeTokenContext(use);
-    const prepared = applyThemeExtendToConfig(resolved, (namespace, values) => {
+    const prepared = applyThemeTokensToConfig(resolved, (namespace, values) => {
       create(namespace, values);
     });
 
@@ -857,7 +858,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       prepared,
       scopeId,
       themeLayerContext,
-      customNamingActive ? themeTokenNaming : undefined,
+      themeTokenNaming,
       themeOptions,
     );
 
@@ -876,15 +877,16 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     create: create as TokensApi<R>['create'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
-    createTheme: ((
-      name: string,
-      config: Omit<ThemeConfig, 'components'>,
-      callOptions?: CreateThemeCallOptions<Omit<ThemeConfig, 'components'>>,
-    ) => {
-      const { components: componentsOption, ...themeCallOptions } = callOptions ?? {};
-      const mergedConfig: ThemeConfig =
-        componentsOption !== undefined ? { ...config, components: componentsOption } : config;
-      return emitTheme(name, mergedConfig, themeCallOptions);
+    createTheme: ((input: CreateThemeInput) => {
+      const { name, replace, components, colorMode, modes, tokens: themeTokens, from } = input;
+      const config: ThemeConfig = {
+        colorMode,
+        modes,
+        tokens: themeTokens,
+        from,
+        ...(components !== undefined ? { components } : {}),
+      };
+      return emitTheme(name, config, { replace });
     }) as TokensApi<R>['createTheme'],
     ensureNamespace,
     disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
@@ -895,7 +897,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
         darkOverrides,
         scopeId,
         themeLayerContext,
-        customNamingActive ? themeTokenNaming : undefined,
+        themeTokenNaming,
         themeOptions,
       );
       return { ...surface, tokens: tokenContext };

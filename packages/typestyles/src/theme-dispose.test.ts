@@ -10,9 +10,9 @@ describe('disposeTheme', () => {
 
   it('createTheme replaces by name without duplicating theme CSS', () => {
     const tokens = createTokens({ scopeId: 'ds' });
-    tokens.createTheme('brand', { base: { fontSize: { md: '14px' } } });
+    tokens.createTheme({ name: 'brand', tokens: { fontSize: { md: '14px' } } });
     flushSync();
-    tokens.createTheme('brand', { base: { fontSize: { md: '18px' } } });
+    tokens.createTheme({ name: 'brand', tokens: { fontSize: { md: '18px' } } });
     flushSync();
 
     const css = getRegisteredCss();
@@ -22,8 +22,8 @@ describe('disposeTheme', () => {
 
   it('disposeTheme removes theme class rules without touching prefix sibling themes', () => {
     const tokens = createTokens({ scopeId: 'var-ui' });
-    tokens.createTheme('dark', { base: { color: { text: { primary: '#111' } } } });
-    tokens.createTheme('dark-mode', { base: { color: { text: { primary: '#222' } } } });
+    tokens.createTheme({ name: 'dark', tokens: { color: { text: { primary: '#111' } } } });
+    tokens.createTheme({ name: 'dark-mode', tokens: { color: { text: { primary: '#222' } } } });
     flushSync();
     tokens.disposeTheme('dark');
     flushSync();
@@ -35,7 +35,7 @@ describe('disposeTheme', () => {
 
   it('exposes disposeTheme on createTypeStyles tokens', () => {
     const { tokens } = createTypeStyles({ scopeId: 'cts' });
-    tokens.createTheme('x', { base: { fontSize: { sm: '12px' } } });
+    tokens.createTheme({ name: 'x', tokens: { fontSize: { sm: '12px' } } });
     flushSync();
     tokens.disposeTheme('x');
     flushSync();
