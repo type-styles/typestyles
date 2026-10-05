@@ -5,7 +5,7 @@ description: Light/dark mode, multi-brand theming, and advanced theme strategies
 
 TypeStyles uses CSS custom properties for theming, making it flexible and powerful. This guide covers common theming patterns.
 
-**New here?** Start with [End-to-end theming (no wrappers)](/docs/theming-end-to-end) — one copy-pasteable module covering `declare` / `create`, `createTheme({ from, tokens })`, `styles.override` + `selectorPrefix`, plain CSS, and `disposeTheme`.
+**New here?** Start with [End-to-end theming](/docs/theming-end-to-end) — one module covering `declare` / `create`, `createTheme({ from, tokens })`, `styles.override` + `selectorPrefix`, plain CSS, and `disposeTheme`.
 
 Coming from **StyleX**, **Panda**, **vanilla-extract**, or **Stitches**? Start with the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet).
 
@@ -46,7 +46,7 @@ The return value is a **`ThemeSurface`**: `{ className, name, tokens? }`, with `
 
 ### Token refs on the theme surface
 
-`tokens.createTheme()` attaches **`surface.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`, without a custom Proxy in your design-system layer.
+`tokens.createTheme()` attaches **`surface.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`.
 
 - **`surface.tokens.use('color')`** — same as `tokens.use('color')` for namespaces created with `tokens.create` / `tokens.declare`.
 - **`surface.tokens.brand`** — shortcuts for namespaces registered via **`config.tokens`** (including keys merged from **`from.tokens`** on presets).
@@ -692,44 +692,26 @@ This is separate from **style-level** `{ light, dark }` on component properties 
 
 ## Optional: `mergeThemeOverrides` helpers
 
-Prefer the built-in path first: [`createTheme({ from, tokens })`](/docs/theming-end-to-end) already
-deep-merges presets with app overrides — no wrapper required. See
-[End-to-end theming](/docs/theming-end-to-end).
+`createTheme({ from, tokens })` already deep-merges a preset with app overrides — see
+[End-to-end theming](/docs/theming-end-to-end). Use the helpers below when you need to merge
+**token ref leaves** yourself (for example building a config object before calling `createTheme`).
 
-If you still expose a thin `createDesignTheme` sugar, or need to merge **token ref leaves** outside
-`createTheme`, use the exported helpers. Token refs from `tokens.declare()` are proxy objects —
-they cannot be cloned with `structuredClone` and will not round-trip through ad-hoc deep merges.
-Pass **leaf** refs (`semantic.accent.default`), not branch proxies (`semantic.accent`):
+Token refs from `tokens.declare()` are proxy objects — they cannot be cloned with
+`structuredClone` and will not round-trip through ad-hoc deep merges. Pass **leaf** refs
+(`semantic.accent.default`), not branch proxies (`semantic.accent`):
 
 ```ts
-import { createTypeStyles, mergeThemeOverrides } from 'typestyles';
+import { mergeThemeOverrides } from 'typestyles';
 
-const { tokens } = createTypeStyles({ scopeId: 'app' });
-
-const preset = {
-  tokens: { color: { text: '#111827', accent: { default: '#0066ff' } } },
+const presetTokens = {
+  color: { text: '#111827', accent: { default: '#0066ff' } },
+};
+const appTokens = {
+  color: { accent: { default: '#ff5500' } },
 };
 
-export function createDesignTheme(options: {
-  from?: typeof preset;
-  tokens?: (typeof preset)['tokens'];
-  colorMode?: { light?: (typeof preset)['tokens']; dark?: (typeof preset)['tokens'] };
-}) {
-  const mergedTokens = mergeThemeOverrides(options.from?.tokens ?? {}, options.tokens);
-  const light = options.colorMode?.light
-    ? mergeThemeOverrides(mergedTokens, options.colorMode.light)
-    : undefined;
-  const dark = options.colorMode?.dark
-    ? mergeThemeOverrides(mergedTokens, options.colorMode.dark)
-    : undefined;
-
-  return tokens.createTheme({
-    name: 'app',
-    from: options.from,
-    tokens: mergedTokens,
-    colorMode: light || dark ? { light, dark } : undefined,
-  });
-}
+const merged = mergeThemeOverrides(presetTokens, appTokens);
+// → { color: { text: '#111827', accent: { default: '#ff5500' } } }
 ```
 
 **`mergeThemeOverrides(base, patch?)`** — deep-merge two override trees. Plain objects merge
@@ -1047,7 +1029,7 @@ are unsupported: emission uses **this** instance's sheet, breakpoints, and layer
 stack, so selectors may land in the wrong CSS.
 
 With `@typestyles/vite` in serve mode, modules that call `styles.override` (or
-design-system sugar like `createDesignTheme` / `overrideComponent`, including
+helpers that wrap it, such as `createDesignTheme` / `overrideComponent`, including
 renamed imports such as `createDesignTheme as cdt`) get HMR dispose tracking so
 theme edits update override CSS without a full reload. Re-registering the same
 override keys always replaces the previous CSS. Recipe HMR still preserves

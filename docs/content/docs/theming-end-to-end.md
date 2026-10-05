@@ -1,11 +1,11 @@
 ---
-title: End-to-end theming (no wrappers)
-description: Pure TypeStyles theme surfaces — tokens, createTheme, styles.override, and dispose — without a design-system helper layer
+title: End-to-end theming
+description: Build and apply a TypeStyles theme — tokens, createTheme, styles.override, and dispose
 ---
 
-This guide is the **copy-pasteable** path for design systems and apps that want TypeStyles to own theming. Packages supply tokens and recipes; consumers customize with `createTheme`, `styles.override`, or plain CSS. No bespoke theme Proxy or `createDesignTheme` required.
+A complete theming setup with TypeStyles: design tokens, a theme surface class, recipe overrides, and mounting in the DOM. Consumers can customize with TypeStyles APIs or plain CSS that targets the same class names and custom properties.
 
-For deeper patterns (multi-brand, condition scopes, `@property` animation), see [Theming patterns](/docs/theming-patterns). Coming from StyleX / Panda / vanilla-extract / Stitches? See [Migration](/docs/migration#coming-from-cheat-sheet).
+For more patterns (multi-brand, condition scopes, `@property` animation), see [Theming patterns](/docs/theming-patterns). Coming from StyleX / Panda / vanilla-extract / Stitches? See [Migration](/docs/migration#coming-from-cheat-sheet).
 
 ## What you get
 
@@ -223,10 +223,10 @@ Prefer this (or `createTheme({ components })`) over hand-written class strings. 
 | Drop a theme (HMR / switcher)         | `tokens.disposeTheme(name)`                                                                                                                                |
 | Zero-runtime extract of all recipes   | [`getRegisteredComponentRefs`](/docs/zero-runtime#design-systems-with-many-recipes) + Vite `extract.registeredComponentsModule`                            |
 
-## Checklist for library authors
+## Checklist for design-system authors
 
-1. Ship tokens with `tokens.create` / `declare` and recipes with `styles.component` on a shared `createTypeStyles({ scopeId })`.
-2. Export a **preset** object (`tokens` / `colorMode` / `modes`) — not a custom theme class hierarchy.
+1. Define tokens with `tokens.create` / `declare` and recipes with `styles.component` on a shared `createTypeStyles({ scopeId })`.
+2. Export a **preset** object (`tokens` / `colorMode` / `modes`) apps can pass to `from`.
 3. Document that apps call `tokens.createTheme({ name, from: preset, tokens: { … } })` and apply `surface.className`.
 4. Document `selectorPrefix: \`.${surface.className}\``(or theme`components`) for recipe restyles.
-5. Keep class and `--*` names stable so plain-CSS consumers work.
+5. Keep class and `--*` names stable so consumers can also theme from plain CSS.

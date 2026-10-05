@@ -1,4 +1,4 @@
 ---
 ---
 
-Documentation: end-to-end theming guide without design-system wrappers (#236).
+Documentation: end-to-end theming guide (#236).
