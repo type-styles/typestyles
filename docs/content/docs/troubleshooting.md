@@ -418,8 +418,9 @@ const responsive = styles.component('responsive', {
 ### Theme not applying
 
 ```tsx
-const darkTheme = tokens.createTheme('dark', {
-  base: {
+const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       primary: '#66b3ff',
     },
@@ -440,8 +441,9 @@ const darkTheme = tokens.createTheme('dark', {
    const color = tokens.create('color', { ... });
 
    // Overriding
-   tokens.createTheme('dark', {
-     base: {
+   tokens.createTheme({
+     name: 'dark',
+     tokens: {
        color: { ... }, // Must match 'color' namespace
      },
    });

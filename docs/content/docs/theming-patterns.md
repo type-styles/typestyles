@@ -5,33 +5,37 @@ description: Light/dark mode, multi-brand theming, and advanced theme strategies
 
 TypeStyles uses CSS custom properties for theming, making it flexible and powerful. This guide covers common theming patterns.
 
-Coming from **StyleX**, **Panda**, **vanilla-extract**, or **Stitches**? Start with the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet) — each maps `createTheme` / theme contracts onto `tokens.create` + `tokens.createTheme`.
+**New here?** Start with [End-to-end theming](/docs/theming-end-to-end) — a walkthrough covering `declare` / `create`, `createTheme({ tokens })`, `styles.override` + `selectorPrefix`, and plain CSS.
+
+Coming from **StyleX**, **Panda**, **vanilla-extract**, or **Stitches**? Start with the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet).
 
 ## Theme surfaces
 
 `tokens.createTheme({ name, … })` registers a **theme surface**: a stable class name `theme-{name}` whose custom properties override token values for that subtree. Everything is one **named** object (no positional `name` / `config` / `options` arguments).
 
+Defaults usually live on `:root` via `tokens.create`. Theme `tokens` / `colorMode` only need **deltas** — unchanged paths inherit. See [End-to-end theming](/docs/theming-end-to-end).
+
 ### What the fields mean
 
-| Field            | Plain language                                                                                                          |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                                       |
-| **`tokens`**     | Per-namespace token values on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `surface.tokens.*` refs. |
-| **`colorMode`**  | Optional `{ light?, dark? }` patches merged into theme output and compiled to `light-dark()` when `colorModes` is set.  |
-| **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets).                |
-| **`from`**       | **Preset defaults** (reusable slice: `tokens`, `colorMode`, `modes`).                                                   |
-| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).                            |
-| **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                                |
-
-**`from`** shares a design-system theme recipe; **sibling fields** on the same `createTheme({ … })` call (`tokens`, `colorMode`, `modes`, …) deep-merge onto that preset. Preset **`tokens`** and your **`tokens`** merge by namespace; your values win on conflicts.
+| Field            | Plain language                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                                      |
+| **`tokens`**     | Per-namespace overrides on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `surface.tokens.*` refs.   |
+| **`colorMode`**  | Optional `{ light?, dark? }` patches merged into theme output and compiled to `light-dark()` when `colorModes` is set. |
+| **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets).               |
+| **`from`**       | Optional: deep-merge a reusable theme config slice (see [below](#reusing-a-theme-config-slice-from)).                  |
+| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).                           |
+| **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                               |
 
 ```ts
 tokens.createTheme({
   name: 'app',
-  from: designPreset,
   tokens: {
     color: { accent: { default: '#0066ff' } },
     brand: { glow: { default: '#0066ff' } },
+  },
+  colorMode: {
+    dark: { color: { text: '#e5e7eb', surface: '#0f172a' } },
   },
 });
 ```
@@ -44,10 +48,10 @@ The return value is a **`ThemeSurface`**: `{ className, name, tokens? }`, with `
 
 ### Token refs on the theme surface
 
-`tokens.createTheme()` attaches **`surface.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`, without a custom Proxy in your design-system layer.
+`tokens.createTheme()` attaches **`surface.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`.
 
 - **`surface.tokens.use('color')`** — same as `tokens.use('color')` for namespaces created with `tokens.create` / `tokens.declare`.
-- **`surface.tokens.brand`** — shortcuts for namespaces registered via **`config.tokens`** (including keys merged from **`from.tokens`** on presets).
+- **`surface.tokens.brand`** — shortcuts for namespaces registered via **`config.tokens`** (including keys merged from **`from.tokens`** when using that option).
 
 `tokens` registers each namespace with `tokens.create`, merges values into the theme’s `base` overrides, and emits CSS on `.theme-{name}`. Use refs in component code or in theme **`components`** factories:
 
@@ -187,8 +191,9 @@ export const color = tokens.create('color', {
 });
 
 // Create dark theme override (class theme-dark)
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       textMuted: '#9ca3af',
@@ -271,8 +276,9 @@ export const color = tokens.create('color', {
   // ... other tokens
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       surface: '#1a1a2e',
@@ -338,13 +344,42 @@ import { tokens } from 'typestyles';
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
-export const appTheme = tokens.createTheme('app', {
-  base: light,
+export const appTheme = tokens.createTheme({
+  name: 'app',
+  tokens: light,
   modes: tokens.colorMode.mediaOnly({ dark }),
 });
 ```
 
 Apply `appTheme.className` once on your root; dark overrides apply automatically via CSS.
+
+## Reusing a theme config slice (`from`)
+
+Most apps do not need this. Prefer `:root` defaults via `tokens.create` and **delta** themes as in [End-to-end theming](/docs/theming-end-to-end).
+
+Use `from` when you want to deep-merge a reusable theme config object (`tokens` / `colorMode` / `modes`) into many `createTheme` calls — for example several customer brands that share the same dark patch and only differ on accent:
+
+```ts
+const shared = {
+  colorMode: {
+    dark: { color: { text: '#e5e7eb', surface: '#0f172a' } },
+  },
+} as const;
+
+tokens.createTheme({
+  name: 'acme',
+  from: shared,
+  tokens: { color: { accent: { default: '#0066ff' } } },
+});
+
+tokens.createTheme({
+  name: 'globex',
+  from: shared,
+  tokens: { color: { accent: { default: '#10b981' } } },
+});
+```
+
+Sibling fields on the same call (`tokens`, `colorMode`, `modes`, …) deep-merge onto `from`; your values win on conflicts. Prefer root defaults via `tokens.create` (often with mode-aware `{ light, dark }` leaves) and only put **shared theme deltas** in `from` — avoid copying the full light palette into `from.tokens`.
 
 ## Multi-brand theming
 
@@ -370,8 +405,9 @@ const baseTokens = {
 };
 
 // Brand A theme
-export const brandA = tokens.createTheme('brand-a', {
-  base: {
+export const brandA = tokens.createTheme({
+  name: 'brand-a',
+  tokens: {
     color: {
       primary: '#0066ff',
       secondary: '#6b7280',
@@ -382,8 +418,9 @@ export const brandA = tokens.createTheme('brand-a', {
 });
 
 // Brand B theme
-export const brandB = tokens.createTheme('brand-b', {
-  base: {
+export const brandB = tokens.createTheme({
+  name: 'brand-b',
+  tokens: {
     color: {
       primary: '#10b981',
       secondary: '#f59e0b',
@@ -394,8 +431,9 @@ export const brandB = tokens.createTheme('brand-b', {
 });
 
 // Brand C theme
-export const brandC = tokens.createTheme('brand-c', {
-  base: {
+export const brandC = tokens.createTheme({
+  name: 'brand-c',
+  tokens: {
     color: {
       primary: '#ef4444',
       secondary: '#8b5cf6',
@@ -462,8 +500,9 @@ CSS custom properties cascade naturally, so the inner theme overrides only affec
 import { tokens } from 'typestyles';
 
 // Chart-specific tokens that don't affect the rest of the app
-export const chartTheme = tokens.createTheme('chart', {
-  base: {
+export const chartTheme = tokens.createTheme({
+  name: 'chart',
+  tokens: {
     color: {
       primary: '#0066ff',
       secondary: '#10b981',
@@ -497,8 +536,9 @@ export function Chart({ data }) {
 // themes/seasonal.ts
 import { tokens } from 'typestyles';
 
-export const holidayTheme = tokens.createTheme('holiday', {
-  base: {
+export const holidayTheme = tokens.createTheme({
+  name: 'holiday',
+  tokens: {
     color: {
       primary: '#c41e3a', // Holiday red
       secondary: '#165b33', // Holiday green
@@ -507,8 +547,9 @@ export const holidayTheme = tokens.createTheme('holiday', {
   },
 });
 
-export const springTheme = tokens.createTheme('spring', {
-  base: {
+export const springTheme = tokens.createTheme({
+  name: 'spring',
+  tokens: {
     color: {
       primary: '#88c999',
       secondary: '#f4a460',
@@ -549,8 +590,9 @@ export function useSeasonalTheme(): string | undefined {
 import { tokens } from 'typestyles';
 
 // Semantic color tokens
-export const successTheme = tokens.createTheme('success', {
-  base: {
+export const successTheme = tokens.createTheme({
+  name: 'success',
+  tokens: {
     color: {
       primary: '#10b981',
       primaryHover: '#059669',
@@ -558,8 +600,9 @@ export const successTheme = tokens.createTheme('success', {
   },
 });
 
-export const warningTheme = tokens.createTheme('warning', {
-  base: {
+export const warningTheme = tokens.createTheme({
+  name: 'warning',
+  tokens: {
     color: {
       primary: '#f59e0b',
       primaryHover: '#d97706',
@@ -567,8 +610,9 @@ export const warningTheme = tokens.createTheme('warning', {
   },
 });
 
-export const dangerTheme = tokens.createTheme('danger', {
-  base: {
+export const dangerTheme = tokens.createTheme({
+  name: 'danger',
+  tokens: {
     color: {
       primary: '#ef4444',
       primaryHover: '#dc2626',
@@ -633,8 +677,9 @@ import { tokens } from 'typestyles';
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
-export const shell = tokens.createTheme('shell', {
-  base: light,
+export const shell = tokens.createTheme({
+  name: 'shell',
+  tokens: light,
   modes: tokens.colorMode.systemWithLightDarkOverride({
     attribute: 'data-color-mode',
     values: { light: 'light', dark: 'dark', system: 'system' },
@@ -663,8 +708,9 @@ const brand = tokens.create('brand', {
   accent: { light: '#111', dark: '#eee' },
 });
 
-const theme = tokens.createTheme('acme', {
-  base: { color: { text: '#111' } },
+const theme = tokens.createTheme({
+  name: 'acme',
+  tokens: { color: { text: '#111' } },
   colorMode: { dark: { color: { text: '#eee' } } },
 });
 ```
@@ -674,41 +720,26 @@ This is separate from **style-level** `{ light, dark }` on component properties 
 **conditional** `modes` layers driven by `tokens.when.*`. See
 [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves) for the full API.
 
-## Building `createTheme({ from, tokens })` wrappers
+## Optional: `mergeThemeOverrides` helpers
 
-Design systems often expose a higher-level `createDesignTheme({ from, tokens, colorMode })`
-that merges a preset with user overrides before calling `tokens.createTheme()`. Token refs from
-`tokens.declare()` are proxy objects — they cannot be cloned with `structuredClone` and will not
-round-trip through ad-hoc deep merges.
+Prefer composing themes with `createTheme({ tokens, colorMode })` (and optional [`from`](#reusing-a-theme-config-slice-from)). Use the helpers below when you need to merge **token ref leaves** yourself — for example building a config object before calling `createTheme`.
 
-Use the exported helpers instead. Pass **leaf** refs (`semantic.accent.default`), not branch
-proxies (`semantic.accent`):
+Token refs from `tokens.declare()` are proxy objects — they cannot be cloned with
+`structuredClone` and will not round-trip through ad-hoc deep merges. Pass **leaf** refs
+(`semantic.accent.default`), not branch proxies (`semantic.accent`):
 
 ```ts
-import { createTypeStyles, mergeThemeOverrides } from 'typestyles';
+import { mergeThemeOverrides } from 'typestyles';
 
-const { tokens } = createTypeStyles({ scopeId: 'app' });
+const presetTokens = {
+  color: { text: '#111827', accent: { default: '#0066ff' } },
+};
+const appTokens = {
+  color: { accent: { default: '#ff5500' } },
+};
 
-const preset = { color: { text: '#111827', accent: { default: '#0066ff' } } };
-
-export function createDesignTheme(options: {
-  from?: typeof preset;
-  tokens?: typeof preset;
-  colorMode?: { light?: typeof preset; dark?: typeof preset };
-}) {
-  const base = mergeThemeOverrides(options.from ?? {}, options.tokens);
-  const light = options.colorMode?.light
-    ? mergeThemeOverrides(base, options.colorMode.light)
-    : undefined;
-  const dark = options.colorMode?.dark
-    ? mergeThemeOverrides(base, options.colorMode.dark)
-    : undefined;
-
-  return tokens.createTheme('app', {
-    base,
-    colorMode: { light, dark },
-  });
-}
+const merged = mergeThemeOverrides(presetTokens, appTokens);
+// → { color: { text: '#111827', accent: { default: '#ff5500' } } }
 ```
 
 **`mergeThemeOverrides(base, patch?)`** — deep-merge two override trees. Plain objects merge
@@ -736,8 +767,9 @@ import { tokens } from 'typestyles';
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
-export const app = tokens.createTheme('app', {
-  base: light,
+export const app = tokens.createTheme({
+  name: 'app',
+  tokens: light,
   modes: [
     // Ambient light/dark switching, as usual:
     ...tokens.colorMode.systemWithLightDarkOverride({
@@ -779,8 +811,9 @@ Two properties worth knowing:
 // themes/accessibility.ts
 import { tokens } from 'typestyles';
 
-export const highContrastTheme = tokens.createTheme('high-contrast', {
-  base: {
+export const highContrastTheme = tokens.createTheme({
+  name: 'high-contrast',
+  tokens: {
     color: {
       text: '#000000',
       surface: '#ffffff',
@@ -821,8 +854,9 @@ export const color = tokens.create('color', {
   // ... other tokens
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       // ... other overrides
@@ -831,8 +865,9 @@ export const darkTheme = tokens.createTheme('dark', {
 });
 
 // Optional: separate surface for motion tokens, etc.
-export const reducedMotionTheme = tokens.createTheme('reduced-motion', {
-  base: {
+export const reducedMotionTheme = tokens.createTheme({
+  name: 'reduced-motion',
+  tokens: {
     /* motion-related overrides */
   },
 });
@@ -900,8 +935,9 @@ const brand = tokens.create('brand', {
   angle: { value: '20deg', syntax: '<angle>', inherits: true },
 });
 
-const dark = tokens.createTheme('dark', {
-  base: {
+const dark = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     brand: { angle: '260deg' },
   },
 });
@@ -1021,7 +1057,7 @@ are unsupported: emission uses **this** instance's sheet, breakpoints, and layer
 stack, so selectors may land in the wrong CSS.
 
 With `@typestyles/vite` in serve mode, modules that call `styles.override` (or
-design-system sugar like `createDesignTheme` / `overrideComponent`, including
+helpers that wrap it, such as `createDesignTheme` / `overrideComponent`, including
 renamed imports such as `createDesignTheme as cdt`) get HMR dispose tracking so
 theme edits update override CSS without a full reload. Re-registering the same
 override keys always replaces the previous CSS. Recipe HMR still preserves

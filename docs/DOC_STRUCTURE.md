@@ -29,6 +29,7 @@ Internal research notes live under `research/` and are not built or indexed.
 - class-naming.md
 - cascade-layers.md
 - custom-at-rules.md
+- theming-end-to-end.md
 - theming-patterns.md
 
 ## Guides

@@ -629,6 +629,7 @@ major semver bump. Opt into snapshot + ESLint guardrails described in
 
 ## Related docs
 
+- [End-to-end theming](/docs/theming-end-to-end) — tokens, theme surfaces, and recipe overrides
 - [Theming Patterns — component overrides](/docs/theming-patterns#component-overrides-two-tier-model)
 
 - [Styles](/docs/styles)

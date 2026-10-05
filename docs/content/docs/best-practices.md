@@ -493,8 +493,9 @@ export const color = tokens.create('color', {
   surfaceRaised: '#f9fafb',
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       textMuted: '#9ca3af',
@@ -511,18 +512,21 @@ document.body.classList.add(darkTheme.className);
 ### Multiple themes
 
 ```ts
-const brandLight = tokens.createTheme('brand-light', {
-  base: {
+const brandLight = tokens.createTheme({
+  name: 'brand-light',
+  tokens: {
     /* … */
   },
 });
-const brandDark = tokens.createTheme('brand-dark', {
-  base: {
+const brandDark = tokens.createTheme({
+  name: 'brand-dark',
+  tokens: {
     /* … */
   },
 });
-const highContrast = tokens.createTheme('high-contrast', {
-  base: {
+const highContrast = tokens.createTheme({
+  name: 'high-contrast',
+  tokens: {
     /* … */
   },
 });

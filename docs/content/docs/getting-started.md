@@ -91,5 +91,6 @@ Full index: [examples/README.md](https://github.com/type-styles/typestyles/blob/
 | [Tokens](/docs/tokens)                             | Namespaces, themes, `tokens.use`                                                  |
 | [Framework comparison](/docs/framework-comparison) | How TypeStyles compares to other tools                                            |
 | [Migration](/docs/migration)                       | Coming from StyleX, Panda, vanilla-extract, Stitches, Emotion                     |
+| [End-to-end theming](/docs/theming-end-to-end)     | Tokens, themes, overrides, and mounting in one walkthrough                        |
 | [Design system with tokens](/docs/design-system)   | Primitives → semantics → components                                               |
 | [Class naming](/docs/class-naming)                 | Semantic vs hashed output                                                         |

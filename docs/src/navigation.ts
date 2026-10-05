@@ -54,6 +54,7 @@ export const docNavigation: { categories: DocNavCategory[] } = {
         { slug: 'class-naming', title: 'Class naming' },
         { slug: 'cascade-layers', title: 'Cascade layers (@layer)' },
         { slug: 'custom-at-rules', title: 'Custom Selectors & At-Rules' },
+        { slug: 'theming-end-to-end', title: 'End-to-end theming' },
         { slug: 'theming-patterns', title: 'Theming Patterns' },
       ],
     },
