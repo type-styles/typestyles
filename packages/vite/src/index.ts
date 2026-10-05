@@ -26,7 +26,8 @@ export type { TypestylesExtractOptions };
  *   styles.component('button', ...)   → prefix ".button-"
  *   styles.class('card', ...)         → prefix ".card-"
  *   tokens.create('color', ...)       → key "tokens:color"
- *   tokens.createTheme('dark', ...)   → key "theme:dark"  (also createTheme('dark', ...))
+ *   tokens.createTheme({ name: 'dark', … })   → key "theme:dark"
+ *   createTheme('dark', …)                    → key "theme:dark" (low-level positional)
  *   keyframes.create('fadeIn', ...)   → key "keyframes:fadeIn"
  *   global.style('body', ...)         → prefix "body"
  *   global.fontFace('Inter', ...)     → prefix "font-face:Inter"

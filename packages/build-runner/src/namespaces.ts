@@ -1,7 +1,8 @@
 const STYLES_COMPONENT_RE = /styles\.component\(\s*['"]([^'"]+)['"]/g;
 const STYLES_CLASS_RE = /styles\.class\(\s*['"]([^'"]+)['"]/g;
 const TOKENS_CREATE_RE = /tokens\.create\(\s*['"]([^'"]+)['"]/g;
-const CREATE_THEME_RE = /(?:tokens\.)?createTheme\(\s*['"]([^'"]+)['"]/g;
+const CREATE_THEME_RE =
+  /(?:tokens\.)?createTheme\(\s*(?:['"]([^'"]+)['"]|\{\s*name\s*:\s*['"]([^'"]+)['"])/g;
 const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_STYLE_RE = /global\.style\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_FONT_FACE_RE = /global\.fontFace\(\s*['"]([^'"]+)['"]/g;
@@ -99,7 +100,8 @@ export function extractNamespaces(code: string): {
     keys.push(`tokens:${match[1]}`);
   }
   for (const match of code.matchAll(CREATE_THEME_RE)) {
-    keys.push(`theme:${match[1]}`);
+    const themeName = match[1] ?? match[2];
+    if (themeName) keys.push(`theme:${themeName}`);
   }
   for (const match of code.matchAll(KEYFRAMES_CREATE_RE)) {
     keys.push(`keyframes:${match[1]}`);

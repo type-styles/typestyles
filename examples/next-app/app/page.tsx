@@ -20,8 +20,9 @@ import {
 import { site } from '@/styles/site';
 import { tokens } from 'typestyles';
 
-const sunsetTheme = tokens.createTheme('ds-sunset', {
-  base: {
+const sunsetTheme = tokens.createTheme({
+  name: 'ds-sunset',
+  tokens: {
     color: {
       accent: '#ea580c',
       accentHover: '#c2410c',
