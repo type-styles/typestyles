@@ -50,8 +50,6 @@ const brand = tokens.createTheme(
 // Elsewhere: brand.tokens!.brand.glow.default → var(--…-brand-glow-default)
 ```
 
-You can still put **`components`** on the config object; for typed `ctx.tokens` in factories, prefer the **`options.components`** form above.
-
 For one-off namespaces outside a theme, **`tokens.ensureNamespace(name, values)`** registers when missing and returns the same ref tree.
 
 For **dark only when the OS prefers dark**, use `tokens.createDarkMode(name, overrides)` or `modes: tokens.colorMode.mediaOnly({ dark: … })`.

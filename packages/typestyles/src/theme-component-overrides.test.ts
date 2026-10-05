@@ -14,13 +14,17 @@ describe('createTheme({ components })', () => {
       variants: { size: { sm: { fontSize: '12px' }, lg: { fontSize: '16px' } } },
     });
 
-    const theme = tokens.createTheme('brand', {
-      components: {
-        button: {
-          base: { color: 'rebeccapurple' },
+    const theme = tokens.createTheme(
+      'brand',
+      {},
+      {
+        components: {
+          button: {
+            base: { color: 'rebeccapurple' },
+          },
         },
       },
-    });
+    );
     flushSync();
 
     const css = getRegisteredCss();
@@ -29,7 +33,7 @@ describe('createTheme({ components })', () => {
     expect(css).toMatch(/rebeccapurple/);
   });
 
-  it('accepts components on the third-argument options bag', () => {
+  it('accepts components on the options bag', () => {
     const { styles, tokens } = createTypeStyles({ scopeId: 'tc3' });
     styles.component('button', { base: { color: 'black' } });
 
@@ -49,9 +53,13 @@ describe('createTheme({ components })', () => {
   it('throws in dev for unknown namespace', () => {
     const { tokens } = createTypeStyles({ scopeId: 'tc2' });
     expect(() =>
-      tokens.createTheme('x', {
-        components: { ghost: { base: { color: 'red' } } },
-      }),
+      tokens.createTheme(
+        'x',
+        {},
+        {
+          components: { ghost: { base: { color: 'red' } } },
+        },
+      ),
     ).toThrow(/unknown component namespace "ghost"/);
   });
 });

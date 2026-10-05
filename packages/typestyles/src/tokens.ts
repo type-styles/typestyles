@@ -57,11 +57,7 @@ import {
 import { applyThemeExtendToConfig } from './theme-extend';
 import { resolveThemeFromPatchConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
-import type {
-  InferThemeExtendFromConfig,
-  ThemeComponentsFor,
-  ThemeCreateConfigArg,
-} from './theme-surface-types';
+import type { CreateThemeCallOptions, InferThemeExtendFromConfig } from './theme-surface-types';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -126,7 +122,7 @@ export type CreateTokensOptions = {
   tokenLayer?: string;
   /**
    * Styles instance from the same `createTypeStyles` call — required for
-   * `createTheme({ components })` recipe overrides (#216).
+   * `createTheme(..., { components })` recipe overrides (#216).
    */
   themeStyles?: ThemeComponentsBridge;
 };
@@ -194,21 +190,7 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
     <const T extends Omit<ThemeConfig, 'components'>>(
       name: string,
       config: T,
-      options?: { replace?: boolean },
-    ): ThemeSurface<InferThemeExtendFromConfig<T>>;
-    <const T extends Omit<ThemeConfig, 'components'>>(
-      name: string,
-      config: T,
-      options: {
-        replace?: boolean;
-        components: NonNullable<ThemeComponentsFor<T>['components']>;
-      },
-    ): ThemeSurface<InferThemeExtendFromConfig<T>>;
-    /** @deprecated Prefer `config` + `{ components }` options so factories infer `ctx.tokens` from `extend`. */
-    <const T extends ThemeConfig>(
-      name: string,
-      config: ThemeCreateConfigArg<T>,
-      options?: { replace?: boolean },
+      options?: CreateThemeCallOptions<T>,
     ): ThemeSurface<InferThemeExtendFromConfig<T>>;
   };
   disposeTheme: (name: string, options?: { removeLiveCss?: boolean }) => void;
@@ -857,7 +839,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     if (resolved.components && !themeStyles) {
       throw new Error(
-        '[typestyles] createTheme({ components }) requires createTypeStyles — ' +
+        '[typestyles] createTheme(..., { components }) requires createTypeStyles — ' +
           'component overrides need the styles registry from the same instance.',
       );
     }
@@ -896,8 +878,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     declare: declare as TokensApi<R>['declare'],
     createTheme: ((
       name: string,
-      config: ThemeConfig,
-      callOptions?: { replace?: boolean; components?: ThemeConfig['components'] },
+      config: Omit<ThemeConfig, 'components'>,
+      callOptions?: CreateThemeCallOptions<Omit<ThemeConfig, 'components'>>,
     ) => {
       const { components: componentsOption, ...themeCallOptions } = callOptions ?? {};
       const mergedConfig: ThemeConfig =

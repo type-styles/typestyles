@@ -43,7 +43,7 @@ export type InferThemeExtendFromConfig<C extends Pick<ThemeConfig, 'extend' | 'f
     ExtendFromOptional<C['extend']>
   >;
 
-/** `components` factories typed from the full config (`extend` / `from` / `patch`). */
+/** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `extend` / presets). */
 export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'extend' | 'from' | 'patch'>> = {
   components?: Record<
     string,
@@ -52,22 +52,6 @@ export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'extend' | 'from' | '
   >;
 };
 
-/**
- * `createTheme` config shape — `Omit`/`&` so factory callbacks get contextual typing without
- * intersecting with the inferred callback type from `T`.
- */
-export type ThemeCreateConfigArg<T extends ThemeConfig> = Omit<T, 'components'> &
-  ThemeComponentsFor<T>;
-
-/** @deprecated Use {@link ThemeCreateConfigArg}. */
-export type ThemeCreateConfigInput<C extends ThemeConfig = ThemeConfig> = ThemeCreateConfigArg<C>;
-
-/** @deprecated Renamed to {@link ThemeCreateConfigArg}. */
-export type ThemeConfigInput<C extends ThemeConfig = ThemeConfig> = ThemeCreateConfigArg<C>;
-
-/** Preserve config literals when a downstream generic would otherwise widen `T`. */
-export function themeConfig<const T extends ThemeConfig>(
-  config: T & ThemeCreateConfigArg<T>,
-): T & ThemeCreateConfigArg<T> {
-  return config;
-}
+export type CreateThemeCallOptions<T extends Omit<ThemeConfig, 'components'>> = {
+  replace?: boolean;
+} & ThemeComponentsFor<T>;

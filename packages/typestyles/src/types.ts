@@ -509,15 +509,7 @@ export type ThemeOverrideContext<
   readonly theme: ThemeSurface<E>;
 };
 
-/**
- * Component override factory — bivariant so `createTheme` can narrow `ctx.tokens` from `extend`
- * while {@link ThemeConfig} stays assignable for plain config objects.
- */
-export type ThemeComponentOverrideFactory<
-  E extends Record<string, CreateTokenValues> = Record<string, never>,
-> = {
-  themeComponentOverride(ctx: ThemeOverrideContext<E>): ThemeComponentOverrideEntry;
-}['themeComponentOverride'];
+export type ThemeComponentOverrideFn = (ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry;
 
 /** Preset slice merged via `from` / `patch` on {@link ThemeConfig}. */
 export type ThemePreset = {
@@ -535,11 +527,6 @@ export type ThemeConfig = {
   /** Conditional mode layers with explicit `when` conditions. */
   modes?: ThemeModeDefinition[];
   /**
-   * Recipe overrides scoped to the theme class. Keys are component namespaces from
-   * `styles.component(namespace, …)` on the same `createTypeStyles` instance.
-   */
-  components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFactory>;
-  /**
    * Extra token namespaces to register (via `tokens.create`) and merge into this theme's
    * `base` overrides. Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
    */
@@ -548,8 +535,13 @@ export type ThemeConfig = {
   from?: ThemePreset;
   /** Overrides merged onto `from`. */
   patch?: ThemePreset & {
-    components?: ThemeConfig['components'];
+    components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
   };
+  /**
+   * Recipe overrides at runtime (`patch.components` or merged from `createTheme` options).
+   * Not accepted on the `createTheme` config argument — use the options bag.
+   */
+  components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
 };
 
 /**

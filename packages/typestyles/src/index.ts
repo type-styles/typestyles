@@ -244,13 +244,10 @@ export {
 } from './token-color-modes';
 export { mergeThemePresetConfig, resolveThemeFromPatchConfig } from './theme-preset-merge';
 export type {
+  CreateThemeCallOptions,
   InferThemeExtendFromConfig,
   ThemeComponentsFor,
-  ThemeCreateConfigArg,
-  ThemeCreateConfigInput,
-  ThemeConfigInput,
 } from './theme-surface-types';
-export { themeConfig } from './theme-surface-types';
 export type { ThemePreset } from './types';
 
 export type { ThemeEmitLayerContext } from './theme';
