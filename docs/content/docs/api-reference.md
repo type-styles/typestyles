@@ -20,6 +20,7 @@ per package or micro-frontend for isolation.
 - `styles.supports(…)`: Build typed `@supports` keys for nested styles (also exported as `supports`). Single-declaration object forms and string-literal raw conditions infer a **literal** `@supports …` string, so `[supports({ display: 'grid' })]: { … }` works next to longhands without casting; use `atRuleBlock` when the key is only known as a generic `string`.
 - `styles.has(…)`, `styles.is(…)`, `styles.where(…)`: Build nested `&`-keys for `:has()`, `:is()`, and `:where()` (same as the `has` / `is` / `where` exports). Literal arguments narrow to a concrete `&:…` key so you can mix them with longhands as `[has('.x')]: { … }` without `as CSSProperties`. `:where()` keeps **zero specificity**; raw `'&:has(…)'` strings still work.
 - `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
+- `styles.when(condition, style)`: Expand a `ThemeCondition` into nested `&` / `@media` keys for recipe slots (also exported as `whenStyle`). Use inside `styles.component` / `styles.class`; prefer `conditional()` + `conditions[]` on `styles.override`. See [Theming patterns — Conditional styles in recipes](/docs/theming-patterns#conditional-styles-in-recipes-styleswhen).
 - `styles.breakpoint(name, feature?)`: Build typed `@media` keys from configured viewport breakpoints (also `createBreakpointMediaFn`)
 - `styles.media(name, block)` / `styles.media(name, feature, block)`: Spreadable viewport breakpoint blocks (also `createMediaFn`)
 - `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
@@ -33,13 +34,13 @@ per package or micro-frontend for isolation.
 - `styles.override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta`, including typed **`vars`** for internal component custom properties (see [Theming patterns](/docs/theming-patterns#override-component-internal-vars))
 - `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
 
-**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `supports`, `atRuleBlock`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
+**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `supports`, `atRuleBlock`, `whenStyle`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
 
 **Helpers:** `getComponentMeta(component)` — read public component metadata attached by `styles.component()`.
 
 **Component registry (per `createStyles` / `createTypeStyles` instance):** `getComponent(namespace)`, `getThemeableComponents()`, `listComponentNamespaces()`. Recipes register on `styles.component()`; pass `{ themeable: false }` to exclude utilities from theme override maps.
 
-**Related exports:** `colorModes` (`['light', 'dark']`), `conditional(when, style, id?)`, `StylableOverride`, `ConditionalOverride`, `ModeAwareValue`.
+**Related exports:** `colorModes` (`['light', 'dark']`), `conditional(when, style, id?)`, `whenStyle(condition, style)`, `StylableOverride`, `ConditionalOverride`, `ModeAwareValue`.
 
 **Related types:** `OverrideConfig`, `OverrideConfigFor`, `InferVarDefinitions`, `ComponentVarValues`, `ComponentVarAssignValue`, `ComponentCreateOptions`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `ComponentVarRegistry`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
 
