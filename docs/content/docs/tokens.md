@@ -301,25 +301,27 @@ the theme class so `light-dark()` resolves correctly in the subtree.
 ### Structured `colorMode` patches on themes
 
 Pass light and dark token trees as **patches** on `createTheme` — TypeStyles deep-merges them
-into `base` and compiles color-compatible leaves to `light-dark()`:
+into the theme `tokens` map and compiles color-compatible leaves to `light-dark()`:
 
 ```ts
 const light = { color: { text: { primary: '#111827' } } };
 const dark = { color: { text: { primary: '#f9fafb' } } };
 
-const acme = tokens.createTheme('acme', {
-  base: light,
+const acme = tokens.createTheme({
+  name: 'acme',
+  tokens: light,
   colorMode: { light, dark },
 });
 // .theme-app-acme { color-scheme: light dark; --app-color-text-primary: light-dark(#111827, #f9fafb); }
 ```
 
-You can supply only one side — for example `colorMode: { dark }` when `base` already holds the
-light values. Mode-aware leaves are also valid directly on `base`:
+You can supply only one side — for example `colorMode: { dark }` when `tokens` already holds the
+light values. Mode-aware leaves are also valid directly on `tokens`:
 
 ```ts
-tokens.createTheme('leaf', {
-  base: {
+tokens.createTheme({
+  name: 'leaf',
+  tokens: {
     color: {
       accent: { default: { light: '#111', dark: '#eee' } },
     },
@@ -340,8 +342,9 @@ Preset helpers (`mediaOnly`, `attributeOnly`, `mediaOrAttribute`,
 const light = { color: { text: '#111', surface: '#fff' } };
 const dark = { color: { text: '#eee', surface: '#111' } };
 
-const shell = tokens.createTheme('shell', {
-  base: light,
+const shell = tokens.createTheme({
+  name: 'shell',
+  tokens: light,
   modes: tokens.colorMode.systemWithLightDarkOverride({
     attribute: 'data-color-mode',
     values: { light: 'light', dark: 'dark', system: 'system' },
@@ -362,15 +365,17 @@ or attribute toggles.
 
 ## Theming
 
-Use `tokens.createTheme(name, config)` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.
+Use `tokens.createTheme({ name, … })` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.
 
-- **`base`** — Overrides always applied on the surface (typical light / default brand).
-- **`colorMode`** — Optional `{ light?, dark? }` patches deep-merged into `base` and compiled to `light-dark()` when `colorModes` is configured (see [Mode-aware token leaves](#mode-aware-token-leaves)).
+- **`tokens`** — Per-namespace values always applied on the surface (typical light / default brand). Same shape as `tokens.create`.
+- **`colorMode`** — Optional `{ light?, dark? }` patches deep-merged into theme tokens and compiled to `light-dark()` when `colorModes` is configured (see [Mode-aware token leaves](#mode-aware-token-leaves)).
 - **`modes`** — Conditional layers with explicit `tokens.when.*` conditions, including spreads of `tokens.colorMode.*` preset arrays.
+- **`from`** — Optional preset; sibling fields deep-merge onto it (see [Theming patterns](/docs/theming-patterns)).
 
 ```ts
-const dark = tokens.createTheme('dark', {
-  base: {
+const dark = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       primary: '#66b3ff',
       text: '#e0e0e0',
@@ -398,15 +403,18 @@ const autoDark = tokens.createDarkMode('app', {
 
 ```ts
 const light = { color: { text: '#111', surface: '#fff' } };
-const dark = { color: { text: '#eee', surface: '#111' } };
+const darkPatch = { color: { text: '#eee', surface: '#111' } };
 
-const brand = tokens.createTheme('brand', {
-  base: light,
-  colorMode: { light, dark },
+const brand = tokens.createTheme({
+  name: 'brand',
+  tokens: light,
+  colorMode: { light, dark: darkPatch },
 });
 ```
 
 Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `selector`, `and`, `or`, `not`. `attr` and `className` take a `scope` of `'self'`, `'ancestor'`, or `'descendant'` describing where the marker lives relative to the theme root (see [Theming patterns](/docs/theming-patterns#condition-scopes-self-ancestor-descendant)).
+
+Coming from StyleX / Panda / vanilla-extract / Stitches? See the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet).
 
 See [Theming patterns](/docs/theming-patterns) for preset mode layers, multi-brand setups, and component overrides.
 

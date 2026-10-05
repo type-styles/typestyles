@@ -1,6 +1,6 @@
 ---
 title: Framework comparison
-description: How TypeStyles compares to StyleX, Panda CSS, vanilla-extract, Emotion, CSS Modules, and plain CSS—with a shared button example and a topic-by-topic comparison
+description: How TypeStyles compares to StyleX, Panda CSS, vanilla-extract, Stitches, Emotion, CSS Modules, and plain CSS—with a shared button example and a topic-by-topic comparison
 ---
 
 This page is a **decision lens**: same button pattern across ecosystems, then a **topic-by-topic** comparison (easier to scan on a laptop than a wide grid of cards or a seven-column table). For API-by-API moves, use the [Migration guide](/docs/migration). For install and your first component, see [Getting started](/docs/getting-started).
@@ -297,7 +297,14 @@ The pattern across all four: a StyleX-based system must **generate an escape hat
 
 ## Practical migration
 
-Start with [Migration](/docs/migration): Panda- and CVA-like APIs map closely to **`styles.component`**; Emotion and CSS Modules map well to **`styles.class`** plus [`cx`](/docs/compose) from `'typestyles'`.
+Start with [Migration](/docs/migration) — jump links for the common compilers:
+
+- [From StyleX](/docs/migration#from-stylex) — `create` / `defineVars` / `createTheme`
+- [From Panda CSS](/docs/migration#from-panda-css) — `cva`, tokens, semantic `_dark`
+- [From vanilla-extract](/docs/migration#from-vanilla-extract) — `recipe`, theme contracts
+- [From Stitches](/docs/migration#from-stitches) — variants, `$tokens`, `createTheme`
+
+Panda- and CVA-like APIs map closely to **`styles.component`**. Emotion and CSS Modules map well to **`styles.class`** plus [`cx`](/docs/compose) from `'typestyles'`.
 
 ## Related docs
 

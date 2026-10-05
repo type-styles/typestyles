@@ -14,7 +14,8 @@ describe('createTheme({ components })', () => {
       variants: { size: { sm: { fontSize: '12px' }, lg: { fontSize: '16px' } } },
     });
 
-    const theme = tokens.createTheme('brand', {
+    const theme = tokens.createTheme({
+      name: 'brand',
       components: {
         button: {
           base: { color: 'rebeccapurple' },
@@ -29,10 +30,26 @@ describe('createTheme({ components })', () => {
     expect(css).toMatch(/rebeccapurple/);
   });
 
+  it('accepts components on the theme input object', () => {
+    const { styles, tokens } = createTypeStyles({ scopeId: 'tc3' });
+    styles.component('button', { base: { color: 'black' } });
+
+    tokens.createTheme({
+      name: 'brand',
+      tokens: { fontSize: { md: '14px' } },
+      components: {
+        button: { base: { color: 'rebeccapurple' } },
+      },
+    });
+    flushSync();
+    expect(getRegisteredCss()).toMatch(/rebeccapurple/);
+  });
+
   it('throws in dev for unknown namespace', () => {
     const { tokens } = createTypeStyles({ scopeId: 'tc2' });
     expect(() =>
-      tokens.createTheme('x', {
+      tokens.createTheme({
+        name: 'x',
         components: { ghost: { base: { color: 'red' } } },
       }),
     ).toThrow(/unknown component namespace "ghost"/);

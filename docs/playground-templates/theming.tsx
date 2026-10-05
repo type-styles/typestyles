@@ -11,8 +11,9 @@ const themeColor = tokens.create('theme', {
   primary: '#0066ff',
 });
 
-const darkTheme = tokens.createTheme('dark', {
-  base: {
+const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     theme: {
       text: '#e0e0e0',
       textMuted: '#9ca3af',

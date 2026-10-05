@@ -13,6 +13,30 @@ describe('extractNamespaces', () => {
     expect(result.prefixes).toEqual(['.button-']);
   });
 
+  it('extracts createTheme names from positional and named-argument forms', () => {
+    expect(
+      extractNamespaces(`tokens.createTheme('dark', { tokens: { color: { primary: '#fff' } } })`)
+        .keys,
+    ).toEqual(['theme:dark']);
+    expect(
+      extractNamespaces(
+        `tokens.createTheme({ name: 'brand', tokens: { color: { primary: '#fff' } } })`,
+      ).keys,
+    ).toEqual(['theme:brand']);
+    expect(extractNamespaces(`createTheme({ name: "acme", tokens: {} })`).keys).toEqual([
+      'theme:acme',
+    ]);
+    expect(
+      extractNamespaces(`
+        tokens.createTheme({
+          from: designPreset,
+          tokens: { color: { accent: '#0066ff' } },
+          name: 'app',
+        })
+      `).keys,
+    ).toEqual(['theme:app']);
+  });
+
   it('matches typestyles package imports', () => {
     expect(TYPESTYLES_IMPORT_RE.test("import { styles } from 'typestyles'")).toBe(true);
     expect(TYPESTYLES_IMPORT_RE.test("import { styles } from './typestyles'")).toBe(false);

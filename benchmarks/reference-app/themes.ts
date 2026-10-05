@@ -1,8 +1,9 @@
 import type { TokensApi } from 'typestyles';
 
 export function createReferenceThemes(tokensApi: TokensApi) {
-  const dark = tokensApi.createTheme('dark', {
-    base: {
+  const dark = tokensApi.createTheme({
+    name: 'dark',
+    tokens: {
       color: {
         primary: '#3b82f6',
         primaryHover: '#60a5fa',
@@ -34,8 +35,9 @@ export function createReferenceThemes(tokensApi: TokensApi) {
     },
   });
 
-  const highContrast = tokensApi.createTheme('high-contrast', {
-    base: {
+  const highContrast = tokensApi.createTheme({
+    name: 'high-contrast',
+    tokens: {
       color: {
         primary: '#1d4ed8',
         primaryHover: '#1e40af',
@@ -48,8 +50,9 @@ export function createReferenceThemes(tokensApi: TokensApi) {
     },
   });
 
-  const warm = tokensApi.createTheme('warm', {
-    base: {
+  const warm = tokensApi.createTheme({
+    name: 'warm',
+    tokens: {
       color: {
         primary: '#d97706',
         primaryHover: '#b45309',

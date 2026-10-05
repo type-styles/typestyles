@@ -54,9 +54,14 @@ import {
   applyThemeComponentOverrides,
   type ThemeComponentsBridge,
 } from './theme-component-overrides';
-import { applyThemeExtendToConfig } from './theme-extend';
-import { resolveThemeFromPatchConfig } from './theme-preset-merge';
+import { applyThemeTokensToConfig } from './theme-extend';
+import { resolveThemeFromPresetConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
+import type {
+  CreateThemeInput,
+  InferThemeTokensFromConfig,
+  ThemeComponentsFor,
+} from './theme-surface-types';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -121,7 +126,7 @@ export type CreateTokensOptions = {
   tokenLayer?: string;
   /**
    * Styles instance from the same `createTypeStyles` call — required for
-   * `createTheme({ components })` recipe overrides (#216).
+   * `createTheme(..., { components })` recipe overrides (#216).
    */
   themeStyles?: ThemeComponentsBridge;
 };
@@ -185,7 +190,11 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
       options?: { nameTemplate?: TokenNameTemplate },
     ): DeclaredTokenRef<TSchema, N>;
   };
-  createTheme: (name: string, config: ThemeConfig, options?: { replace?: boolean }) => ThemeSurface;
+  createTheme: {
+    <const C extends Omit<ThemeConfig, 'components'>>(
+      input: { name: string; replace?: boolean } & C & ThemeComponentsFor<C>,
+    ): ThemeSurface<InferThemeTokensFromConfig<C>>;
+  };
   disposeTheme: (name: string, options?: { removeLiveCss?: boolean }) => void;
   /**
    * Register a namespace when missing, then return `tokens.use(namespace)`.
@@ -428,8 +437,6 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
   const declaredSchemaLeaves = new Map<string, Map<string, TokenSchemaLeaf>>();
   const namespaceValueTrees = new Map<string, CreateTokenValues>();
   const instanceDefaultTemplate = options.nameTemplate;
-  let customNamingActive = Boolean(instanceDefaultTemplate);
-
   const themeTokenNaming: ThemeTokenNaming = createThemeTokenNaming(
     scopeId,
     instanceDefaultTemplate,
@@ -534,9 +541,10 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
 
     const cssNs = scopedTokenNamespace(scopeId, namespace);
     const effectiveTemplate =
-      options?.nameTemplate ?? (hasDeclared ? declaredTemplate : instanceDefaultTemplate);
-    if (effectiveTemplate !== undefined) customNamingActive = true;
-
+      options?.nameTemplate ??
+      (hasDeclared ? declaredTemplate : undefined) ??
+      createdTokenTemplates.get(namespace) ??
+      instanceDefaultTemplate;
     let flatEntries: Array<{ path: string; value: string }>;
     const nameByPath = new Map<string, string>();
 
@@ -823,12 +831,16 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return use(namespace) as TokenRefTree<T>;
   }
 
-  function emitTheme(name: string, config: ThemeConfig, callOptions?: { replace?: boolean }) {
-    const resolved = resolveThemeFromPatchConfig(config, colorModes);
+  function emitTheme(
+    name: string,
+    config: ThemeConfig,
+    callOptions?: { replace?: boolean },
+  ): ThemeSurface {
+    const resolved = resolveThemeFromPresetConfig(config, colorModes);
 
     if (resolved.components && !themeStyles) {
       throw new Error(
-        '[typestyles] createTheme({ components }) requires createTypeStyles — ' +
+        '[typestyles] createTheme(..., { components }) requires createTypeStyles — ' +
           'component overrides need the styles registry from the same instance.',
       );
     }
@@ -837,7 +849,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     }
 
     const tokenContext = createThemeTokenContext(use);
-    const prepared = applyThemeExtendToConfig(resolved, (namespace, values) => {
+    const prepared = applyThemeTokensToConfig(resolved, (namespace, values) => {
       create(namespace, values);
     });
 
@@ -846,11 +858,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       prepared,
       scopeId,
       themeLayerContext,
-      customNamingActive ? themeTokenNaming : undefined,
+      themeTokenNaming,
       themeOptions,
     );
 
-    const withTokens: ThemeSurface = { ...surface, tokens: tokenContext };
+    const withTokens = { ...surface, tokens: tokenContext } as ThemeSurface;
 
     const components = resolved.components;
     if (components && themeStyles) {
@@ -865,7 +877,17 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     create: create as TokensApi<R>['create'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
-    createTheme: (name, config, callOptions) => emitTheme(name, config, callOptions),
+    createTheme: ((input: CreateThemeInput) => {
+      const { name, replace, components, colorMode, modes, tokens: themeTokens, from } = input;
+      const config: ThemeConfig = {
+        colorMode,
+        modes,
+        tokens: themeTokens,
+        from,
+        ...(components !== undefined ? { components } : {}),
+      };
+      return emitTheme(name, config, { replace });
+    }) as TokensApi<R>['createTheme'],
     ensureNamespace,
     disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
     createDarkMode: (name, darkOverrides) => {
@@ -875,7 +897,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
         darkOverrides,
         scopeId,
         themeLayerContext,
-        customNamingActive ? themeTokenNaming : undefined,
+        themeTokenNaming,
         themeOptions,
       );
       return { ...surface, tokens: tokenContext };

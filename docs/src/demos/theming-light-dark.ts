@@ -9,8 +9,9 @@ export const themeColor = tokens.create('theme', {
   primary: '#0066ff',
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     theme: {
       text: '#e0e0e0',
       textMuted: '#9ca3af',
@@ -38,8 +39,9 @@ export const demoSourceCode = `export const color = tokens.create('color', {
   primary: '#0066ff',
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       surface: '#1a1a2e',

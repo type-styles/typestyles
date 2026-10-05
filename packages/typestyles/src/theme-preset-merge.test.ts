@@ -5,18 +5,18 @@ import { when } from './theme';
 import { mergeThemePresetConfig } from './theme-preset-merge';
 
 describe('mergeThemePresetConfig', () => {
-  it('deep-merges from and patch base trees', () => {
+  it('deep-merges from and override token trees', () => {
     expect(
       mergeThemePresetConfig(
-        { base: { color: { text: { primary: '#111' } } } },
-        { base: { color: { accent: { default: '#0066ff' } } } },
-      ).base,
+        { tokens: { color: { text: { primary: '#111' } } } },
+        { tokens: { color: { accent: { default: '#0066ff' } } } },
+      ).tokens,
     ).toEqual({
       color: { text: { primary: '#111' }, accent: { default: '#0066ff' } },
     });
   });
 
-  it('merges modes by id so patch overrides from', () => {
+  it('merges modes by id so overrides win over preset', () => {
     const sharedWhen = when.prefersDark;
     expect(
       mergeThemePresetConfig(
@@ -61,21 +61,20 @@ describe('mergeThemePresetConfig', () => {
   });
 });
 
-describe('createTheme({ from, patch })', () => {
+describe('createTheme({ from, …overrides })', () => {
   beforeEach(() => reset());
 
-  it('emits merged preset + patch with mode-aware leaves', () => {
+  it('emits merged preset + overrides with mode-aware leaves', () => {
     const { tokens } = createTypeStyles({ scopeId: 'fp', colorModes: ['light', 'dark'] });
-    tokens.createTheme('app', {
+    tokens.createTheme({
+      name: 'app',
       from: {
-        base: {
+        tokens: {
           color: { canvas: { light: '#fff', dark: '#000' } },
         },
       },
-      patch: {
-        base: {
-          color: { accent: { default: '#0066ff' } },
-        },
+      tokens: {
+        color: { accent: { default: '#0066ff' } },
       },
     });
     flushSync();
@@ -84,10 +83,11 @@ describe('createTheme({ from, patch })', () => {
     expect(css).toContain('--fp-color-accent-default: #0066ff');
   });
 
-  it('applies patch mode overrides when id matches from preset', () => {
+  it('applies mode overrides when id matches from preset', () => {
     const { tokens } = createTypeStyles({ scopeId: 'md' });
     tokens.create('color', { text: { primary: '#111' } });
-    tokens.createTheme('brand', {
+    tokens.createTheme({
+      name: 'brand',
       from: {
         modes: [
           {
@@ -97,15 +97,13 @@ describe('createTheme({ from, patch })', () => {
           },
         ],
       },
-      patch: {
-        modes: [
-          {
-            id: 'focus',
-            when: when.prefersDark,
-            overrides: { color: { text: { primary: '#eee' } } },
-          },
-        ],
-      },
+      modes: [
+        {
+          id: 'focus',
+          when: when.prefersDark,
+          overrides: { color: { text: { primary: '#eee' } } },
+        },
+      ],
     });
     flushSync();
     const css = getRegisteredCss();

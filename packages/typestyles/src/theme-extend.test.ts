@@ -2,13 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { reset, getRegisteredCss, flushSync } from './sheet';
 import { createTypeStyles } from './create-type-styles';
 
-describe('createTheme({ extend })', () => {
+describe('createTheme({ tokens })', () => {
   beforeEach(() => reset());
 
-  it('registers extend namespaces and exposes refs on ThemeSurface.tokens', () => {
+  it('registers token namespaces and exposes refs on ThemeSurface.tokens', () => {
     const { tokens } = createTypeStyles({ scopeId: 'ext', colorModes: ['light', 'dark'] });
-    const theme = tokens.createTheme('brand', {
-      extend: {
+    const theme = tokens.createTheme({
+      name: 'brand',
+      tokens: {
         brand: {
           accent: { default: { light: '#0066ff', dark: '#3399ff' } },
         },
@@ -33,10 +34,45 @@ describe('createTheme({ extend })', () => {
     expect(getRegisteredCss()).toContain('--ens-metrics-radius-sm');
   });
 
-  it('re-create theme with same name does not duplicate extend namespace registration', () => {
+  it('tokens refs match ensureNamespace for the same namespace', () => {
+    const { tokens } = createTypeStyles({ scopeId: 'match' });
+    const ensured = tokens.ensureNamespace('brand', {
+      glow: { default: '#abc' },
+    });
+    const theme = tokens.createTheme({
+      name: 't',
+      tokens: {
+        brand: {
+          glow: { default: '#abc' },
+        },
+      },
+    });
+    expect(theme.tokens?.brand.glow.default).toBe(ensured.glow.default);
+  });
+
+  it('merges tokens from from preset and top-level overrides', () => {
+    const { tokens } = createTypeStyles({ scopeId: 'fp-ext' });
+    const theme = tokens.createTheme({
+      name: 'app',
+      from: {
+        tokens: {
+          brand: { primary: '#111' },
+        },
+      },
+      tokens: {
+        brand: { accent: { default: '#0066ff' } },
+      },
+    });
+    expect(theme.tokens?.brand.primary).toMatch(/var\(--/);
+    expect(theme.tokens?.brand.accent.default).toMatch(/var\(--/);
+    flushSync();
+    expect(getRegisteredCss()).toContain('--fp-ext-brand-accent-default');
+  });
+
+  it('re-create theme with same name does not duplicate token namespace registration', () => {
     const { tokens } = createTypeStyles({ scopeId: 're' });
-    tokens.createTheme('x', { extend: { brand: { primary: '#111' } } });
-    tokens.createTheme('x', { extend: { brand: { primary: '#222' } } });
+    tokens.createTheme({ name: 'x', tokens: { brand: { primary: '#111' } } });
+    tokens.createTheme({ name: 'x', tokens: { brand: { primary: '#222' } } });
     flushSync();
     const css = getRegisteredCss();
     expect(css).toContain('#222');

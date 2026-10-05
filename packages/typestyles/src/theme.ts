@@ -6,6 +6,7 @@ import type {
   ThemeConditionSelector,
   ThemeConditionAnd,
   ThemeConditionOr,
+  ThemeCompileConfig,
   ThemeConfig,
   ThemeModeDefinition,
   ThemeOverrides,
@@ -24,12 +25,9 @@ import {
   type CompiledCondition,
 } from './condition-compile';
 import type { ColorModeMap } from './color-modes';
-import {
-  expandThemeOverrides,
-  mergeThemeColorModePatches,
-  normalizeThemeConfig,
-} from './token-color-modes';
-import { resolveThemeFromPatchConfig } from './theme-preset-merge';
+import { expandThemeOverrides, mergeThemeColorModePatches } from './token-color-modes';
+import { resolveThemeFromPresetConfig } from './theme-preset-merge';
+import { themeTokensToCompileConfig } from './theme-extend';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {
@@ -348,7 +346,8 @@ function presetSystemWithLightDarkOverride(
  *
  * @example
  * ```ts
- * tokens.createTheme('acme', {
+ * tokens.createTheme({
+ *   name: 'acme',
  *   base: lightTokens,
  *   colorMode: tokens.colorMode.systemWithLightDarkOverride({
  *     attribute: 'data-color-mode',
@@ -396,8 +395,9 @@ function createThemeSurface(name: string, className: string): ThemeSurface {
  *
  * @example
  * ```ts
- * const acme = tokens.createTheme('acme', {
- *   base: { color: { text: { primary: '#111827' } } },
+ * const acme = tokens.createTheme({
+ *   name: 'acme',
+ *   tokens: { color: { text: { primary: '#111827' } } },
  *   colorMode: {
  *     light: { color: { text: { primary: '#111827' } } },
  *     dark: { color: { text: { primary: '#f9fafb' } } },
@@ -408,9 +408,17 @@ function createThemeSurface(name: string, className: string): ThemeSurface {
  * // `${acme}` === 'theme-acme'
  * ```
  */
+function isThemeCompileConfig(
+  config: ThemeConfig | ThemeCompileConfig,
+): config is ThemeCompileConfig {
+  const compile = config as ThemeCompileConfig;
+  const input = config as ThemeConfig;
+  return compile.base !== undefined && input.tokens === undefined;
+}
+
 export function createTheme(
   name: string,
-  config: ThemeConfig,
+  config: ThemeConfig | ThemeCompileConfig,
   scopeId?: string,
   layerContext?: ThemeEmitLayerContext,
   naming?: ThemeTokenNaming,
@@ -422,10 +430,9 @@ export function createTheme(
   const segment = themeSegment(scopeId, name);
   const className = `theme-${segment}`;
 
-  const prepared = normalizeThemeConfig(
-    resolveThemeFromPatchConfig(config, colorModes),
-    colorModes,
-  );
+  const prepared = isThemeCompileConfig(config)
+    ? config
+    : themeTokensToCompileConfig(resolveThemeFromPresetConfig(config, colorModes));
 
   const emitRule = (key: string, css: string): void => {
     if (layerContext) {

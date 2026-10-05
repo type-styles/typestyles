@@ -4,16 +4,16 @@ import type { ColorModeMap } from './color-modes';
 
 export type { ThemePreset };
 
-function mergeExtendMaps(
+function mergeTokensMaps(
   from: Record<string, CreateTokenValues> | undefined,
-  patch: Record<string, CreateTokenValues> | undefined,
+  onto: Record<string, CreateTokenValues> | undefined,
 ): Record<string, CreateTokenValues> | undefined {
-  if (!from && !patch) return undefined;
-  const keys = new Set([...Object.keys(from ?? {}), ...Object.keys(patch ?? {})]);
+  if (!from && !onto) return undefined;
+  const keys = new Set([...Object.keys(from ?? {}), ...Object.keys(onto ?? {})]);
   const out: Record<string, CreateTokenValues> = {};
   for (const key of keys) {
     const a = from?.[key];
-    const b = patch?.[key];
+    const b = onto?.[key];
     if (a !== undefined && b !== undefined) {
       out[key] = mergeTokenValues(a, b) as CreateTokenValues;
     } else {
@@ -23,20 +23,20 @@ function mergeExtendMaps(
   return out;
 }
 
-/** Merge mode layers by `id`; patch overrides `from` (same as base / colorMode / extend). */
+/** Merge mode layers by `id`; overrides win over preset (same as tokens / colorMode). */
 function mergeThemeModes(
   from: ThemeModeDefinition[] | undefined,
-  patch: ThemeModeDefinition[] | undefined,
+  onto: ThemeModeDefinition[] | undefined,
 ): ThemeModeDefinition[] | undefined {
-  if (!from?.length && !patch?.length) return undefined;
-  if (!from?.length) return patch ? [...patch] : undefined;
-  if (!patch?.length) return [...from];
+  if (!from?.length && !onto?.length) return undefined;
+  if (!from?.length) return onto ? [...onto] : undefined;
+  if (!onto?.length) return [...from];
 
   const byId = new Map<string, ThemeModeDefinition>();
   for (const mode of from) {
     byId.set(mode.id, mode);
   }
-  for (const mode of patch) {
+  for (const mode of onto) {
     const existing = byId.get(mode.id);
     byId.set(
       mode.id,
@@ -56,7 +56,7 @@ function mergeThemeModes(
     out.push(byId.get(mode.id)!);
     seen.add(mode.id);
   }
-  for (const mode of patch) {
+  for (const mode of onto) {
     if (!seen.has(mode.id)) {
       out.push(byId.get(mode.id)!);
       seen.add(mode.id);
@@ -66,15 +66,15 @@ function mergeThemeModes(
 }
 
 /**
- * Deep-merge `from` + `patch` theme presets (base, colorMode, extend, modes).
+ * Deep-merge preset + override slices (`tokens`, `colorMode`, `modes`).
  * Does not run mode-aware normalization — call {@link normalizeThemeConfig} after.
  */
 export function mergeThemePresetConfig(
   from: ThemePreset | undefined,
-  patch: ThemePreset & Pick<ThemeConfig, 'components'>,
+  onto: ThemePreset & Pick<ThemeConfig, 'components'>,
 ): ThemeConfig {
   const f = from ?? {};
-  const p = patch ?? {};
+  const p = onto ?? {};
 
   const colorModeLight = mergeThemeOverrides(f.colorMode?.light ?? {}, p.colorMode?.light);
   const colorModeDark = mergeThemeOverrides(f.colorMode?.dark ?? {}, p.colorMode?.dark);
@@ -82,25 +82,28 @@ export function mergeThemePresetConfig(
     Object.keys(colorModeLight).length > 0 || Object.keys(colorModeDark).length > 0;
 
   return {
-    base: mergeThemeOverrides(f.base ?? {}, p.base),
+    tokens: mergeTokensMaps(f.tokens, p.tokens),
     colorMode: hasColorMode ? { light: colorModeLight, dark: colorModeDark } : undefined,
     modes: mergeThemeModes(f.modes, p.modes),
-    extend: mergeExtendMaps(f.extend, p.extend),
     components: p.components,
   };
 }
 
-export function resolveThemeFromPatchConfig(
+export function resolveThemeFromPresetConfig(
   config: ThemeConfig,
   colorModes?: ColorModeMap,
 ): ThemeConfig {
-  if (config.from === undefined && config.patch === undefined) {
+  if (config.from === undefined) {
     return normalizeThemeConfig(config, colorModes);
   }
 
-  const merged = mergeThemePresetConfig(config.from, {
-    ...config.patch,
-    components: config.patch?.components ?? config.components,
+  const { from, tokens, colorMode, modes, components } = config;
+
+  const merged = mergeThemePresetConfig(from, {
+    tokens,
+    colorMode,
+    modes,
+    components,
   });
 
   return normalizeThemeConfig(merged, colorModes);

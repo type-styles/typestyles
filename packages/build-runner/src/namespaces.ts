@@ -1,10 +1,35 @@
 const STYLES_COMPONENT_RE = /styles\.component\(\s*['"]([^'"]+)['"]/g;
 const STYLES_CLASS_RE = /styles\.class\(\s*['"]([^'"]+)['"]/g;
 const TOKENS_CREATE_RE = /tokens\.create\(\s*['"]([^'"]+)['"]/g;
-const CREATE_THEME_RE = /(?:tokens\.)?createTheme\(\s*['"]([^'"]+)['"]/g;
+const CREATE_THEME_CALL_RE = /(?:tokens\.)?createTheme\s*\(/g;
 const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_STYLE_RE = /global\.style\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_FONT_FACE_RE = /global\.fontFace\(\s*['"]([^'"]+)['"]/g;
+
+/** Max chars to scan inside a `createTheme(…)` call for a `name` string literal. */
+const CREATE_THEME_ARG_SCAN = 4000;
+
+/**
+ * Theme names from positional `createTheme('x', …)` and object
+ * `createTheme({ … name: 'x' … })` (name may appear after other fields).
+ */
+function extractCreateThemeNames(code: string): string[] {
+  const names: string[] = [];
+  for (const match of code.matchAll(CREATE_THEME_CALL_RE)) {
+    const start = (match.index ?? 0) + match[0].length;
+    const args = code.slice(start, start + CREATE_THEME_ARG_SCAN);
+    const positional = args.match(/^\s*['"]([^'"]+)['"]/);
+    if (positional) {
+      names.push(positional[1]);
+      continue;
+    }
+    if (!/^\s*\{/.test(args)) continue;
+    // `name` may follow `from` / `tokens` / comments — match first prop named `name`.
+    const named = args.match(/\bname\s*:\s*['"]([^'"]+)['"]/);
+    if (named) names.push(named[1]);
+  }
+  return names;
+}
 
 /** Canonical sugar / API names that register `styles.override` rules. */
 const OVERRIDE_HMR_EXPORT_NAMES = new Set(['createDesignTheme', 'overrideComponent']);
@@ -98,8 +123,8 @@ export function extractNamespaces(code: string): {
   for (const match of code.matchAll(TOKENS_CREATE_RE)) {
     keys.push(`tokens:${match[1]}`);
   }
-  for (const match of code.matchAll(CREATE_THEME_RE)) {
-    keys.push(`theme:${match[1]}`);
+  for (const themeName of extractCreateThemeNames(code)) {
+    keys.push(`theme:${themeName}`);
   }
   for (const match of code.matchAll(KEYFRAMES_CREATE_RE)) {
     keys.push(`keyframes:${match[1]}`);

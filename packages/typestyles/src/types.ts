@@ -502,45 +502,43 @@ export type ThemeColorModePatches = {
 export type ThemeComponentOverrideEntry = Record<string, unknown>;
 
 /** Passed to theme `components` factory functions (#216). */
-export type ThemeOverrideContext = {
-  readonly tokens: ThemeTokenContext;
-  readonly theme: ThemeSurface;
+export type ThemeOverrideContext<
+  E extends Record<string, CreateTokenValues> = Record<string, never>,
+> = {
+  readonly tokens: ThemeTokenContext<E>;
+  readonly theme: ThemeSurface<E>;
 };
 
-/** Preset slice merged via `from` / `patch` on {@link ThemeConfig}. */
+export type ThemeComponentOverrideFn = (ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry;
+
+/** Preset slice merged via `from` on {@link ThemeConfig}. */
 export type ThemePreset = {
-  base?: ThemeOverrides;
+  /** Per-namespace token values (same shape as `tokens.create` trees). */
+  tokens?: Record<string, CreateTokenValues>;
   colorMode?: ThemeColorModePatches;
   modes?: ThemeModeDefinition[];
-  extend?: Record<string, CreateTokenValues>;
 };
 
 export type ThemeConfig = {
-  /** Base token overrides — emitted as `.theme-{name} { … }`. */
-  base?: ThemeOverrides;
+  /**
+   * Per-namespace token overrides for `.theme-{name}` — registers each namespace via
+   * `tokens.create` (when using `tokens.createTheme`) and emits `--*` variables.
+   * Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
+   * With `from`, deep-merged onto the preset's `tokens`.
+   */
+  tokens?: Record<string, CreateTokenValues>;
   /** Light/dark token patches compiled to `light-dark()` on theme custom properties. */
   colorMode?: ThemeColorModePatches;
   /** Conditional mode layers with explicit `when` conditions. */
   modes?: ThemeModeDefinition[];
-  /**
-   * Recipe overrides scoped to the theme class. Keys are component namespaces from
-   * `styles.component(namespace, …)` on the same `createTypeStyles` instance.
-   */
-  components?: Record<
-    string,
-    ThemeComponentOverrideEntry | ((ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry)
-  >;
-  /**
-   * Extra token namespaces to register (via `tokens.create`) and merge into this theme's
-   * `base` overrides. Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
-   */
-  extend?: Record<string, CreateTokenValues>;
-  /** Preset defaults — deep-merged with `patch` before compile (#220). */
+  /** Preset defaults — deep-merged with sibling fields (`tokens`, `colorMode`, `modes`, …). */
   from?: ThemePreset;
-  /** Overrides merged onto `from`. */
-  patch?: ThemePreset & {
-    components?: ThemeConfig['components'];
-  };
+  components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
+};
+
+/** Theme config after `tokens` namespaces are folded for the CSS compiler. */
+export type ThemeCompileConfig = Omit<ThemeConfig, 'tokens'> & {
+  base?: ThemeOverrides;
 };
 
 /**
@@ -550,14 +548,14 @@ export type ThemeConfig = {
  * - `surface.name` — the theme name (e.g. `"acme"`)
  * - `String(surface)` / template interpolation — coerces to `className`
  */
-export interface ThemeSurface {
+export interface ThemeSurface<E extends Record<string, CreateTokenValues> = Record<string, never>> {
   readonly className: string;
   readonly name: string;
   /**
    * Token refs for override factories — `tokens.use` plus namespace shortcuts (`tokens.color`, …).
    * Present on surfaces from `tokens.createTheme()` / `createTypeStyles`.
    */
-  readonly tokens?: ThemeTokenContext;
+  readonly tokens?: ThemeTokenContext<E>;
   toString(): string;
   [Symbol.toPrimitive](hint: string): string;
 }

@@ -1,8 +1,9 @@
 import { global, tokens } from './runtime';
 
 /** Apply on a root section to flip slate + brand for dark UI (tokens cascade). */
-export const darkShell = tokens.createTheme('typewind-dark', {
-  base: {
+export const darkShell = tokens.createTheme({
+  name: 'typewind-dark',
+  tokens: {
     slate: {
       '50': '#0f172a',
       '100': '#1e293b',
