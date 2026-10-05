@@ -57,6 +57,7 @@ import {
 import { applyThemeExtendToConfig } from './theme-extend';
 import { resolveThemeFromPatchConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
+import type { InferThemeExtendFromConfig, ThemeConfigInput } from './theme-surface-types';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -185,7 +186,13 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
       options?: { nameTemplate?: TokenNameTemplate },
     ): DeclaredTokenRef<TSchema, N>;
   };
-  createTheme: (name: string, config: ThemeConfig, options?: { replace?: boolean }) => ThemeSurface;
+  createTheme: {
+    <const C extends ThemeConfig>(
+      name: string,
+      config: C & ThemeConfigInput<C>,
+      options?: { replace?: boolean },
+    ): ThemeSurface<InferThemeExtendFromConfig<C>>;
+  };
   disposeTheme: (name: string, options?: { removeLiveCss?: boolean }) => void;
   /**
    * Register a namespace when missing, then return `tokens.use(namespace)`.
@@ -823,7 +830,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return use(namespace) as TokenRefTree<T>;
   }
 
-  function emitTheme(name: string, config: ThemeConfig, callOptions?: { replace?: boolean }) {
+  function emitTheme(
+    name: string,
+    config: ThemeConfig,
+    callOptions?: { replace?: boolean },
+  ): ThemeSurface {
     const resolved = resolveThemeFromPatchConfig(config, colorModes);
 
     if (resolved.components && !themeStyles) {
@@ -850,7 +861,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       themeOptions,
     );
 
-    const withTokens: ThemeSurface = { ...surface, tokens: tokenContext };
+    const withTokens = { ...surface, tokens: tokenContext } as ThemeSurface;
 
     const components = resolved.components;
     if (components && themeStyles) {
@@ -865,7 +876,14 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     create: create as TokensApi<R>['create'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
-    createTheme: (name, config, callOptions) => emitTheme(name, config, callOptions),
+    createTheme: <const C extends ThemeConfig>(
+      name: string,
+      config: C & ThemeConfigInput<C>,
+      callOptions?: { replace?: boolean },
+    ): ThemeSurface<InferThemeExtendFromConfig<C>> =>
+      emitTheme(name, config as ThemeConfig, callOptions) as ThemeSurface<
+        InferThemeExtendFromConfig<C>
+      >,
     ensureNamespace,
     disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
     createDarkMode: (name, darkOverrides) => {

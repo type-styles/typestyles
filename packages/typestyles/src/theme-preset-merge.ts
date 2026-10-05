@@ -103,5 +103,7 @@ export function resolveThemeFromPatchConfig(
     components: config.patch?.components ?? config.components,
   });
 
-  return normalizeThemeConfig(merged, colorModes);
+  const extend = mergeExtendMaps(merged.extend, config.extend);
+
+  return normalizeThemeConfig(extend !== undefined ? { ...merged, extend } : merged, colorModes);
 }

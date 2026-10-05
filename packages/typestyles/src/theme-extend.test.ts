@@ -33,6 +33,41 @@ describe('createTheme({ extend })', () => {
     expect(getRegisteredCss()).toContain('--ens-metrics-radius-sm');
   });
 
+  it('extend refs match ensureNamespace for the same namespace', () => {
+    const { tokens } = createTypeStyles({ scopeId: 'match' });
+    const ensured = tokens.ensureNamespace('brand', {
+      glow: { default: '#abc' },
+    });
+    const theme = tokens.createTheme('t', {
+      extend: {
+        brand: {
+          glow: { default: '#abc' },
+        },
+      },
+    });
+    expect(theme.tokens?.brand.glow.default).toBe(ensured.glow.default);
+  });
+
+  it('merges extend from from/patch and exposes refs', () => {
+    const { tokens } = createTypeStyles({ scopeId: 'fp-ext' });
+    const theme = tokens.createTheme('app', {
+      from: {
+        extend: {
+          brand: { primary: '#111' },
+        },
+      },
+      patch: {
+        extend: {
+          brand: { accent: { default: '#0066ff' } },
+        },
+      },
+    });
+    expect(theme.tokens?.brand.primary).toMatch(/var\(--/);
+    expect(theme.tokens?.brand.accent.default).toMatch(/var\(--/);
+    flushSync();
+    expect(getRegisteredCss()).toContain('--fp-ext-brand-accent-default');
+  });
+
   it('re-create theme with same name does not duplicate extend namespace registration', () => {
     const { tokens } = createTypeStyles({ scopeId: 're' });
     tokens.createTheme('x', { extend: { brand: { primary: '#111' } } });

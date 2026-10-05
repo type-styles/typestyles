@@ -16,7 +16,35 @@ TypeStyles uses CSS custom properties for theming, making it flexible and powerf
 
 Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).
 
-The return value is a **`ThemeSurface`**: `{ className, name }`, with `String(surface)` and template literals resolving to `className`. In React, pass **`surface.className`** (or `String(surface)`) to `className` props.
+The return value is a **`ThemeSurface`**: `{ className, name, tokens? }`, with `String(surface)` and template literals resolving to `className`. In React, pass **`surface.className`** (or `String(surface)`) to `className` props.
+
+### Token refs on the theme surface
+
+`tokens.createTheme()` attaches **`surface.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`, without a custom Proxy in your design-system layer.
+
+- **`surface.tokens.use('color')`** — same as `tokens.use('color')` for namespaces created with `tokens.create` / `tokens.declare`.
+- **`surface.tokens.brand`** — shortcuts for namespaces registered via **`config.extend`** (including keys merged from **`from` / `patch`** presets).
+
+`extend` registers each namespace with `tokens.create`, merges values into the theme’s `base` overrides, and emits CSS on `.theme-{name}`. Use refs in component code or in theme **`components`** factories:
+
+```ts
+const brand = tokens.createTheme('brand', {
+  extend: {
+    brand: {
+      glow: { default: '#0066ff' },
+    },
+  },
+  components: {
+    button: ({ tokens: t }) => ({
+      base: { boxShadow: `0 0 12px ${t.brand.glow.default}` },
+    }),
+  },
+});
+
+// Elsewhere: brand.tokens!.brand.glow.default → var(--…-brand-glow-default)
+```
+
+For one-off namespaces outside a theme, **`tokens.ensureNamespace(name, values)`** registers when missing and returns the same ref tree.
 
 For **dark only when the OS prefers dark**, use `tokens.createDarkMode(name, overrides)` or `modes: tokens.colorMode.mediaOnly({ dark: … })`.
 

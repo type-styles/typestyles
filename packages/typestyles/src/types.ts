@@ -502,9 +502,11 @@ export type ThemeColorModePatches = {
 export type ThemeComponentOverrideEntry = Record<string, unknown>;
 
 /** Passed to theme `components` factory functions (#216). */
-export type ThemeOverrideContext = {
-  readonly tokens: ThemeTokenContext;
-  readonly theme: ThemeSurface;
+export type ThemeOverrideContext<
+  E extends Record<string, CreateTokenValues> = Record<string, never>,
+> = {
+  readonly tokens: ThemeTokenContext<E>;
+  readonly theme: ThemeSurface<E>;
 };
 
 /** Preset slice merged via `from` / `patch` on {@link ThemeConfig}. */
@@ -550,14 +552,14 @@ export type ThemeConfig = {
  * - `surface.name` — the theme name (e.g. `"acme"`)
  * - `String(surface)` / template interpolation — coerces to `className`
  */
-export interface ThemeSurface {
+export interface ThemeSurface<E extends Record<string, CreateTokenValues> = Record<string, never>> {
   readonly className: string;
   readonly name: string;
   /**
    * Token refs for override factories — `tokens.use` plus namespace shortcuts (`tokens.color`, …).
    * Present on surfaces from `tokens.createTheme()` / `createTypeStyles`.
    */
-  readonly tokens?: ThemeTokenContext;
+  readonly tokens?: ThemeTokenContext<E>;
   toString(): string;
   [Symbol.toPrimitive](hint: string): string;
 }
