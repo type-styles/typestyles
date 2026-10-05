@@ -59,6 +59,7 @@ import {
 } from './container';
 import { supports as supportsQuery } from './supports';
 import { atRuleBlock as atRuleBlockFn } from './at-rule-block';
+import { whenStyle as whenStyleFn } from './when-style';
 import {
   createBreakpointMediaFn,
   createMediaFn,
@@ -299,6 +300,11 @@ export type StylesApi = ComponentRegistryApi & {
    * Build a spreadable `{ [ @key ]: nested }` so computed `@…` keys stay typed (see `atRuleBlock` export).
    */
   readonly atRuleBlock: typeof atRuleBlockFn;
+  /**
+   * Expand a `ThemeCondition` into nested `&` / `@media` keys for recipe slots (see `whenStyle` export).
+   * Prefer this inside `styles.component`; use `conditional()` + `conditions[]` on `styles.override`.
+   */
+  readonly when: typeof whenStyleFn;
   /**
    * Typed `@media` object keys from configured viewport breakpoints (see `breakpoint` / `media`).
    */
@@ -821,6 +827,7 @@ function buildStylesRuntimeApi(
         containerRef,
         supports: supportsQuery,
         atRuleBlock: atRuleBlockFn,
+        when: whenStyleFn,
         breakpoint,
         media,
         has: hasNested,
@@ -860,6 +867,7 @@ function buildStylesRuntimeApi(
       containerRef,
       supports: supportsQuery,
       atRuleBlock: atRuleBlockFn,
+      when: whenStyleFn,
       breakpoint,
       media,
       has: hasNested,
@@ -890,6 +898,7 @@ export type StylesWithUtilsApi<U extends StyleUtils> = ComponentRegistryApi & {
   readonly containerRef: (label: string) => ContainerNameRef;
   readonly supports: typeof supportsQuery;
   readonly atRuleBlock: typeof atRuleBlockFn;
+  readonly when: typeof whenStyleFn;
   readonly breakpoint: BreakpointMediaFn;
   readonly media: MediaFn;
   readonly has: typeof hasNested;
@@ -1090,6 +1099,7 @@ export function createStylesWithUtils<U extends StyleUtils>(
       containerRef,
       supports: supportsQuery,
       atRuleBlock: atRuleBlockFn,
+      when: whenStyleFn,
       breakpoint,
       media,
       has: hasNested,
@@ -1166,6 +1176,7 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
       containerRef,
       supports: supportsQuery,
       atRuleBlock: atRuleBlockFn,
+      when: whenStyleFn,
       breakpoint,
       media,
       has: hasNested,

@@ -20,6 +20,7 @@ import { container, createContainerRef } from './container';
 import { supports } from './supports';
 import { atRuleBlock } from './at-rule-block';
 import { has, is, where } from './relational-pseudo';
+import { whenStyle } from './when-style';
 import { atan2, calc, clamp, cos, hypot, pow, sin, sqrt, tan } from './css-math';
 import { content } from './css-content';
 
@@ -113,7 +114,7 @@ export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';
 
 export type { GlobalStyleTuple } from './global-style-tuple';
 
-export { container, createContainerRef, supports, atRuleBlock, has, is, where };
+export { container, createContainerRef, supports, atRuleBlock, has, is, where, whenStyle };
 export { atProperty } from './at-property';
 export type { AtPropertyPreset, AtPropertyPresetName } from './at-property';
 

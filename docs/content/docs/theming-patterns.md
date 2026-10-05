@@ -1178,11 +1178,36 @@ styles.override(button, {
 properties (`padding`, `fontWeight`, …) should use `conditions` instead — dev warns if
 you pass mode objects on them. v1 supports at most two registered modes.
 
+#### Conditional styles in recipes (`styles.when`)
+
+`conditions` / `conditional()` only work on **`styles.override`**. Inside a
+`styles.component` recipe (or `styles.class`), spread **`styles.when(condition, style)`**
+so the same `tokens.when.*` / `resolvedDarkWhen` builders expand into nested `&` keys
+and `@media` wrappers:
+
+```ts
+import { resolvedDarkWhen, when } from 'typestyles';
+
+styles.component('badge', {
+  base: {
+    color: '#111827',
+    ...styles.when(when.prefersDark, { color: '#e5e7eb' }),
+    ...styles.when(resolvedDarkWhen('data-mode', 'ancestor'), {
+      '&::after': { opacity: 0.85 },
+    }),
+  },
+});
+```
+
+That is equivalent to hand-writing selector maps (what some design systems call
+`atDarkMode`), without duplicating the condition contract themes already use.
+Also exported as **`whenStyle`** from `typestyles` when you are not on a `styles` instance.
+
 #### Conditional override blocks (`conditions`)
 
-For structural or multi-property mode differences, add `conditions` on override style
-blocks (`base`, variant options, compounds, slot blocks). Each entry compiles `when` with
-the same `tokens.when.*` builders theme modes use:
+For structural or multi-property mode differences on **overrides**, add `conditions` on
+override style blocks (`base`, variant options, compounds, slot blocks). Each entry
+compiles `when` with the same `tokens.when.*` builders theme modes use:
 
 ```ts
 import { conditional } from 'typestyles';
@@ -1206,6 +1231,7 @@ styles.override(
 ```
 
 `conditions` is reserved — do not put it on `styles.component()` recipe definitions.
+Use [`styles.when`](#conditional-styles-in-recipes-styleswhen) in recipes instead.
 
 `getComponentMeta(component)` reads the public `__tsMeta` blob (namespace, kind,
 naming mode, base class(es), per-option selector fragments). Renaming anything in
