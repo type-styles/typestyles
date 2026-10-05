@@ -1,5 +1,13 @@
 # typestyles
 
+## 0.26.0
+
+### Minor Changes
+
+- [#240](https://github.com/type-styles/typestyles/pull/240) [`cc0f437`](https://github.com/type-styles/typestyles/commit/cc0f4376dfdaf5598ce09a3f216df9a9ea958941) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `styles.when` / `whenStyle` to spread `ThemeCondition` into recipe slot style objects (closes [#235](https://github.com/type-styles/typestyles/issues/235)). Raise main-entry gzip budget (+400 B) for the new helper.
+
+- [#237](https://github.com/type-styles/typestyles/pull/237) [`56c9bf1`](https://github.com/type-styles/typestyles/commit/56c9bf1dafccfc46335c63251d83e986d79bb73e) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Simplify `tokens.createTheme` to a single named-argument object: per-namespace values live under `tokens` (replacing `base` / `extend`), presets use `from` with sibling-field merges (no `patch`), and docs cover migration from StyleX, Panda, vanilla-extract, and Stitches.
+
 ## 0.25.0
 
 ### Minor Changes

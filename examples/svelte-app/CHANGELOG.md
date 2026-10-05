@@ -1,5 +1,12 @@
 # typestyles-svelte-example
 
+## 0.0.26
+
+### Patch Changes
+
+- Updated dependencies [[`cc0f437`](https://github.com/type-styles/typestyles/commit/cc0f4376dfdaf5598ce09a3f216df9a9ea958941), [`56c9bf1`](https://github.com/type-styles/typestyles/commit/56c9bf1dafccfc46335c63251d83e986d79bb73e)]:
+  - typestyles@0.26.0
+
 ## 0.0.25
 
 ### Patch Changes
