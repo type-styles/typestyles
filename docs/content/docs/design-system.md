@@ -421,8 +421,9 @@ const button = styles.component('button', {
 import { tokens } from 'typestyles';
 import { primitiveColors } from '../primitives/colors';
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       brand: primitiveColors.brand[400],
       brandHover: primitiveColors.brand[300],
@@ -451,8 +452,9 @@ export const darkTheme = tokens.createTheme('dark', {
 // tokens/themes/high-contrast.ts
 import { tokens } from 'typestyles';
 
-export const highContrastTheme = tokens.createTheme('high-contrast', {
-  base: {
+export const highContrastTheme = tokens.createTheme({
+  name: 'high-contrast',
+  tokens: {
     color: {
       text: '#000000',
       background: '#ffffff',

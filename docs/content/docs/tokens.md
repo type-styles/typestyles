@@ -416,6 +416,8 @@ Condition primitives: `tokens.when.media`, `prefersDark`, `attr`, `className`, `
 
 Coming from StyleX / Panda / vanilla-extract / Stitches? See the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet).
 
+For a full app path (declare → theme → override → mount → dispose), see [End-to-end theming](/docs/theming-end-to-end).
+
 See [Theming patterns](/docs/theming-patterns) for preset mode layers, multi-brand setups, and component overrides.
 
 ## Interop with DTCG and Style Dictionary

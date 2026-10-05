@@ -5,7 +5,9 @@ description: Light/dark mode, multi-brand theming, and advanced theme strategies
 
 TypeStyles uses CSS custom properties for theming, making it flexible and powerful. This guide covers common theming patterns.
 
-Coming from **StyleX**, **Panda**, **vanilla-extract**, or **Stitches**? Start with the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet) — each maps `createTheme` / theme contracts onto `tokens.create` + `tokens.createTheme`.
+**New here?** Start with [End-to-end theming (no wrappers)](/docs/theming-end-to-end) — one copy-pasteable module covering `declare` / `create`, `createTheme({ from, tokens })`, `styles.override` + `selectorPrefix`, plain CSS, and `disposeTheme`.
+
+Coming from **StyleX**, **Panda**, **vanilla-extract**, or **Stitches**? Start with the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet).
 
 ## Theme surfaces
 
@@ -187,8 +189,9 @@ export const color = tokens.create('color', {
 });
 
 // Create dark theme override (class theme-dark)
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       textMuted: '#9ca3af',
@@ -271,8 +274,9 @@ export const color = tokens.create('color', {
   // ... other tokens
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       surface: '#1a1a2e',
@@ -338,8 +342,9 @@ import { tokens } from 'typestyles';
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
-export const appTheme = tokens.createTheme('app', {
-  base: light,
+export const appTheme = tokens.createTheme({
+  name: 'app',
+  tokens: light,
   modes: tokens.colorMode.mediaOnly({ dark }),
 });
 ```
@@ -370,8 +375,9 @@ const baseTokens = {
 };
 
 // Brand A theme
-export const brandA = tokens.createTheme('brand-a', {
-  base: {
+export const brandA = tokens.createTheme({
+  name: 'brand-a',
+  tokens: {
     color: {
       primary: '#0066ff',
       secondary: '#6b7280',
@@ -382,8 +388,9 @@ export const brandA = tokens.createTheme('brand-a', {
 });
 
 // Brand B theme
-export const brandB = tokens.createTheme('brand-b', {
-  base: {
+export const brandB = tokens.createTheme({
+  name: 'brand-b',
+  tokens: {
     color: {
       primary: '#10b981',
       secondary: '#f59e0b',
@@ -394,8 +401,9 @@ export const brandB = tokens.createTheme('brand-b', {
 });
 
 // Brand C theme
-export const brandC = tokens.createTheme('brand-c', {
-  base: {
+export const brandC = tokens.createTheme({
+  name: 'brand-c',
+  tokens: {
     color: {
       primary: '#ef4444',
       secondary: '#8b5cf6',
@@ -462,8 +470,9 @@ CSS custom properties cascade naturally, so the inner theme overrides only affec
 import { tokens } from 'typestyles';
 
 // Chart-specific tokens that don't affect the rest of the app
-export const chartTheme = tokens.createTheme('chart', {
-  base: {
+export const chartTheme = tokens.createTheme({
+  name: 'chart',
+  tokens: {
     color: {
       primary: '#0066ff',
       secondary: '#10b981',
@@ -497,8 +506,9 @@ export function Chart({ data }) {
 // themes/seasonal.ts
 import { tokens } from 'typestyles';
 
-export const holidayTheme = tokens.createTheme('holiday', {
-  base: {
+export const holidayTheme = tokens.createTheme({
+  name: 'holiday',
+  tokens: {
     color: {
       primary: '#c41e3a', // Holiday red
       secondary: '#165b33', // Holiday green
@@ -507,8 +517,9 @@ export const holidayTheme = tokens.createTheme('holiday', {
   },
 });
 
-export const springTheme = tokens.createTheme('spring', {
-  base: {
+export const springTheme = tokens.createTheme({
+  name: 'spring',
+  tokens: {
     color: {
       primary: '#88c999',
       secondary: '#f4a460',
@@ -549,8 +560,9 @@ export function useSeasonalTheme(): string | undefined {
 import { tokens } from 'typestyles';
 
 // Semantic color tokens
-export const successTheme = tokens.createTheme('success', {
-  base: {
+export const successTheme = tokens.createTheme({
+  name: 'success',
+  tokens: {
     color: {
       primary: '#10b981',
       primaryHover: '#059669',
@@ -558,8 +570,9 @@ export const successTheme = tokens.createTheme('success', {
   },
 });
 
-export const warningTheme = tokens.createTheme('warning', {
-  base: {
+export const warningTheme = tokens.createTheme({
+  name: 'warning',
+  tokens: {
     color: {
       primary: '#f59e0b',
       primaryHover: '#d97706',
@@ -567,8 +580,9 @@ export const warningTheme = tokens.createTheme('warning', {
   },
 });
 
-export const dangerTheme = tokens.createTheme('danger', {
-  base: {
+export const dangerTheme = tokens.createTheme({
+  name: 'danger',
+  tokens: {
     color: {
       primary: '#ef4444',
       primaryHover: '#dc2626',
@@ -633,8 +647,9 @@ import { tokens } from 'typestyles';
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
-export const shell = tokens.createTheme('shell', {
-  base: light,
+export const shell = tokens.createTheme({
+  name: 'shell',
+  tokens: light,
   modes: tokens.colorMode.systemWithLightDarkOverride({
     attribute: 'data-color-mode',
     values: { light: 'light', dark: 'dark', system: 'system' },
@@ -663,8 +678,9 @@ const brand = tokens.create('brand', {
   accent: { light: '#111', dark: '#eee' },
 });
 
-const theme = tokens.createTheme('acme', {
-  base: { color: { text: '#111' } },
+const theme = tokens.createTheme({
+  name: 'acme',
+  tokens: { color: { text: '#111' } },
   colorMode: { dark: { color: { text: '#eee' } } },
 });
 ```
@@ -674,39 +690,44 @@ This is separate from **style-level** `{ light, dark }` on component properties 
 **conditional** `modes` layers driven by `tokens.when.*`. See
 [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves) for the full API.
 
-## Building `createTheme({ from, tokens })` wrappers
+## Optional: `mergeThemeOverrides` helpers
 
-Design systems often expose a higher-level `createDesignTheme({ from, tokens, colorMode })`
-that merges a preset with user overrides before calling `tokens.createTheme()`. Token refs from
-`tokens.declare()` are proxy objects — they cannot be cloned with `structuredClone` and will not
-round-trip through ad-hoc deep merges.
+Prefer the built-in path first: [`createTheme({ from, tokens })`](/docs/theming-end-to-end) already
+deep-merges presets with app overrides — no wrapper required. See
+[End-to-end theming](/docs/theming-end-to-end).
 
-Use the exported helpers instead. Pass **leaf** refs (`semantic.accent.default`), not branch
-proxies (`semantic.accent`):
+If you still expose a thin `createDesignTheme` sugar, or need to merge **token ref leaves** outside
+`createTheme`, use the exported helpers. Token refs from `tokens.declare()` are proxy objects —
+they cannot be cloned with `structuredClone` and will not round-trip through ad-hoc deep merges.
+Pass **leaf** refs (`semantic.accent.default`), not branch proxies (`semantic.accent`):
 
 ```ts
 import { createTypeStyles, mergeThemeOverrides } from 'typestyles';
 
 const { tokens } = createTypeStyles({ scopeId: 'app' });
 
-const preset = { color: { text: '#111827', accent: { default: '#0066ff' } } };
+const preset = {
+  tokens: { color: { text: '#111827', accent: { default: '#0066ff' } } },
+};
 
 export function createDesignTheme(options: {
   from?: typeof preset;
-  tokens?: typeof preset;
-  colorMode?: { light?: typeof preset; dark?: typeof preset };
+  tokens?: (typeof preset)['tokens'];
+  colorMode?: { light?: (typeof preset)['tokens']; dark?: (typeof preset)['tokens'] };
 }) {
-  const base = mergeThemeOverrides(options.from ?? {}, options.tokens);
+  const mergedTokens = mergeThemeOverrides(options.from?.tokens ?? {}, options.tokens);
   const light = options.colorMode?.light
-    ? mergeThemeOverrides(base, options.colorMode.light)
+    ? mergeThemeOverrides(mergedTokens, options.colorMode.light)
     : undefined;
   const dark = options.colorMode?.dark
-    ? mergeThemeOverrides(base, options.colorMode.dark)
+    ? mergeThemeOverrides(mergedTokens, options.colorMode.dark)
     : undefined;
 
-  return tokens.createTheme('app', {
-    base,
-    colorMode: { light, dark },
+  return tokens.createTheme({
+    name: 'app',
+    from: options.from,
+    tokens: mergedTokens,
+    colorMode: light || dark ? { light, dark } : undefined,
   });
 }
 ```
@@ -736,8 +757,9 @@ import { tokens } from 'typestyles';
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
 
-export const app = tokens.createTheme('app', {
-  base: light,
+export const app = tokens.createTheme({
+  name: 'app',
+  tokens: light,
   modes: [
     // Ambient light/dark switching, as usual:
     ...tokens.colorMode.systemWithLightDarkOverride({
@@ -779,8 +801,9 @@ Two properties worth knowing:
 // themes/accessibility.ts
 import { tokens } from 'typestyles';
 
-export const highContrastTheme = tokens.createTheme('high-contrast', {
-  base: {
+export const highContrastTheme = tokens.createTheme({
+  name: 'high-contrast',
+  tokens: {
     color: {
       text: '#000000',
       surface: '#ffffff',
@@ -821,8 +844,9 @@ export const color = tokens.create('color', {
   // ... other tokens
 });
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     color: {
       text: '#e0e0e0',
       // ... other overrides
@@ -831,8 +855,9 @@ export const darkTheme = tokens.createTheme('dark', {
 });
 
 // Optional: separate surface for motion tokens, etc.
-export const reducedMotionTheme = tokens.createTheme('reduced-motion', {
-  base: {
+export const reducedMotionTheme = tokens.createTheme({
+  name: 'reduced-motion',
+  tokens: {
     /* motion-related overrides */
   },
 });
@@ -900,8 +925,9 @@ const brand = tokens.create('brand', {
   angle: { value: '20deg', syntax: '<angle>', inherits: true },
 });
 
-const dark = tokens.createTheme('dark', {
-  base: {
+const dark = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     brand: { angle: '260deg' },
   },
 });

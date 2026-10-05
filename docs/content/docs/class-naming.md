@@ -36,7 +36,7 @@ import { createTokens } from 'typestyles';
 export const tokens = createTokens({ scopeId: '@acme/design-system' });
 ```
 
-With `scopeId` set, `tokens.create('color', …)` emits variables like `--acme-design-system-color-primary` (sanitized), and `tokens.createTheme('dark', …)` registers a theme class whose segment includes the scope.
+With `scopeId` set, `tokens.create('color', …)` emits variables like `--acme-design-system-color-primary` (sanitized), and `tokens.createTheme({ name: 'dark', … })` registers a theme class whose segment includes the scope.
 
 For **CSS cascade layers** (`@layer`) — optional, and off by default — see [Cascade layers](/docs/cascade-layers). Use **`createTypeStyles`** when both class rules and token/theme CSS should share one layer stack and one `scopeId`.
 

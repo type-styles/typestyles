@@ -55,7 +55,7 @@ Theme and token CSS needs no separate build step. Because extraction is execute-
 import { tokens, createTheme } from 'typestyles';
 
 export const color = tokens.create('color', { primary: '#0066ff', surface: '#ffffff' });
-createTheme('dark', { base: { color: { primary: '#66aaff', surface: '#111111' } } });
+createTheme({ name: 'dark', tokens: { color: { primary: '#66aaff', surface: '#111111' } } });
 ```
 
 ```css
@@ -74,7 +74,7 @@ This means TypeStyles never needs a "did you forget to build your theme" runtime
 
 The one thing to get right is the same as for component styles: the modules calling `tokens.create` / `createTheme` must be reachable from your [convention entry](#vite) (or explicit `extract.modules`).
 
-**Design systems with many recipes:** add a registry module (for example `src/themeable-refs.ts`) that side-effect-imports every recipe file and exports `getRegisteredComponentRefs(styles)` from your `createTypeStyles` runtime. Wire it with Vite `extract.registeredComponentsModule: 'src/themeable-refs.ts'`, or set `extract.include: 'allRegisteredComponents'` to auto-append a convention registry file when present (`src/themeable-refs.ts`, `src/typestyles/themeable-refs.ts`, …). The plain `typestyles-entry` side-effect imports are not enough on their own — the registry module must pull in each recipe so `styles.component()` runs during extract.
+**Design systems with many recipes:** add a registry module (for example `src/themeable-refs.ts`) that side-effect-imports every recipe file and exports `getRegisteredComponentRefs(styles)` from your `createTypeStyles` runtime. Wire it with Vite `extract.registeredComponentsModule: 'src/themeable-refs.ts'`, or set `extract.include: 'allRegisteredComponents'` to auto-append a convention registry file when present (`src/themeable-refs.ts`, `src/typestyles/themeable-refs.ts`, …). The plain `typestyles-entry` side-effect imports are not enough on their own — the registry module must pull in each recipe so `styles.component()` runs during extract. Full theme + override walkthrough: [End-to-end theming](/docs/theming-end-to-end).
 
 To guard against a theme module dropping out of the entry graph, assert on a token variable or theme class with `verifyTypestylesBuild()` (see [Verify extraction in CI](#verify-extraction-in-ci)):
 

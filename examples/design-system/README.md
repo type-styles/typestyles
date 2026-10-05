@@ -99,10 +99,13 @@ const subtleCodeBlock = mergeDesignThemeOverrides(brand, {
   codeBlock: { rootBg: '#0c1222', headerBg: '#111827' },
 });
 
-export const themeAcme = tokens.createTheme('ds-acme', { base: subtleCodeBlock });
+export const themeAcme = tokens.createTheme({
+  name: 'ds-acme',
+  tokens: subtleCodeBlock,
+});
 ```
 
-Use `tokens.createTheme('ds-<name>', { base: { … } })` with the same namespace keys as your token map (`color`, `syntax`, `codeBlock`, primitives, etc.). Add `colorMode` or `modes` when you need conditional layers; palette themes in this package use `createDesignTheme` for the full light/dark/system pattern.
+Use `tokens.createTheme({ name: 'ds-<name>', tokens: { … } })` with the same namespace keys as your token map (`color`, `syntax`, `codeBlock`, primitives, etc.). Add `colorMode` or `modes` when you need conditional layers; palette themes in this package use `createDesignTheme` for the full light/dark/system pattern. For a wrapper-free walkthrough, see [End-to-end theming](https://typestyles.dev/docs/theming-end-to-end).
 
 ## Extending tokens safely
 

@@ -215,8 +215,9 @@ Run Style Dictionary twice (one platform per mode) into separate primitive modul
 import { color as lightColor } from './generated/light';
 import { color as darkColor } from './generated/dark';
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: { color: { brand: darkColor['brand-500'], text: darkColor['text-default'] } },
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: { color: { brand: darkColor['brand-500'], text: darkColor['text-default'] } },
 });
 ```
 

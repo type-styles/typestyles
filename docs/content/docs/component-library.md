@@ -375,8 +375,9 @@ export type { ButtonProps } from './Button';
 // src/tokens/themes.ts
 import { tokens } from 'typestyles';
 
-export const darkTheme = tokens.createTheme('dark', {
-  base: {
+export const darkTheme = tokens.createTheme({
+  name: 'dark',
+  tokens: {
     'semantic-color': {
       primary: '#60a5fa',
       primaryHover: '#3b82f6',
@@ -390,8 +391,9 @@ export const darkTheme = tokens.createTheme('dark', {
   },
 });
 
-export const highContrastTheme = tokens.createTheme('high-contrast', {
-  base: {
+export const highContrastTheme = tokens.createTheme({
+  name: 'high-contrast',
+  tokens: {
     'semantic-color': {
       text: '#000000',
       background: '#ffffff',
