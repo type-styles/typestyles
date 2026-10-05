@@ -26,6 +26,15 @@ describe('extractNamespaces', () => {
     expect(extractNamespaces(`createTheme({ name: "acme", tokens: {} })`).keys).toEqual([
       'theme:acme',
     ]);
+    expect(
+      extractNamespaces(`
+        tokens.createTheme({
+          from: designPreset,
+          tokens: { color: { accent: '#0066ff' } },
+          name: 'app',
+        })
+      `).keys,
+    ).toEqual(['theme:app']);
   });
 
   it('matches typestyles package imports', () => {
