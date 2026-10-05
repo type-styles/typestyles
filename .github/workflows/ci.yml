@@ -6,7 +6,9 @@ on:
       - main
   pull_request:
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
@@ -77,6 +79,7 @@ jobs:
 
   benchmark:
     name: Benchmark
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -104,6 +107,9 @@ jobs:
     name: Release
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [lint, typecheck, test]
+    concurrency:
+      group: typestyles-npm-release
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -151,6 +157,9 @@ jobs:
       github.ref == 'refs/heads/main' &&
       github.event.head_commit.message != 'chore: version packages'
     needs: [lint, typecheck, test]
+    concurrency:
+      group: typestyles-npm-release
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
