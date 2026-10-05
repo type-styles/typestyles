@@ -29,6 +29,23 @@ describe('createTheme({ components })', () => {
     expect(css).toMatch(/rebeccapurple/);
   });
 
+  it('accepts components on the third-argument options bag', () => {
+    const { styles, tokens } = createTypeStyles({ scopeId: 'tc3' });
+    styles.component('button', { base: { color: 'black' } });
+
+    tokens.createTheme(
+      'brand',
+      { base: { fontSize: { md: '14px' } } },
+      {
+        components: {
+          button: { base: { color: 'rebeccapurple' } },
+        },
+      },
+    );
+    flushSync();
+    expect(getRegisteredCss()).toMatch(/rebeccapurple/);
+  });
+
   it('throws in dev for unknown namespace', () => {
     const { tokens } = createTypeStyles({ scopeId: 'tc2' });
     expect(() =>

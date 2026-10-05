@@ -57,7 +57,11 @@ import {
 import { applyThemeExtendToConfig } from './theme-extend';
 import { resolveThemeFromPatchConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
-import type { InferThemeExtendFromConfig, ThemeConfigInput } from './theme-surface-types';
+import type {
+  InferThemeExtendFromConfig,
+  ThemeComponentsFor,
+  ThemeCreateConfigArg,
+} from './theme-surface-types';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
 const tokenLeafValuesByRef = new WeakMap<object, Record<string, string>>();
@@ -187,11 +191,25 @@ export type TokensApi<R extends TokenRegistry = Record<string, never>> = {
     ): DeclaredTokenRef<TSchema, N>;
   };
   createTheme: {
-    <const C extends ThemeConfig>(
+    <const T extends Omit<ThemeConfig, 'components'>>(
       name: string,
-      config: C & ThemeConfigInput<C>,
+      config: T,
       options?: { replace?: boolean },
-    ): ThemeSurface<InferThemeExtendFromConfig<C>>;
+    ): ThemeSurface<InferThemeExtendFromConfig<T>>;
+    <const T extends Omit<ThemeConfig, 'components'>>(
+      name: string,
+      config: T,
+      options: {
+        replace?: boolean;
+        components: NonNullable<ThemeComponentsFor<T>['components']>;
+      },
+    ): ThemeSurface<InferThemeExtendFromConfig<T>>;
+    /** @deprecated Prefer `config` + `{ components }` options so factories infer `ctx.tokens` from `extend`. */
+    <const T extends ThemeConfig>(
+      name: string,
+      config: ThemeCreateConfigArg<T>,
+      options?: { replace?: boolean },
+    ): ThemeSurface<InferThemeExtendFromConfig<T>>;
   };
   disposeTheme: (name: string, options?: { removeLiveCss?: boolean }) => void;
   /**
@@ -876,14 +894,16 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     create: create as TokensApi<R>['create'],
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
-    createTheme: <const C extends ThemeConfig>(
+    createTheme: ((
       name: string,
-      config: C & ThemeConfigInput<C>,
-      callOptions?: { replace?: boolean },
-    ): ThemeSurface<InferThemeExtendFromConfig<C>> =>
-      emitTheme(name, config as ThemeConfig, callOptions) as ThemeSurface<
-        InferThemeExtendFromConfig<C>
-      >,
+      config: ThemeConfig,
+      callOptions?: { replace?: boolean; components?: ThemeConfig['components'] },
+    ) => {
+      const { components: componentsOption, ...themeCallOptions } = callOptions ?? {};
+      const mergedConfig: ThemeConfig =
+        componentsOption !== undefined ? { ...config, components: componentsOption } : config;
+      return emitTheme(name, mergedConfig, themeCallOptions);
+    }) as TokensApi<R>['createTheme'],
     ensureNamespace,
     disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
     createDarkMode: (name, darkOverrides) => {

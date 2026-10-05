@@ -28,21 +28,29 @@ The return value is a **`ThemeSurface`**: `{ className, name, tokens? }`, with `
 `extend` registers each namespace with `tokens.create`, merges values into the theme’s `base` overrides, and emits CSS on `.theme-{name}`. Use refs in component code or in theme **`components`** factories:
 
 ```ts
-const brand = tokens.createTheme('brand', {
-  extend: {
-    brand: {
-      glow: { default: '#0066ff' },
+const brand = tokens.createTheme(
+  'brand',
+  {
+    extend: {
+      brand: {
+        glow: { default: '#0066ff' },
+      },
     },
   },
-  components: {
-    button: ({ tokens: t }) => ({
-      base: { boxShadow: `0 0 12px ${t.brand.glow.default}` },
-    }),
+  {
+    // Pass `components` in the third argument so `t.brand.*` is typed from `extend`.
+    components: {
+      button: ({ tokens: t }) => ({
+        base: { boxShadow: `0 0 12px ${t.brand.glow.default}` },
+      }),
+    },
   },
-});
+);
 
 // Elsewhere: brand.tokens!.brand.glow.default → var(--…-brand-glow-default)
 ```
+
+You can still put **`components`** on the config object; for typed `ctx.tokens` in factories, prefer the **`options.components`** form above.
 
 For one-off namespaces outside a theme, **`tokens.ensureNamespace(name, values)`** registers when missing and returns the same ref tree.
 

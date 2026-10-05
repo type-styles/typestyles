@@ -37,16 +37,37 @@ type ExtendFromOptional<E> = E extends ExtendMap ? E : NoExtend;
 /**
  * Merged `extend` namespaces from a `createTheme` config (`extend`, `from.extend`, `patch.extend`).
  */
-export type InferThemeExtendFromConfig<C extends ThemeConfig> = MergeTwoExtendMaps<
-  MergeTwoExtendMaps<ExtendFromPreset<C['from']>, ExtendFromPreset<C['patch']>>,
-  ExtendFromOptional<C['extend']>
->;
+export type InferThemeExtendFromConfig<C extends Pick<ThemeConfig, 'extend' | 'from' | 'patch'>> =
+  MergeTwoExtendMaps<
+    MergeTwoExtendMaps<ExtendFromPreset<C['from']>, ExtendFromPreset<C['patch']>>,
+    ExtendFromOptional<C['extend']>
+  >;
 
-/** Config argument shape so `components` factories see typed `ctx.tokens` for `extend` keys. */
-export type ThemeConfigInput<C extends ThemeConfig = ThemeConfig> = Omit<C, 'components'> & {
+/** `components` factories typed from the full config (`extend` / `from` / `patch`). */
+export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'extend' | 'from' | 'patch'>> = {
   components?: Record<
     string,
     | ThemeComponentOverrideEntry
-    | ((ctx: ThemeOverrideContext<InferThemeExtendFromConfig<C>>) => ThemeComponentOverrideEntry)
+    | ((ctx: ThemeOverrideContext<InferThemeExtendFromConfig<T>>) => ThemeComponentOverrideEntry)
   >;
 };
+
+/**
+ * `createTheme` config shape — `Omit`/`&` so factory callbacks get contextual typing without
+ * intersecting with the inferred callback type from `T`.
+ */
+export type ThemeCreateConfigArg<T extends ThemeConfig> = Omit<T, 'components'> &
+  ThemeComponentsFor<T>;
+
+/** @deprecated Use {@link ThemeCreateConfigArg}. */
+export type ThemeCreateConfigInput<C extends ThemeConfig = ThemeConfig> = ThemeCreateConfigArg<C>;
+
+/** @deprecated Renamed to {@link ThemeCreateConfigArg}. */
+export type ThemeConfigInput<C extends ThemeConfig = ThemeConfig> = ThemeCreateConfigArg<C>;
+
+/** Preserve config literals when a downstream generic would otherwise widen `T`. */
+export function themeConfig<const T extends ThemeConfig>(
+  config: T & ThemeCreateConfigArg<T>,
+): T & ThemeCreateConfigArg<T> {
+  return config;
+}
