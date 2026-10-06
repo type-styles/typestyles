@@ -1,0 +1,29 @@
+@layer reset, base, tokens, components, overrides, utilities;
+@property --vui-button-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@layer tokens {
+  :root {
+    --vui-color-brand: red;
+    --vui-color-red-10: #f90;
+  }
+  .theme-vui-default {
+    color-scheme: light dark;
+    --vui-color-brand: light-dark(red, blue);
+    --vui-color-red-10: #f90;
+  }
+}
+@layer components {
+  .vui-button {
+    --vui-button-bg: var(--vui-color-brand);
+    background: var(--vui-button-bg);
+  }
+  .vui-button[data-role='primary'] {
+    background: var(--vui-color-red-10);
+  }
+  .vui-button[data-role='secondary'] {
+    border: 1px solid black;
+  }
+}

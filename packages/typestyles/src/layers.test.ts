@@ -4,6 +4,8 @@ import { createStyles } from './styles';
 import { createTokens } from './tokens';
 import { createTypeStyles } from './create-type-styles';
 import { resolveCascadeLayers } from './layers';
+import { colorModes } from './color-modes';
+import { collectStyles } from './server';
 
 describe('cascade layers', () => {
   beforeEach(() => {
@@ -144,5 +146,94 @@ describe('cascade layers', () => {
 
   it('resolveCascadeLayers throws on duplicate layer names', () => {
     expect(() => resolveCascadeLayers(['a', 'a'], undefined)).toThrow(/Duplicate/);
+  });
+
+  it('getRegisteredCss consolidates same-named @layer blocks', () => {
+    const styles = createStyles({
+      layers: ['components'] as const,
+    });
+    styles.component(
+      'merge-btn',
+      {
+        base: { padding: '8px' },
+        variants: {
+          size: {
+            sm: { fontSize: '12px' },
+            lg: { fontSize: '18px' },
+          },
+        },
+      },
+      { layer: 'components' },
+    );
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css.match(/@layer components \{/g)?.length).toBe(1);
+    expect(css).toContain('.merge-btn');
+    expect(css).toContain('.merge-btn--size-sm');
+    expect(css).toContain('.merge-btn--size-lg');
+  });
+
+  it('snapshots consolidated layered CSS for a small design-system shape', async () => {
+    const { styles, tokens } = createTypeStyles({
+      scopeId: 'vui',
+      mode: 'attribute',
+      layers: ['reset', 'base', 'tokens', 'components', 'overrides', 'utilities'] as const,
+      tokenLayer: 'tokens',
+      colorModes,
+    });
+
+    tokens.create('color', {
+      brand: 'red',
+      red: { 10: '#f90' },
+    });
+
+    tokens.createTheme({
+      name: 'default',
+      tokens: {
+        color: {
+          brand: { light: 'red', dark: 'blue' },
+          red: { 10: '#f90' },
+        },
+      },
+    });
+
+    styles.component(
+      'button',
+      (c) => {
+        const bg = c.var('bg', {
+          value: 'var(--vui-color-brand)',
+          syntax: '<color>',
+        });
+        return {
+          base: {
+            background: bg.var,
+          },
+          variants: {
+            role: {
+              primary: { background: 'var(--vui-color-red-10)' },
+              secondary: { border: '1px solid black' },
+            },
+          },
+        };
+      },
+      { layer: 'components' },
+    );
+
+    flushSync();
+    await expect(getRegisteredCss()).toMatchFileSnapshot(
+      './__snapshots__/consolidate-cascade-layers-design-system.css',
+    );
+  });
+
+  it('collectStyles SSR output consolidates @layer blocks', () => {
+    const { css } = collectStyles(() => {
+      const styles = createStyles({ layers: ['components'] as const });
+      styles.class('a', { color: 'red' }, { layer: 'components' });
+      styles.class('b', { color: 'blue' }, { layer: 'components' });
+      return '';
+    });
+    expect(css.match(/@layer components \{/g)?.length).toBe(1);
+    expect(css).toContain('.a');
+    expect(css).toContain('.b');
   });
 });

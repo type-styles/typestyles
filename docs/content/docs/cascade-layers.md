@@ -8,8 +8,9 @@ By default, TypeStyles emits **flat** rules (no `@layer`), matching legacy behav
 When you opt in with a **`layers`** tuple on `createStyles`, `createTokens`, or the unified **`createTypeStyles`** factory, TypeStyles:
 
 1. Registers a single **`@layer a, b, c;`** preamble (once per distinct stack) so order is deterministic.
-2. Wraps each emitted rule block in **`@layer <name> { … }`** for the `layer` you pass on each style call.
-3. When **`createTokens({ layers, tokenLayer })`** is used, `:root` custom properties and **theme** rules go into `tokenLayer` so utilities and components can override tokens predictably.
+2. Wraps each emitted rule block in **`@layer <name> { … }`** for the `layer` you pass on each style call (runtime CSSOM still inserts one block at a time).
+3. When reading CSS via **`getRegisteredCss()`**, SSR collection, or build extraction, consolidates same-named `@layer` blocks into one block per layer and hoists `@property` rules after the order preamble.
+4. When **`createTokens({ layers, tokenLayer })`** is used, `:root` custom properties and **theme** rules go into `tokenLayer` so utilities and components can override tokens predictably.
 
 ## `createTypeStyles` (recommended for design systems)
 
