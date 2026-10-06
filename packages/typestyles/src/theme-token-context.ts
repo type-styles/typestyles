@@ -4,7 +4,7 @@ import type { CreateTokenValues, TokenRefTree } from './types';
 export type ThemeTokenUseFn = (namespaceOrRef: string) => unknown;
 
 /**
- * Token bag on {@link ThemeSurface} — `use()` plus namespace shortcuts (`tokens.color`, `tokens.brand`, …).
+ * Token bag on {@link Theme} — `use()` plus namespace shortcuts (`tokens.color`, `tokens.brand`, …).
  * Generic `E` adds typed trees for `createTheme({ tokens })` namespaces (#234).
  */
 export type ThemeTokenContext<E extends Record<string, CreateTokenValues> = Record<string, never>> =

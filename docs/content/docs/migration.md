@@ -177,7 +177,7 @@ export const dark = tokens.createTheme({
 
 Apply `dark.className` (or `String(dark)`) on a parent container to scope theme values. Plain CSS can set the same `--app-color-*` variables under `.theme-app-dark`.
 
-See [Theming patterns](/docs/theming-patterns) for `ThemeSurface.override` and `components` recipe overrides.
+See [Theming patterns](/docs/theming-patterns) for `Theme.override` and `components` recipe overrides.
 
 ### Panda utility props to `@typestyles/props`
 
@@ -751,7 +751,7 @@ export const brandText = styles.class('brand-text', {
 | -------------------------------- | ----------------------------------------------------------------------------------- |
 | `createThemeContract`            | `tokens.declare` (schema) or just `tokens.create` (contract + defaults)             |
 | `createTheme(vars, values)`      | `tokens.createTheme({ name, tokens })` — reuses the same `--*` names                |
-| `vars.color.brand`               | `color.brand` / `tokens.use('color').brand` / `surface.tokens.color.brand`          |
+| `vars.color.brand`               | `color.brand` / `tokens.use('color').brand` / `theme.tokens.color.brand`            |
 | Hashed theme class + scoped vars | Readable `.theme-app-dark` + `--app-color-brand` (with `scopeId`)                   |
 | `assignInlineVars`               | [`assignVars`](/docs/dynamic-styles) / inline style for dynamic values              |
 | `.css.ts` only                   | Ordinary `.ts` / `.tsx`; optional [zero-runtime](/docs/zero-runtime) for static CSS |
@@ -871,14 +871,14 @@ export const dark = tokens.createTheme({
 });
 ```
 
-| StyleX                                            | TypeStyles                                                          |
-| ------------------------------------------------- | ------------------------------------------------------------------- |
-| `defineVars` in `.stylex.js`                      | `tokens.create` in any module (no special file extension)           |
-| Hashed `--x…` names (unless you force `--…` keys) | Predictable `--{scopeId}-{namespace}-…` names                       |
-| `createTheme(vars, values)`                       | `tokens.createTheme({ name, tokens: { … } })`                       |
-| Themes don't merge (last CSS theme wins)          | `ThemeSurface.override` deep-merges typed patches onto a root theme |
-| Atomic hashed classes                             | Semantic `button--intent-primary` (or hashed / attribute modes)     |
-| Outside overrides need framework escape hatches   | Plain CSS can target classes and `--*` vars                         |
+| StyleX                                            | TypeStyles                                                      |
+| ------------------------------------------------- | --------------------------------------------------------------- |
+| `defineVars` in `.stylex.js`                      | `tokens.create` in any module (no special file extension)       |
+| Hashed `--x…` names (unless you force `--…` keys) | Predictable `--{scopeId}-{namespace}-…` names                   |
+| `createTheme(vars, values)`                       | `tokens.createTheme({ name, tokens: { … } })`                   |
+| Themes don't merge (last CSS theme wins)          | `Theme.override` deep-merges typed patches onto a root theme    |
+| Atomic hashed classes                             | Semantic `button--intent-primary` (or hashed / attribute modes) |
+| Outside overrides need framework escape hatches   | Plain CSS can target classes and `--*` vars                     |
 
 **When StyleX still wins:** you want Meta's compiler guarantees and atomic output as a hard product requirement. **When TypeStyles wins for StyleX migrants:** design-system consumers need to retheme from app CSS, DevTools must stay readable, or you want themes/tokens without a dedicated compiler pipeline. Deeper comparison: [Framework comparison — Theming vs StyleX](/docs/framework-comparison#theming-architecture-typestyles-vs-stylex-and-astryx).
 

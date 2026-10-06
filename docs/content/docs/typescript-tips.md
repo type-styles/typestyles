@@ -204,9 +204,9 @@ type SpaceToken = keyof typeof themeTokens.space;
 
 ## Type-safe themes
 
-### Fork themes with `ThemeSurface.override`
+### Fork themes with `Theme.override`
 
-Pass a concrete token tree into the **root** `createTheme` (often `as const`). Child themes created with `override` are typed against that tree — no hand-written `interface Theme` required:
+Pass a concrete token tree into the **root** `createTheme` (often `as const`). Child themes created with `override` are typed against that tree — no hand-written token-shape interface required:
 
 ```ts
 const light = {

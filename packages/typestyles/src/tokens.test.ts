@@ -794,7 +794,7 @@ describe('createTheme', () => {
     reset();
   });
 
-  it('returns a ThemeSurface with className and name', () => {
+  it('returns a Theme with className and name', () => {
     const dark = createTheme('dark', { tokens: { color: { primary: '#66b3ff' } } });
 
     expect(dark.className).toBe('theme-dark');

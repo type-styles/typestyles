@@ -10,9 +10,9 @@ import type {
   ThemeConfig,
   ThemeModeDefinition,
   ThemeOverrides,
-  ThemePreset,
-  ThemeSurface,
-  ThemeSurfaceOverrideInput,
+  ThemeSource,
+  Theme,
+  ThemeOverrideInput,
   TokenValues,
 } from './types';
 import { flattenTokenEntries, flattenTokenPaths } from './types';
@@ -28,9 +28,9 @@ import {
 } from './condition-compile';
 import type { ColorModeMap } from './color-modes';
 import { expandThemeOverrides, mergeThemeColorModePatches } from './token-color-modes';
-import { bindThemeSurfaceOverride } from './theme-preset-merge';
+import { bindThemeOverride } from './theme-source-merge';
 import { themeTokensToCompileConfig } from './theme-extend';
-import { themeConfigToPreset } from './theme-surface-types';
+import { themeConfigToSource } from './theme-types';
 import { normalizeThemeConfig } from './token-color-modes';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
@@ -55,14 +55,14 @@ export type CreateThemeOptions = {
 
 /** Internal hooks so `tokens.createTheme` can share one override implementation. */
 type CreateThemeInternalOptions = CreateThemeOptions & {
-  /** Snapshot for `ThemeSurface.source` / `override` (defaults to config-derived preset). */
-  source?: ThemePreset;
+  /** Snapshot for `Theme.source` / `override` (defaults to config-derived preset). */
+  source?: ThemeSource;
   /** Child-theme applicator; defaults to recursive `createTheme`. */
   createChildTheme?: (
     name: string,
     config: ThemeConfig,
     callOptions?: { replace?: boolean },
-  ) => ThemeSurface;
+  ) => Theme;
 };
 
 // ---------------------------------------------------------------------------
@@ -383,15 +383,15 @@ export const colorMode = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// ThemeSurface factory
+// Theme factory
 // ---------------------------------------------------------------------------
 
-function createThemeSurface(
+function createThemeObject(
   name: string,
   className: string,
-  source: ThemePreset,
-  overrideFn: (input: ThemeSurfaceOverrideInput) => ThemeSurface,
-): ThemeSurface {
+  source: ThemeSource,
+  overrideFn: (input: ThemeOverrideInput) => Theme,
+): Theme {
   return {
     className,
     name,
@@ -407,15 +407,15 @@ function createThemeSurface(
 }
 
 /** Snapshot mergeable token config from a createTheme input (before compile fold). */
-function themeSourceFromConfig(config: ThemeConfig | ThemeCompileConfig): ThemePreset {
+function themeSourceFromConfig(config: ThemeConfig | ThemeCompileConfig): ThemeSource {
   if (isThemeCompileConfig(config)) {
-    return themeConfigToPreset({
+    return themeConfigToSource({
       tokens: config.base as ThemeConfig['tokens'],
       colorMode: config.colorMode,
       modes: config.modes,
     });
   }
-  return themeConfigToPreset({
+  return themeConfigToSource({
     tokens: config.tokens,
     colorMode: config.colorMode,
     modes: config.modes,
@@ -429,7 +429,7 @@ function themeSourceFromConfig(config: ThemeConfig | ThemeCompileConfig): ThemeP
 /**
  * Create a themed surface with base token overrides and optional mode layers.
  *
- * Returns a `ThemeSurface` object whose `className` (and string coercion)
+ * Returns a `Theme` object whose `className` (and string coercion)
  * is a stable, human-readable class name like `"theme-acme"`.
  *
  * @example
@@ -462,7 +462,7 @@ export function createTheme(
   layerContext?: ThemeEmitLayerContext,
   naming?: ThemeTokenNaming,
   options?: CreateThemeInternalOptions,
-): ThemeSurface {
+): Theme {
   const colorModes = options?.colorModes;
   const darkWhen = options?.resolvedDarkWhen ?? resolvedDarkWhen('data-mode', 'self');
 
@@ -576,12 +576,7 @@ export function createTheme(
         replace: callOptions?.replace ?? options?.replace,
       }));
 
-  return createThemeSurface(
-    name,
-    className,
-    source,
-    bindThemeSurfaceOverride(source, createChildTheme),
-  );
+  return createThemeObject(name, className, source, bindThemeOverride(source, createChildTheme));
 }
 
 // ---------------------------------------------------------------------------
@@ -606,7 +601,7 @@ export function createDarkMode(
   layerContext?: ThemeEmitLayerContext,
   naming?: ThemeTokenNaming,
   options?: CreateThemeOptions,
-): ThemeSurface {
+): Theme {
   return createTheme(
     name,
     {

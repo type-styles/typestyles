@@ -3,7 +3,7 @@ import { reset, getRegisteredCss, flushSync } from './sheet';
 import { createTypeStyles } from './create-type-styles';
 import { createTheme } from './theme';
 
-describe('ThemeSurface.override', () => {
+describe('Theme.override', () => {
   beforeEach(() => reset());
 
   it('exposes source snapshot from createTheme tokens + colorMode', () => {

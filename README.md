@@ -146,7 +146,7 @@ const theme = tokens.createTheme('dark', {
   },
 });
 
-// Apply the theme to any subtree (ThemeSurface — use .className in React)
+// Apply the theme to any subtree (Theme — use .className in React)
 <div className={theme.className}>{/* All children use dark theme values */}</div>;
 ```
 
@@ -383,7 +383,7 @@ spacing.md; // "var(--spacing-md)"
 
 ### `tokens.createTheme(name, config)`
 
-Creates a theme surface (class `theme-{name}`) with token overrides. Pass **`base`**, and either **`modes`** (manual `tokens.when` conditions) or **`colorMode`** (presets), not both. Returns a **`ThemeSurface`**—use **`surface.className`** where a string is required.
+Creates a theme surface (class `theme-{name}`) with token overrides. Pass **`base`**, and either **`modes`** (manual `tokens.when` conditions) or **`colorMode`** (presets), not both. Returns a **`Theme`**—use **`theme.className`** where a string is required.
 
 ```tsx
 const dark = tokens.createTheme('dark', {

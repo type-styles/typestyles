@@ -3,7 +3,7 @@ import type {
   ThemeComponentOverrideEntry,
   ThemeConfig,
   ThemeOverrideContext,
-  ThemePreset,
+  ThemeSource,
 } from './types';
 
 type TokensMap = Record<string, CreateTokenValues>;
@@ -41,7 +41,7 @@ type TokensFromColorModePatches<C> = C extends {
 
 /**
  * Merged token namespaces from a `createTheme` config (`tokens` + `colorMode` trees).
- * Used as {@link ThemeSurface}'s type parameter so {@link ThemeSurface.override} can constrain patches.
+ * Used as {@link Theme}'s type parameter so {@link Theme.override} can constrain patches.
  */
 export type InferThemeTokensFromConfig<C extends Pick<ThemeConfig, 'tokens' | 'colorMode'>> =
   MergeTwoTokensMaps<TokensFromOptional<C['tokens']>, TokensFromColorModePatches<C>>;
@@ -60,12 +60,12 @@ type CreateThemeConfigFields = Omit<ThemeConfig, 'components'>;
 /**
  * Single argument to `tokens.createTheme()` — theme name, token layers, optional recipe overrides.
  *
- * - **`tokens`** — per-namespace values on `.theme-{name}` (registers namespaces for `surface.tokens` refs).
+ * - **`tokens`** — per-namespace values on `.theme-{name}` (registers namespaces for `theme.tokens` refs).
  * - **`colorMode` / `modes`** — light/dark and conditional override layers (see theming docs).
  * - **`components`** — per-recipe CSS overrides scoped to this theme class.
  * - **`replace`** — when true (default), reusing `name` replaces the previous theme registration.
  *
- * Fork child themes with {@link ThemeSurface.override}, not a second `createTheme` merge API.
+ * Fork child themes with {@link Theme.override}, not a second `createTheme` merge API.
  */
 export type CreateThemeInput<T extends CreateThemeConfigFields = CreateThemeConfigFields> = {
   name: string;
@@ -73,11 +73,11 @@ export type CreateThemeInput<T extends CreateThemeConfigFields = CreateThemeConf
 } & T &
   ThemeComponentsFor<T>;
 
-/** Build a {@link ThemePreset} snapshot from a resolved theme config (no `components`). */
-export function themeConfigToPreset(config: Pick<ThemeConfig, keyof ThemePreset>): ThemePreset {
-  const preset: ThemePreset = {};
-  if (config.tokens !== undefined) preset.tokens = config.tokens;
-  if (config.colorMode !== undefined) preset.colorMode = config.colorMode;
-  if (config.modes !== undefined) preset.modes = config.modes;
-  return preset;
+/** Build a {@link ThemeSource} snapshot from a resolved theme config (no `components`). */
+export function themeConfigToSource(config: Pick<ThemeConfig, keyof ThemeSource>): ThemeSource {
+  const source: ThemeSource = {};
+  if (config.tokens !== undefined) source.tokens = config.tokens;
+  if (config.colorMode !== undefined) source.colorMode = config.colorMode;
+  if (config.modes !== undefined) source.modes = config.modes;
+  return source;
 }

@@ -1,4 +1,4 @@
-import type { ThemeOverrides, ThemeSurface } from 'typestyles';
+import type { ThemeOverrides, Theme } from 'typestyles';
 import type { DesignColorValues, DesignSyntaxValues } from './tokens/semantic';
 import type {
   DesignDurationValues,
@@ -41,7 +41,7 @@ export type DesignThemeConfig = {
   dark: ThemeOverrides;
 };
 
-/** Same as typestyles `ThemeSurface` — class name + name for a palette from `createDesignTheme`. */
-export type DesignTheme = ThemeSurface;
+/** Same as typestyles `Theme` — class name + name for a palette from `createDesignTheme`. */
+export type DesignTheme = Theme;
 
 export type { DesignColorValues, DesignSyntaxValues };

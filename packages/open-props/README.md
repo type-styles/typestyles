@@ -130,7 +130,7 @@ const dark = tokens.createTheme('dark', {
 <div className={dark.className}>...</div>;
 ```
 
-See [Theming](https://typestyles.dev/docs/theming) for `createTheme`, dark mode presets, and `ThemeSurface`.
+See [Theming](https://typestyles.dev/docs/theming) for `createTheme`, dark mode presets, and `Theme`.
 
 ## Production builds
 

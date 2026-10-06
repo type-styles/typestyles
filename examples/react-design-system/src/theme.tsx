@@ -23,7 +23,7 @@ export type DesignSystemProviderProps = {
    * When true, skip applying `defaultTheme` / `data-mode` on the wrapper — use when the theme
    * surface already lives on `document.documentElement` (docs-style appearance bootstrap).
    */
-  omitWrapperThemeSurface?: boolean;
+  omitWrapperTheme?: boolean;
 };
 
 export function DesignSystemProvider({
@@ -32,7 +32,7 @@ export function DesignSystemProvider({
   theme: controlledTheme,
   onThemeChange,
   customThemeClassName,
-  omitWrapperThemeSurface = false,
+  omitWrapperTheme = false,
 }: DesignSystemProviderProps): JSX.Element {
   const [uncontrolledTheme, setUncontrolledTheme] = useState<ThemeName>(defaultTheme);
 
@@ -55,7 +55,7 @@ export function DesignSystemProvider({
 
   const dataMode = theme;
 
-  const surfaceClassName = omitWrapperThemeSurface
+  const surfaceClassName = omitWrapperTheme
     ? customThemeClassName
     : cx(baseTheme.className, customThemeClassName);
 
@@ -63,7 +63,7 @@ export function DesignSystemProvider({
     <ThemeContext.Provider value={value}>
       <div
         className={surfaceClassName}
-        data-mode={omitWrapperThemeSurface ? undefined : dataMode}
+        data-mode={omitWrapperTheme ? undefined : dataMode}
         style={{ display: 'contents' }}
       >
         {children}

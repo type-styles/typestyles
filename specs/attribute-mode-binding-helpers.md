@@ -151,7 +151,7 @@ cx(s.root, s.linkRoot, className);
 ```
 
 1. Trigger once per callsite (dedupe by stack or a WeakSet of object identity — implementation detail).
-2. Plain strings and `ThemeSurface` (no `attrs` key) — no warning.
+2. Plain strings and `Theme` (no `attrs` key) — no warning.
 3. Document in attribute-mode integration guide.
 
 ### Optional: `cx.classOnly`

@@ -20,7 +20,7 @@ Defaults usually live on `:root` via `tokens.create`. Theme `tokens` / `colorMod
 | Field            | Plain language                                                                                                         |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                                      |
-| **`tokens`**     | Per-namespace overrides on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `surface.tokens.*` refs.   |
+| **`tokens`**     | Per-namespace overrides on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `theme.tokens.*` refs.     |
 | **`colorMode`**  | Optional `{ light?, dark? }` patches merged into theme output and compiled to `light-dark()` when `colorModes` is set. |
 | **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets).               |
 | **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).                           |
@@ -43,7 +43,7 @@ tokens.createTheme({
 
 Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).
 
-The return value is a **`ThemeSurface`**: `{ className, name, source, tokens?, override }`, with `String(surface)` and template literals resolving to `className`. In React, pass **`surface.className`** (or `String(surface)`) to `className` props.
+The return value is a **`Theme`**: `{ className, name, source, tokens?, override }`, with `String(theme)` and template literals resolving to `className`. In React, pass **`theme.className`** (or `String(theme)`) to `className` props.
 
 ### Deriving child themes (`override`)
 
@@ -69,7 +69,7 @@ export const brandTheme = defaultTheme.override({
 });
 ```
 
-`override` deep-merges onto the parent’s `source` snapshot, emits a new `.theme-{name}` class, and returns another `ThemeSurface` (so chaining works). Apply one class for a single app theme, or keep several classes in the stylesheet for side-by-side brands / a theme switcher.
+`override` deep-merges onto the parent’s `source` snapshot, emits a new `.theme-{name}` class, and returns another `Theme` (so chaining works). Apply one class for a single app theme, or keep several classes in the stylesheet for side-by-side brands / a theme switcher.
 
 **Closed token tree:** patches may only touch namespaces and paths that already exist on the root theme. New keys belong on the root `createTheme` (or on `:root` via `tokens.create`), not in `override`.
 
@@ -87,10 +87,10 @@ defaultTheme.override({ name: 'purple', tokens: patch });
 
 ### Token refs on the theme surface
 
-`tokens.createTheme()` attaches **`surface.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`.
+`tokens.createTheme()` attaches **`theme.tokens`**: the same ref tree shape as `tokens.use(namespace)` / `tokens.ensureNamespace()`.
 
-- **`surface.tokens.use('color')`** — same as `tokens.use('color')` for namespaces created with `tokens.create` / `tokens.declare`.
-- **`surface.tokens.brand`** — shortcuts for namespaces registered via **`config.tokens`** on the root theme (and re-registered when a child `override` merges those namespaces).
+- **`theme.tokens.use('color')`** — same as `tokens.use('color')` for namespaces created with `tokens.create` / `tokens.declare`.
+- **`theme.tokens.brand`** — shortcuts for namespaces registered via **`config.tokens`** on the root theme (and re-registered when a child `override` merges those namespaces).
 
 `tokens` registers each namespace with `tokens.create`, merges values into the theme’s `base` overrides, and emits CSS on `.theme-{name}`. Use refs in component code or in theme **`components`** factories:
 
@@ -467,7 +467,7 @@ function App({ brandId }) {
   const surface = brands[brandId] || brandA;
 
   return (
-    <div className={surface.className}>
+    <div className={theme.className}>
       <PageContent />
     </div>
   );
@@ -729,7 +729,7 @@ This is separate from **style-level** `{ light, dark }` on component properties 
 
 ## Optional: `mergeThemeOverrides` helpers
 
-Prefer composing themes with `createTheme({ tokens, colorMode })` and forking with [`surface.override`](#deriving-child-themes-override). Use the helpers below when you need to merge **token ref leaves** yourself — for example building a config object before calling `createTheme`.
+Prefer composing themes with `createTheme({ tokens, colorMode })` and forking with [`theme.override`](#deriving-child-themes-override). Use the helpers below when you need to merge **token ref leaves** yourself — for example building a config object before calling `createTheme`.
 
 Token refs from `tokens.declare()` are proxy objects — they cannot be cloned with
 `structuredClone` and will not round-trip through ad-hoc deep merges. Pass **leaf** refs

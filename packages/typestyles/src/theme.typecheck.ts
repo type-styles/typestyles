@@ -1,5 +1,5 @@
 /**
- * Compile-only: `ThemeSurface.tokens` typing (#234) and `ThemeSurface.override` patches.
+ * Compile-only: `Theme.tokens` typing (#234) and `Theme.override` patches.
  */
 import { createTypeStyles } from './create-type-styles';
 import { createTokens } from './tokens';

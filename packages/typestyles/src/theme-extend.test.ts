@@ -5,7 +5,7 @@ import { createTypeStyles } from './create-type-styles';
 describe('createTheme({ tokens })', () => {
   beforeEach(() => reset());
 
-  it('registers token namespaces and exposes refs on ThemeSurface.tokens', () => {
+  it('registers token namespaces and exposes refs on Theme.tokens', () => {
     const { tokens } = createTypeStyles({ scopeId: 'ext', colorModes: ['light', 'dark'] });
     const theme = tokens.createTheme({
       name: 'brand',

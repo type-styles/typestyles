@@ -150,7 +150,7 @@ styles.override(
 );
 ```
 
-Sharing one root theme across many brands? Use [`ThemeSurface.override`](/docs/theming-patterns#deriving-child-themes-override).
+Sharing one root theme across many brands? Use [`Theme.override`](/docs/theming-patterns#deriving-child-themes-override).
 
 ## Mount (React)
 
@@ -216,7 +216,7 @@ Prefer this (or `createTheme({ components })`) over hand-written class strings. 
 | Need                                  | API                                                                                                                                                        |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deep-merge override trees / leaf refs | [`mergeThemeOverrides`](/docs/theming-patterns#optional-mergethemeoverrides-helpers)                                                                       |
-| Fork a root theme for brands / apps   | [`ThemeSurface.override`](/docs/theming-patterns#deriving-child-themes-override)                                                                           |
+| Fork a root theme for brands / apps   | [`Theme.override`](/docs/theming-patterns#deriving-child-themes-override)                                                                                  |
 | Media / attr / class conditions       | [`tokens.when`](/docs/theming-patterns#condition-scopes-self-ancestor-descendant), [`tokens.colorMode.*`](/docs/tokens#preset-mode-layers-tokenscolormode) |
 | Zero-runtime extract of all recipes   | [`getRegisteredComponentRefs`](/docs/zero-runtime#design-systems-with-many-recipes) + Vite `extract.registeredComponentsModule`                            |
 
@@ -225,6 +225,6 @@ Prefer this (or `createTheme({ components })`) over hand-written class strings. 
 1. Export a shared `createTypeStyles({ scopeId, colorModes })` runtime.
 2. `tokens.declare` the schema, then `tokens.create(…, { decl })` with mode-aware `{ light, dark }` leaves for defaults.
 3. Register recipes with `styles.component` on that same runtime.
-4. Document that apps call `tokens.createTheme({ name, tokens, … })` with **overrides only**, then apply `surface.className`.
-5. Document `selectorPrefix: \`.${surface.className}\``(or theme`components`) for recipe restyles.
+4. Document that apps call `tokens.createTheme({ name, tokens, … })` with **overrides only**, then apply `theme.className`.
+5. Document `selectorPrefix: \`.${theme.className}\``(or theme`components`) for recipe restyles.
 6. Keep class and `--*` names stable so consumers can also theme from plain CSS.

@@ -2,7 +2,7 @@ import type { ComponentAttrsResult } from './types';
 
 /**
  * Anything that coerces to a class string via `toString()`/`Symbol.toPrimitive` — covers
- * `ThemeSurface` (`tokens.createTheme(...)`) and `ComponentAttrsResult`
+ * `Theme` (`tokens.createTheme(...)`) and `ComponentAttrsResult`
  * (`createStyles({ mode: 'attribute' })`) alongside plain strings.
  */
 type Stringable = { toString(): string };

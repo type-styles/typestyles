@@ -16,10 +16,10 @@ function findRule(predicate: (text: string) => boolean): string | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// ThemeSurface
+// Theme
 // ---------------------------------------------------------------------------
 
-describe('ThemeSurface', () => {
+describe('Theme', () => {
   beforeEach(() => reset());
 
   it('has className and name properties', () => {
@@ -909,7 +909,7 @@ describe('colorMode patches with modes', () => {
 describe('createDarkMode', () => {
   beforeEach(() => reset());
 
-  it('returns a ThemeSurface', () => {
+  it('returns a Theme', () => {
     const dm = createDarkMode('simple', { color: { text: '#eee' } });
     expect(dm.className).toBe('theme-simple');
     expect(dm.name).toBe('simple');

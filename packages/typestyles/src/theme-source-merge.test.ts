@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { reset, getRegisteredCss, flushSync } from './sheet';
 import { createTypeStyles } from './create-type-styles';
 import { when } from './theme';
-import { applyThemeSurfaceOverride, mergeThemePresetConfig } from './theme-preset-merge';
+import { applyThemeOverride, mergeThemeSource } from './theme-source-merge';
 
-describe('mergeThemePresetConfig', () => {
+describe('mergeThemeSource', () => {
   it('deep-merges from and override token trees', () => {
     expect(
-      mergeThemePresetConfig(
+      mergeThemeSource(
         { tokens: { color: { text: { primary: '#111' } } } },
         { tokens: { color: { accent: { default: '#0066ff' } } } },
       ).tokens,
@@ -19,7 +19,7 @@ describe('mergeThemePresetConfig', () => {
   it('merges modes by id so overrides win over preset', () => {
     const sharedWhen = when.prefersDark;
     expect(
-      mergeThemePresetConfig(
+      mergeThemeSource(
         {
           modes: [
             {
@@ -61,7 +61,7 @@ describe('mergeThemePresetConfig', () => {
   });
 });
 
-describe('ThemeSurface.override (via createTheme root)', () => {
+describe('Theme.override (via createTheme root)', () => {
   beforeEach(() => reset());
 
   it('emits merged root + override patches with mode-aware leaves', () => {
@@ -116,9 +116,9 @@ describe('ThemeSurface.override (via createTheme root)', () => {
     expect(css).not.toMatch(/theme-md-brand[\s\S]*#222/);
   });
 
-  it('applyThemeSurfaceOverride merges patches onto a source snapshot', () => {
+  it('applyThemeOverride merges patches onto a source snapshot', () => {
     expect(
-      applyThemeSurfaceOverride(
+      applyThemeOverride(
         { tokens: { color: { brand: 'red', muted: 'gray' } } },
         { name: 'child', tokens: { color: { brand: 'blue' } } },
       ).tokens,
