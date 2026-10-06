@@ -45,6 +45,17 @@ tokens.create(
   { decl: color },
 );
 
+// Mode-aware leaves are valid create values for declared <color> paths
+tokens.create(
+  'color',
+  {
+    bg: { light: '#0a0a0a', dark: '#fafafa' },
+    text: { light: '#111', dark: '#eee' },
+    accent: '#0066ff',
+  },
+  { decl: color },
+);
+
 tokens.create(
   'semantic',
   {
