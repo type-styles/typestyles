@@ -5,7 +5,6 @@ import type {
   TokenRegistry,
   ThemeConfig,
   ThemeSurface,
-  ThemeSurfaceOverrideInput,
   ThemeOverrides,
   TokenSchema,
   DeclaredTokenRef,
@@ -47,7 +46,7 @@ import type { CascadeLayersInput } from './layers';
 import { applyLayerToRules, assertOwnLayer, resolveCascadeLayers } from './layers';
 import type { ColorModeMap } from './color-modes';
 import { isColorModeObject } from './color-modes';
-import { expandModeAwareTokenValues } from './token-color-modes';
+import { expandModeAwareTokenValues, normalizeThemeConfig } from './token-color-modes';
 import { compileThemeCondition, buildSelectorForContext } from './condition-compile';
 import { disposeThemeByName } from './theme-dispose';
 import {
@@ -55,7 +54,6 @@ import {
   type ThemeComponentsBridge,
 } from './theme-component-overrides';
 import { applyThemeTokensToConfig } from './theme-extend';
-import { mergeThemePresetConfig, resolveThemeFromPresetConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
 import {
   themeConfigToPreset,
@@ -843,7 +841,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     config: ThemeConfig,
     callOptions?: { replace?: boolean },
   ): ThemeSurface<E> {
-    const resolved = resolveThemeFromPresetConfig(config, colorModes);
+    const resolved = normalizeThemeConfig(config, colorModes);
 
     if (resolved.components && !themeStyles) {
       throw new Error(
@@ -861,31 +859,16 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       create(namespace, values);
     });
 
-    const surface = createTheme(
-      name,
-      prepared,
-      scopeId,
-      themeLayerContext,
-      themeTokenNaming,
-      themeOptions,
-    );
-
-    const override = (input: ThemeSurfaceOverrideInput<E>): ThemeSurface<E> => {
-      const { name: childName, replace, components, tokens: patchTokens, colorMode, modes } = input;
-      const merged = mergeThemePresetConfig(source, {
-        tokens: patchTokens as ThemeConfig['tokens'],
-        colorMode: colorMode as ThemeConfig['colorMode'],
-        modes: modes as ThemeConfig['modes'],
-        ...(components !== undefined ? { components } : {}),
-      });
-      return emitTheme<E>(childName, merged, { replace });
-    };
+    const surface = createTheme(name, prepared, scopeId, themeLayerContext, themeTokenNaming, {
+      ...themeOptions,
+      source,
+      createChildTheme: (childName, merged, childOptions) =>
+        emitTheme<E>(childName, merged, childOptions) as ThemeSurface,
+    });
 
     const withTokens = {
       ...surface,
-      source,
       tokens: tokenContext,
-      override,
     } as ThemeSurface<E>;
 
     const components = resolved.components;
@@ -907,12 +890,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
     createTheme: ((input: CreateThemeInput) => {
-      const { name, replace, components, colorMode, modes, tokens: themeTokens, from } = input;
+      const { name, replace, components, colorMode, modes, tokens: themeTokens } = input;
       const config: ThemeConfig = {
         colorMode,
         modes,
         tokens: themeTokens,
-        from,
         ...(components !== undefined ? { components } : {}),
       };
       return emitTheme(name, config, { replace });

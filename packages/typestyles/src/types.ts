@@ -511,7 +511,7 @@ export type ThemeOverrideContext<
 
 export type ThemeComponentOverrideFn = (ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry;
 
-/** Preset slice merged via `from` on {@link ThemeConfig} / stored on {@link ThemeSurface.source}. */
+/** Mergeable token config snapshot stored on {@link ThemeSurface.source}. */
 export type ThemePreset = {
   /** Per-namespace token values (same shape as `tokens.create` trees). */
   tokens?: Record<string, CreateTokenValues>;
@@ -524,15 +524,12 @@ export type ThemeConfig = {
    * Per-namespace token overrides for `.theme-{name}` — registers each namespace via
    * `tokens.create` (when using `tokens.createTheme`) and emits `--*` variables.
    * Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
-   * With `from`, deep-merged onto the preset's `tokens`.
    */
   tokens?: Record<string, CreateTokenValues>;
   /** Light/dark token patches compiled to `light-dark()` on theme custom properties. */
   colorMode?: ThemeColorModePatches;
   /** Conditional mode layers with explicit `when` conditions. */
   modes?: ThemeModeDefinition[];
-  /** Preset defaults — deep-merged with sibling fields (`tokens`, `colorMode`, `modes`, …). */
-  from?: ThemePreset;
   components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
 };
 
@@ -601,7 +598,8 @@ export interface ThemeSurface<E extends Record<string, CreateTokenValues> = Reco
   readonly tokens?: ThemeTokenContext<E>;
   /**
    * Create a child theme by deep-merging typed patches onto this surface's {@link source}.
-   * Prefer this over `tokens.createTheme({ from })` when forking a design-system root theme.
+   * Patches are closed against the root token tree — new namespaces/paths belong on the root
+   * `createTheme` (or `tokens.create`), not in `override`.
    */
   override(input: ThemeSurfaceOverrideInput<E>): ThemeSurface<E>;
   toString(): string;

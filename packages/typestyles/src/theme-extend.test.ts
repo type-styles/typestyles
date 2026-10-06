@@ -50,23 +50,27 @@ describe('createTheme({ tokens })', () => {
     expect(theme.tokens?.brand.glow.default).toBe(ensured.glow.default);
   });
 
-  it('merges tokens from from preset and top-level overrides', () => {
+  it('override deep-merges tokens onto the root surface source', () => {
     const { tokens } = createTypeStyles({ scopeId: 'fp-ext' });
-    const theme = tokens.createTheme({
-      name: 'app',
-      from: {
-        tokens: {
-          brand: { primary: '#111' },
-        },
+    const root = tokens.createTheme({
+      name: 'root',
+      tokens: {
+        brand: { primary: '#111', accent: { default: '#000' } },
       },
+    });
+    const theme = root.override({
+      name: 'app',
       tokens: {
         brand: { accent: { default: '#0066ff' } },
       },
     });
     expect(theme.tokens?.brand.primary).toMatch(/var\(--/);
     expect(theme.tokens?.brand.accent.default).toMatch(/var\(--/);
+    expect(theme.source.tokens).toEqual({
+      brand: { primary: '#111', accent: { default: '#0066ff' } },
+    });
     flushSync();
-    expect(getRegisteredCss()).toContain('--fp-ext-brand-accent-default');
+    expect(getRegisteredCss()).toContain('--fp-ext-brand-accent-default: #0066ff');
   });
 
   it('re-create theme with same name does not duplicate token namespace registration', () => {

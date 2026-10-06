@@ -238,6 +238,8 @@ export const brandTheme = defaultTheme.override({
 
 `tokens.create(values, { decl })` still type-checks root **values** against a `declare` schema. Use `override` for typed **theme forks**.
 
+New namespaces and paths belong on the root `createTheme` (or `tokens.create`) — `override` is a closed deep-partial of that tree. Excess-property errors apply to object literals; for variables, use `satisfies DeepPartialThemeTokens<…>`.
+
 ### Theme-aware components
 
 ```ts

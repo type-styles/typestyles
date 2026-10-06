@@ -84,4 +84,47 @@ describe('ThemeSurface.override', () => {
     flushSync();
     expect(getRegisteredCss()).toMatch(/--color-primary:\s*#222/);
   });
+
+  it('merges colorMode patches onto the parent source', () => {
+    const { tokens } = createTypeStyles({ scopeId: 'ov-cm', colorModes: ['light', 'dark'] });
+    const light = { color: { brand: 'red' } } as const;
+    const root = tokens.createTheme({
+      name: 'default',
+      tokens: light,
+      colorMode: { light, dark: { color: { brand: 'green' } } },
+    });
+    const child = root.override({
+      name: 'brand',
+      colorMode: { dark: { color: { brand: 'navy' } } },
+    });
+
+    expect(child.source.colorMode).toEqual({
+      light: { color: { brand: 'red' } },
+      dark: { color: { brand: 'navy' } },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/--ov-cm-color-brand:\s*light-dark\(red, navy\)/);
+  });
+
+  it('passes replace through so reusing a child name updates CSS', () => {
+    const { tokens } = createTypeStyles({ scopeId: 'ov-rep' });
+    const root = tokens.createTheme({
+      name: 'default',
+      tokens: { color: { brand: 'red' } },
+    });
+    root.override({
+      name: 'brand',
+      tokens: { color: { brand: 'blue' } },
+    });
+    root.override({
+      name: 'brand',
+      tokens: { color: { brand: 'green' } },
+      replace: true,
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/--ov-rep-color-brand:\s*green/);
+    expect(css).not.toMatch(/--ov-rep-color-brand:\s*blue/);
+  });
 });

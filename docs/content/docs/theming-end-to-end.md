@@ -150,7 +150,7 @@ styles.override(
 );
 ```
 
-Sharing one full theme config across many brand call sites? Optional `from` deep-merge is under [Reusing a theme config slice](/docs/theming-patterns#reusing-a-theme-config-slice-from).
+Sharing one root theme across many brands? Use [`ThemeSurface.override`](/docs/theming-patterns#deriving-child-themes-override).
 
 ## Mount (React)
 
@@ -216,7 +216,7 @@ Prefer this (or `createTheme({ components })`) over hand-written class strings. 
 | Need                                  | API                                                                                                                                                        |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deep-merge override trees / leaf refs | [`mergeThemeOverrides`](/docs/theming-patterns#optional-mergethemeoverrides-helpers)                                                                       |
-| Reuse a full theme config slice       | [`from` on createTheme](/docs/theming-patterns#reusing-a-theme-config-slice-from)                                                                          |
+| Fork a root theme for brands / apps   | [`ThemeSurface.override`](/docs/theming-patterns#deriving-child-themes-override)                                                                           |
 | Media / attr / class conditions       | [`tokens.when`](/docs/theming-patterns#condition-scopes-self-ancestor-descendant), [`tokens.colorMode.*`](/docs/tokens#preset-mode-layers-tokenscolormode) |
 | Zero-runtime extract of all recipes   | [`getRegisteredComponentRefs`](/docs/zero-runtime#design-systems-with-many-recipes) + Vite `extract.registeredComponentsModule`                            |
 

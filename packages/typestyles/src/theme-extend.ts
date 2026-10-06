@@ -10,7 +10,7 @@ export function applyThemeTokensToConfig(
 ): ThemeCompileConfig {
   const tokens = config.tokens;
   if (!tokens || Object.keys(tokens).length === 0) {
-    const { tokens: _t, from: _f, ...rest } = config;
+    const { tokens: _t, ...rest } = config;
     return rest;
   }
 
@@ -20,7 +20,7 @@ export function applyThemeTokensToConfig(
     base[namespace] = values as ThemeOverrides[string];
   }
 
-  const { tokens: _omit, from: _from, ...rest } = config;
+  const { tokens: _omit, ...rest } = config;
   return { ...rest, base };
 }
 

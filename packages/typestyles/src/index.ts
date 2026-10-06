@@ -246,7 +246,11 @@ export {
   normalizeModeAwareOverrides,
   normalizeThemeConfig,
 } from './token-color-modes';
-export { mergeThemePresetConfig, resolveThemeFromPresetConfig } from './theme-preset-merge';
+export {
+  applyThemeSurfaceOverride,
+  bindThemeSurfaceOverride,
+  mergeThemePresetConfig,
+} from './theme-preset-merge';
 export type {
   CreateThemeInput,
   InferThemeTokensFromConfig,

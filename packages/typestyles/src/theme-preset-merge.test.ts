@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { reset, getRegisteredCss, flushSync } from './sheet';
 import { createTypeStyles } from './create-type-styles';
 import { when } from './theme';
-import { mergeThemePresetConfig } from './theme-preset-merge';
+import { applyThemeSurfaceOverride, mergeThemePresetConfig } from './theme-preset-merge';
 
 describe('mergeThemePresetConfig', () => {
   it('deep-merges from and override token trees', () => {
@@ -61,18 +61,22 @@ describe('mergeThemePresetConfig', () => {
   });
 });
 
-describe('createTheme({ from, …overrides })', () => {
+describe('ThemeSurface.override (via createTheme root)', () => {
   beforeEach(() => reset());
 
-  it('emits merged preset + overrides with mode-aware leaves', () => {
+  it('emits merged root + override patches with mode-aware leaves', () => {
     const { tokens } = createTypeStyles({ scopeId: 'fp', colorModes: ['light', 'dark'] });
-    tokens.createTheme({
-      name: 'app',
-      from: {
-        tokens: {
-          color: { canvas: { light: '#fff', dark: '#000' } },
+    const root = tokens.createTheme({
+      name: 'root',
+      tokens: {
+        color: {
+          canvas: { light: '#fff', dark: '#000' },
+          accent: { default: '#111' },
         },
       },
+    });
+    root.override({
+      name: 'app',
       tokens: {
         color: { accent: { default: '#0066ff' } },
       },
@@ -83,20 +87,21 @@ describe('createTheme({ from, …overrides })', () => {
     expect(css).toContain('--fp-color-accent-default: #0066ff');
   });
 
-  it('applies mode overrides when id matches from preset', () => {
+  it('merges modes by id when override patches a matching mode', () => {
     const { tokens } = createTypeStyles({ scopeId: 'md' });
     tokens.create('color', { text: { primary: '#111' } });
-    tokens.createTheme({
+    const root = tokens.createTheme({
+      name: 'root',
+      modes: [
+        {
+          id: 'focus',
+          when: when.prefersDark,
+          overrides: { color: { text: { primary: '#222' } } },
+        },
+      ],
+    });
+    root.override({
       name: 'brand',
-      from: {
-        modes: [
-          {
-            id: 'focus',
-            when: when.prefersDark,
-            overrides: { color: { text: { primary: '#222' } } },
-          },
-        ],
-      },
       modes: [
         {
           id: 'focus',
@@ -109,5 +114,16 @@ describe('createTheme({ from, …overrides })', () => {
     const css = getRegisteredCss();
     expect(css).toMatch(/theme-md-brand.*#eee/s);
     expect(css).not.toMatch(/theme-md-brand[\s\S]*#222/);
+  });
+
+  it('applyThemeSurfaceOverride merges patches onto a source snapshot', () => {
+    expect(
+      applyThemeSurfaceOverride(
+        { tokens: { color: { brand: 'red', muted: 'gray' } } },
+        { name: 'child', tokens: { color: { brand: 'blue' } } },
+      ).tokens,
+    ).toEqual({
+      color: { brand: 'blue', muted: 'gray' },
+    });
   });
 });

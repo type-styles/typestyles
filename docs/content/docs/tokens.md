@@ -370,7 +370,7 @@ Use `tokens.createTheme({ name, … })` to register a **theme surface**: a class
 - **`tokens`** — Per-namespace overrides on the surface (deltas onto `:root` defaults). Same shape as `tokens.create`.
 - **`colorMode`** — Optional `{ light?, dark? }` patches deep-merged into theme tokens and compiled to `light-dark()` when `colorModes` is configured (see [Mode-aware token leaves](#mode-aware-token-leaves)).
 - **`modes`** — Conditional layers with explicit `tokens.when.*` conditions, including spreads of `tokens.colorMode.*` preset arrays.
-- **`from`** — Optional deep-merge of a reusable theme config slice (advanced; see [Reusing a theme config slice](/docs/theming-patterns#reusing-a-theme-config-slice-from)).
+- **Child themes** — Fork with [`ThemeSurface.override`](/docs/theming-patterns#deriving-child-themes-override) (typed deep-partial patches of the root token tree).
 
 ```ts
 const dark = tokens.createTheme({

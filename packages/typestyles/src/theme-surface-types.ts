@@ -31,8 +31,6 @@ type MergeTwoTokensMaps<L extends TokensMap, R extends TokensMap> = Omit<L, keyo
   [K in keyof R]: K extends keyof L ? MergeCreateTokenValues<L[K], R[K]> : R[K];
 };
 
-type TokensFromPreset<P> = P extends { tokens: infer T extends TokensMap } ? T : NoTokens;
-
 type TokensFromOptional<T> = T extends TokensMap ? T : NoTokens;
 
 type TokensFromColorModePatches<C> = C extends {
@@ -42,18 +40,14 @@ type TokensFromColorModePatches<C> = C extends {
   : NoTokens;
 
 /**
- * Merged token namespaces from a `createTheme` config (`tokens`, `from.tokens`, `colorMode` trees).
+ * Merged token namespaces from a `createTheme` config (`tokens` + `colorMode` trees).
  * Used as {@link ThemeSurface}'s type parameter so {@link ThemeSurface.override} can constrain patches.
  */
-export type InferThemeTokensFromConfig<
-  C extends Pick<ThemeConfig, 'tokens' | 'from' | 'colorMode'>,
-> = MergeTwoTokensMaps<
-  MergeTwoTokensMaps<TokensFromPreset<C['from']>, TokensFromOptional<C['tokens']>>,
-  TokensFromColorModePatches<C>
->;
+export type InferThemeTokensFromConfig<C extends Pick<ThemeConfig, 'tokens' | 'colorMode'>> =
+  MergeTwoTokensMaps<TokensFromOptional<C['tokens']>, TokensFromColorModePatches<C>>;
 
-/** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `tokens` / presets). */
-export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'tokens' | 'from' | 'colorMode'>> = {
+/** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `tokens` / colorMode). */
+export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'tokens' | 'colorMode'>> = {
   components?: Record<
     string,
     | ThemeComponentOverrideEntry
@@ -68,10 +62,10 @@ type CreateThemeConfigFields = Omit<ThemeConfig, 'components'>;
  *
  * - **`tokens`** — per-namespace values on `.theme-{name}` (registers namespaces for `surface.tokens` refs).
  * - **`colorMode` / `modes`** — light/dark and conditional override layers (see theming docs).
- * - **`from`** — plain config slice (`ThemePreset`); sibling fields deep-merge onto it before compile.
- *   Prefer {@link ThemeSurface.override} when forking an existing theme surface.
  * - **`components`** — per-recipe CSS overrides scoped to this theme class.
  * - **`replace`** — when true (default), reusing `name` replaces the previous theme registration.
+ *
+ * Fork child themes with {@link ThemeSurface.override}, not a second `createTheme` merge API.
  */
 export type CreateThemeInput<T extends CreateThemeConfigFields = CreateThemeConfigFields> = {
   name: string;
@@ -79,7 +73,7 @@ export type CreateThemeInput<T extends CreateThemeConfigFields = CreateThemeConf
 } & T &
   ThemeComponentsFor<T>;
 
-/** Build a {@link ThemePreset} snapshot from a resolved theme config (no `from` / `components`). */
+/** Build a {@link ThemePreset} snapshot from a resolved theme config (no `components`). */
 export function themeConfigToPreset(config: Pick<ThemeConfig, keyof ThemePreset>): ThemePreset {
   const preset: ThemePreset = {};
   if (config.tokens !== undefined) preset.tokens = config.tokens;

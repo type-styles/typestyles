@@ -3,6 +3,7 @@
  */
 import { createTypeStyles } from './create-type-styles';
 import { createTokens } from './tokens';
+import type { DeepPartialThemeTokens } from './types';
 
 const { tokens } = createTypeStyles({ scopeId: 'tc' });
 const bare = createTokens({ scopeId: 'bare' });
@@ -29,18 +30,6 @@ const bareTheme = bare.createTheme({
 });
 const _bareRef: string = bareTheme.tokens!.brand.glow.default;
 void _bareRef;
-
-tokens.createTheme({
-  name: 'preset',
-  from: {
-    tokens: {
-      metrics: { radius: { sm: '4px' } },
-    },
-  },
-  tokens: {
-    metrics: { radius: { lg: '8px' } },
-  },
-});
 
 const light = {
   color: {
@@ -93,3 +82,10 @@ defaultTheme.override({
     space: { sm: '4px' },
   },
 });
+
+// Excess-property checks apply to object literals. Intermediate variables need `satisfies`:
+type DefaultTokens = typeof light;
+const patch = {
+  color: { brand: 'purple' },
+} satisfies DeepPartialThemeTokens<DefaultTokens>;
+defaultTheme.override({ name: 'satisfies-patch', tokens: patch });

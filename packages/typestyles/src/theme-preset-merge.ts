@@ -1,6 +1,12 @@
-import type { CreateTokenValues, ThemeConfig, ThemeModeDefinition, ThemePreset } from './types';
-import { mergeThemeOverrides, mergeTokenValues, normalizeThemeConfig } from './token-color-modes';
-import type { ColorModeMap } from './color-modes';
+import type {
+  CreateTokenValues,
+  ThemeConfig,
+  ThemeModeDefinition,
+  ThemePreset,
+  ThemeSurface,
+  ThemeSurfaceOverrideInput,
+} from './types';
+import { mergeThemeOverrides, mergeTokenValues } from './token-color-modes';
 
 export type { ThemePreset };
 
@@ -67,7 +73,7 @@ function mergeThemeModes(
 
 /**
  * Deep-merge preset + override slices (`tokens`, `colorMode`, `modes`).
- * Does not run mode-aware normalization — call {@link normalizeThemeConfig} after.
+ * Does not run mode-aware normalization — call {@link normalizeThemeConfig} after when compiling.
  */
 export function mergeThemePresetConfig(
   from: ThemePreset | undefined,
@@ -89,22 +95,27 @@ export function mergeThemePresetConfig(
   };
 }
 
-export function resolveThemeFromPresetConfig(
-  config: ThemeConfig,
-  colorModes?: ColorModeMap,
+/** Merge a {@link ThemeSurface.override} input onto a parent {@link ThemePreset} snapshot. */
+export function applyThemeSurfaceOverride(
+  source: ThemePreset,
+  input: ThemeSurfaceOverrideInput,
 ): ThemeConfig {
-  if (config.from === undefined) {
-    return normalizeThemeConfig(config, colorModes);
-  }
-
-  const { from, tokens, colorMode, modes, components } = config;
-
-  const merged = mergeThemePresetConfig(from, {
-    tokens,
-    colorMode,
-    modes,
-    components,
+  const { components, tokens, colorMode, modes } = input;
+  return mergeThemePresetConfig(source, {
+    tokens: tokens as ThemeConfig['tokens'],
+    colorMode: colorMode as ThemeConfig['colorMode'],
+    modes: modes as ThemeConfig['modes'],
+    ...(components !== undefined ? { components } : {}),
   });
+}
 
-  return normalizeThemeConfig(merged, colorModes);
+/**
+ * Bind {@link ThemeSurface.override} to a recreate callback (tokens API or low-level createTheme).
+ */
+export function bindThemeSurfaceOverride(
+  source: ThemePreset,
+  apply: (name: string, config: ThemeConfig, callOptions?: { replace?: boolean }) => ThemeSurface,
+): (input: ThemeSurfaceOverrideInput) => ThemeSurface {
+  return (input) =>
+    apply(input.name, applyThemeSurfaceOverride(source, input), { replace: input.replace });
 }
