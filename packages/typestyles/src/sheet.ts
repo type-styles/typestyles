@@ -12,6 +12,7 @@ import {
   resetSheetState,
   type SheetState,
 } from './sheet-context';
+import { consolidateCascadeLayers } from './consolidate-cascade-layers';
 
 /** Stable id for the managed `<style>` element (SSR, hydration, and client runtime). */
 export const TYPESTYLES_STYLE_ID = 'typestyles';
@@ -600,7 +601,7 @@ export function startCollection(): () => string {
   return () => {
     const css = state.ssrBuffer ? state.ssrBuffer.join('\n') : '';
     state.ssrBuffer = null;
-    return css;
+    return consolidateCascadeLayers(css);
   };
 }
 
@@ -625,7 +626,7 @@ export function startCollection(): () => string {
  * ```
  */
 export function getRegisteredCss(): string {
-  return getSheetState().allRules.join('\n');
+  return consolidateCascadeLayers(getSheetState().allRules.join('\n'));
 }
 
 const registeredCssListeners = new Set<() => void>();
