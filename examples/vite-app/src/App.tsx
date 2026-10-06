@@ -84,7 +84,7 @@ export function App(): JSX.Element {
   }
 
   return (
-    <DesignSystemProvider theme={providerTheme} omitWrapperThemeSurface>
+    <DesignSystemProvider theme={providerTheme} omitWrapperTheme>
       <main className={`${site.page} ${layout.stack}`}>
         <header className={`${site.header} ${layout.stack}`}>
           <h1 className={text.title}>Vite consuming shared typestyles design system</h1>

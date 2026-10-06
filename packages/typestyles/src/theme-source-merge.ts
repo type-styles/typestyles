@@ -1,8 +1,14 @@
-import type { CreateTokenValues, ThemeConfig, ThemeModeDefinition, ThemePreset } from './types';
-import { mergeThemeOverrides, mergeTokenValues, normalizeThemeConfig } from './token-color-modes';
-import type { ColorModeMap } from './color-modes';
+import type {
+  CreateTokenValues,
+  ThemeConfig,
+  ThemeModeDefinition,
+  ThemeSource,
+  Theme,
+  ThemeOverrideInput,
+} from './types';
+import { mergeThemeOverrides, mergeTokenValues } from './token-color-modes';
 
-export type { ThemePreset };
+export type { ThemeSource };
 
 function mergeTokensMaps(
   from: Record<string, CreateTokenValues> | undefined,
@@ -67,11 +73,11 @@ function mergeThemeModes(
 
 /**
  * Deep-merge preset + override slices (`tokens`, `colorMode`, `modes`).
- * Does not run mode-aware normalization — call {@link normalizeThemeConfig} after.
+ * Does not run mode-aware normalization — call {@link normalizeThemeConfig} after when compiling.
  */
-export function mergeThemePresetConfig(
-  from: ThemePreset | undefined,
-  onto: ThemePreset & Pick<ThemeConfig, 'components'>,
+export function mergeThemeSource(
+  from: ThemeSource | undefined,
+  onto: ThemeSource & Pick<ThemeConfig, 'components'>,
 ): ThemeConfig {
   const f = from ?? {};
   const p = onto ?? {};
@@ -89,22 +95,24 @@ export function mergeThemePresetConfig(
   };
 }
 
-export function resolveThemeFromPresetConfig(
-  config: ThemeConfig,
-  colorModes?: ColorModeMap,
-): ThemeConfig {
-  if (config.from === undefined) {
-    return normalizeThemeConfig(config, colorModes);
-  }
-
-  const { from, tokens, colorMode, modes, components } = config;
-
-  const merged = mergeThemePresetConfig(from, {
-    tokens,
-    colorMode,
-    modes,
-    components,
+/** Merge a {@link Theme.override} input onto a parent {@link ThemeSource} snapshot. */
+export function applyThemeOverride(source: ThemeSource, input: ThemeOverrideInput): ThemeConfig {
+  const { components, tokens, colorMode, modes } = input;
+  return mergeThemeSource(source, {
+    tokens: tokens as ThemeConfig['tokens'],
+    colorMode: colorMode as ThemeConfig['colorMode'],
+    modes: modes as ThemeConfig['modes'],
+    ...(components !== undefined ? { components } : {}),
   });
+}
 
-  return normalizeThemeConfig(merged, colorModes);
+/**
+ * Bind {@link Theme.override} to a recreate callback (tokens API or low-level createTheme).
+ */
+export function bindThemeOverride(
+  source: ThemeSource,
+  apply: (name: string, config: ThemeConfig, callOptions?: { replace?: boolean }) => Theme,
+): (input: ThemeOverrideInput) => Theme {
+  return (input) =>
+    apply(input.name, applyThemeOverride(source, input), { replace: input.replace });
 }

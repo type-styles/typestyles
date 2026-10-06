@@ -212,7 +212,10 @@ export type {
   ThemeModeDefinition,
   ThemeConfig,
   ThemeColorModePatches,
-  ThemeSurface,
+  ThemeSource,
+  Theme,
+  ThemeOverrideInput,
+  DeepPartialThemeTokens,
   DeepPartialTokenValues,
   TokenSchema,
   TokenSchemaLeaf,
@@ -243,13 +246,13 @@ export {
   normalizeModeAwareOverrides,
   normalizeThemeConfig,
 } from './token-color-modes';
-export { mergeThemePresetConfig, resolveThemeFromPresetConfig } from './theme-preset-merge';
+export { applyThemeOverride, bindThemeOverride, mergeThemeSource } from './theme-source-merge';
 export type {
   CreateThemeInput,
   InferThemeTokensFromConfig,
   ThemeComponentsFor,
-} from './theme-surface-types';
-export type { ThemePreset } from './types';
+} from './theme-types';
+export { themeConfigToSource } from './theme-types';
 
 export type { ThemeEmitLayerContext } from './theme';
 

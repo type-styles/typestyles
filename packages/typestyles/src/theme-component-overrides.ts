@@ -2,7 +2,7 @@ import type {
   ThemeComponentOverrideEntry,
   ThemeConfig,
   ThemeOverrideContext,
-  ThemeSurface,
+  Theme,
 } from './types';
 import type { ComponentRegistryApi } from './component-registry';
 import type { OverrideFn } from './override';
@@ -17,7 +17,7 @@ export type ThemeComponentsBridge = ComponentRegistryApi & {
 };
 
 export function applyThemeComponentOverrides(
-  surface: ThemeSurface,
+  surface: Theme,
   components: ThemeComponentOverrides | undefined,
   tokens: ThemeTokenContext,
   styles: ThemeComponentsBridge,

@@ -40,7 +40,7 @@ Tokens are grouped for clarity; recipes consume the flat `designTokens` object (
 
 ## Theme surfaces
 
-Palettes are built with `createDesignTheme()` (see `src/create-theme.ts`): one **`ThemeSurface`** per palette from `tokens.createTheme` with **`base` light tokens** and a structured **`colorMode: { light, dark }`** patch compiled to `light-dark()` on theme custom properties. The shared `createTypeStyles` runtime registers `colorModes`, so each surface also emits `color-scheme: light dark`.
+Palettes are built with `createDesignTheme()` (see `src/create-theme.ts`): one **`Theme`** per palette from `tokens.createTheme` with **`base` light tokens** and a structured **`colorMode: { light, dark }`** patch compiled to `light-dark()` on theme custom properties. The shared `createTypeStyles` runtime registers `colorModes`, so each surface also emits `color-scheme: light dark`.
 
 | Export         | `className`     | Role                      |
 | -------------- | --------------- | ------------------------- |
@@ -49,7 +49,7 @@ Palettes are built with `createDesignTheme()` (see `src/create-theme.ts`): one *
 | `roseTheme`    | `theme-rose`    | Rose palette              |
 | `amberTheme`   | `theme-amber`   | Amber palette             |
 
-Each export is a **`DesignTheme`** (`ThemeSurface` from `tokens.createTheme`: `className`, `name`, string coercion). Strip other palette classes before switching palette (see `docs/src/tokens.ts` for the list used by the docs site).
+Each export is a **`DesignTheme`** (`Theme` from `tokens.createTheme`: `className`, `name`, string coercion). Strip other palette classes before switching palette (see `docs/src/tokens.ts` for the list used by the docs site).
 
 ### Astro (no React context)
 

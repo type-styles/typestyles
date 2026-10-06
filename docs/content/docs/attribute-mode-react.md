@@ -120,7 +120,7 @@ In development, TypeStyles logs a warning when `cx()` receives a
 `ComponentAttrsResult`. Use `mergeProps` or `combine` instead.
 
 `cx` remains the right tool for plain strings, semantic/BEM class names, and
-`ThemeSurface` values:
+`Theme` values:
 
 ```tsx
 cx('layout-grid', isWide && 'layout-grid--wide', className);

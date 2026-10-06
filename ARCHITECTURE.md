@@ -229,7 +229,7 @@ Manages CSS custom properties as typed design tokens.
 
 **`tokens.use(namespace)`** — References tokens defined elsewhere (no CSS injection).
 
-**`tokens.createTheme(name, config)`** — Creates a theme surface (`.theme-{name}`) with `base` overrides and optional `modes` or `colorMode` layers. Returns a `ThemeSurface` with `className`, `name`, and `toString()`.
+**`tokens.createTheme(name, config)`** — Creates a theme surface (`.theme-{name}`) with `base` overrides and optional `modes` or `colorMode` layers. Returns a `Theme` with `className`, `name`, and `toString()`.
 
 **`tokens.createDarkMode(name, overrides)`** — Shorthand for a single media-query dark mode.
 
