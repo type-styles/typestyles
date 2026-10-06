@@ -518,7 +518,13 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     if (process.env.NODE_ENV !== 'production') {
       const schemaLeaves = declaredSchemaLeaves.get(namespace);
       if (schemaLeaves) {
-        for (const [path] of flattenTokenEntries(values as TokenValues)) {
+        // Expand `{ light, dark }` leaves first so schema checks see `color-brand`,
+        // not spurious `color-brand-light` / `color-brand-dark` paths from flattening.
+        const { expanded: valuesForSchemaCheck } = expandModeAwareTokenValues(
+          values as TokenValues,
+          colorModes,
+        );
+        for (const [path] of flattenTokenEntries(valuesForSchemaCheck)) {
           if (!schemaLeaves.has(path)) {
             throw new Error(
               `[typestyles] tokens.create('${namespace}', ...) path "${path}" is not in the declared schema.`,
