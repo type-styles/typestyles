@@ -1,5 +1,13 @@
 # typestyles
 
+## 0.26.1
+
+### Patch Changes
+
+- [#244](https://github.com/type-styles/typestyles/pull/244) [`7a3ebfd`](https://github.com/type-styles/typestyles/commit/7a3ebfd340c83871ce14d6d5765816de1a24ab56) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Consolidate same-named `@layer` blocks (and hoist `@property`) in `getRegisteredCss()` / SSR / extract output so generated CSS is easier to read.
+
+- [#242](https://github.com/type-styles/typestyles/pull/242) [`a48f23b`](https://github.com/type-styles/typestyles/commit/a48f23b3ff78574a8f7cb87acd90b817cf9710a1) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Fix `tokens.create(..., { decl })` rejecting mode-aware `{ light, dark }` leaves. Schema validation now expands those leaves before path checks so declared color slots accept light/dark pairs.
+
 ## 0.26.0
 
 ### Minor Changes
