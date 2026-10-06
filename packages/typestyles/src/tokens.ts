@@ -5,6 +5,7 @@ import type {
   TokenRegistry,
   ThemeConfig,
   ThemeSurface,
+  ThemeSurfaceOverrideInput,
   ThemeOverrides,
   TokenSchema,
   DeclaredTokenRef,
@@ -36,7 +37,6 @@ import { insertRule, insertRules, invalidateKeys } from './sheet';
 import { createRegisteredPropertyRef, registerAtPropertySchema } from './registered-property';
 import {
   createTheme,
-  createDarkMode,
   when,
   colorMode,
   resolvedDarkWhen,
@@ -55,12 +55,13 @@ import {
   type ThemeComponentsBridge,
 } from './theme-component-overrides';
 import { applyThemeTokensToConfig } from './theme-extend';
-import { resolveThemeFromPresetConfig } from './theme-preset-merge';
+import { mergeThemePresetConfig, resolveThemeFromPresetConfig } from './theme-preset-merge';
 import { createThemeTokenContext } from './theme-token-context';
-import type {
-  CreateThemeInput,
-  InferThemeTokensFromConfig,
-  ThemeComponentsFor,
+import {
+  themeConfigToPreset,
+  type CreateThemeInput,
+  type InferThemeTokensFromConfig,
+  type ThemeComponentsFor,
 } from './theme-surface-types';
 
 const tokenMetaByRef = new WeakMap<object, { namespace: string }>();
@@ -837,11 +838,11 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     return use(namespace) as TokenRefTree<T>;
   }
 
-  function emitTheme(
+  function emitTheme<E extends Record<string, CreateTokenValues> = Record<string, never>>(
     name: string,
     config: ThemeConfig,
     callOptions?: { replace?: boolean },
-  ): ThemeSurface {
+  ): ThemeSurface<E> {
     const resolved = resolveThemeFromPresetConfig(config, colorModes);
 
     if (resolved.components && !themeStyles) {
@@ -854,6 +855,7 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       disposeThemeByName(scopeId, name, { tokenLayer, removeLiveCss: true });
     }
 
+    const source = themeConfigToPreset(resolved);
     const tokenContext = createThemeTokenContext(use);
     const prepared = applyThemeTokensToConfig(resolved, (namespace, values) => {
       create(namespace, values);
@@ -868,11 +870,32 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
       themeOptions,
     );
 
-    const withTokens = { ...surface, tokens: tokenContext } as ThemeSurface;
+    const override = (input: ThemeSurfaceOverrideInput<E>): ThemeSurface<E> => {
+      const { name: childName, replace, components, tokens: patchTokens, colorMode, modes } = input;
+      const merged = mergeThemePresetConfig(source, {
+        tokens: patchTokens as ThemeConfig['tokens'],
+        colorMode: colorMode as ThemeConfig['colorMode'],
+        modes: modes as ThemeConfig['modes'],
+        ...(components !== undefined ? { components } : {}),
+      });
+      return emitTheme<E>(childName, merged, { replace });
+    };
+
+    const withTokens = {
+      ...surface,
+      source,
+      tokens: tokenContext,
+      override,
+    } as ThemeSurface<E>;
 
     const components = resolved.components;
     if (components && themeStyles) {
-      applyThemeComponentOverrides(withTokens, components, tokenContext, themeStyles);
+      applyThemeComponentOverrides(
+        withTokens as ThemeSurface,
+        components,
+        tokenContext,
+        themeStyles,
+      );
     }
 
     return withTokens;
@@ -897,16 +920,9 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     ensureNamespace,
     disposeTheme: (name, options) => disposeThemeByName(scopeId, name, { tokenLayer, ...options }),
     createDarkMode: (name, darkOverrides) => {
-      const tokenContext = createThemeTokenContext(use);
-      const surface = createDarkMode(
-        name,
-        darkOverrides,
-        scopeId,
-        themeLayerContext,
-        themeTokenNaming,
-        themeOptions,
-      );
-      return { ...surface, tokens: tokenContext };
+      return emitTheme(name, {
+        modes: [{ id: 'dark', overrides: darkOverrides, when: when.prefersDark }],
+      });
     },
     when,
     colorMode,

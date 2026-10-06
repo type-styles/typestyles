@@ -3,6 +3,7 @@ import type {
   ThemeComponentOverrideEntry,
   ThemeConfig,
   ThemeOverrideContext,
+  ThemePreset,
 } from './types';
 
 type TokensMap = Record<string, CreateTokenValues>;
@@ -34,14 +35,25 @@ type TokensFromPreset<P> = P extends { tokens: infer T extends TokensMap } ? T :
 
 type TokensFromOptional<T> = T extends TokensMap ? T : NoTokens;
 
+type TokensFromColorModePatches<C> = C extends {
+  colorMode?: { light?: infer L; dark?: infer D };
+}
+  ? MergeTwoTokensMaps<L extends TokensMap ? L : NoTokens, D extends TokensMap ? D : NoTokens>
+  : NoTokens;
+
 /**
- * Merged `tokens` namespaces from a `createTheme` config (`tokens`, `from.tokens`).
+ * Merged token namespaces from a `createTheme` config (`tokens`, `from.tokens`, `colorMode` trees).
+ * Used as {@link ThemeSurface}'s type parameter so {@link ThemeSurface.override} can constrain patches.
  */
-export type InferThemeTokensFromConfig<C extends Pick<ThemeConfig, 'tokens' | 'from'>> =
-  MergeTwoTokensMaps<TokensFromPreset<C['from']>, TokensFromOptional<C['tokens']>>;
+export type InferThemeTokensFromConfig<
+  C extends Pick<ThemeConfig, 'tokens' | 'from' | 'colorMode'>,
+> = MergeTwoTokensMaps<
+  MergeTwoTokensMaps<TokensFromPreset<C['from']>, TokensFromOptional<C['tokens']>>,
+  TokensFromColorModePatches<C>
+>;
 
 /** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `tokens` / presets). */
-export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'tokens' | 'from'>> = {
+export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'tokens' | 'from' | 'colorMode'>> = {
   components?: Record<
     string,
     | ThemeComponentOverrideEntry
@@ -56,7 +68,8 @@ type CreateThemeConfigFields = Omit<ThemeConfig, 'components'>;
  *
  * - **`tokens`** — per-namespace values on `.theme-{name}` (registers namespaces for `surface.tokens` refs).
  * - **`colorMode` / `modes`** — light/dark and conditional override layers (see theming docs).
- * - **`from`** — preset; sibling fields deep-merge onto it before compile.
+ * - **`from`** — plain config slice (`ThemePreset`); sibling fields deep-merge onto it before compile.
+ *   Prefer {@link ThemeSurface.override} when forking an existing theme surface.
  * - **`components`** — per-recipe CSS overrides scoped to this theme class.
  * - **`replace`** — when true (default), reusing `name` replaces the previous theme registration.
  */
@@ -65,3 +78,12 @@ export type CreateThemeInput<T extends CreateThemeConfigFields = CreateThemeConf
   replace?: boolean;
 } & T &
   ThemeComponentsFor<T>;
+
+/** Build a {@link ThemePreset} snapshot from a resolved theme config (no `from` / `components`). */
+export function themeConfigToPreset(config: Pick<ThemeConfig, keyof ThemePreset>): ThemePreset {
+  const preset: ThemePreset = {};
+  if (config.tokens !== undefined) preset.tokens = config.tokens;
+  if (config.colorMode !== undefined) preset.colorMode = config.colorMode;
+  if (config.modes !== undefined) preset.modes = config.modes;
+  return preset;
+}

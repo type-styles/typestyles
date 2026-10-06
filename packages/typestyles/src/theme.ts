@@ -10,7 +10,9 @@ import type {
   ThemeConfig,
   ThemeModeDefinition,
   ThemeOverrides,
+  ThemePreset,
   ThemeSurface,
+  ThemeSurfaceOverrideInput,
   TokenValues,
 } from './types';
 import { flattenTokenEntries, flattenTokenPaths } from './types';
@@ -26,8 +28,9 @@ import {
 } from './condition-compile';
 import type { ColorModeMap } from './color-modes';
 import { expandThemeOverrides, mergeThemeColorModePatches } from './token-color-modes';
-import { resolveThemeFromPresetConfig } from './theme-preset-merge';
+import { mergeThemePresetConfig, resolveThemeFromPresetConfig } from './theme-preset-merge';
 import { themeTokensToCompileConfig } from './theme-extend';
+import { themeConfigToPreset } from './theme-surface-types';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {
@@ -370,10 +373,17 @@ export const colorMode = {
 // ThemeSurface factory
 // ---------------------------------------------------------------------------
 
-function createThemeSurface(name: string, className: string): ThemeSurface {
+function createThemeSurface(
+  name: string,
+  className: string,
+  source: ThemePreset,
+  overrideFn: (input: ThemeSurfaceOverrideInput) => ThemeSurface,
+): ThemeSurface {
   return {
     className,
     name,
+    source,
+    override: overrideFn,
     toString() {
       return className;
     },
@@ -381,6 +391,35 @@ function createThemeSurface(name: string, className: string): ThemeSurface {
       return className;
     },
   };
+}
+
+/** Snapshot mergeable token config from a createTheme input (before compile fold). */
+function themeSourceFromConfig(
+  config: ThemeConfig | ThemeCompileConfig,
+  colorModes?: ColorModeMap,
+): ThemePreset {
+  if (isThemeCompileConfig(config)) {
+    return themeConfigToPreset({
+      tokens: config.base as ThemeConfig['tokens'],
+      colorMode: config.colorMode,
+      modes: config.modes,
+    });
+  }
+  if (config.from !== undefined) {
+    return themeConfigToPreset(
+      mergeThemePresetConfig(config.from, {
+        tokens: config.tokens,
+        colorMode: config.colorMode,
+        modes: config.modes,
+      }),
+    );
+  }
+  void colorModes;
+  return themeConfigToPreset({
+    tokens: config.tokens,
+    colorMode: config.colorMode,
+    modes: config.modes,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -429,6 +468,7 @@ export function createTheme(
 
   const segment = themeSegment(scopeId, name);
   const className = `theme-${segment}`;
+  const source = themeSourceFromConfig(config, colorModes);
 
   const prepared = isThemeCompileConfig(config)
     ? config
@@ -527,7 +567,19 @@ export function createTheme(
     }
   }
 
-  return createThemeSurface(name, className);
+  const overrideFn = (input: ThemeSurfaceOverrideInput): ThemeSurface => {
+    const { name: childName, replace: _replace, components, tokens, colorMode, modes } = input;
+    void _replace;
+    const merged = mergeThemePresetConfig(source, {
+      tokens: tokens as ThemeConfig['tokens'],
+      colorMode: colorMode as ThemeConfig['colorMode'],
+      modes: modes as ThemeConfig['modes'],
+      ...(components !== undefined ? { components } : {}),
+    });
+    return createTheme(childName, merged, scopeId, layerContext, naming, options);
+  };
+
+  return createThemeSurface(name, className, source, overrideFn);
 }
 
 // ---------------------------------------------------------------------------

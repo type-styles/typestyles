@@ -1,5 +1,5 @@
 /**
- * Compile-only: `ThemeSurface.tokens` typing for `createTheme({ tokens })` (#234).
+ * Compile-only: `ThemeSurface.tokens` typing (#234) and `ThemeSurface.override` patches.
  */
 import { createTypeStyles } from './create-type-styles';
 import { createTokens } from './tokens';
@@ -39,5 +39,57 @@ tokens.createTheme({
   },
   tokens: {
     metrics: { radius: { lg: '8px' } },
+  },
+});
+
+const light = {
+  color: {
+    brand: 'red',
+    red: { 10: '#f90' },
+  },
+} as const;
+
+const defaultTheme = tokens.createTheme({
+  name: 'default',
+  tokens: light,
+  colorMode: { light, dark: { color: { brand: 'green' } } },
+});
+
+const myTheme = defaultTheme.override({
+  name: 'my-theme',
+  tokens: {
+    color: {
+      brand: 'blue',
+    },
+  },
+});
+void myTheme;
+
+defaultTheme.override({
+  name: 'mode-patch',
+  colorMode: {
+    dark: {
+      color: {
+        brand: 'navy',
+      },
+    },
+  },
+});
+
+defaultTheme.override({
+  name: 'bad-key',
+  tokens: {
+    color: {
+      // @ts-expect-error — unknown token path under color
+      nope: 'x',
+    },
+  },
+});
+
+defaultTheme.override({
+  name: 'bad-ns',
+  tokens: {
+    // @ts-expect-error — unknown namespace
+    space: { sm: '4px' },
   },
 });

@@ -212,7 +212,10 @@ export type {
   ThemeModeDefinition,
   ThemeConfig,
   ThemeColorModePatches,
+  ThemePreset,
   ThemeSurface,
+  ThemeSurfaceOverrideInput,
+  DeepPartialThemeTokens,
   DeepPartialTokenValues,
   TokenSchema,
   TokenSchemaLeaf,
@@ -249,7 +252,7 @@ export type {
   InferThemeTokensFromConfig,
   ThemeComponentsFor,
 } from './theme-surface-types';
-export type { ThemePreset } from './types';
+export { themeConfigToPreset } from './theme-surface-types';
 
 export type { ThemeEmitLayerContext } from './theme';
 

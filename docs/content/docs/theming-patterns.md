@@ -17,15 +17,15 @@ Defaults usually live on `:root` via `tokens.create`. Theme `tokens` / `colorMod
 
 ### What the fields mean
 
-| Field            | Plain language                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                                      |
-| **`tokens`**     | Per-namespace overrides on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `surface.tokens.*` refs.   |
-| **`colorMode`**  | Optional `{ light?, dark? }` patches merged into theme output and compiled to `light-dark()` when `colorModes` is set. |
-| **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets).               |
-| **`from`**       | Optional: deep-merge a reusable theme config slice (see [below](#reusing-a-theme-config-slice-from)).                  |
-| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).                           |
-| **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                               |
+| Field            | Plain language                                                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                                                                        |
+| **`tokens`**     | Per-namespace overrides on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `surface.tokens.*` refs.                                     |
+| **`colorMode`**  | Optional `{ light?, dark? }` patches merged into theme output and compiled to `light-dark()` when `colorModes` is set.                                   |
+| **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets).                                                 |
+| **`from`**       | Optional: deep-merge a plain config slice (`ThemePreset`) — prefer [`surface.override`](#deriving-child-themes-override) when forking an existing theme. |
+| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).                                                             |
+| **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                                                                 |
 
 ```ts
 tokens.createTheme({
@@ -44,7 +44,33 @@ tokens.createTheme({
 
 Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).
 
-The return value is a **`ThemeSurface`**: `{ className, name, tokens? }`, with `String(surface)` and template literals resolving to `className`. In React, pass **`surface.className`** (or `String(surface)`) to `className` props.
+The return value is a **`ThemeSurface`**: `{ className, name, source, tokens?, override }`, with `String(surface)` and template literals resolving to `className`. In React, pass **`surface.className`** (or `String(surface)`) to `className` props.
+
+### Deriving child themes (`override`)
+
+Use **`tokens.createTheme`** for the **root** theme (the design-system default that defines the token tree). Use **`theme.override`** for **child** themes — app brands, team packs, or theme-switcher entries that only patch values:
+
+```ts
+const light = {
+  color: { brand: 'red', accent: { default: '#111' } },
+} as const;
+
+export const defaultTheme = tokens.createTheme({
+  name: 'default',
+  tokens: light,
+  colorMode: { light, dark: { color: { brand: 'green' } } },
+});
+
+// Typed against defaultTheme's token tree — unknown keys are errors
+export const brandTheme = defaultTheme.override({
+  name: 'brand',
+  tokens: {
+    color: { brand: 'blue' },
+  },
+});
+```
+
+`override` deep-merges onto the parent’s `source` snapshot, emits a new `.theme-{name}` class, and returns another `ThemeSurface` (so chaining works). Apply one class for a single app theme, or keep several classes in the stylesheet for side-by-side brands / a theme switcher.
 
 ### Token refs on the theme surface
 
@@ -355,9 +381,9 @@ Apply `appTheme.className` once on your root; dark overrides apply automatically
 
 ## Reusing a theme config slice (`from`)
 
-Most apps do not need this. Prefer `:root` defaults via `tokens.create` and **delta** themes as in [End-to-end theming](/docs/theming-end-to-end).
+Most apps should fork themes with [`surface.override`](#deriving-child-themes-override) instead. Prefer `:root` defaults via `tokens.create` and **delta** themes as in [End-to-end theming](/docs/theming-end-to-end).
 
-Use `from` when you want to deep-merge a reusable theme config object (`tokens` / `colorMode` / `modes`) into many `createTheme` calls — for example several customer brands that share the same dark patch and only differ on accent:
+Use `from` when you have a plain config object (`ThemePreset` — `tokens` / `colorMode` / `modes`) to deep-merge into `createTheme`, not an existing `ThemeSurface`:
 
 ```ts
 const shared = {
@@ -389,36 +415,33 @@ Sibling fields on the same call (`tokens`, `colorMode`, `modes`, …) deep-merge
 // themes.ts
 import { tokens } from 'typestyles';
 
-// Define base tokens structure
-const baseTokens = {
+const light = {
   color: {
-    primary: '',
-    secondary: '',
-    text: '',
-    surface: '',
+    primary: '#0066ff',
+    secondary: '#6b7280',
+    text: '#111827',
+    surface: '#ffffff',
   },
   space: {
     sm: '8px',
     md: '16px',
     lg: '24px',
   },
-};
+} as const;
 
-// Brand A theme
-export const brandA = tokens.createTheme({
+export const defaultTheme = tokens.createTheme({
+  name: 'default',
+  tokens: light,
+});
+
+export const brandA = defaultTheme.override({
   name: 'brand-a',
   tokens: {
-    color: {
-      primary: '#0066ff',
-      secondary: '#6b7280',
-      text: '#111827',
-      surface: '#ffffff',
-    },
+    color: { primary: '#0066ff' },
   },
 });
 
-// Brand B theme
-export const brandB = tokens.createTheme({
+export const brandB = defaultTheme.override({
   name: 'brand-b',
   tokens: {
     color: {
@@ -430,8 +453,7 @@ export const brandB = tokens.createTheme({
   },
 });
 
-// Brand C theme
-export const brandC = tokens.createTheme({
+export const brandC = defaultTheme.override({
   name: 'brand-c',
   tokens: {
     color: {

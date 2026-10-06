@@ -511,7 +511,7 @@ export type ThemeOverrideContext<
 
 export type ThemeComponentOverrideFn = (ctx: ThemeOverrideContext) => ThemeComponentOverrideEntry;
 
-/** Preset slice merged via `from` on {@link ThemeConfig}. */
+/** Preset slice merged via `from` on {@link ThemeConfig} / stored on {@link ThemeSurface.source}. */
 export type ThemePreset = {
   /** Per-namespace token values (same shape as `tokens.create` trees). */
   tokens?: Record<string, CreateTokenValues>;
@@ -542,20 +542,68 @@ export type ThemeCompileConfig = Omit<ThemeConfig, 'tokens'> & {
 };
 
 /**
+ * Closed deep-partial of a token map for {@link ThemeSurface.override}.
+ * When `E` is empty (unknown registry), falls back to open theme overrides.
+ * Leaf positions accept scalars or mode-aware `{ light, dark }` objects.
+ */
+export type DeepPartialThemeTokens<T, M extends ColorModeMap = LightDarkColorModes> = [
+  keyof T,
+] extends [never]
+  ? { [key: string]: DeepPartialTokenValues<M> | undefined }
+  : {
+      [K in keyof T]?: T[K] extends ModeAwareTokenLeaf<M>
+        ? ModeAwareTokenLeaf<M>
+        : T[K] extends Record<string, unknown>
+          ? DeepPartialThemeTokens<T[K], M>
+          : ModeAwareTokenLeaf<M>;
+    };
+
+/**
+ * Input to {@link ThemeSurface.override} — child theme patches typed against the parent token tree.
+ */
+export type ThemeSurfaceOverrideInput<
+  E extends Record<string, CreateTokenValues> = Record<string, never>,
+> = {
+  name: string;
+  replace?: boolean;
+  tokens?: DeepPartialThemeTokens<E>;
+  colorMode?: {
+    light?: DeepPartialThemeTokens<E>;
+    dark?: DeepPartialThemeTokens<E>;
+  };
+  modes?: ReadonlyArray<{
+    readonly id: string;
+    readonly overrides: DeepPartialThemeTokens<E>;
+    readonly when: ThemeCondition;
+  }>;
+  components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
+};
+
+/**
  * The object returned by `tokens.createTheme()`.
  *
  * - `surface.className` — the generated class name (e.g. `"theme-acme"`)
  * - `surface.name` — the theme name (e.g. `"acme"`)
+ * - `surface.source` — mergeable token config snapshot for {@link ThemeSurface.override}
  * - `String(surface)` / template interpolation — coerces to `className`
  */
 export interface ThemeSurface<E extends Record<string, CreateTokenValues> = Record<string, never>> {
   readonly className: string;
   readonly name: string;
   /**
+   * Resolved token / colorMode / modes snapshot used when deriving child themes via {@link override}.
+   */
+  readonly source: ThemePreset;
+  /**
    * Token refs for override factories — `tokens.use` plus namespace shortcuts (`tokens.color`, …).
    * Present on surfaces from `tokens.createTheme()` / `createTypeStyles`.
    */
   readonly tokens?: ThemeTokenContext<E>;
+  /**
+   * Create a child theme by deep-merging typed patches onto this surface's {@link source}.
+   * Prefer this over `tokens.createTheme({ from })` when forking a design-system root theme.
+   */
+  override(input: ThemeSurfaceOverrideInput<E>): ThemeSurface<E>;
   toString(): string;
   [Symbol.toPrimitive](hint: string): string;
 }

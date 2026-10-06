@@ -204,34 +204,39 @@ type SpaceToken = keyof typeof themeTokens.space;
 
 ## Type-safe themes
 
-### Theme type definition
+### Fork themes with `ThemeSurface.override`
+
+Pass a concrete token tree into the **root** `createTheme` (often `as const`). Child themes created with `override` are typed against that tree — no hand-written `interface Theme` required:
 
 ```ts
-// types/theme.ts
-export interface Theme {
+const light = {
   color: {
-    primary: string;
-    secondary: string;
-    text: string;
-    surface: string;
-  };
+    primary: '#0066ff',
+    secondary: '#6b7280',
+    text: '#111827',
+    surface: '#ffffff',
+  },
   space: {
-    sm: string;
-    md: string;
-    lg: string;
-  };
-}
+    sm: '8px',
+    md: '16px',
+  },
+} as const;
 
-// Ensure your tokens match the theme
-export const color = tokens.create('color', {
-  primary: '#0066ff',
-  secondary: '#6b7280',
-  text: '#111827',
-  surface: '#ffffff',
+export const defaultTheme = tokens.createTheme({
+  name: 'default',
+  tokens: light,
 });
 
-// TypeScript will error if you miss a key
+// Autocomplete + excess-property errors on token paths
+export const brandTheme = defaultTheme.override({
+  name: 'brand',
+  tokens: {
+    color: { primary: '#10b981' },
+  },
+});
 ```
+
+`tokens.create(values, { decl })` still type-checks root **values** against a `declare` schema. Use `override` for typed **theme forks**.
 
 ### Theme-aware components
 
