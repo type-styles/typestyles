@@ -107,6 +107,33 @@ describe('Theme.override', () => {
     expect(css).toMatch(/--ov-cm-color-brand:\s*light-dark\(red, navy\)/);
   });
 
+  it('lets tokens patches win over inherited colorMode.light', () => {
+    const { tokens } = createTypeStyles({ scopeId: 'ov-fold', colorModes: ['light', 'dark'] });
+    const light = { color: { brand: 'red', accent: { default: '#111' } } } as const;
+    const root = tokens.createTheme({
+      name: 'default',
+      tokens: light,
+      colorMode: { light, dark: { color: { brand: 'green' } } },
+    });
+    const child = root.override({
+      name: 'brand',
+      tokens: { color: { brand: 'blue' } },
+    });
+
+    expect(child.source.tokens).toEqual({
+      color: { brand: 'blue', accent: { default: '#111' } },
+    });
+    expect(child.source.colorMode).toEqual({
+      light: { color: { brand: 'blue', accent: { default: '#111' } } },
+      dark: { color: { brand: 'green' } },
+    });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(
+      /\.theme-ov-fold-brand\s*\{[^}]*--ov-fold-color-brand:\s*light-dark\(blue, green\)/,
+    );
+  });
+
   it('passes replace through so reusing a child name updates CSS', () => {
     const { tokens } = createTypeStyles({ scopeId: 'ov-rep' });
     const root = tokens.createTheme({

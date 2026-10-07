@@ -126,4 +126,20 @@ describe('Theme.override (via createTheme root)', () => {
       color: { brand: 'blue', muted: 'gray' },
     });
   });
+
+  it('applyThemeOverride folds tokens into colorMode.light so they win at compile', () => {
+    const light = { color: { brand: 'red', muted: 'gray' } };
+    expect(
+      applyThemeOverride(
+        {
+          tokens: light,
+          colorMode: { light, dark: { color: { brand: 'green' } } },
+        },
+        { name: 'child', tokens: { color: { brand: 'blue' } } },
+      ).colorMode,
+    ).toEqual({
+      light: { color: { brand: 'blue', muted: 'gray' } },
+      dark: { color: { brand: 'green' } },
+    });
+  });
 });
