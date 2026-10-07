@@ -481,8 +481,8 @@ export function createTheme(
   };
 
   const expanded = expandThemeOverrides(prepared.base ?? {}, colorModes);
-  let resolvedBase = expanded.expanded;
-  let darkOnlyFallback: ThemeOverrides | null = expanded.darkOnly;
+  const resolvedBase = expanded.expanded;
+  const darkOnlyFallback: ThemeOverrides | null = expanded.darkOnly;
 
   const baseDecls = buildDeclarations(scopeId, resolvedBase, naming, colorModes).decls;
   const colorSchemeDecl = colorModes ? 'color-scheme: light dark' : '';
