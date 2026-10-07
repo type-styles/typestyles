@@ -1,5 +1,12 @@
 # @typestyles/benchmarks
 
+## 0.0.30
+
+### Patch Changes
+
+- Updated dependencies [[`c0b0ef8`](https://github.com/type-styles/typestyles/commit/c0b0ef87a94d4128f90d5c48131539ed49bca4e4)]:
+  - typestyles@0.28.0
+
 ## 0.0.29
 
 ### Patch Changes

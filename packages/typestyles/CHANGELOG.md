@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.28.0
+
+### Minor Changes
+
+- [#250](https://github.com/type-styles/typestyles/pull/250) [`c0b0ef8`](https://github.com/type-styles/typestyles/commit/c0b0ef87a94d4128f90d5c48131539ed49bca4e4) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - **BREAKING:** Remove structured `createTheme({ colorMode })` / `Theme.override({ colorMode })` patches. Light/dark values are mode-aware token leaves only (`{ light, dark }` → CSS `light-dark()`). Keep instance `colorModes` and conditional `modes` / `tokens.colorMode.*` presets.
+
 ## 0.27.0
 
 ### Minor Changes
