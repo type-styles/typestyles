@@ -26,7 +26,7 @@ export const { style, recipe } = createTypeStyles({
 });
 ```
 
-Use `recipe`, `style`, and `style.hash` from that object. For [utility shortcuts](/docs/styles#utility-shortcuts), pass **`utils`** into `createTypeStyles`.
+Use `recipe`, `style`, and `hash` from that object. For [utility shortcuts](/docs/styles#utility-shortcuts), pass **`utils`** into `createTypeStyles`.
 
 **Tokens and themes** use the same idea: **`createTypeStyles({ scopeId })`** or **`createTokens({ scopeId })`** so custom properties and theme classes do not collide when multiple bundles share one document:
 
@@ -49,7 +49,7 @@ Returns `{ style, recipe, tokens, global, … }` with the same naming options as
 | Option    | Type                                                                                    | Default      | Description                                                                                                                                                                                                                                                                |
 | --------- | --------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mode`    | `'semantic' \| 'hashed' \| 'compact' \| 'atomic' \| 'attribute' \| 'bem' \| 'template'` | `'semantic'` | How class strings are built (see below).                                                                                                                                                                                                                                   |
-| `prefix`  | `string`                                                                                | `'ts'`       | Leading segment for hashed/compact/atomic output and for `style.hash`.                                                                                                                                                                                                     |
+| `prefix`  | `string`                                                                                | `'ts'`       | Leading segment for hashed/compact/atomic output and for `hash`.                                                                                                                                                                                                           |
 | `scopeId` | `string`                                                                                | `''`         | Optional id (package name, app name) so two packages can reuse the same logical namespace without sharing the same class string. In `semantic` mode the sanitized scope is prefixed onto class names; in `hashed`/`compact`/`atomic` mode it is mixed into the hash input. |
 | `layers`  | `{ order, token, style, global? }` or legacy tuple on `createStyles`                    | _(omitted)_  | When set, enables `@layer` output. See [Cascade layers](/docs/cascade-layers).                                                                                                                                                                                             |
 
@@ -147,9 +147,9 @@ Dimensioned/slot `recipe()` variants compile to BEM modifier classes (`block--mo
 
 Like `bem`, but the block/element/modifier class name is decided by a user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention — `mode: 'bem'` is itself a built-in preset of this same mechanism. `ctx` is a **`ClassNameContext`** (`scope`, `namespace`, `element`, `dimension`, `modifier`). Useful for SUIT CSS, prefixed/ITCSS conventions, or avoiding BEM's dimension-collision problem. `style()` remains a bare class and flat configs retain their historical hyphen names. See [Generic classname template](/docs/components#generic-classname-template).
 
-## `style.hash`
+## `hash`
 
-`style.hash` on a given instance uses that instance’s **`prefix`** and **`scopeId`**. If **`scopeId`** is empty, the hash input matches the historical behavior (properties only, plus label handling) for the same style shape.
+`hash` on a given instance uses that instance’s **`prefix`** and **`scopeId`**. If **`scopeId`** is empty, the hash input matches the historical behavior (properties only, plus label handling) for the same style shape.
 
 ## Monorepos and `scopeId`
 

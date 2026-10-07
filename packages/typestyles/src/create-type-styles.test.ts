@@ -16,8 +16,8 @@ describe('createTypeStyles', () => {
     expect(btn({ variant: 'primary' }).attrs).toEqual({ 'data-variant': 'primary' });
   });
 
-  it('exposes flat style/recipe/global surface with nested layers defaults', () => {
-    const { style, recipe, global } = createTypeStyles({
+  it('exposes flat style/hash/recipe/global surface with nested layers defaults', () => {
+    const { style, hash, recipe, global } = createTypeStyles({
       scopeId: 'flat',
       layers: {
         order: ['reset', 'tokens', 'components'],
@@ -27,6 +27,8 @@ describe('createTypeStyles', () => {
       },
     });
     style('card', { padding: '1rem' });
+    const hashed = hash({ color: 'blue' }, { label: 'chip' });
+    expect(hashed).toMatch(/^ts-chip-/);
     recipe('btn', { base: { color: 'red' } });
     global.rules({ body: { margin: 0 } });
     flushSync();
@@ -34,6 +36,24 @@ describe('createTypeStyles', () => {
     expect(css).toMatch(/@layer components/);
     expect(css).toMatch(/@layer reset/);
     expect(css).toContain('padding: 1rem');
+    expect(css).toContain('color: blue');
     expect(css).toContain('body { margin: 0');
+  });
+
+  it('hash and style expand createTypeStyles utils', () => {
+    const { style, hash } = createTypeStyles({
+      scopeId: 'utils',
+      utils: {
+        size: (value: string | number) => ({ width: value, height: value }),
+      },
+    });
+    style('box', { size: 40 });
+    hash({ size: 20 }, { label: 'sq' });
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toContain('width: 40px');
+    expect(css).toContain('height: 40px');
+    expect(css).toContain('width: 20px');
+    expect(css).toContain('height: 20px');
   });
 });

@@ -48,7 +48,7 @@ export const button = recipe('button', {
 - `createTypeStyles({ scopeId, mode?, prefix?, layers? })` — preferred entry; flat `{ style, recipe, tokens, global, … }`
 - `recipe(namespace, config)` — CVA-style variants (`base`, `variants`, `defaultVariants`, `compoundVariants`)
 - `style(name, properties)` — single named class
-- `style.hash(properties)` — deterministic hashed class
+- `hash(properties)` — deterministic hashed class
 - `tokens.create(namespace, values)` — CSS custom properties (`--{scopeId}-…`)
 - `tokens.createTheme({ name, tokens, … })` — theme class overrides
 - `global.rule` / `global.rules` / `global.apply` / `global.fontFace` — globals (not component-scoped)
@@ -74,7 +74,7 @@ Guide: https://typestyles.dev/docs/zero-runtime.md
 
 - **Missing side-effect entry** — build extraction only sees imported style modules
 - **Unscoped `style` / `recipe`** in libraries — use `createTypeStyles({ scopeId: 'pkg' })` per package
-- **Dynamic class strings** — use variants or `style.hash`, not template literals for one-off classes
+- **Dynamic class strings** — use variants or `hash`, not template literals for one-off classes
 - **Forgetting `scopeId`** when multiple bundles share a page — token/class collisions
 - **SSR without server helpers** — import from `typestyles/server` for streaming/collection
 - **Importing removed singletons** — `import { styles }` / `import { tokens }` / `import { global }` from `typestyles` no longer exist

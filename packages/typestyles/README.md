@@ -390,7 +390,7 @@ const card = style('card', { padding: '1rem' });
 // card === "card"
 ```
 
-Use **`style.hash(properties, options?)`** for deterministic hashed classes from raw style objects (the lower-level `createStyles()` API exposes the same as **`hashClass`**).
+Use **`hash(properties, options?)`** for deterministic hashed classes from raw style objects (the lower-level `createStyles()` API exposes the same as **`hashClass`**).
 
 ### `cx(...classes)`
 

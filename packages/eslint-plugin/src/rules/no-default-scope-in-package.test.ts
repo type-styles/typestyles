@@ -14,10 +14,6 @@ describe('no-default-scope-in-package', () => {
         filename: 'src/button.ts',
       },
       {
-        code: `style.hash({ color: 'red' })`,
-        filename: 'src/a.ts',
-      },
-      {
         code: `other.class('card', { padding: 8 })`,
         filename: 'src/a.ts',
       },
@@ -35,6 +31,11 @@ describe('no-default-scope-in-package', () => {
       {
         code: `recipe('button', { base: { color: 'red' } })`,
         filename: 'src/button.ts',
+        errors: [{ messageId: 'unscopedInPackage' }],
+      },
+      {
+        code: `hash({ color: 'red' })`,
+        filename: 'src/a.ts',
         errors: [{ messageId: 'unscopedInPackage' }],
       },
       {

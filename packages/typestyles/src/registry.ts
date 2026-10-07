@@ -21,7 +21,7 @@ function isDev(): boolean {
  *
  * The owner key identifies the logical definition (`scope:class:name` /
  * `scope:component:namespace` for `style` / `recipe`,
- * payload-derived for `style.hash`) so HMR re-registrations of the same
+ * payload-derived for `hash`) so HMR re-registrations of the same
  * definition are not flagged — while `style('button')` and
  * `recipe('button')` (which share an emitted string under semantic
  * naming) still surface as a collision.

@@ -224,7 +224,7 @@ const button = recipe('button', {
 });
 ```
 
-The returned API is utility-aware (`style`, `style.hash`, and `recipe` accept your utility keys).
+The returned API is utility-aware (`style`, `hash`, and `recipe` accept your utility keys).
 
 Utility keys are fully typed from your utility definitions and can be mixed with normal CSS properties.
 

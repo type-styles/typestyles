@@ -1,7 +1,7 @@
 import type { ClassNamingConfig } from './class-naming';
 import { createGlobal } from './create-global';
 import type { GlobalApiLayered, GlobalApiUnlayered } from './create-global';
-import { createStyles, createClass, createHashClass } from './styles';
+import { createStyles } from './styles';
 import type { ComponentRegistryApi, StylesApi } from './styles';
 import type { CSSProperties, StyleUtils } from './types';
 import type { BreakpointsConfig } from './breakpoints';
@@ -28,26 +28,32 @@ export type TypeStylesLayersConfig<L extends string = string> = {
   readonly order: readonly [L, ...L[]];
   /** Default `@layer` for `:root` / theme token CSS. */
   readonly token: L;
-  /** Default `@layer` for `style` / `recipe` / `style.hash`. */
+  /** Default `@layer` for `style` / `recipe` / `hash`. */
   readonly style: L;
   /** Default `@layer` for `global.rule` / `global.rules` / `global.apply`. */
   readonly global?: L;
   readonly prependFrameworkLayers?: readonly string[];
 };
 
-export type StyleFn = ((
+export type StyleFn = (
   name: string,
   properties: CSSProperties,
   options?: { layer?: string },
-) => string) & {
-  hash(properties: CSSProperties, options?: { label?: string; layer?: string }): string;
-};
+) => string;
+
+/** Deterministic hashed class from a style object (was `styles.hashClass`). */
+export type HashFn = (
+  properties: CSSProperties,
+  options?: { label?: string; layer?: string },
+) => string;
 
 /** Flat public surface returned by {@link createTypeStyles}. */
 export type TypeStylesApi = ComponentRegistryApi & {
   readonly classNaming: Readonly<ClassNamingConfig>;
   /** Create a single named class (was `styles.class`). */
   style: StyleFn;
+  /** Deterministic hashed class from a style object (was `styles.hashClass`). */
+  hash: HashFn;
   /**
    * Multi-variant / slot recipe (was `styles.component`).
    * Extra optional `{ layer?, themeable? }` is allowed when overriding the factory `layers.style` default.
@@ -101,13 +107,29 @@ function cascadeInputFromLayers(
   };
 }
 
-function buildStyleFn(classNaming: ClassNamingConfig): StyleFn {
-  const style = ((name: string, properties: CSSProperties, options?: { layer?: string }): string =>
-    createClass(classNaming, name, properties, options?.layer)) as StyleFn;
-  style.hash = (properties, options) =>
-    createHashClass(classNaming, properties, options?.label, options?.layer);
-  return style;
+function buildStyleFn(styles: StylesApi | StylesApiWithLayersLoose): StyleFn {
+  return (name, properties, options) => {
+    if (styles.classNaming.cascadeLayers) {
+      return (styles as StylesApiWithLayersLoose).class(name, properties, options);
+    }
+    return styles.class(name, properties);
+  };
 }
+
+function buildHashFn(styles: StylesApi | StylesApiWithLayersLoose): HashFn {
+  return (properties, options) => {
+    if (styles.classNaming.cascadeLayers) {
+      return (styles as StylesApiWithLayersLoose).hashClass(properties, options);
+    }
+    return styles.hashClass(properties, options?.label);
+  };
+}
+
+/** Minimal layered surface so we can forward `{ layer }` without importing the full layered type. */
+type StylesApiWithLayersLoose = Omit<StylesApi, 'class' | 'hashClass'> & {
+  class: (name: string, properties: CSSProperties, options?: { layer?: string }) => string;
+  hashClass: (properties: CSSProperties, options?: { label?: string; layer?: string }) => string;
+};
 
 function flattenTypeStylesApi(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,7 +157,8 @@ function flattenTypeStylesApi(
   };
   return {
     classNaming: s.classNaming,
-    style: buildStyleFn(s.classNaming),
+    style: buildStyleFn(s as StylesApi),
+    hash: buildHashFn(s as StylesApi),
     recipe: s.component as StylesApi['component'],
     tokens,
     global,

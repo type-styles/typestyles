@@ -73,7 +73,7 @@ Or in `tsconfig.json`:
 }
 ```
 
-Inline style objects are converted to deterministic classes via `style.hash` (or `hashClass` on a `createStyles()` instance) at runtime.
+Inline style objects are converted to deterministic classes via `hash` (or `hashClass` on a `createStyles()` instance) at runtime.
 
 ## Zero-runtime `css` prop (Babel)
 

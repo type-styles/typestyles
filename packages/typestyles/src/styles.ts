@@ -167,14 +167,14 @@ export function createClass(
  *
  * @example
  * ```ts
- * const button = style.hash({
+ * const button = hash({
  *   padding: '8px 12px',
  *   borderRadius: '8px',
  * });
  *
- * const danger = style.hash(
+ * const danger = hash(
  *   { backgroundColor: 'red', color: 'white' },
- *   'danger'
+ *   { label: 'danger' },
  * );
  * ```
  */
@@ -188,7 +188,7 @@ export function createHashClass(
   if (cfg.mode === 'atomic') {
     const { classNames, rules } = decomposeAtomicStyle(cfg, properties);
     if (classNaming.cascadeLayers) {
-      const resolved = resolveStyleEmitLayer(classNaming, layer, 'style.hash(…)');
+      const resolved = resolveStyleEmitLayer(classNaming, layer, 'hash(…)');
       insertRules(applyLayerToRules(rules, resolved!, classNaming.cascadeLayers));
     } else {
       insertRules(rules);
@@ -213,7 +213,7 @@ export function createHashClass(
     colorModes: classNaming.colorModes,
   });
   if (classNaming.cascadeLayers) {
-    const resolved = resolveStyleEmitLayer(classNaming, layer, 'style.hash(…)');
+    const resolved = resolveStyleEmitLayer(classNaming, layer, 'hash(…)');
     insertRules(applyLayerToRules(rules, resolved!, classNaming.cascadeLayers));
   } else {
     insertRules(rules);
@@ -903,6 +903,7 @@ function buildStylesRuntimeApi(
 }
 
 export type StylesWithUtilsApi<U extends StyleUtils> = ComponentRegistryApi & {
+  readonly classNaming: Readonly<ClassNamingConfig>;
   readonly container: typeof containerQuery;
   readonly containerRef: (label: string) => ContainerNameRef;
   readonly supports: typeof supportsQuery;
@@ -1104,6 +1105,7 @@ export function createStylesWithUtils<U extends StyleUtils>(
 
   return attachComponentRegistryMethods(
     {
+      classNaming,
       container: containerQuery,
       containerRef,
       supports: supportsQuery,
@@ -1181,6 +1183,7 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
 
   return attachComponentRegistryMethods(
     {
+      classNaming,
       container: containerQuery,
       containerRef,
       supports: supportsQuery,

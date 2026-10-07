@@ -75,7 +75,7 @@ export type ClassNamingConfig = {
    */
   cascadeLayers?: ResolvedCascadeLayers;
   /**
-   * Default `@layer` for `style` / `recipe` / `style.hash` when the call omits `{ layer }`.
+   * Default `@layer` for `style` / `recipe` / `hash` when the call omits `{ layer }`.
    * Set via `createTypeStyles({ layers: { style } })` or `createStyles({ styleLayer })`.
    */
   styleLayer?: string;

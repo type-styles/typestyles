@@ -20,7 +20,7 @@ export const { style, recipe, tokens, global } = createTypeStyles({ scopeId: 'ap
 **Style surface:**
 
 - `style(name, properties, options?)`: Create a single named class (was `styles.class`)
-- `style.hash(properties, options?)`: Deterministic hashed class (was `styles.hashClass`); `options` may include `label` and `layer`
+- `hash(properties, options?)`: Deterministic hashed class (was `styles.hashClass`); `options` may include `label` and `layer`
 - `recipe(namespace, config, options?)`: Multi-variant / slot recipe (was `styles.component`); optional `{ layer?, themeable? }`
 - `compose(...fns)`: Compose multiple style functions
 - `override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta`, including typed **`vars`** (see [Theming patterns](/docs/theming-patterns#override-component-internal-vars))

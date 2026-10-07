@@ -13,7 +13,7 @@ function isDefaultStylesCall(node: TSESTree.CallExpression): boolean {
   const { callee } = node;
   // Flat API from an unscoped `createTypeStyles()` destructure (or legacy default export).
   if (callee.type === 'Identifier') {
-    return callee.name === 'style' || callee.name === 'recipe';
+    return callee.name === 'style' || callee.name === 'recipe' || callee.name === 'hash';
   }
   if (callee.type !== 'MemberExpression') return false;
   const method = memberPropertyName(callee);
@@ -35,7 +35,7 @@ export const noDefaultScopeInPackage = createRule({
     },
     messages: {
       unscopedInPackage:
-        'Using unscoped `{{method}}()` in a published package risks class-name collisions. Use `createTypeStyles({ scopeId: pkg.name })` (or `createStyles({ scopeId })`) and call `style` / `recipe` from that instance.',
+        'Using unscoped `{{method}}()` in a published package risks class-name collisions. Use `createTypeStyles({ scopeId: pkg.name })` (or `createStyles({ scopeId })`) and call `style` / `hash` / `recipe` from that instance.',
     },
     schema: [],
   },

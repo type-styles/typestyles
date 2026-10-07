@@ -72,7 +72,7 @@ recipe('button', { base: { … } });
 recipe('button', { base: { … } });
 ```
 
-Tracks `recipe`, `style`, `style.hash`, `tokens.create`, `tokens.createTheme`, `keyframes.create`, and `global.rule` / `global.fontFace` (and legacy `styles.component`, `styles.class`, `global.style` where used). Reports duplicates within a file and across files in the same ESLint run.
+Tracks `recipe`, `style`, `hash`, `tokens.create`, `tokens.createTheme`, `keyframes.create`, and `global.rule` / `global.fontFace` (and legacy `styles.component`, `styles.class`, `global.style` where used). Reports duplicates within a file and across files in the same ESLint run.
 
 > Bundler plugins (`@typestyles/vite`, etc.) also fail the build on duplicate `recipe` / `style` namespaces. ESLint catches the issue earlier in the editor.
 

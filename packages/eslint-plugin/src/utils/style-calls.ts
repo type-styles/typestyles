@@ -3,7 +3,7 @@ import type { TSESTree } from '@typescript-eslint/utils';
 export type NamespaceKind =
   | 'style'
   | 'recipe'
-  | 'style.hash'
+  | 'hash'
   | 'styles.class'
   | 'styles.component'
   | 'styles.hashClass'
@@ -82,11 +82,10 @@ export function getNamespaceCall(node: TSESTree.CallExpression): NamespaceCall |
     return { kind: 'recipe', key: `.${nameNode.value}-`, nameNode };
   }
 
-  if (isMemberCall(callee, 'style', 'hash')) {
+  if (callee.type === 'Identifier' && callee.name === 'hash') {
     const first = args[0];
     if (!first || first.type === 'SpreadElement') return null;
-    const label = args[0];
-    // style.hash(props, { label }) — label may be in options object; skip keying when absent
+    // hash(props, { label }) — label may be in options object; skip keying when absent
     if (args[1]?.type === 'ObjectExpression') {
       for (const prop of args[1].properties) {
         if (
@@ -96,12 +95,9 @@ export function getNamespaceCall(node: TSESTree.CallExpression): NamespaceCall |
           prop.value.type === 'Literal' &&
           typeof prop.value.value === 'string'
         ) {
-          return { kind: 'style.hash', key: `.${prop.value.value}-`, nameNode: prop.value };
+          return { kind: 'hash', key: `.${prop.value.value}-`, nameNode: prop.value };
         }
       }
-    }
-    if (label.type === 'Literal' && typeof label.value === 'string') {
-      return { kind: 'style.hash', key: `.${label.value}-`, nameNode: label };
     }
     return null;
   }
@@ -215,13 +211,18 @@ export function getStyleObjectArguments(
     return objects;
   }
 
+  if (callee.type === 'Identifier' && callee.name === 'hash') {
+    pushObject(args[0]);
+    return objects;
+  }
+
   if (callee.type === 'MemberExpression') {
     const method = memberPropertyName(callee);
     if (method === 'class' || method === 'component' || method === 'rule' || method === 'style') {
       pushObject(args[1]);
       return objects;
     }
-    if (method === 'hashClass' || method === 'hash' || method === 'rules') {
+    if (method === 'hashClass' || method === 'rules') {
       const first = args[0];
       if (first && first.type !== 'SpreadElement' && first.type === 'ObjectExpression') {
         objects.push(first);

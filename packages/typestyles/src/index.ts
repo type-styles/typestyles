@@ -109,7 +109,7 @@ export type {
 
 /** Primary app/library entry. Prefer this over the lower-level factories. */
 export { createTypeStyles };
-export type { TypeStylesApi, TypeStylesLayersConfig, StyleFn } from './create-type-styles';
+export type { TypeStylesApi, TypeStylesLayersConfig, StyleFn, HashFn } from './create-type-styles';
 
 /**
  * Lower-level factories (prefer {@link createTypeStyles} for apps).
