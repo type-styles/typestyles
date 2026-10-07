@@ -3,9 +3,8 @@
  */
 import { createTypeStyles } from './create-type-styles';
 import { createTokens } from './tokens';
-import type { DeepPartialThemeTokens } from './types';
 
-const { tokens } = createTypeStyles({ scopeId: 'tc' });
+const { tokens } = createTypeStyles({ scopeId: 'tc', colorModes: ['light', 'dark'] });
 const bare = createTokens({ scopeId: 'bare' });
 
 const brand = tokens.createTheme({
@@ -31,36 +30,33 @@ const bareTheme = bare.createTheme({
 const _bareRef: string = bareTheme.tokens!.brand.glow.default;
 void _bareRef;
 
-const light = {
+const values = {
   color: {
-    brand: 'red',
+    brand: { light: 'red', dark: 'green' },
     red: { 10: '#f90' },
   },
 } as const;
 
 const defaultTheme = tokens.createTheme({
   name: 'default',
-  tokens: light,
-  colorMode: { light, dark: { color: { brand: 'green' } } },
+  tokens: values,
 });
 
 const myTheme = defaultTheme.override({
   name: 'my-theme',
   tokens: {
     color: {
-      brand: 'blue',
+      brand: { light: 'blue', dark: 'navy' },
     },
   },
 });
 void myTheme;
 
 defaultTheme.override({
-  name: 'mode-patch',
-  colorMode: {
-    dark: {
-      color: {
-        brand: 'navy',
-      },
+  name: 'leaf-patch',
+  tokens: {
+    color: {
+      brand: { light: 'navy', dark: 'skyblue' },
     },
   },
 });
@@ -82,10 +78,3 @@ defaultTheme.override({
     space: { sm: '4px' },
   },
 });
-
-// Excess-property checks apply to object literals. Intermediate variables need `satisfies`:
-type DefaultTokens = typeof light;
-const patch = {
-  color: { brand: 'purple' },
-} satisfies DeepPartialThemeTokens<DefaultTokens>;
-defaultTheme.override({ name: 'satisfies-patch', tokens: patch });

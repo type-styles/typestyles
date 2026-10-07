@@ -945,16 +945,17 @@ describe('tokens.create mode-aware leaves', () => {
   });
 });
 
-describe('tokens.createTheme colorMode patches', () => {
+describe('tokens.createTheme mode-aware leaves', () => {
   beforeEach(() => reset());
 
-  it('compiles colorMode patches to light-dark() on theme class', () => {
+  it('compiles mode-aware leaves to light-dark() on theme class', () => {
     const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
     api.createTheme({
       name: 'acme',
-      tokens: { color: { text: { primary: '#111' } } },
-      colorMode: {
-        dark: { color: { text: { primary: '#eee' } } },
+      tokens: {
+        color: {
+          text: { primary: { light: '#111', dark: '#eee' } },
+        },
       },
     });
     flushSync();
@@ -963,7 +964,7 @@ describe('tokens.createTheme colorMode patches', () => {
     expect(css).toContain('.theme-app-acme { color-scheme: light dark');
   });
 
-  it('supports mode-aware leaves directly on base', () => {
+  it('supports nested mode-aware leaves', () => {
     const api = createTokens({ scopeId: 'app', colorModes: ['light', 'dark'] });
     api.createTheme({
       name: 'leaf',

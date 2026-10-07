@@ -32,8 +32,8 @@ export type DesignPrimitiveOverrides = {
 };
 
 /**
- * Palette config aligned with `tokens.createTheme`: `light` is the default
- * surface tokens; `dark` is the dark-mode override layer (same shape as `ThemeOverrides`).
+ * Palette config for `createDesignTheme`: separate light/dark trees are zipped into
+ * mode-aware `{ light, dark }` leaves for `tokens.createTheme`.
  */
 export type DesignThemeConfig = {
   name: string;

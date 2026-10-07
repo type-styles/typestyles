@@ -294,69 +294,6 @@ export function expandModeAwareTokenValues(
   return walkExpandModeAware(values, colorModes, '');
 }
 
-/** Deep-merge base + light/dark patches, compiling color-compatible leaves to `light-dark()`. */
-export function mergeThemeColorModePatches(
-  base: ThemeOverrides,
-  lightPatch: ThemeOverrides | undefined,
-  darkPatch: ThemeOverrides | undefined,
-  colorModes: ColorModeMap | undefined,
-): { merged: ThemeOverrides; darkOnly: ThemeOverrides | null } {
-  if (!colorModes) {
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      (lightPatch !== undefined || darkPatch !== undefined)
-    ) {
-      console.warn(
-        '[typestyles] `createTheme` `colorMode` patches require `colorModes` on `createTypeStyles` / `createTokens` — merging patches without compiling `light-dark()`.',
-      );
-    }
-    return {
-      merged: mergeThemeOverrides(mergeThemeOverrides(base, lightPatch), darkPatch),
-      darkOnly: null,
-    };
-  }
-
-  const lightTree = mergeThemeOverrides(base, lightPatch);
-  const darkTree = mergeThemeOverrides(base, darkPatch);
-  const merged: Record<string, unknown> = {};
-  const darkOnly: Record<string, unknown> = {};
-  let hasDarkOnly = false;
-  const namespaces = new Set([...Object.keys(lightTree), ...Object.keys(darkTree)]);
-
-  for (const namespace of namespaces) {
-    const lightNs = (lightTree[namespace] ?? {}) as TokenValues;
-    const darkNs = (darkTree[namespace] ?? {}) as TokenValues;
-    const result = mergeTokenTreesWithColorModes(lightNs, darkNs);
-    merged[namespace] = result.merged;
-    if (result.darkOnly) {
-      darkOnly[namespace] = result.darkOnly;
-      hasDarkOnly = true;
-    }
-  }
-
-  const expanded = expandThemeOverrides(merged as ThemeOverrides, colorModes);
-  const combinedDarkOnly: Record<string, unknown> = { ...darkOnly };
-  if (expanded.darkOnly) {
-    for (const [namespace, values] of Object.entries(expanded.darkOnly)) {
-      if (isNestedTokenObject(combinedDarkOnly[namespace]) && isNestedTokenObject(values)) {
-        const { merged: nestedMerged } = mergeTokenTreesWithColorModes(
-          combinedDarkOnly[namespace] as TokenValues,
-          values as TokenValues,
-        );
-        combinedDarkOnly[namespace] = nestedMerged;
-      } else {
-        combinedDarkOnly[namespace] = values;
-      }
-    }
-    hasDarkOnly = true;
-  }
-
-  return {
-    merged: expanded.expanded,
-    darkOnly: hasDarkOnly ? (combinedDarkOnly as ThemeOverrides) : null,
-  };
-}
-
 /**
  * When `colorModes` is not configured, replace `{ light, dark }` leaves with the light
  * value so flattening does not emit bogus `-light` / `-dark` custom property suffixes.
@@ -442,20 +379,9 @@ function splitTokenValues(value: TokenValues, colorModes: ColorModeMap): SplitTo
   };
 }
 
-function mergeThemeOverridePatches(
-  ...patches: (ThemeOverrides | undefined)[]
-): ThemeOverrides | undefined {
-  let out: ThemeOverrides | undefined;
-  for (const patch of patches) {
-    if (!patch || Object.keys(patch).length === 0) continue;
-    out = out ? mergeThemeOverrides(out, patch) : patch;
-  }
-  return out;
-}
-
 /**
  * Split nested `{ light, dark }` leaves into light-first base values and a dark patch tree.
- * Used before `colorMode` merging so inline mode leaves compose with explicit `colorMode` patches.
+ * Useful for tests / tooling; theme compile expands leaves via {@link expandThemeOverrides}.
  */
 export function normalizeModeAwareOverrides(
   overrides: ThemeOverrides,
@@ -474,44 +400,16 @@ export function normalizeModeAwareOverrides(
   return { base: base as ThemeOverrides, darkPatch: darkPatch as ThemeOverrides };
 }
 
-/** Normalize theme config: split mode-aware leaves in `tokens` / `colorMode` before compile. */
+/**
+ * Normalize theme config before compile.
+ * Mode-aware `{ light, dark }` leaves stay on `tokens` for {@link expandThemeOverrides}.
+ */
 export function normalizeThemeConfig(
   config: ThemeConfig,
   colorModes: ColorModeMap | undefined,
 ): ThemeConfig {
-  if (!colorModes) return config;
-
-  const { base: normalizedTokens, darkPatch: baseDarkPatch } = normalizeModeAwareOverrides(
-    (config.tokens ?? {}) as ThemeOverrides,
-    colorModes,
-  );
-
-  let colorMode = config.colorMode;
-
-  const lightSplit = colorMode?.light
-    ? normalizeModeAwareOverrides(colorMode.light, colorModes)
-    : undefined;
-  const darkSplit = colorMode?.dark
-    ? normalizeModeAwareOverrides(colorMode.dark, colorModes)
-    : undefined;
-
-  const mergedDark = mergeThemeOverridePatches(
-    baseDarkPatch,
-    lightSplit?.darkPatch,
-    darkSplit?.base,
-    darkSplit?.darkPatch,
-  );
-
-  colorMode = {
-    light: lightSplit?.base ?? colorMode?.light,
-    dark: mergedDark ?? colorMode?.dark,
-  };
-
-  if (colorMode.light === undefined && colorMode.dark === undefined) {
-    colorMode = undefined;
-  }
-
-  return { ...config, tokens: normalizedTokens as ThemeConfig['tokens'], colorMode };
+  void colorModes;
+  return config;
 }
 
 /** Expand mode-aware values inside each namespace of theme overrides. */

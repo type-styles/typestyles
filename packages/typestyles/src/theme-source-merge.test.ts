@@ -127,19 +127,27 @@ describe('Theme.override (via createTheme root)', () => {
     });
   });
 
-  it('applyThemeOverride folds tokens into colorMode.light so they win at compile', () => {
-    const light = { color: { brand: 'red', muted: 'gray' } };
+  it('applyThemeOverride merges mode-aware leaf patches', () => {
     expect(
       applyThemeOverride(
         {
-          tokens: light,
-          colorMode: { light, dark: { color: { brand: 'green' } } },
+          tokens: {
+            color: {
+              brand: { light: 'red', dark: 'green' },
+              muted: 'gray',
+            },
+          },
         },
-        { name: 'child', tokens: { color: { brand: 'blue' } } },
-      ).colorMode,
+        {
+          name: 'child',
+          tokens: { color: { brand: { light: 'blue', dark: 'navy' } } },
+        },
+      ).tokens,
     ).toEqual({
-      light: { color: { brand: 'blue', muted: 'gray' } },
-      dark: { color: { brand: 'green' } },
+      color: {
+        brand: { light: 'blue', dark: 'navy' },
+        muted: 'gray',
+      },
     });
   });
 });

@@ -3,7 +3,6 @@ import { colorModes, isColorModeObject } from './color-modes';
 import {
   canUseLightDarkForTokenValue,
   expandModeAwareTokenValues,
-  mergeThemeColorModePatches,
   mergeTokenTreesWithColorModes,
   coerceUnexpandedModeLeaves,
 } from './token-color-modes';
@@ -38,18 +37,6 @@ describe('token-color-modes', () => {
     );
     expect(expanded).toEqual({ glow: '0 0 0 3px blue' });
     expect(darkOnly).toEqual({ glow: '0 0 16px navy' });
-  });
-
-  it('merges theme colorMode patches to light-dark on base', () => {
-    const { merged } = mergeThemeColorModePatches(
-      { color: { accent: { default: '#111' } } },
-      undefined,
-      { color: { accent: { default: '#eee' } } },
-      colorModes,
-    );
-    expect(merged).toEqual({
-      color: { accent: { default: 'light-dark(#111, #eee)' } },
-    });
   });
 
   it('merges token trees with light-dark leaves', () => {
@@ -99,17 +86,6 @@ describe('token-color-modes', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expandModeAwareTokenValues({ accent: { light: '#111', dark: '#eee' } }, undefined);
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('colorModes'));
-    });
-
-    it('warns when colorMode patches are used without colorModes', () => {
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      mergeThemeColorModePatches(
-        { color: { text: '#111' } },
-        undefined,
-        { color: { text: '#eee' } },
-        undefined,
-      );
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining('colorMode'));
     });
   });
 });
