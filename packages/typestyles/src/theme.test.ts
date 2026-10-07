@@ -825,20 +825,17 @@ describe('colorMode.systemWithLightDarkOverride', () => {
 });
 
 // ---------------------------------------------------------------------------
-// structured colorMode patches + modes
+// mode-aware leaves + modes
 // ---------------------------------------------------------------------------
 
-describe('colorMode patches with modes', () => {
+describe('mode-aware leaves with modes', () => {
   beforeEach(() => reset());
 
-  it('allows colorMode patches alongside manual modes', () => {
+  it('allows mode-aware leaves alongside manual modes', () => {
     createTheme(
       'both',
       {
-        tokens: { color: { text: '#111' } },
-        colorMode: {
-          dark: { color: { text: '#eee' } },
-        },
+        tokens: { color: { text: { light: '#111', dark: '#eee' } } },
         modes: [
           { id: 'shadow', overrides: { shadow: { sm: '0 1px 2px #000' } }, when: when.prefersDark },
         ],

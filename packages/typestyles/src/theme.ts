@@ -27,11 +27,10 @@ import {
   type CompiledCondition,
 } from './condition-compile';
 import type { ColorModeMap } from './color-modes';
-import { expandThemeOverrides, mergeThemeColorModePatches } from './token-color-modes';
+import { expandThemeOverrides, normalizeThemeConfig } from './token-color-modes';
 import { bindThemeOverride } from './theme-source-merge';
 import { themeTokensToCompileConfig } from './theme-extend';
 import { themeConfigToSource } from './theme-types';
-import { normalizeThemeConfig } from './token-color-modes';
 
 /** When present, theme rules are wrapped in `@layer` alongside token `:root` CSS. */
 export type ThemeEmitLayerContext = {
@@ -411,13 +410,11 @@ function themeSourceFromConfig(config: ThemeConfig | ThemeCompileConfig): ThemeS
   if (isThemeCompileConfig(config)) {
     return themeConfigToSource({
       tokens: config.base as ThemeConfig['tokens'],
-      colorMode: config.colorMode,
       modes: config.modes,
     });
   }
   return themeConfigToSource({
     tokens: config.tokens,
-    colorMode: config.colorMode,
     modes: config.modes,
   });
 }
@@ -431,15 +428,16 @@ function themeSourceFromConfig(config: ThemeConfig | ThemeCompileConfig): ThemeS
  *
  * Returns a `Theme` object whose `className` (and string coercion)
  * is a stable, human-readable class name like `"theme-acme"`.
+ * Light/dark values use mode-aware leaves that compile to CSS `light-dark()`.
  *
  * @example
  * ```ts
  * const acme = tokens.createTheme({
  *   name: 'acme',
- *   tokens: { color: { text: { primary: '#111827' } } },
- *   colorMode: {
- *     light: { color: { text: { primary: '#111827' } } },
- *     dark: { color: { text: { primary: '#f9fafb' } } },
+ *   tokens: {
+ *     color: {
+ *       text: { primary: { light: '#111827', dark: '#f9fafb' } },
+ *     },
  *   },
  * });
  *
@@ -482,23 +480,9 @@ export function createTheme(
     }
   };
 
-  let resolvedBase = prepared.base ?? {};
-  let darkOnlyFallback: ThemeOverrides | null = null;
-
-  if (prepared.colorMode) {
-    const merged = mergeThemeColorModePatches(
-      resolvedBase,
-      prepared.colorMode.light,
-      prepared.colorMode.dark,
-      colorModes,
-    );
-    resolvedBase = merged.merged;
-    darkOnlyFallback = merged.darkOnly;
-  } else {
-    const expanded = expandThemeOverrides(resolvedBase, colorModes);
-    resolvedBase = expanded.expanded;
-    darkOnlyFallback = expanded.darkOnly;
-  }
+  const expanded = expandThemeOverrides(prepared.base ?? {}, colorModes);
+  let resolvedBase = expanded.expanded;
+  let darkOnlyFallback: ThemeOverrides | null = expanded.darkOnly;
 
   const baseDecls = buildDeclarations(scopeId, resolvedBase, naming, colorModes).decls;
   const colorSchemeDecl = colorModes ? 'color-scheme: light dark' : '';

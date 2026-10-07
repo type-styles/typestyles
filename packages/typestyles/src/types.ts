@@ -489,14 +489,9 @@ export type ThemeModeDefinition = {
   readonly when: ThemeCondition;
 };
 
-export type ThemeColorModePatches = {
-  light?: ThemeOverrides;
-  dark?: ThemeOverrides;
-};
-
 /**
  * Configuration for `tokens.createTheme()`.
- * `colorMode` merges light/dark patches into `light-dark()` on custom properties.
+ * Light/dark values belong on mode-aware token leaves (`{ light, dark }` → CSS `light-dark()`).
  * `modes` adds conditional override layers (presets, shadow fallbacks, etc.).
  */
 export type ThemeComponentOverrideEntry = Record<string, unknown>;
@@ -515,7 +510,6 @@ export type ThemeComponentOverrideFn = (ctx: ThemeOverrideContext) => ThemeCompo
 export type ThemeSource = {
   /** Per-namespace token values (same shape as `tokens.create` trees). */
   tokens?: Record<string, CreateTokenValues>;
-  colorMode?: ThemeColorModePatches;
   modes?: ThemeModeDefinition[];
 };
 
@@ -523,11 +517,9 @@ export type ThemeConfig = {
   /**
    * Per-namespace token overrides for `.theme-{name}` — registers each namespace via
    * `tokens.create` (when using `tokens.createTheme`) and emits `--*` variables.
-   * Mode-aware `{ light, dark }` leaves are allowed when `colorModes` is set.
+   * Mode-aware `{ light, dark }` leaves compile to CSS `light-dark()` when `colorModes` is set.
    */
   tokens?: Record<string, CreateTokenValues>;
-  /** Light/dark token patches compiled to `light-dark()` on theme custom properties. */
-  colorMode?: ThemeColorModePatches;
   /** Conditional mode layers with explicit `when` conditions. */
   modes?: ThemeModeDefinition[];
   components?: Record<string, ThemeComponentOverrideEntry | ThemeComponentOverrideFn>;
@@ -564,10 +556,6 @@ export type ThemeOverrideInput<
   name: string;
   replace?: boolean;
   tokens?: DeepPartialThemeTokens<E>;
-  colorMode?: {
-    light?: DeepPartialThemeTokens<E>;
-    dark?: DeepPartialThemeTokens<E>;
-  };
   modes?: ReadonlyArray<{
     readonly id: string;
     readonly overrides: DeepPartialThemeTokens<E>;
@@ -588,7 +576,7 @@ export interface Theme<E extends Record<string, CreateTokenValues> = Record<stri
   readonly className: string;
   readonly name: string;
   /**
-   * Resolved token / colorMode / modes snapshot used when deriving child themes via {@link override}.
+   * Resolved token / modes snapshot used when deriving child themes via {@link override}.
    */
   readonly source: ThemeSource;
   /**

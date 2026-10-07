@@ -6,20 +6,20 @@ import { createTheme } from './theme';
 describe('Theme.override', () => {
   beforeEach(() => reset());
 
-  it('exposes source snapshot from createTheme tokens + colorMode', () => {
+  it('exposes source snapshot from createTheme tokens', () => {
     const { tokens } = createTypeStyles({ scopeId: 'ov-src', colorModes: ['light', 'dark'] });
-    const light = {
-      color: { brand: 'red', red: { 10: '#f90' } },
+    const values = {
+      color: {
+        brand: { light: 'red', dark: 'green' },
+        red: { 10: '#f90' },
+      },
     } as const;
-    const dark = { color: { brand: 'green' } } as const;
     const root = tokens.createTheme({
       name: 'default',
-      tokens: light,
-      colorMode: { light, dark },
+      tokens: values,
     });
 
-    expect(root.source.tokens).toEqual(light);
-    expect(root.source.colorMode).toEqual({ light, dark });
+    expect(root.source.tokens).toEqual(values);
     expect(typeof root.override).toBe('function');
   });
 
@@ -28,27 +28,33 @@ describe('Theme.override', () => {
     const root = tokens.createTheme({
       name: 'default',
       tokens: {
-        color: { brand: 'red', accent: { default: '#111' } },
+        color: {
+          brand: { light: 'red', dark: 'green' },
+          accent: { default: '#111' },
+        },
       },
     });
 
     const child = root.override({
       name: 'brand',
       tokens: {
-        color: { brand: 'blue' },
+        color: { brand: { light: 'blue', dark: 'navy' } },
       },
     });
 
     expect(child.name).toBe('brand');
     expect(child.className).toBe('theme-ov-merge-brand');
     expect(child.source.tokens).toEqual({
-      color: { brand: 'blue', accent: { default: '#111' } },
+      color: {
+        brand: { light: 'blue', dark: 'navy' },
+        accent: { default: '#111' },
+      },
     });
 
     flushSync();
     const css = getRegisteredCss();
     expect(css).toContain('.theme-ov-merge-brand');
-    expect(css).toMatch(/--ov-merge-color-brand:\s*blue/);
+    expect(css).toMatch(/--ov-merge-color-brand:\s*light-dark\(blue, navy\)/);
     expect(css).toMatch(/--ov-merge-color-accent-default:\s*#111/);
   });
 
@@ -83,55 +89,6 @@ describe('Theme.override', () => {
     expect(child.className).toBe('theme-child');
     flushSync();
     expect(getRegisteredCss()).toMatch(/--color-primary:\s*#222/);
-  });
-
-  it('merges colorMode patches onto the parent source', () => {
-    const { tokens } = createTypeStyles({ scopeId: 'ov-cm', colorModes: ['light', 'dark'] });
-    const light = { color: { brand: 'red' } } as const;
-    const root = tokens.createTheme({
-      name: 'default',
-      tokens: light,
-      colorMode: { light, dark: { color: { brand: 'green' } } },
-    });
-    const child = root.override({
-      name: 'brand',
-      colorMode: { dark: { color: { brand: 'navy' } } },
-    });
-
-    expect(child.source.colorMode).toEqual({
-      light: { color: { brand: 'red' } },
-      dark: { color: { brand: 'navy' } },
-    });
-    flushSync();
-    const css = getRegisteredCss();
-    expect(css).toMatch(/--ov-cm-color-brand:\s*light-dark\(red, navy\)/);
-  });
-
-  it('lets tokens patches win over inherited colorMode.light', () => {
-    const { tokens } = createTypeStyles({ scopeId: 'ov-fold', colorModes: ['light', 'dark'] });
-    const light = { color: { brand: 'red', accent: { default: '#111' } } } as const;
-    const root = tokens.createTheme({
-      name: 'default',
-      tokens: light,
-      colorMode: { light, dark: { color: { brand: 'green' } } },
-    });
-    const child = root.override({
-      name: 'brand',
-      tokens: { color: { brand: 'blue' } },
-    });
-
-    expect(child.source.tokens).toEqual({
-      color: { brand: 'blue', accent: { default: '#111' } },
-    });
-    expect(child.source.colorMode).toEqual({
-      light: { color: { brand: 'blue', accent: { default: '#111' } } },
-      dark: { color: { brand: 'green' } },
-    });
-    flushSync();
-    const css = getRegisteredCss();
-    expect(css).toMatch(
-      /\.theme-ov-fold-brand\s*\{[^}]*--ov-fold-color-brand:\s*light-dark\(blue, green\)/,
-    );
   });
 
   it('passes replace through so reusing a child name updates CSS', () => {

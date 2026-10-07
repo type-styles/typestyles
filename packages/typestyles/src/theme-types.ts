@@ -11,43 +11,18 @@ type TokensMap = Record<string, CreateTokenValues>;
 /** Empty tokens map without a string index signature (avoids `keyof` → `string` in merges). */
 type NoTokens = Record<never, CreateTokenValues>;
 
-/** Deep-merge two token value trees at the type level (matches runtime `mergeTokenValues`). */
-export type MergeCreateTokenValues<A, B> =
-  A extends Record<string, unknown>
-    ? B extends Record<string, unknown>
-      ? {
-          [K in keyof A | keyof B]: K extends keyof B
-            ? K extends keyof A
-              ? MergeCreateTokenValues<A[K], B[K]>
-              : B[K]
-            : K extends keyof A
-              ? A[K]
-              : never;
-        }
-      : B
-    : B;
-
-type MergeTwoTokensMaps<L extends TokensMap, R extends TokensMap> = Omit<L, keyof R> & {
-  [K in keyof R]: K extends keyof L ? MergeCreateTokenValues<L[K], R[K]> : R[K];
-};
-
 type TokensFromOptional<T> = T extends TokensMap ? T : NoTokens;
 
-type TokensFromColorModePatches<C> = C extends {
-  colorMode?: { light?: infer L; dark?: infer D };
-}
-  ? MergeTwoTokensMaps<L extends TokensMap ? L : NoTokens, D extends TokensMap ? D : NoTokens>
-  : NoTokens;
-
 /**
- * Merged token namespaces from a `createTheme` config (`tokens` + `colorMode` trees).
+ * Token namespaces from a `createTheme` config (`tokens`).
  * Used as {@link Theme}'s type parameter so {@link Theme.override} can constrain patches.
  */
-export type InferThemeTokensFromConfig<C extends Pick<ThemeConfig, 'tokens' | 'colorMode'>> =
-  MergeTwoTokensMaps<TokensFromOptional<C['tokens']>, TokensFromColorModePatches<C>>;
+export type InferThemeTokensFromConfig<C extends Pick<ThemeConfig, 'tokens'>> = TokensFromOptional<
+  C['tokens']
+>;
 
-/** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `tokens` / colorMode). */
-export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'tokens' | 'colorMode'>> = {
+/** Typed `components` map for `createTheme` (factories see `ctx.tokens` from `tokens`). */
+export type ThemeComponentsFor<T extends Pick<ThemeConfig, 'tokens'>> = {
   components?: Record<
     string,
     | ThemeComponentOverrideEntry
@@ -61,7 +36,8 @@ type CreateThemeConfigFields = Omit<ThemeConfig, 'components'>;
  * Single argument to `tokens.createTheme()` — theme name, token layers, optional recipe overrides.
  *
  * - **`tokens`** — per-namespace values on `.theme-{name}` (registers namespaces for `theme.tokens` refs).
- * - **`colorMode` / `modes`** — light/dark and conditional override layers (see theming docs).
+ *   Use mode-aware `{ light, dark }` leaves for CSS `light-dark()`.
+ * - **`modes`** — conditional override layers (see theming docs / `tokens.colorMode.*` presets).
  * - **`components`** — per-recipe CSS overrides scoped to this theme class.
  * - **`replace`** — when true (default), reusing `name` replaces the previous theme registration.
  *
@@ -77,7 +53,6 @@ export type CreateThemeInput<T extends CreateThemeConfigFields = CreateThemeConf
 export function themeConfigToSource(config: Pick<ThemeConfig, keyof ThemeSource>): ThemeSource {
   const source: ThemeSource = {};
   if (config.tokens !== undefined) source.tokens = config.tokens;
-  if (config.colorMode !== undefined) source.colorMode = config.colorMode;
   if (config.modes !== undefined) source.modes = config.modes;
   return source;
 }

@@ -17,29 +17,29 @@ Defaults usually live on `:root` via `tokens.create`. Theme `tokens` / `colorMod
 
 ### What the fields mean
 
-| Field            | Plain language                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                                      |
-| **`tokens`**     | Per-namespace overrides on `.theme-{name}` (`color`, `brand`, …) — registers namespaces for `theme.tokens.*` refs.     |
-| **`colorMode`**  | Optional `{ light?, dark? }` patches merged into theme output and compiled to `light-dark()` when `colorModes` is set. |
-| **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets).               |
-| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).                           |
-| **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                               |
+| Field            | Plain language                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------- |
+| **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                        |
+| **`tokens`**     | Per-namespace overrides on `.theme-{name}` — use `{ light, dark }` leaves for CSS `light-dark()`.        |
+| **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets). |
+| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).             |
+| **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                 |
 
 ```ts
 tokens.createTheme({
   name: 'app',
   tokens: {
-    color: { accent: { default: '#0066ff' } },
+    color: {
+      accent: { default: '#0066ff' },
+      text: { light: '#111827', dark: '#e5e7eb' },
+      surface: { light: '#ffffff', dark: '#0f172a' },
+    },
     brand: { glow: { default: '#0066ff' } },
-  },
-  colorMode: {
-    dark: { color: { text: '#e5e7eb', surface: '#0f172a' } },
   },
 });
 ```
 
-- **Inline `{ light, dark }` leaves** — On scalar token paths in `tokens`, `colorMode`, or `modes[].overrides`, TypeStyles splits light-first values into the theme surface and dark values into the dark patch. Use `normalizeModeAwareOverrides()` from `typestyles` for tests or debugging.
+- **Inline `{ light, dark }` leaves** — On scalar token paths in `tokens` or `modes[].overrides`, TypeStyles compiles color-compatible values to CSS `light-dark()`.
 
 Overrides use the same nested shape as `tokens.create` (nested keys become hyphenated `--namespace-key` variables).
 
@@ -50,21 +50,23 @@ The return value is a **`Theme`**: `{ className, name, source, tokens?, override
 Use **`tokens.createTheme`** for the **root** theme (the design-system default that defines the token tree). Use **`theme.override`** for **child** themes — app brands, team packs, or theme-switcher entries that only patch values:
 
 ```ts
-const light = {
-  color: { brand: 'red', accent: { default: '#111' } },
+const values = {
+  color: {
+    brand: { light: 'red', dark: 'green' },
+    accent: { default: '#111' },
+  },
 } as const;
 
 export const defaultTheme = tokens.createTheme({
   name: 'default',
-  tokens: light,
-  colorMode: { light, dark: { color: { brand: 'green' } } },
+  tokens: values,
 });
 
 // Typed against defaultTheme's token tree — unknown keys are errors
 export const brandTheme = defaultTheme.override({
   name: 'brand',
   tokens: {
-    color: { brand: 'blue' },
+    color: { brand: { light: 'blue', dark: 'navy' } },
   },
 });
 ```
@@ -702,9 +704,9 @@ Set `data-color-mode` on `html` (or another ancestor); apply `shell.className` o
 ### Mode-aware token values (`light-dark()` on custom properties)
 
 When you register `colorModes` on `createTypeStyles` or `createTokens`, token leaves can use
-`{ light, dark }` directly in `tokens.create()` and structured `colorMode: { light, dark }`
-patches on `tokens.createTheme()`. Color-compatible values compile to `light-dark()` on `--*`
-variables; shadow-like shorthands get a dark override rule instead.
+`{ light, dark }` in `tokens.create()` and `tokens.createTheme({ tokens })`. Color-compatible
+values compile to CSS `light-dark()` on `--*` variables; shadow-like shorthands get a dark
+override rule instead.
 
 ```ts
 import { colorModes, createTypeStyles } from 'typestyles';
@@ -717,8 +719,9 @@ const brand = tokens.create('brand', {
 
 const theme = tokens.createTheme({
   name: 'acme',
-  tokens: { color: { text: '#111' } },
-  colorMode: { dark: { color: { text: '#eee' } } },
+  tokens: {
+    color: { text: { light: '#111', dark: '#eee' } },
+  },
 });
 ```
 
@@ -729,7 +732,7 @@ This is separate from **style-level** `{ light, dark }` on component properties 
 
 ## Optional: `mergeThemeOverrides` helpers
 
-Prefer composing themes with `createTheme({ tokens, colorMode })` and forking with [`theme.override`](#deriving-child-themes-override). Use the helpers below when you need to merge **token ref leaves** yourself — for example building a config object before calling `createTheme`.
+Prefer composing themes with `createTheme({ tokens })` (mode-aware leaves) and forking with [`theme.override`](#deriving-child-themes-override). Use the helpers below when you need to merge **token ref leaves** yourself — for example building a config object before calling `createTheme`.
 
 Token refs from `tokens.declare()` are proxy objects — they cannot be cloned with
 `structuredClone` and will not round-trip through ad-hoc deep merges. Pass **leaf** refs

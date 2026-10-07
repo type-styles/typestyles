@@ -211,7 +211,6 @@ export type {
   ThemeConditionNot,
   ThemeModeDefinition,
   ThemeConfig,
-  ThemeColorModePatches,
   ThemeSource,
   Theme,
   ThemeOverrideInput,
@@ -307,8 +306,9 @@ export const global = {
  *
  * const acme = tokens.createTheme({
  *   name: 'acme',
- *   base: { color: { primary: '#ff6600' } },
- *   colorMode: tokens.colorMode.mediaOnly({ dark: darkOverrides }),
+ *   tokens: {
+ *     color: { primary: { light: '#ff6600', dark: '#66b3ff' } },
+ *   },
  * });
  * ```
  */

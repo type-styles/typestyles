@@ -298,59 +298,44 @@ from key names alone. v1 supports at most two registered modes.
 Theme surfaces created while `colorModes` is configured also emit `color-scheme: light dark` on
 the theme class so `light-dark()` resolves correctly in the subtree.
 
-### Structured `colorMode` patches on themes
-
-Pass light and dark token trees as **patches** on `createTheme` — TypeStyles deep-merges them
-into the theme `tokens` map and compiles color-compatible leaves to `light-dark()`:
+### Themes use the same leaf shape
 
 ```ts
-const light = { color: { text: { primary: '#111827' } } };
-const dark = { color: { text: { primary: '#f9fafb' } } };
-
-const acme = tokens.createTheme({
+tokens.createTheme({
   name: 'acme',
-  tokens: light,
-  colorMode: { light, dark },
+  tokens: {
+    color: {
+      text: { primary: { light: '#111827', dark: '#f9fafb' } },
+    },
+  },
 });
 // .theme-app-acme { color-scheme: light dark; --app-color-text-primary: light-dark(#111827, #f9fafb); }
 ```
 
-You can supply only one side — for example `colorMode: { dark }` when `tokens` already holds the
-light values. Mode-aware leaves are also valid directly on `tokens`:
-
-```ts
-tokens.createTheme({
-  name: 'leaf',
-  tokens: {
-    color: {
-      accent: { default: { light: '#111', dark: '#eee' } },
-    },
-  },
-});
-```
-
-`colorMode` patches can be combined with manual `modes` layers (for example a shadow-only dark
-layer under `tokens.when.prefersDark`).
+Combine with manual `modes` layers when you need conditional rules that are not `light-dark()`
+(for example a shadow-only layer under `tokens.when.prefersDark`).
 
 ### Preset mode layers (`tokens.colorMode.*`)
 
 Preset helpers (`mediaOnly`, `attributeOnly`, `mediaOrAttribute`,
-`systemWithLightDarkOverride`) return `ThemeModeDefinition[]` arrays. Pass them via **`modes`**
-(spread or assign), not the `colorMode` config field:
+`systemWithLightDarkOverride`) return `ThemeModeDefinition[]` arrays for **`modes`** — conditional
+override rules (media / attributes). They are separate from mode-aware **token leaves**:
 
 ```ts
-const light = { color: { text: '#111', surface: '#fff' } };
-const dark = { color: { text: '#eee', surface: '#111' } };
-
 const shell = tokens.createTheme({
   name: 'shell',
-  tokens: light,
+  tokens: {
+    color: {
+      text: { light: '#111', dark: '#eee' },
+      surface: { light: '#fff', dark: '#111' },
+    },
+  },
   modes: tokens.colorMode.systemWithLightDarkOverride({
     attribute: 'data-color-mode',
     values: { light: 'light', dark: 'dark', system: 'system' },
     scope: 'ancestor',
-    light,
-    dark,
+    light: { color: { text: '#111', surface: '#fff' } },
+    dark: { color: { text: '#eee', surface: '#111' } },
   }),
 });
 ```
@@ -358,17 +343,11 @@ const shell = tokens.createTheme({
 See [Theming patterns](/docs/theming-patterns) for end-to-end examples with `data-mode`,
 multi-brand palettes, and condition scopes.
 
-`colorMode` on `createTheme` and `tokens.colorMode.*` presets solve different problems:
-**structured patches** compile static light/dark token values into `light-dark()` on the theme
-surface; **presets** emit conditional override rules when appearance should follow media queries
-or attribute toggles.
-
 ## Theming
 
 Use `tokens.createTheme({ name, … })` to register a **theme surface**: a class `theme-{name}` whose custom properties override token values for that subtree.
 
-- **`tokens`** — Per-namespace overrides on the surface (deltas onto `:root` defaults). Same shape as `tokens.create`.
-- **`colorMode`** — Optional `{ light?, dark? }` patches deep-merged into theme tokens and compiled to `light-dark()` when `colorModes` is configured (see [Mode-aware token leaves](#mode-aware-token-leaves)).
+- **`tokens`** — Per-namespace overrides on the surface (deltas onto `:root` defaults). Same shape as `tokens.create`, including mode-aware `{ light, dark }` leaves (see [Mode-aware token leaves](#mode-aware-token-leaves)).
 - **`modes`** — Conditional layers with explicit `tokens.when.*` conditions, including spreads of `tokens.colorMode.*` preset arrays.
 - **Child themes** — Fork with [`Theme.override`](/docs/theming-patterns#deriving-child-themes-override) (typed deep-partial patches of the root token tree).
 
@@ -399,16 +378,17 @@ const autoDark = tokens.createDarkMode('app', {
 });
 ```
 
-**Light/dark patches compiled to `light-dark()`:**
+**Light/dark via mode-aware leaves (`light-dark()`):**
 
 ```ts
-const light = { color: { text: '#111', surface: '#fff' } };
-const darkPatch = { color: { text: '#eee', surface: '#111' } };
-
 const brand = tokens.createTheme({
   name: 'brand',
-  tokens: light,
-  colorMode: { light, dark: darkPatch },
+  tokens: {
+    color: {
+      text: { light: '#111', dark: '#eee' },
+      surface: { light: '#fff', dark: '#111' },
+    },
+  },
 });
 ```
 

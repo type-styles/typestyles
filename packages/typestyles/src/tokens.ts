@@ -885,9 +885,8 @@ export function createTokens<R extends TokenRegistry = Record<string, never>>(
     use: use as TokensApi<R>['use'],
     declare: declare as TokensApi<R>['declare'],
     createTheme: ((input: CreateThemeInput) => {
-      const { name, replace, components, colorMode, modes, tokens: themeTokens } = input;
+      const { name, replace, components, modes, tokens: themeTokens } = input;
       const config: ThemeConfig = {
-        colorMode,
         modes,
         tokens: themeTokens,
         ...(components !== undefined ? { components } : {}),

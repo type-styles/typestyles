@@ -45,23 +45,16 @@ describe('normalizeModeAwareOverrides', () => {
   });
 });
 
-describe('createTheme with inline mode leaves + colorMode', () => {
+describe('createTheme with mode-aware leaves', () => {
   beforeEach(() => reset());
 
-  it('merges normalized dark patch with explicit colorMode.dark overrides', () => {
+  it('compiles nested mode-aware leaves to light-dark()', () => {
     createTheme(
       'nested',
       {
         base: {
           color: {
-            accent: { default: { light: '#111', dark: '#222' } },
-          },
-        },
-        colorMode: {
-          dark: {
-            color: {
-              accent: { default: '#333' },
-            },
+            accent: { default: { light: '#111', dark: '#333' } },
           },
         },
       },
