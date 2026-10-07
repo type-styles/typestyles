@@ -2,6 +2,7 @@ import type {
   CreateTokenValues,
   ThemeConfig,
   ThemeModeDefinition,
+  ThemeOverrides,
   ThemeSource,
   Theme,
   ThemeOverrideInput,
@@ -98,9 +99,24 @@ export function mergeThemeSource(
 /** Merge a {@link Theme.override} input onto a parent {@link ThemeSource} snapshot. */
 export function applyThemeOverride(source: ThemeSource, input: ThemeOverrideInput): ThemeConfig {
   const { components, tokens, colorMode, modes } = input;
+  /**
+   * `createTheme` compiles `colorMode.light` over `tokens`. When the parent stored the same
+   * tree in both (common for root themes), a child `tokens` patch would lose to the inherited
+   * light snapshot unless we also fold `tokens` into `colorMode.light`.
+   * Only fold when the parent already has `colorMode` — tokens-only roots stay tokens-only.
+   * Explicit `colorMode.light` on the same override still wins over `tokens`.
+   */
+  const colorModeWithTokenFold =
+    tokens !== undefined && source.colorMode !== undefined
+      ? {
+          light: mergeThemeOverrides(tokens as ThemeOverrides, colorMode?.light ?? {}),
+          ...(colorMode?.dark !== undefined ? { dark: colorMode.dark } : {}),
+        }
+      : colorMode;
+
   return mergeThemeSource(source, {
     tokens: tokens as ThemeConfig['tokens'],
-    colorMode: colorMode as ThemeConfig['colorMode'],
+    colorMode: colorModeWithTokenFold as ThemeConfig['colorMode'],
     modes: modes as ThemeConfig['modes'],
     ...(components !== undefined ? { components } : {}),
   });
