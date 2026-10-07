@@ -44,7 +44,7 @@ function extractVarName(varRef: string): string | undefined {
  * ```ts
  * const cardBg = createVar('cardBg');
  *
- * const card = styles.component('card', {
+ * const card = recipe('card', {
  *   base: { background: cardBg, padding: '16px' },
  * });
  *

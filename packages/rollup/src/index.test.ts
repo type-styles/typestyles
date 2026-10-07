@@ -14,9 +14,10 @@ function rollupHookFn<F>(hook: F | { handler: F } | undefined | null): F | undef
 describe('extractNamespaces', () => {
   it('extracts styles and tokens namespaces', () => {
     const code = `
-      import { styles, tokens } from 'typestyles';
+      import { createTypeStyles } from 'typestyles';
+      const { recipe, tokens } = createTypeStyles();
       const color = tokens.create('color', { primary: '#0066ff' });
-      const button = styles.component('button', { base: { color: color.primary } });
+      const button = recipe('button', { base: { color: color.primary } });
     `;
     const result = extractNamespaces(code);
     expect(result.keys).toEqual(['tokens:color']);
@@ -25,7 +26,8 @@ describe('extractNamespaces', () => {
 
   it('extracts styles.class namespaces as prefixes', () => {
     const code = `
-      import { styles } from 'typestyles';
+      import { createStyles } from 'typestyles';
+const styles = createStyles();
       styles.class('hero', { display: 'flex' });
     `;
     const result = extractNamespaces(code);
@@ -40,8 +42,9 @@ describe('typestylesRollupPlugin', () => {
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.ts'),
-      `import { styles } from 'typestyles';
-styles.component('rollup-convention', { base: { color: 'red' } });`,
+      `import { createTypeStyles } from 'typestyles';
+const { recipe } = createTypeStyles();
+recipe('rollup-convention', { base: { color: 'red' } });`,
     );
 
     const plugin = typestylesRollupPlugin({ root: dir });
@@ -74,7 +77,8 @@ styles.component('rollup-convention', { base: { color: 'red' } });`,
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.ts'),
-      `import { tokens, createTheme } from 'typestyles';
+      `import { createTokens, createTheme } from 'typestyles';
+const tokens = createTokens();
 const color = tokens.create('rollup-color', { primary: '#0066ff' });
 createTheme('rollup-dark', { base: { 'rollup-color': { primary: '#66aaff' } } });`,
     );
@@ -109,10 +113,12 @@ createTheme('rollup-dark', { base: { 'rollup-color': { primary: '#66aaff' } } })
     const plugin = typestylesRollupPlugin();
     const transform = rollupHookFn(plugin.transform);
     if (transform == null) throw new Error('expected plugin.transform');
-    const codeA = `import { styles } from 'typestyles';
-styles.component('rollup-dup', { base: { color: 'red' } });`;
-    const codeB = `import { styles } from 'typestyles';
-styles.component('rollup-dup', { base: { color: 'blue' } });`;
+    const codeA = `import { createTypeStyles } from 'typestyles';
+const { recipe } = createTypeStyles();
+recipe('rollup-dup', { base: { color: 'red' } });`;
+    const codeB = `import { createTypeStyles } from 'typestyles';
+const { recipe } = createTypeStyles();
+recipe('rollup-dup', { base: { color: 'blue' } });`;
 
     const ctx = {
       error(message: string) {

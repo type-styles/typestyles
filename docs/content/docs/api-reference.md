@@ -7,53 +7,40 @@ Auto-generated documentation for all typestyles APIs.
 
 ## Core Exports
 
-### `styles`
+### `createTypeStyles(options?)`
 
-Default style API (semantic class names, empty `scopeId`). Prefer `createStyles({ scopeId, mode, prefix })`
-per package or micro-frontend for isolation.
+**Preferred entry point.** Returns a flat **`TypeStylesApi`**: `{ style, recipe, tokens, global, compose, override, scope, property, container, … }` with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`utils`**, **`breakpoints`**, **`colorModes`**, **`layers`**).
 
-**Methods:**
+```ts
+import { createTypeStyles } from 'typestyles';
 
-- `styles.component(namespace, config)`: Create multi-variant component styles (CVA-style)
-- `styles.class(name, properties)`: Create a single class
-- `styles.container(…)`: Build typed `@container` keys for nested styles (also exported as `container`). Object/two-arg forms infer a **literal** `@container …` string, so `[container({ minWidth: 400 })]: { … }` works next to longhands without casting; use `atRuleBlock` when the key is only known as a generic `string`.
-- `styles.supports(…)`: Build typed `@supports` keys for nested styles (also exported as `supports`). Single-declaration object forms and string-literal raw conditions infer a **literal** `@supports …` string, so `[supports({ display: 'grid' })]: { … }` works next to longhands without casting; use `atRuleBlock` when the key is only known as a generic `string`.
-- `styles.has(…)`, `styles.is(…)`, `styles.where(…)`: Build nested `&`-keys for `:has()`, `:is()`, and `:where()` (same as the `has` / `is` / `where` exports). Literal arguments narrow to a concrete `&:…` key so you can mix them with longhands as `[has('.x')]: { … }` without `as CSSProperties`. `:where()` keeps **zero specificity**; raw `'&:has(…)'` strings still work.
-- `styles.atRuleBlock(key, nested)`: Spreadable `{ [@key]: nested }` so `@…` keys type-check (also exported as `atRuleBlock`)
-- `styles.when(condition, style)`: Expand a `ThemeCondition` into nested `&` / `@media` keys for recipe slots (also exported as `whenStyle`). Use inside `styles.component` / `styles.class`; prefer `conditional()` + `conditions[]` on `styles.override`. See [Theming patterns — Conditional styles in recipes](/docs/theming-patterns#conditional-styles-in-recipes-styleswhen).
-- `styles.breakpoint(name, feature?)`: Build typed `@media` keys from configured viewport breakpoints (also `createBreakpointMediaFn`)
-- `styles.media(name, block)` / `styles.media(name, feature, block)`: Spreadable viewport breakpoint blocks (also `createMediaFn`)
-- `styles.containerRef(label)`: Readable `{scopeId}-{label}` or `{prefix}-{label}` `container-name` (see `createContainerRef`)
-- `styles.hashClass(properties, label?)`: Create a deterministic hashed class
-- `styles.property(id, options?)`: Register a standalone CSS custom property (optional `@property` when `syntax` is set); returns `{ name, var, toString }`. When `value` depends on `var()`/`env()`, pass optional `initial` for the `@property` placeholder `initial-value`, or let TypeStyles pick a syntax-keyed default (e.g. `transparent` for `<color>`). Shorthand entry point — unchanged; bundles declare + set when `options` includes both `syntax` and `value`.
-- `styles.property.declare(id, registration)`: Emit `@property` for a scoped global custom property (`--{scope}-property-{id}`); returns a `PropertyRef`. Registration is metadata only (`syntax`, `inherits?`, `initial?`) — no runtime value.
-- `styles.property.set(ref, value)`: Set the value of a property ref from this styles instance (throws in dev if `ref` belongs to a different instance).
-- `styles.compose(...fns)`: Compose multiple style functions
-- `styles.withUtils(utils)`: Create a utility-aware styles API (prefer `createStyles({ utils })` for a single instance)
-- `styles.scope(opts, className, overrides)`: Proximity-correct overrides via CSS `@scope` (nested themes)
-- `styles.override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta`, including typed **`vars`** for internal component custom properties (see [Theming patterns](/docs/theming-patterns#override-component-internal-vars))
-- `styles.classNaming`: Read-only resolved naming config for the default `styles` instance
+export const { style, recipe, tokens, global } = createTypeStyles({ scopeId: 'app' });
+```
 
-**Named exports (same behavior as `styles.*`):** `container`, `createContainerRef`, `supports`, `atRuleBlock`, `whenStyle`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
+**Style surface:**
 
-**Helpers:** `getComponentMeta(component)` — read public component metadata attached by `styles.component()`.
+- `style(name, properties, options?)`: Create a single named class (was `styles.class`)
+- `style.hash(properties, options?)`: Deterministic hashed class (was `styles.hashClass`); `options` may include `label` and `layer`
+- `recipe(namespace, config, options?)`: Multi-variant / slot recipe (was `styles.component`); optional `{ layer?, themeable? }`
+- `compose(...fns)`: Compose multiple style functions
+- `override(component, config, options?)`: Recipe-shaped typed overrides from component `__tsMeta`, including typed **`vars`** (see [Theming patterns](/docs/theming-patterns#override-component-internal-vars))
+- `scope(opts, className, overrides)`: Proximity-correct overrides via CSS `@scope`
+- `property(id, options?)` / `property.declare` / `property.set`: Standalone CSS custom properties (optional `@property` when `syntax` is set)
+- `container(…)`, `supports(…)`, `has(…)`, `is(…)`, `where(…)`, `atRuleBlock(…)`, `when(…)`, `breakpoint(…)`, `media(…)`, `containerRef(label)`: Nested-selector / at-rule helpers (also available as top-level named exports)
+- `classNaming`: Read-only resolved naming config
+- Component registry: `getComponent(namespace)`, `getThemeableComponents()`, `listComponentNamespaces()` — recipes register on `recipe()`; pass `{ themeable: false }` to exclude utilities from theme override maps
 
-**Component registry (per `createStyles` / `createTypeStyles` instance):** `getComponent(namespace)`, `getThemeableComponents()`, `listComponentNamespaces()`. Recipes register on `styles.component()`; pass `{ themeable: false }` to exclude utilities from theme override maps.
+**Cascade layers:** Pass nested **`layers: { order, token, style, global? }`**. `token` / `style` (and optional `global`) are the defaults so call sites rarely need `{ layer }` — see [Cascade layers](/docs/cascade-layers).
 
-**Related exports:** `colorModes` (`['light', 'dark']`), `conditional(when, style, id?)`, `whenStyle(condition, style)`, `StylableOverride`, `ConditionalOverride`, `ModeAwareValue`.
+**Related exports:** `colorModes` (`['light', 'dark']`), `conditional(when, style, id?)`, `whenStyle(condition, style)`, `StylableOverride`, `ConditionalOverride`, `ModeAwareValue`, `container`, `createContainerRef`, `supports`, `atRuleBlock`, `createBreakpointMediaFn`, `createMediaFn`, `resolveBreakpointMediaKey`, `has`, `is`, `where`.
 
-**Related types:** `OverrideConfig`, `OverrideConfigFor`, `InferVarDefinitions`, `ComponentVarValues`, `ComponentVarAssignValue`, `ComponentCreateOptions`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `ComponentVarRegistry`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
+**Helpers:** `getComponentMeta(component)` — read public component metadata attached by `recipe()`.
 
-### `createStyles(options?)`
+**Related types:** `TypeStylesApi`, `TypeStylesLayersConfig`, `OverrideConfig`, `OverrideConfigFor`, `InferVarDefinitions`, `ComponentVarValues`, `ComponentVarAssignValue`, `ComponentCreateOptions`, `OverrideOptions`, `OverrideFn`, `ComponentMeta`, `ComponentVarRegistry`, `VariantOptionKey`, `CompoundSelectionValue`, `ContainerQueryKey`, `ContainerObjectKey`, `HasNestedKey`, `IsNestedKey`, `WhereNestedKey`, `IsPseudoArg`. See [Custom selectors & at-rules](/docs/custom-at-rules) and [TypeScript tips](/docs/typescript-tips).
 
-Returns a new style API (same shape as `styles`) with its own class naming config. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem' | 'template'`), `prefix`, `scopeId`. Optionally pass **`utils`** — a map of shorthand expanders — to get a utility-aware API in one step (same typing as `styles.withUtils(…)`; see [Styles](/docs/styles#utility-shortcuts)). Optionally pass **`layers`** (tuple or `{ order, prependFrameworkLayers? }`) to enable **`@layer`** output; then every **`class`**, **`hashClass`**, and **`component`** call must include a third argument **`{ layer: '…' }`** (see [Cascade layers](/docs/cascade-layers)). Optionally pass **`colorModes`** — register mode keys for `{ light, dark }` shorthand on color/image properties (`light-dark()`); use the **`colorModes`** constant from `typestyles` (`['light', 'dark']`) for the usual case (see [Theming patterns — mode-aware overrides](/docs/theming-patterns#mode-aware-property-values-colormodes)).
+### `tokens` (from `createTypeStyles` / `createTokens`)
 
-The default `import { styles } from 'typestyles'` is `createStyles()` with default options.
-
-### `tokens`
-
-Default token API (unscoped custom properties). Prefer `createTokens({ scopeId })` when multiple
-bundles share a page.
+Token + theme API bound to an optional `scopeId`. Prefer the `tokens` from **`createTypeStyles`** so styles and tokens share one scope.
 
 **Methods:**
 
@@ -67,15 +54,17 @@ bundles share a page.
 - **`Theme.override(input)`**: typed deep-merge fork of a root theme (`name`, optional `tokens` / `colorMode` / `modes` / `components` / `replace`). Closed against the root token tree.
 - `tokens.createDarkMode(name, darkOverrides)`: Shorthand theme with a single dark `@media` branch
 - `tokens.when` / `tokens.colorMode`: Condition helpers for themes
-- `tokens.scopeId`: The scope passed to `createTokens`, if any
+- `tokens.scopeId`: The scope passed to `createTokens` / `createTypeStyles`, if any
 
 ### `createTokens(options?)`
 
-Returns a token + theme API bound to an optional `scopeId`. When set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme({ name: 'dark', … })` registers `.theme-{scopeId}-dark` (sanitized segments). With **`layers`**, **`tokenLayer`** is required and token/theme CSS is wrapped in that layer. Optional **`nameTemplate`** on the instance or per `tokens.create` call controls emitted `--*` names (see [Tokens](/docs/tokens#custom-css-variable-names-nametemplate)). Optional **`colorModes`** registers mode keys for `{ light, dark }` token leaves and theme `colorMode` patches (`light-dark()` emission); use the **`colorModes`** constant from `typestyles` (`['light', 'dark']`).
+Lower-level factory for a token + theme API alone. When `scopeId` is set, `tokens.create('color', …)` emits `--{scopeId}-color-*` variables and `tokens.createTheme({ name: 'dark', … })` registers `.theme-{scopeId}-dark` (sanitized segments). With **`layers`**, **`tokenLayer`** is required and token/theme CSS is wrapped in that layer. Optional **`nameTemplate`** on the instance or per `tokens.create` call controls emitted `--*` names (see [Tokens](/docs/tokens#custom-css-variable-names-nametemplate)). Optional **`colorModes`** registers mode keys for `{ light, dark }` token leaves and theme `colorMode` patches (`light-dark()` emission); use the **`colorModes`** constant from `typestyles` (`['light', 'dark']`).
 
-The default `import { tokens } from 'typestyles'` is `createTokens()` (no scope).
+Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**, **`TokenSchema`**, **`TokenSchemaLeaf`**, **`DeclaredTokenRef`**, **`CreateTokenValues`**, **`TokenDescriptor`** (for `ctx.vars()` / `property`), **`SyntaxRef`**, **`CssSyntax`**, **`SyntaxRefAccepts`**, **`CreateValueForSyntax`**, **`CompatibleSourceSyntax`**, **`SyntaxAwareLonghands`**, **`CSSPropertyValue`**, **`InferFromSchema`**, **`InferValuesFromSchema`**. Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
 
-Exported types: **`TokenNameContext`**, **`TokenNameTemplate`**, **`FlatTokenPathEntry`**, **`TokenSchema`**, **`TokenSchemaLeaf`**, **`DeclaredTokenRef`**, **`CreateTokenValues`**, **`TokenDescriptor`** (for `ctx.vars()` / `styles.property`), **`SyntaxRef`**, **`CssSyntax`**, **`SyntaxRefAccepts`**, **`CreateValueForSyntax`**, **`CompatibleSourceSyntax`**, **`SyntaxAwareLonghands`**, **`CSSPropertyValue`**, **`InferFromSchema`**, **`InferValuesFromSchema`**. Helper: **`flattenTokenPaths`** (segment-preserving flatten for custom templates).
+### `createStyles(options?)`
+
+Lower-level styles-only factory (`styles.class` / `styles.component` / …). Prefer **`createTypeStyles`** for app and library code. Pass `Partial<ClassNamingConfig>`: `mode` (`'semantic' | 'hashed' | 'compact' | 'atomic' | 'attribute' | 'bem' | 'template'`), `prefix`, `scopeId`. Optionally pass **`utils`**, **`layers`** + **`tokenLayer`** / **`styleLayer`**, and **`colorModes`** — see [Cascade layers](/docs/cascade-layers) and [Theming patterns — mode-aware overrides](/docs/theming-patterns#mode-aware-property-values-colormodes).
 
 ### `keyframes`
 
@@ -175,22 +164,20 @@ hypot('3px', '4px'); // "hypot(3px, 4px)"
 
 See [TypeScript Tips — Complex CSS values](/docs/typescript-tips).
 
-### `createTypeStyles(options)`
-
-Returns **`{ styles, tokens, global }`** with one shared **`scopeId`** (and optional **`mode`**, **`prefix`**, **`layers`**, **`tokenLayer`**, **`colorModes`**). When **`layers`** is omitted, behavior matches separate **`createStyles()`** + **`createTokens()`** (no `@layer` in output). When **`layers`** is set, **`tokenLayer`** is required and both APIs use the same cascade-layer stack. Pass **`colorModes`** (use the `colorModes` export from `typestyles`) to enable `{ light, dark }` on token leaves and theme patches — see [Tokens — Mode-aware token leaves](/docs/tokens#mode-aware-token-leaves). See [Cascade layers](/docs/cascade-layers).
-
-**Default singleton:** `import { styles, tokens } from 'typestyles'` is the same as calling `createStyles()` and `createTokens()` with **no** `scopeId`. That is fine for throwaway demos, but **prefer `createTypeStyles({ scopeId })`** in real apps and libraries so tokens and themes stay namespaced. Add **`global`** from the same constructor when you register [cascade layers](/docs/cascade-layers) or shared `@layer` stacks.
-
 ### Cascade layers (types)
 
-Exported types include **`CascadeLayersInput`**, **`CascadeLayersObjectInput`**, **`ResolvedCascadeLayers`**, and **`ThemeEmitLayerContext`** (theme emission with layers).
+Exported types include **`TypeStylesLayersConfig`**, **`CascadeLayersInput`**, **`CascadeLayersObjectInput`**, **`ResolvedCascadeLayers`**, and **`ThemeEmitLayerContext`** (theme emission with layers).
 
-### `global`
+### `global` (from `createTypeStyles` / `createGlobal`)
 
-Global CSS helpers (not scoped to a component class):
+Global CSS helpers (not scoped to a component class). Prefer `global` from **`createTypeStyles`** so it shares `scopeId` and cascade layers.
 
-- `global.style(selector, styles)`: Insert rules for an arbitrary selector. Rules dedupe by an internal key (`scopeId` + selector + layer when layered). A second call with the **same** key and **different** CSS is skipped; in non-`production` builds, TypeStyles logs a **console warning** so overlapping selectors (for example reset `body` plus your own `body`) are not silent failures. Reuse one call, merge properties, or use a more specific selector (e.g. `html body`).
+- `global.rule(selector, properties, options?)`: Insert rules for a single selector. Rules dedupe by an internal key (`scopeId` + selector + layer when layered). A second call with the **same** key and **different** CSS is skipped; in non-`production` builds, TypeStyles logs a **console warning**. Also accepts a recipe tuple from `typestyles/globals`.
+- `global.rules(styles, options?)`: Insert rules for many selectors in one call (shared optional `{ layer }`).
+- `global.apply(...tuples)`: Apply multiple `typestyles/globals` recipe tuples.
 - `global.fontFace(family, props)`: Register `@font-face` (supports `src` as a string or array of fragments, variable font weight ranges, `font-display`, `unicode-range`, and metric overrides — see [Fonts](/docs/fonts))
+
+Lower-level: **`createGlobal(options?)`** returns the same surface without pairing styles/tokens.
 
 ### `cx(...parts)`
 
@@ -201,9 +188,11 @@ Use `cx` to combine TypeStyles classes with external class strings and condition
 In development, passing a `ComponentAttrsResult` from attribute mode logs a warning — variant attrs are not applied. Use [`mergeProps`](#mergepropsresult-classnames) or [`combine`](#combineparts) instead. See [Attribute mode — React & Astro](/docs/attribute-mode-react).
 
 ```ts
-import { cx, styles } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const card = styles.component('card', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: { padding: '16px' },
   elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
 });
@@ -265,12 +254,14 @@ Exported types: **`ClassNamingMode`**, **`ClassNamingConfig`**, **`ClassNameCont
 
 ## Usage Examples
 
-### Creating Styles
+### Creating styles
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { recipe, tokens } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: { padding: '8px 16px' },
   variants: {
     intent: { primary: { backgroundColor: '#0066ff' } },
@@ -278,31 +269,32 @@ const button = styles.component('button', {
   defaultVariants: { intent: 'primary' },
 });
 
-button(); // "button button--intent-primary"
+button(); // "app-button app-button--intent-primary"
 button({ intent: 'primary' }); // same
 const { base } = button; // destructure class strings
 ```
 
-### Creating Tokens
+### Creating tokens
 
 ```ts
-import { tokens } from 'typestyles';
-
 const color = tokens.create('color', {
   primary: '#0066ff',
   secondary: '#6b7280',
 });
 
-color.primary; // "var(--color-primary)"
+color.primary; // "var(--app-color-primary)"
 ```
 
 ### Scoped instances (libraries / micro-frontends)
 
 ```ts
-import { createStyles, createTokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-export const styles = createStyles({ scopeId: 'my-ds', mode: 'hashed', prefix: 'ds' });
-export const tokens = createTokens({ scopeId: 'my-ds' });
+export const { style, recipe, tokens, global } = createTypeStyles({
+  scopeId: 'my-ds',
+  mode: 'hashed',
+  prefix: 'ds',
+});
 ```
 
 ### `:has()`, `:is()`, `:where()` (nested selectors)
@@ -310,17 +302,19 @@ export const tokens = createTokens({ scopeId: 'my-ds' });
 Use the helpers as **computed keys** so you keep normal CSS semantics (including `:where`’s zero specificity) with the same “small builder” ergonomics as `container()`:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const nav = styles.class('nav', {
+const { style, where, has, is } = createTypeStyles({ scopeId: 'app' });
+
+const nav = style('nav', {
   display: 'flex',
-  [styles.where('.nav')]: { gap: '8px' },
-  [styles.has('.active')]: { borderBottom: '2px solid blue' },
-  [styles.is(':hover', ':focus-visible')]: { outline: '2px solid blue' },
+  [where('.nav')]: { gap: '8px' },
+  [has('.active')]: { borderBottom: '2px solid blue' },
+  [is(':hover', ':focus-visible')]: { outline: '2px solid blue' },
 });
 ```
 
-The named exports `has`, `is`, and `where` are identical to `styles.has` / `styles.is` / `styles.where`. The `IsPseudoArg` type documents common pseudos for `:is()` groups.
+The named exports `has`, `is`, and `where` are identical to the helpers on a `createTypeStyles` instance. The `IsPseudoArg` type documents common pseudos for `:is()` groups.
 
 ### Creating Animations
 

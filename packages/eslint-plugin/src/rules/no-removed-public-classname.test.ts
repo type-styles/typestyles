@@ -28,7 +28,7 @@ describe('no-removed-public-classname', () => {
   ruleTester.run('no-removed-public-classname-valid', noRemovedPublicClassname, {
     valid: [
       {
-        code: `styles.component('button', {
+        code: `recipe('button', {
           base: { color: 'red' },
           variants: { intent: { primary: { backgroundColor: 'blue' } } },
         });`,
@@ -49,7 +49,7 @@ describe('no-removed-public-classname / invalid', () => {
     valid: [],
     invalid: [
       {
-        code: `styles.component('btn', {
+        code: `recipe('btn', {
           base: { color: 'red' },
           variants: { intent: { primary: { backgroundColor: 'blue' } } },
         });`,
@@ -70,7 +70,7 @@ describe('no-removed-public-classname / removed variant', () => {
     valid: [],
     invalid: [
       {
-        code: `styles.component('button', {
+        code: `recipe('button', {
           base: { color: 'red' },
           variants: { intent: { primary: { backgroundColor: 'blue' } } },
         });`,

@@ -1,9 +1,12 @@
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens, global } = createTypeStyles({
+export const { style, recipe, tokens, global } = createTypeStyles({
   scopeId: 'docs',
   mode: 'semantic',
-  layers: ['reset', 'tokens', 'components'] as const,
-  tokenLayer: 'tokens',
-  globalLayer: 'reset',
+  layers: {
+    order: ['reset', 'tokens', 'components'],
+    token: 'tokens',
+    style: 'components',
+    global: 'reset',
+  },
 });

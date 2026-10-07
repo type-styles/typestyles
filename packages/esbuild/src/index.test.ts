@@ -13,12 +13,14 @@ describe('typestylesEsbuildPlugin', () => {
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.ts'),
-      `import { styles } from 'typestyles';
-styles.component('esbuild-convention', { base: { color: 'green' } });`,
+      `import { createTypeStyles } from 'typestyles';
+const { recipe } = createTypeStyles();
+recipe('esbuild-convention', { base: { color: 'green' } });`,
     );
     writeFileSync(
       join(dir, 'src/main.ts'),
-      `import { styles } from 'typestyles';
+      `import { createStyles } from 'typestyles';
+const styles = createStyles();
 export const label = styles.component('esbuild-label', { base: { fontSize: '14px' } });`,
     );
 
@@ -43,7 +45,8 @@ export const label = styles.component('esbuild-label', { base: { fontSize: '14px
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.ts'),
-      `import { tokens, createTheme } from 'typestyles';
+      `import { createTokens, createTheme } from 'typestyles';
+const tokens = createTokens();
 const color = tokens.create('esbuild-color', { primary: '#0066ff' });
 createTheme('esbuild-dark', { base: { 'esbuild-color': { primary: '#66aaff' } } });`,
     );

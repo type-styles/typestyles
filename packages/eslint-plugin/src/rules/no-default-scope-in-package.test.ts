@@ -14,7 +14,7 @@ describe('no-default-scope-in-package', () => {
         filename: 'src/button.ts',
       },
       {
-        code: `styles.hashClass({ color: 'red' })`,
+        code: `style.hash({ color: 'red' })`,
         filename: 'src/a.ts',
       },
       {
@@ -22,25 +22,25 @@ describe('no-default-scope-in-package', () => {
         filename: 'src/a.ts',
       },
       {
-        code: `styles.compose(a, b)`,
+        code: `compose(a, b)`,
         filename: 'src/a.ts',
       },
     ],
     invalid: [
       {
-        code: `styles.class('card', { padding: 8 })`,
+        code: `style('card', { padding: 8 })`,
         filename: 'src/card.ts',
         errors: [{ messageId: 'unscopedInPackage' }],
       },
       {
-        code: `styles.component('button', { base: { color: 'red' } })`,
+        code: `recipe('button', { base: { color: 'red' } })`,
         filename: 'src/button.ts',
         errors: [{ messageId: 'unscopedInPackage' }],
       },
       {
         code: `
-          styles.class('card', { padding: 8 });
-          styles.component('button', { base: { color: 'red' } });
+          style('card', { padding: 8 });
+          recipe('button', { base: { color: 'red' } });
         `,
         filename: 'src/mixed.ts',
         errors: [{ messageId: 'unscopedInPackage' }, { messageId: 'unscopedInPackage' }],

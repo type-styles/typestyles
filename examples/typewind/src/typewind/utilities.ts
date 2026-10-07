@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'typestyles';
 import { brand, slate, space } from './theme';
-import { styles } from './runtime';
+import { style } from './runtime';
 
 const s = space;
 const c = slate;
@@ -9,7 +9,7 @@ const b = brand;
 const utilLayer = { layer: 'utilities' } as const;
 
 function u(name: string, properties: CSSProperties): string {
-  return styles.class(name, properties, utilLayer);
+  return style(name, properties, utilLayer);
 }
 
 /* —— Display —— */

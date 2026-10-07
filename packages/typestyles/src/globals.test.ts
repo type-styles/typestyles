@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { reset } from './globals';
-import { globalApply } from './global';
 import { reset as sheetReset, flushSync, getRegisteredCss } from './sheet';
 import { createGlobal } from './create-global';
 
@@ -10,7 +9,7 @@ describe('reset (Josh Comeau)', () => {
   });
 
   it('emits the core reset rules via globalApply', () => {
-    globalApply(...reset({ includeAppRootIsolation: false }));
+    createGlobal().apply(...reset({ includeAppRootIsolation: false }));
     flushSync();
     const css = getRegisteredCss();
     expect(css).toContain('box-sizing: border-box');
@@ -33,7 +32,7 @@ describe('reset (Josh Comeau)', () => {
   });
 
   it('includes app root isolation by default', () => {
-    globalApply(...reset());
+    createGlobal().apply(...reset());
     flushSync();
     expect(getRegisteredCss()).toContain('#root, #__next');
     expect(getRegisteredCss()).toContain('isolation: isolate');

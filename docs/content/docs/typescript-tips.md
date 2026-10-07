@@ -12,10 +12,12 @@ TypeStyles is built with TypeScript in mind. This guide covers tips for getting 
 TypeStyles automatically infers types from your definitions:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 
 // Types are inferred automatically
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     backgroundColor: '#0066ff',
@@ -35,7 +37,9 @@ const classes = button({ primary: true });
 Token references are typed as strings:
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.create('color', {
   primary: '#0066ff',
@@ -114,9 +118,11 @@ const styles: Record<string, CustomAtRules> = {
 Make your component props type-safe:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: { fontWeight: 500 },
   variants: {
     intent: {
@@ -154,16 +160,18 @@ function Button({ variant = 'primary', size = 'medium', children }: ButtonProps)
 
 ### Stricter object literals
 
-You can add `as const` to **nested values** when you want literal types preserved (for example token-like maps). For `styles.component`, variant keys are inferred from the config object, and **multipart `slots` names are inferred from a `slots` array literal** (no `as const` needed when the array is written inline in the config). If a slot recipe is built in a helper with a widened return type, pin the overload with `styles.component<typeof SLOTS, VariantDefs>(…)` — see [Components — Multipart `slots`](/docs/components#multipart-slots). Use explicit component prop types when you need a narrower public API than the style keys alone.
+You can add `as const` to **nested values** when you want literal types preserved (for example token-like maps). For `recipe`, variant keys are inferred from the config object, and **multipart `slots` names are inferred from a `slots` array literal** (no `as const` needed when the array is written inline in the config). If a slot recipe is built in a helper with a widened return type, pin the overload with `recipe<typeof SLOTS, VariantDefs>(…)` — see [Components — Multipart `slots`](/docs/components#multipart-slots). Use explicit component prop types when you need a narrower public API than the style keys alone.
 
 ## Utility types
 
 ### Extracting style types
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const card = styles.component('card', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: { ... },
   elevated: { ... },
 });
@@ -181,7 +189,9 @@ type CardProps = {
 ### Token type extraction
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const themeTokens = {
   color: tokens.create('color', {
@@ -243,7 +253,9 @@ New namespaces and paths belong on the root `createTheme` (or `tokens.create`) �
 ### Theme-aware components
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const themeTokens = {
   color: tokens.create('color', {
@@ -279,9 +291,11 @@ function ThemedComponent({ color, space }: ThemedComponentProps) {
 ### Generic style components
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const box = styles.component('box', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const box = recipe('box', {
   base: { padding: '16px' },
   variants: {
     tone: {
@@ -367,9 +381,11 @@ declare module 'typestyles' {
 ### Safe variant checking
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: { padding: '8px 12px' },
   variants: {
     intent: {
@@ -400,7 +416,9 @@ function Button({ variant }: { variant?: string }) {
 
 ```ts
 // styles/config.ts
-import { type CSSProperties, styles } from 'typestyles';
+import { createTypeStyles, type CSSProperties } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
 
 interface StyleConfig {
   namespace: string;
@@ -410,7 +428,7 @@ interface StyleConfig {
 
 function createStrictStyles(config: StyleConfig) {
   const { namespace, base, variants } = config;
-  return styles.component(namespace, { base, ...variants });
+  return recipe(namespace, { base, ...variants });
 }
 
 // Usage with full type safety
@@ -430,7 +448,9 @@ button({ primary: true }); // ✓ base + primary classes
 ### Narrowing with type predicates
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
@@ -438,7 +458,7 @@ function isButtonVariant(value: string): value is ButtonVariant {
   return ['primary', 'secondary', 'ghost'].includes(value);
 }
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px 12px' },
   variants: {
     intent: {
@@ -479,9 +499,11 @@ Property values are typed as **strings** (or numbers where unit conversion appli
 TypeStyles exports **`calc`** (a tagged template) and **`clamp(min, preferred, max)`** so the outer `calc(…)` / `clamp(…)` parentheses are always emitted together:
 
 ```ts
-import { calc, clamp, styles } from 'typestyles';
+import { calc, clamp, createTypeStyles } from 'typestyles';
 
-styles.class('sidebar', {
+const { style } = createTypeStyles({ scopeId: 'app' });
+
+style('sidebar', {
   height: calc`100vh - 2 * ${t.space[4]}`,
   fontSize: clamp('0.875rem', '2vw', '1.125rem'),
 });
@@ -527,24 +549,26 @@ Style objects allow nested keys that start with **`&`** (pseudos, descendants), 
 
 TypeStyles narrows keys when you use the builders with **literal** inputs:
 
-- **`styles.container({ minWidth: 400 })`**, **`styles.container('sidebar', { minWidth: 300 })`**, and **`styles.container('(min-width: 1px)')`** infer a concrete `` `@container …` `` key.
-- **`styles.supports({ display: 'grid' })`** and **`styles.supports('(backdrop-filter: blur(4px))')`** infer a concrete `` `@supports …` `` key.
-- **`styles.has('.active')`**, **`styles.is(':hover', ':focus-visible')`**, **`styles.where('.nav')`** infer a concrete `` `&:…` `` key.
+- **`container({ minWidth: 400 })`**, **`container('sidebar', { minWidth: 300 })`**, and **`container('(min-width: 1px)')`** infer a concrete `` `@container …` `` key.
+- **`supports({ display: 'grid' })`** and **`supports('(backdrop-filter: blur(4px))')`** infer a concrete `` `@supports …` `` key.
+- **`has('.active')`**, **`is(':hover', ':focus-visible')`**, **`where('.nav')`** infer a concrete `` `&:…` `` key.
 
 So this pattern type-checks without casting:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-styles.class('card', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+style('card', {
   color: 'inherit',
-  [styles.container({ minWidth: 400 })]: { display: 'grid' },
-  [styles.supports({ display: 'grid' })]: { gap: 16 },
-  [styles.has('.expanded')]: { borderColor: 'blue' },
+  [container({ minWidth: 400 })]: { display: 'grid' },
+  [supports({ display: 'grid' })]: { gap: 16 },
+  [has('.expanded')]: { borderColor: 'blue' },
 });
 ```
 
-When the query or selector is only known as a **`string`** variable at compile time, use **`…styles.atRuleBlock(containerKey, { … })`** (or spread a one-key object) instead of `[someString]: { … }`. See [Custom selectors & at-rules](/docs/custom-at-rules).
+When the query or selector is only known as a **`string`** variable at compile time, use **`…atRuleBlock(containerKey, { … })`** (or spread a one-key object) instead of `[someString]: { … }`. See [Custom selectors & at-rules](/docs/custom-at-rules).
 
 ## Common type issues
 
@@ -554,7 +578,7 @@ This can happen with very complex nested styles. Solution: simplify nesting or a
 
 ```ts
 // If you get deep type errors, add explicit return type
-const complex = styles.component('complex', {
+const complex = recipe('complex', {
   base: {
     // very deep nesting
   },
@@ -579,16 +603,16 @@ Break complex styles into smaller pieces:
 
 ```ts
 // ❌ Avoid very complex single definitions
-const complex = styles.component('complex', {
+const complex = recipe('complex', {
   base: {
     // hundreds of lines
   },
 });
 
 // ✅ Break into logical groups
-const header = styles.component('header', { ... });
-const content = styles.component('content', { ... });
-const footer = styles.component('footer', { ... });
+const header = recipe('header', { ... });
+const content = recipe('content', { ... });
+const footer = recipe('footer', { ... });
 ```
 
 ## Summary

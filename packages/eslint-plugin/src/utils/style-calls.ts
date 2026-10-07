@@ -1,6 +1,9 @@
 import type { TSESTree } from '@typescript-eslint/utils';
 
 export type NamespaceKind =
+  | 'style'
+  | 'recipe'
+  | 'style.hash'
   | 'styles.class'
   | 'styles.component'
   | 'styles.hashClass'
@@ -8,6 +11,7 @@ export type NamespaceKind =
   | 'tokens.createTheme'
   | 'createTheme'
   | 'keyframes.create'
+  | 'global.rule'
   | 'global.style'
   | 'global.fontFace';
 
@@ -61,10 +65,46 @@ function firstStringArg(args: TSESTree.CallExpressionArgument[]): TSESTree.Strin
 
 /**
  * Detect TypeStyles namespace registrations from call expressions.
- * Matches API shape (e.g. `styles.class('card', …)`) regardless of import alias.
+ * Matches API shape (e.g. `style('card', …)` / `recipe('button', …)`) regardless of import alias.
  */
 export function getNamespaceCall(node: TSESTree.CallExpression): NamespaceCall | null {
   const { callee, arguments: args } = node;
+
+  if (callee.type === 'Identifier' && callee.name === 'style') {
+    const nameNode = firstStringArg(args);
+    if (!nameNode) return null;
+    return { kind: 'style', key: `.${nameNode.value}-`, nameNode };
+  }
+
+  if (callee.type === 'Identifier' && callee.name === 'recipe') {
+    const nameNode = firstStringArg(args);
+    if (!nameNode) return null;
+    return { kind: 'recipe', key: `.${nameNode.value}-`, nameNode };
+  }
+
+  if (isMemberCall(callee, 'style', 'hash')) {
+    const first = args[0];
+    if (!first || first.type === 'SpreadElement') return null;
+    const label = args[0];
+    // style.hash(props, { label }) — label may be in options object; skip keying when absent
+    if (args[1]?.type === 'ObjectExpression') {
+      for (const prop of args[1].properties) {
+        if (
+          prop.type === 'Property' &&
+          prop.key.type === 'Identifier' &&
+          prop.key.name === 'label' &&
+          prop.value.type === 'Literal' &&
+          typeof prop.value.value === 'string'
+        ) {
+          return { kind: 'style.hash', key: `.${prop.value.value}-`, nameNode: prop.value };
+        }
+      }
+    }
+    if (label.type === 'Literal' && typeof label.value === 'string') {
+      return { kind: 'style.hash', key: `.${label.value}-`, nameNode: label };
+    }
+    return null;
+  }
 
   if (isMemberCall(callee, 'styles', 'class')) {
     const nameNode = firstStringArg(args);
@@ -115,10 +155,14 @@ export function getNamespaceCall(node: TSESTree.CallExpression): NamespaceCall |
     return { kind: 'keyframes.create', key: `keyframes:${nameNode.value}`, nameNode };
   }
 
-  if (isMemberCall(callee, 'global', 'style')) {
+  if (isMemberCall(callee, 'global', 'rule') || isMemberCall(callee, 'global', 'style')) {
     const nameNode = firstStringArg(args);
     if (!nameNode) return null;
-    return { kind: 'global.style', key: nameNode.value, nameNode };
+    return {
+      kind: isMemberCall(callee, 'global', 'rule') ? 'global.rule' : 'global.style',
+      key: nameNode.value,
+      nameNode,
+    };
   }
 
   if (isMemberCall(callee, 'global', 'fontFace')) {
@@ -166,13 +210,18 @@ export function getStyleObjectArguments(
     }
   };
 
+  if (callee.type === 'Identifier' && (callee.name === 'style' || callee.name === 'recipe')) {
+    pushObject(args[1]);
+    return objects;
+  }
+
   if (callee.type === 'MemberExpression') {
     const method = memberPropertyName(callee);
-    if (method === 'class' || method === 'component') {
+    if (method === 'class' || method === 'component' || method === 'rule' || method === 'style') {
       pushObject(args[1]);
       return objects;
     }
-    if (method === 'hashClass') {
+    if (method === 'hashClass' || method === 'hash' || method === 'rules') {
       const first = args[0];
       if (first && first.type !== 'SpreadElement' && first.type === 'ObjectExpression') {
         objects.push(first);

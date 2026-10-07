@@ -34,8 +34,11 @@ describe('snapshot-classnames', () => {
     );
     const runtimePath = path.join(rootDir, 'src/runtime.ts');
     const bindings = resolveProjectStylesBindings([runtimePath], rootDir);
-    expect([...bindings.keys()]).toContain('styles');
-    expect(bindings.get('styles')).toEqual({ mode: 'semantic', scopeId: 'example-ds' });
+    expect([...bindings.keys()]).toEqual(
+      expect.arrayContaining(['style', 'recipe', 'tokens', 'global']),
+    );
+    expect(bindings.get('style')).toEqual({ mode: 'semantic', scopeId: 'example-ds' });
+    expect(bindings.get('recipe')).toEqual({ mode: 'semantic', scopeId: 'example-ds' });
   });
 
   it('collects class names from the design-system button source', () => {

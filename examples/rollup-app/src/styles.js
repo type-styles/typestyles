@@ -1,8 +1,10 @@
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 import { color, space } from './tokens';
 import { fadeIn, spin } from './animations';
 
-export const layout = styles.component('layout', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+export const layout = recipe('layout', {
   page: {
     maxWidth: '720px',
     margin: '0 auto',
@@ -30,7 +32,7 @@ export const layout = styles.component('layout', {
   },
 });
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     padding: `${space.sm} ${space.md}`,
     borderRadius: '6px',
@@ -46,7 +48,7 @@ export const button = styles.component('button', {
   },
 });
 
-export const card = styles.component('card', {
+export const card = recipe('card', {
   base: {
     padding: space.lg,
     borderRadius: '8px',
@@ -55,7 +57,7 @@ export const card = styles.component('card', {
   },
 });
 
-export const spinner = styles.component('spinner', {
+export const spinner = recipe('spinner', {
   base: {
     width: '24px',
     height: '24px',

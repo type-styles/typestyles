@@ -1,9 +1,12 @@
-const STYLES_COMPONENT_RE = /styles\.component\(\s*['"]([^'"]+)['"]/g;
-const STYLES_CLASS_RE = /styles\.class\(\s*['"]([^'"]+)['"]/g;
+/** `recipe('…')` (new) and `styles.component('…')` (createStyles / legacy). */
+const STYLES_COMPONENT_RE = /(?:styles\.component|(?<![\w.])recipe)\(\s*['"]([^'"]+)['"]/g;
+/** `style('…')` (new) and `styles.class('…')` (createStyles / legacy). */
+const STYLES_CLASS_RE = /(?:styles\.class|(?<![\w.])style)\(\s*['"]([^'"]+)['"]/g;
 const TOKENS_CREATE_RE = /tokens\.create\(\s*['"]([^'"]+)['"]/g;
 const CREATE_THEME_CALL_RE = /(?:tokens\.)?createTheme\s*\(/g;
 const KEYFRAMES_CREATE_RE = /keyframes\.create\(\s*['"]([^'"]+)['"]/g;
-const GLOBAL_STYLE_RE = /global\.style\(\s*['"]([^'"]+)['"]/g;
+/** `global.rule` (new) and `global.style` (legacy). */
+const GLOBAL_STYLE_RE = /global\.(?:rule|style)\(\s*['"]([^'"]+)['"]/g;
 const GLOBAL_FONT_FACE_RE = /global\.fontFace\(\s*['"]([^'"]+)['"]/g;
 
 /** Max chars to scan inside a `createTheme(…)` call for a `name` string literal. */
@@ -90,7 +93,7 @@ function collectOverrideHmrCallTargets(code: string): {
  */
 export function moduleNeedsOverrideHmr(code: string): boolean {
   const scan = stripCommentsForHmrScan(code);
-  if (/\bstyles\.override\s*\(/.test(scan)) return true;
+  if (/\b(?:styles\.)?override\s*\(/.test(scan)) return true;
 
   const { locals, namespaces } = collectOverrideHmrCallTargets(scan);
   for (const name of locals) {

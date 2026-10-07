@@ -31,10 +31,10 @@ describe('component registry', () => {
   it('does not share registry across createTypeStyles instances', () => {
     const a = createTypeStyles({ scopeId: 'a' });
     const b = createTypeStyles({ scopeId: 'b' });
-    a.styles.component('card', { base: { padding: '1rem' } });
-    b.styles.component('card', { base: { padding: '2rem' } });
+    a.recipe('card', { base: { padding: '1rem' } });
+    b.recipe('card', { base: { padding: '2rem' } });
 
-    expect(a.styles.getComponent('card')).not.toBe(b.styles.getComponent('card'));
+    expect(a.getComponent('card')).not.toBe(b.getComponent('card'));
   });
 
   it('getRegisteredComponentRefs returns themeable handles keyed by namespace', () => {

@@ -5,13 +5,13 @@ import { ruleTester } from '../test/rule-tester';
 describe('no-shorthand-longhand-conflict', () => {
   ruleTester.run('no-shorthand-longhand-conflict', noShorthandLonghandConflict, {
     valid: [
-      `styles.class('card', { paddingTop: 8, paddingBottom: 8 })`,
-      `styles.class('card', { padding: 8 })`,
-      `styles.class('card', {
+      `style('card', { paddingTop: 8, paddingBottom: 8 })`,
+      `style('card', { padding: 8 })`,
+      `style('card', {
           padding: 8,
           '&:hover': { paddingTop: 12 },
         })`,
-      `styles.component('button', {
+      `recipe('button', {
           base: { color: 'red' },
           variants: {
             size: {
@@ -23,15 +23,15 @@ describe('no-shorthand-longhand-conflict', () => {
     ],
     invalid: [
       {
-        code: `styles.class('card', { padding: 8, paddingTop: 4 })`,
+        code: `style('card', { padding: 8, paddingTop: 4 })`,
         errors: [{ messageId: 'conflict' }],
       },
       {
-        code: `styles.class('card', { margin: 0, marginLeft: 4 })`,
+        code: `style('card', { margin: 0, marginLeft: 4 })`,
         errors: [{ messageId: 'conflict' }],
       },
       {
-        code: `styles.class('box', { border: '1px solid', borderColor: 'red' })`,
+        code: `style('box', { border: '1px solid', borderColor: 'red' })`,
         errors: [{ messageId: 'conflict' }],
       },
     ],

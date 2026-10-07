@@ -36,8 +36,8 @@ primitive rather than three bespoke one-offs (also future-proofs for
 - Named convenience wrappers for the two concrete cases in scope now: `backdrop()`
   and `highlight(name)` — **docs lead with these**; `pseudoElement()` is the escape hatch.
 - Extend `IsPseudoArg` with `:popover-open` and `:open`.
-- Module-level exports **and** `styles.pseudoElement` / `styles.backdrop` /
-  `styles.highlight` on the instance API (parity with `has` / `is` / `where`).
+- Module-level exports **and** `pseudoElement` / `backdrop` /
+  `highlight` on the instance API (parity with `has` / `is` / `where`).
 
 ## Non-goals
 
@@ -49,7 +49,7 @@ primitive rather than three bespoke one-offs (also future-proofs for
 - **No `CSS.highlights` / `Range` API wrapper.** That's imperative JS/DOM state
   management, not style definition — genuinely out of scope for a CSS-in-TS styling
   library.
-- **No `highlight()` scoped ref** (`styles.highlightRef`) in v1 — highlight names must
+- **No `highlight()` scoped ref** (`highlightRef`) in v1 — highlight names must
   match `CSS.highlights.set(name, …)` in app code; a branded ref doesn't help without
   wrapping registration. Plain strings are sufficient; document the coordination requirement.
 - **No Customizable Select (`::picker(select)`) helper in v1** — not Baseline as of
@@ -122,10 +122,12 @@ one union and both selectors compose the same way through `is()`.
 ## Examples
 
 ```ts
-import { styles, is, backdrop, highlight } from 'typestyles';
+import { createTypeStyles, is, backdrop, highlight } from 'typestyles';
 
-// Popover or dialog — flat longhands on styles.class (not `base`, which is component-only)
-styles.class('menu', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+// Popover or dialog — flat longhands on style (not `base`, which is component-only)
+style('menu', {
   padding: '8px',
   margin: 0, // reset UA popover defaults when paired with anchor positioning
   [is(':popover-open', ':open')]: { opacity: 1, transform: 'scale(1)' },
@@ -133,14 +135,14 @@ styles.class('menu', {
 });
 
 // Component slot model — equivalent using `base`
-styles.component('menu', {
+recipe('menu', {
   base: { padding: '8px', margin: 0 },
   [is(':popover-open', ':open')]: { opacity: 1, transform: 'scale(1)' },
   [backdrop()]: { backdropFilter: 'blur(4px)', background: 'rgb(0 0 0 / 0.4)' },
 });
 
 // Custom Highlight API — CSS half only; registration is app code
-styles.class('doc', {
+style('doc', {
   fontFamily: 'serif',
   [highlight('search-match')]: { background: 'yellow', color: 'black' },
 });
@@ -155,14 +157,14 @@ both, don't duplicate full examples here.
 
 ## Implementation
 
-| File                                                | Change                                                                                     |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `packages/typestyles/src/pseudo-element.ts`         | New — `pseudoElement`, `backdrop`, `highlight`, `PseudoElementKey`                         |
-| `packages/typestyles/src/pseudo-element.test.ts`    | New                                                                                        |
-| `packages/typestyles/src/relational-pseudo.ts`      | Extend `IsPseudoArg` with `:popover-open`, `:open`                                         |
-| `packages/typestyles/src/relational-pseudo.test.ts` | Add cases for the two new pseudo-class arguments                                           |
-| `packages/typestyles/src/styles.ts`                 | `styles.pseudoElement`, `styles.backdrop`, `styles.highlight` (same fns as module exports) |
-| `packages/typestyles/src/index.ts`                  | Re-export fns + `PseudoElementKey` (alongside `HasNestedKey`, `IsNestedKey`, …)            |
+| File                                                | Change                                                                          |
+| --------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `packages/typestyles/src/pseudo-element.ts`         | New — `pseudoElement`, `backdrop`, `highlight`, `PseudoElementKey`              |
+| `packages/typestyles/src/pseudo-element.test.ts`    | New                                                                             |
+| `packages/typestyles/src/relational-pseudo.ts`      | Extend `IsPseudoArg` with `:popover-open`, `:open`                              |
+| `packages/typestyles/src/relational-pseudo.test.ts` | Add cases for the two new pseudo-class arguments                                |
+| `packages/typestyles/src/styles.ts`                 | `pseudoElement`, `backdrop`, `highlight` (same fns as module exports)           |
+| `packages/typestyles/src/index.ts`                  | Re-export fns + `PseudoElementKey` (alongside `HasNestedKey`, `IsNestedKey`, …) |
 
 No `serialize-style.ts` changes — `&::name` keys already resolve correctly today
 through `resolveNestedSelector`'s `key.includes('&')` branch (verify with integration
@@ -189,7 +191,7 @@ Also cover:
 | ---------------------------- | ----------------------------------------------------------------------- |
 | `pseudoElement()`            | with/without arg, empty `name` / empty `arg` throw                      |
 | `backdrop()` / `highlight()` | correct output strings; `highlight('')` throws                          |
-| `styles.*` parity            | `styles.backdrop()` / `styles.highlight()` match module-level exports   |
+| instance / module parity     | `backdrop()` / `highlight()` match module-level exports                 |
 | `is()` with popover args     | `:popover-open`, `:open` compose correctly; narrow via `IsPseudoArg`    |
-| Serialization                | `styles.class('x', { [backdrop()]: … })` emits `.x::backdrop { … }`     |
+| Serialization                | `style('x', { [backdrop()]: … })` emits `.x::backdrop { … }`            |
 | Extraction                   | `&::backdrop` / `&::highlight(name)` keys extracted in build smoke test |

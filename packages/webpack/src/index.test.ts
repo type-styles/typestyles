@@ -13,12 +13,14 @@ describe('TypestylesWebpackPlugin', () => {
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.js'),
-      `import { styles } from 'typestyles';
-styles.component('webpack-convention', { base: { color: 'purple' } });`,
+      `import { createTypeStyles } from 'typestyles';
+const { recipe } = createTypeStyles();
+recipe('webpack-convention', { base: { color: 'purple' } });`,
     );
     writeFileSync(
       join(dir, 'src/index.js'),
-      `import { styles } from 'typestyles';
+      `import { createStyles } from 'typestyles';
+const styles = createStyles();
 export const badge = styles.component('webpack-badge', { base: { padding: '4px' } });`,
     );
 
@@ -66,7 +68,8 @@ export const badge = styles.component('webpack-badge', { base: { padding: '4px' 
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.js'),
-      `import { tokens, createTheme } from 'typestyles';
+      `import { createTokens, createTheme } from 'typestyles';
+const tokens = createTokens();
 const color = tokens.create('webpack-color', { primary: '#0066ff' });
 createTheme('webpack-dark', { base: { 'webpack-color': { primary: '#66aaff' } } });`,
     );

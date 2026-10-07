@@ -48,7 +48,7 @@ type StylableOverride = VariantOptionStyle & {
 ```
 
 `conditions` is a reserved key on `base`, variant options, compound styles, and slot blocks.
-It is **not** valid on `styles.component()` recipe styles — dev warns and skips emission.
+It is **not** valid on `recipe()` recipe styles — dev warns and skips emission.
 
 Emission:
 

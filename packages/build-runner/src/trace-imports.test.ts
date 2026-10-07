@@ -11,7 +11,7 @@ describe('traceTypestylesModules', () => {
     mkdirSync(join(root, 'styles'), { recursive: true });
     writeFileSync(
       join(root, 'styles/tokens.ts'),
-      `import { tokens } from 'typestyles';\ntokens.create('trace-root', { color: { primary: '#000' } });\n`,
+      `import { createTypeStyles } from 'typestyles';\nconst { tokens } = createTypeStyles();\ntokens.create('trace-root', { color: { primary: '#000' } });\n`,
     );
     writeFileSync(
       join(root, 'app/page.tsx'),
@@ -42,7 +42,7 @@ describe('traceTypestylesModules', () => {
     mkdirSync(join(root, 'styles'), { recursive: true });
     writeFileSync(
       join(root, 'styles/site.ts'),
-      `import { styles } from 'typestyles';\nstyles.class('site-page', { padding: '1rem' });\n`,
+      `import { createStyles } from 'typestyles';\nconst styles = createStyles();\nstyles.class('site-page', { padding: '1rem' });\n`,
     );
     writeFileSync(
       join(root, 'app/page.tsx'),

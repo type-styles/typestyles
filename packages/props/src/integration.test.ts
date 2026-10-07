@@ -1,14 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { styles, reset, getRegisteredCss } from 'typestyles';
+import { createTypeStyles, reset, getRegisteredCss } from 'typestyles';
 import { defineProperties, createProps } from './index';
+
+const { recipe, compose } = createTypeStyles();
 
 describe('integration with typestyles', () => {
   beforeEach(() => {
     reset();
   });
 
-  it('works with styles.compose()', () => {
-    const base = styles.component('base', {
+  it('works with compose()', () => {
+    const base = recipe('base', {
       base: { padding: '8px' },
     });
 
@@ -23,7 +25,7 @@ describe('integration with typestyles', () => {
 
     // Compose with string result from props function
     const atomClasses = atoms({ display: 'flex' });
-    const composed = styles.compose(base, atomClasses);
+    const composed = compose(base, atomClasses);
     const result = composed();
 
     expect(result).toBe('base atoms-display-flex');
@@ -49,8 +51,8 @@ describe('integration with typestyles', () => {
     expect(css).toContain('padding: 4px');
   });
 
-  it('handles responsive props with styles.compose()', () => {
-    const layout = styles.component('layout', {
+  it('handles responsive props with compose()', () => {
+    const layout = recipe('layout', {
       base: { maxWidth: '1200px' },
     });
 
@@ -68,7 +70,7 @@ describe('integration with typestyles', () => {
 
     // Compose with string result from props function
     const responsiveClasses = responsive({ display: { mobile: 'grid' } });
-    const composed = styles.compose(layout, responsiveClasses);
+    const composed = compose(layout, responsiveClasses);
     const result = composed();
 
     expect(result).toBe('layout responsive-display-mobile-grid');

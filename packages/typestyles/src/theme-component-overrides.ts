@@ -33,7 +33,7 @@ export function applyThemeComponentOverrides(
       if (process.env.NODE_ENV !== 'production') {
         throw new Error(
           `[typestyles] createTheme: unknown component namespace "${namespace}". ` +
-            `Register the recipe with styles.component('${namespace}', …) on the same createTypeStyles instance.`,
+            `Register the recipe with recipe('${namespace}', …) on the same createTypeStyles instance.`,
         );
       }
       continue;
@@ -42,7 +42,7 @@ export function applyThemeComponentOverrides(
       if (process.env.NODE_ENV !== 'production') {
         throw new Error(
           `[typestyles] createTheme: component "${namespace}" is not themeable ` +
-            `(styles.component(..., { themeable: false })).`,
+            `(recipe(..., { themeable: false })).`,
         );
       }
       continue;

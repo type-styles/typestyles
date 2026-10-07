@@ -8,13 +8,13 @@ Full guide: [Atomic CSS utilities](https://typestyles.dev/docs/atomic-css)
 
 ## Why this exists
 
-| Approach                | Tradeoff                                                                                      |
-| ----------------------- | --------------------------------------------------------------------------------------------- |
-| Tailwind                | Fast authoring, no type safety, config-driven strings                                         |
-| Panda CSS               | Build-time codegen, separate pipeline                                                         |
-| **`@typestyles/props`** | Typed props API, runs with typestyles runtime or extraction, composes with `styles.component` |
+| Approach                | Tradeoff                                                                            |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| Tailwind                | Fast authoring, no type safety, config-driven strings                               |
+| Panda CSS               | Build-time codegen, separate pipeline                                               |
+| **`@typestyles/props`** | Typed props API, runs with typestyles runtime or extraction, composes with `recipe` |
 
-Utility class naming is separate from `styles.component` / `styles.class` — see [Class naming](https://typestyles.dev/docs/class-naming).
+Utility class naming is separate from `recipe` / `style` — see [Class naming](https://typestyles.dev/docs/class-naming).
 
 ## Installation
 
@@ -113,8 +113,10 @@ props({ padding: { mobile: 2, default: 4 } });
 Utilities and components work together via `cx`:
 
 ```tsx
-import { styles, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 import { createProps, defineProperties } from '@typestyles/props';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
 
 const atoms = createProps(
   'atom',
@@ -123,7 +125,7 @@ const atoms = createProps(
   }),
 );
 
-const card = styles.component('card', {
+const card = recipe('card', {
   base: { borderRadius: '8px', backgroundColor: 'white' },
 });
 

@@ -50,7 +50,7 @@ function warnIfDuplicateRuleKeyConflict(
   const nextShort = ignoredCss.length > 220 ? `${ignoredCss.slice(0, 220)}…` : ignoredCss;
   console.warn(
     `[typestyles] Skipped a rule: dedupe key "${key}" already exists with different CSS. ` +
-      `Only the first registration is kept. For globals, merge into one \`global.style\`, ` +
+      `Only the first registration is kept. For globals, merge into one \`global.rule\`, ` +
       `or use a distinct selector (e.g. \`html body\` after reset’s \`body\`).\n` +
       `  Existing: ${prevShort}\n` +
       `  Skipped:  ${nextShort}`,
@@ -278,7 +278,7 @@ function prependFallbackRule(css: string): void {
 }
 
 /**
- * Active HMR slot for `styles.override()` keys (set by Vite-injected `createOverrideHmrSlot`).
+ * Active HMR slot for `override()` keys (set by Vite-injected `createOverrideHmrSlot`).
  * Module eval is synchronous, so one active slot is enough to attribute keys to the
  * theme / app module that registered them — including via `createDesignTheme` sugar.
  */
@@ -295,7 +295,7 @@ export type OverrideHmrSlot = {
 
 /**
  * Create a per-module override HMR slot. Vite injects activate / deactivate / dispose
- * around modules that call `styles.override`, `createDesignTheme`, or `overrideComponent`.
+ * around modules that call `override`, `createDesignTheme`, or `overrideComponent`.
  */
 export function createOverrideHmrSlot(): OverrideHmrSlot {
   const keys = new Set<string>();
@@ -610,7 +610,7 @@ export function startCollection(): () => string {
  *
  * Unlike `collectStyles`, this doesn't require wrapping a render function.
  * It simply returns every CSS rule that has been registered via
- * `styles.component`, `styles.class`, `tokens.create`, `keyframes.create`, etc.
+ * `recipe`, `style`, `tokens.create`, `keyframes.create`, etc.
  *
  * Ideal for SSR frameworks that need the CSS separately from the render
  * pass (e.g. TanStack Start's `head()`, Next.js metadata, Remix links).
@@ -833,7 +833,7 @@ export function removeCssomRulesForExactThemeClass(className: string): void {
 }
 
 /**
- * `styles.override()` keys are `override:…` (or `layer:…:override:…` when layered).
+ * `override()` keys are `override:…` (or `layer:…:override:…` when layered).
  * Component HMR must not drop them — theme modules own those rules and are not
  * re-executed when the recipe module hot-reloads.
  */
@@ -850,10 +850,10 @@ function ruleCssOwnedByOverride(state: SheetState, rule: CSSRule): boolean {
 }
 
 /**
- * Drop every rule key tied to a `styles.component('namespace', …)` registration, including
+ * Drop every rule key tied to a `recipe('namespace', …)` registration, including
  * `@layer`-wrapped keys (`layer:….:.namespace-…`), and release reserved namespace entries.
  * Used for Vite HMR and for dev recovery when a module re-runs before `hot.dispose`.
- * Preserves `styles.override()` rules that target the same class family.
+ * Preserves `override()` rules that target the same class family.
  */
 export function invalidateComponentNamespaceForDev(
   namespace: string,
@@ -905,8 +905,8 @@ export function invalidateComponentNamespaceForDev(
  * `.name:…`, etc.), but not BEM modifiers/elements (`.name--…`, `.name__…`) or sibling
  * identifiers that share a string prefix (`.name-group`, `.namegroup`).
  *
- * Used by `styles.class` HMR invalidation so re-registering `styles.class('button')` does
- * not drop `styles.component('button')` modifier rules.
+ * Used by `style` HMR invalidation so re-registering `style('button')` does
+ * not drop `recipe('button')` modifier rules.
  */
 function matchesExactEmittedClass(selectorKey: string, className: string): boolean {
   const needle = `.${className}`;
@@ -943,13 +943,13 @@ function ruleMatchesExactEmittedClass(rule: CSSRule, className: string): boolean
 }
 
 /**
- * Drop every rule key tied to a `styles.class('name', …)` registration — the base selector plus
+ * Drop every rule key tied to a `style('name', …)` registration — the base selector plus
  * any pseudo/nested/at-rule-wrapped variants. Used for Vite HMR and for dev recovery when a
  * module re-runs before `hot.dispose`, including multi-environment SSR setups (e.g. the Vite
  * Environment API, or RSC frameworks like Waku) that re-evaluate the same source module once
  * per environment within a single process.
  *
- * Matching is exact-class (not the component class family), so `styles.class('button')` HMR
+ * Matching is exact-class (not the component class family), so `style('button')` HMR
  * does not invalidate `button--*` / `button__*` component rules.
  *
  * No-op when `emittedClassName` is `undefined` (hashed/compact/atomic modes derive the class name

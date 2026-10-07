@@ -1,6 +1,6 @@
-import { createStyles, createTokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const tokens = createTokens({ scopeId: 'theming-light-dark-demo' });
+const { recipe, tokens } = createTypeStyles({ scopeId: 'theming-light-dark-demo' });
 
 export const themeColor = tokens.create('theme', {
   text: '#111827',
@@ -21,9 +21,7 @@ export const darkTheme = tokens.createTheme({
   },
 });
 
-const styles = createStyles();
-
-export const card = styles.component('demo-card', {
+export const card = recipe('demo-card', {
   base: {
     padding: '16px 20px',
     borderRadius: '8px',

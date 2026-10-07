@@ -43,7 +43,7 @@ test-setup file that every test file imports (not your package's production runt
 import { onAfterReset } from 'typestyles/testing';
 
 export function registerColorSchemeGlobals() {
-  /* ... global.style(...) calls ... */
+  /* ... global.rule(...) calls ... */
 }
 
 // Re-run this automatically every time a test calls resetAll()
@@ -117,7 +117,7 @@ surface with `@typestyles/cli` rather than asserting individual class names by h
 
 | Cleared automatically by `reset()` / `resetAll()` | Must be re-registered via `onAfterReset`                                 |
 | ------------------------------------------------- | ------------------------------------------------------------------------ |
-| Injected style rules, atomic cache                | Global styles (`global.style(...)`) registered at import time            |
+| Injected style rules, atomic cache                | Global styles (`global.rule(...)`) registered at import time             |
 | Token registrations (`tokens.create`)             | Package-level token dedup registries you built on top of `tokens.create` |
 | Custom property (`@property`) registrations       | Font faces registered via your own wrapper around `globalFontFace`       |
 | Emitted class-name tracking                       | Any other package-level singleton state initialized at import time       |

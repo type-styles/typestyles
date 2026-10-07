@@ -1,15 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { globalStyle, globalFontFace } from './global';
+import { globalFontFace } from './global';
+import { createGlobal } from './create-global';
 import { boxSizing, body } from './globals';
 import { reset, flushSync, getRegisteredCss } from './sheet';
 
-describe('globalStyle', () => {
+describe('global.rule', () => {
+  const global = createGlobal();
+
   beforeEach(() => {
     reset();
   });
 
   it('injects a rule for a plain selector', () => {
-    globalStyle('body', { margin: 0, padding: 0 });
+    global.rule('body', { margin: 0, padding: 0 });
     flushSync();
 
     const css = getRegisteredCss();
@@ -19,7 +22,7 @@ describe('globalStyle', () => {
   });
 
   it('injects rules for pseudo-selectors', () => {
-    globalStyle('a:hover', { textDecoration: 'underline' });
+    global.rule('a:hover', { textDecoration: 'underline' });
     flushSync();
 
     const css = getRegisteredCss();
@@ -28,16 +31,16 @@ describe('globalStyle', () => {
   });
 
   it('injects rules for complex selectors', () => {
-    globalStyle('*, *::before, *::after', { boxSizing: 'border-box' });
+    global.rule('*, *::before, *::after', { boxSizing: 'border-box' });
     flushSync();
 
     const css = getRegisteredCss();
     expect(css).toContain('box-sizing: border-box');
   });
 
-  it('accepts a globals recipe tuple', () => {
-    globalStyle(boxSizing());
-    globalStyle(body({ margin: 0 }));
+  it('accepts globals recipe tuples via apply', () => {
+    global.apply(boxSizing());
+    global.apply(body({ margin: 0 }));
     flushSync();
 
     const css = getRegisteredCss();
@@ -46,8 +49,8 @@ describe('globalStyle', () => {
   });
 
   it('deduplicates identical rules', () => {
-    globalStyle('body', { margin: 0 });
-    globalStyle('body', { margin: 0 });
+    global.rule('body', { margin: 0 });
+    global.rule('body', { margin: 0 });
     flushSync();
 
     const css = getRegisteredCss();
@@ -57,7 +60,7 @@ describe('globalStyle', () => {
   });
 
   it('injects into the DOM stylesheet', () => {
-    globalStyle('html', { fontSize: '16px' });
+    global.rule('html', { fontSize: '16px' });
     flushSync();
 
     const style = document.getElementById('typestyles') as HTMLStyleElement;

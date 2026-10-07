@@ -1,7 +1,7 @@
 # Responsive Object Syntax — Implementation Spec (P6)
 
 Implements `IMPROVEMENTS.md` P6 — breakpoint shorthand in **style property
-values** for the core TypeStyles engine (`styles.class`, `styles.component`,
+values** for the core TypeStyles engine (`style`, `recipe`,
 theme/global style objects, and any path that serializes `CSSProperties` via
 `serializeStyle`).
 
@@ -56,14 +56,14 @@ requiring a compiler or a second styling model.
 
 ## Guiding principles
 
-| Principle                                        | Rationale                                                                                                                                                                                                                                             |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Sugar over a new runtime**                     | Responsive objects expand at CSS-serialization time into the same `@media { … }` output authors can write manually today. No new class-name scheme in `semantic`/`hashed`/`compact` modes.                                                            |
-| **Breakpoints registered once**                  | Breakpoint names (`sm`, `md`, …) map to media-query strings on the styles instance (`createStyles` / `createTypeStyles`), not re-declared per property.                                                                                               |
-| **`base` is the default**                        | Unqualified mobile-first value lives under `base` (Panda/Chakra convention). Accept `_` as an alias for migration ergonomics from Panda's `_` token.                                                                                                  |
-| **Scalar values only**                           | Responsive object values are `string \| number` — one declaration per breakpoint. Nested `CSSProperties` per breakpoint belong in explicit `@media` keys, not responsive shorthand (avoids ambiguous objects).                                        |
-| **Explicit beats magic**                         | Full `'@media (min-width: 768px)'` keys remain valid and take precedence when both forms appear. Unknown breakpoint keys on a value object are **errors in development**, not silent passthrough.                                                     |
-| **Same breakpoints story as props (eventually)** | v1 ships on the styles instance; a follow-up may expose a shared breakpoint map type/helper for `@typestyles/props` — out of scope here, but the names and query strings should match what props docs already use (`sm: '(min-width: 640px)'`, etc.). |
+| Principle                                        | Rationale                                                                                                                                                                                                                                      |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sugar over a new runtime**                     | Responsive objects expand at CSS-serialization time into the same `@media { … }` output authors can write manually today. No new class-name scheme in `semantic`/`hashed`/`compact` modes.                                                     |
+| **Breakpoints registered once**                  | Breakpoint names (`sm`, `md`, …) map to media-query strings on the instance (`createStyles` / `createTypeStyles`), not re-declared per property.                                                                                               |
+| **`base` is the default**                        | Unqualified mobile-first value lives under `base` (Panda/Chakra convention). Accept `_` as an alias for migration ergonomics from Panda's `_` token.                                                                                           |
+| **Scalar values only**                           | Responsive object values are `string \| number` — one declaration per breakpoint. Nested `CSSProperties` per breakpoint belong in explicit `@media` keys, not responsive shorthand (avoids ambiguous objects).                                 |
+| **Explicit beats magic**                         | Full `'@media (min-width: 768px)'` keys remain valid and take precedence when both forms appear. Unknown breakpoint keys on a value object are **errors in development**, not silent passthrough.                                              |
+| **Same breakpoints story as props (eventually)** | v1 ships on the instance; a follow-up may expose a shared breakpoint map type/helper for `@typestyles/props` — out of scope here, but the names and query strings should match what props docs already use (`sm: '(min-width: 640px)'`, etc.). |
 
 ---
 
@@ -75,7 +75,7 @@ Add an optional **`breakpoints`** field to `createStyles` options (and pass it
 through `createTypeStyles` unchanged):
 
 ```ts
-const { styles } = createTypeStyles({
+const { style, recipe } = createTypeStyles({
   scopeId: 'app',
   breakpoints: {
     sm: '(min-width: 640px)',
@@ -90,10 +90,10 @@ const { styles } = createTypeStyles({
 - Values are **media query conditions without the `@media` wrapper** — same
   string you'd put inside `@media … { }` (matches `@typestyles/props`
   `{ '@media': '(min-width: 640px)' }`).
-- Default export `import { styles } from 'typestyles'` uses **`breakpoints:
-undefined`** — responsive object values are rejected in dev (see Validation)
-  unless breakpoints are configured on that instance.
-- Stored on the styles instance's internal config next to `scopeId`, `mode`,
+- `createTypeStyles()` / `createStyles()` without **`breakpoints`** rejects
+  responsive object values in dev (see Validation) until breakpoints are configured
+  on that instance.
+- Stored on the instance's internal config next to `scopeId`, `mode`,
   `layers` — not global mutable state.
 
 Optional sugar — **`breakpoints.fromTokens`** (nice-to-have in v1, required
@@ -120,7 +120,19 @@ Any `string | number` CSS property value in a `CSSProperties` object may
 instead be a **responsive object**:
 
 ```ts
-styles.component('container', {
+import { createTypeStyles } from 'typestyles';
+
+const { recipe } = createTypeStyles({
+  scopeId: 'app',
+  breakpoints: {
+    sm: '(min-width: 640px)',
+    md: '(min-width: 768px)',
+    lg: '(min-width: 1024px)',
+    xl: '(min-width: 1280px)',
+  },
+});
+
+recipe('container', {
   base: {
     width: '100%',
     paddingLeft: { base: t.space[4], md: t.space[6] },
@@ -171,10 +183,10 @@ decomposition rules as today for atomic declarations, plus media wrapping from
 
 Responsive objects are allowed in:
 
-- `styles.class` / `styles.component` `base`, variant styles, compound
+- `style` / `recipe` `base`, variant styles, compound
   variants, slot styles
-- `styles.scope()` overrides
-- `global.style()` / global recipes
+- `scope()` overrides
+- `global.rule()` / global recipes
 - Nested pseudo blocks: `'&:hover': { opacity: { base: 0.9, md: 1 } }` — base
   and breakpoint declarations serialize inside the `:hover` rule (breakpoint
   keys expand to nested `@media` **inside** the pseudo rule's block, which is
@@ -191,7 +203,7 @@ Responsive objects are **not** interpreted inside:
 
 When `serializeStyle` encounters a plain object as a property value:
 
-1. If **`breakpoints` is unset** on the styles instance that owns the
+1. If **`breakpoints` is unset** on the instance that owns the
    serialization context → throw (or `console.error` + fall back to invalid CSS
    `"[object Object]"` — **prefer throw in dev**, omit declaration in prod).
 2. If every key is in `{ base, _ } ∪ breakpointNames` and every value is
@@ -273,7 +285,7 @@ correctness does not require merge; duplicate `@media` blocks are valid CSS).
 
 ### 4. Types — `CSSProperties` responsive augmentation
 
-Add a conditional type on the styles API (exact typing strategy left to
+Add a conditional type on the `createTypeStyles` / `createStyles` API (exact typing strategy left to
 implementation, but the spec requires):
 
 ```ts
@@ -378,9 +390,9 @@ Include before/after replacing the reference-app container pattern.
 1. **Component styles compile to real CSS rules**, not utility class lists —
    responsive objects must expand to `@media`, not to
    `atom-padding-md-16`-style names.
-2. **Breakpoint registry on the styles instance** mirrors how `scopeId` and
+2. **Breakpoint registry on the instance** mirrors how `scopeId` and
    `layers` already parameterize a `createTypeStyles` design system — one
    place to define the scale, many components reference names.
 3. **Pre-expansion to existing `@media` keys** reuses `serializeStyle`'s
    at-rule branch instead of inventing a parallel responsive code path — same
-   reason `styles.scope()` reuses serialization rather than a new CSS printer.
+   reason `scope()` reuses serialization rather than a new CSS printer.

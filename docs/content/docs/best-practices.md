@@ -13,14 +13,14 @@ Use kebab-case for namespaces. The namespace should describe the component or pa
 
 ```ts
 // Good - descriptive and consistent
-const button = styles.component('button', { ... });
-const card = styles.component('card', { ... });
-const navigationMenu = styles.component('navigation-menu', { ... });
+const button = recipe('button', { ... });
+const card = recipe('card', { ... });
+const navigationMenu = recipe('navigation-menu', { ... });
 
 // Avoid - generic or single-letter names
-const b = styles.component('b', { ... });
-const x = styles.component('x', { ... });
-const component = styles.component('component', { ... });
+const b = recipe('b', { ... });
+const x = recipe('x', { ... });
+const component = recipe('component', { ... });
 ```
 
 ### Variants
@@ -28,7 +28,7 @@ const component = styles.component('component', { ... });
 Use camelCase for variant dimension names. Be descriptive about the style purpose, not just the visual appearance:
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { ... },
   variants: {
     intent: {
@@ -56,7 +56,7 @@ const button = styles.component('button', {
 For flat configs, variant names should still be descriptive:
 
 ```ts
-const card = styles.component('card', {
+const card = recipe('card', {
   base: { ... },
   elevated: { ... },
   interactive: { ... },
@@ -156,7 +156,9 @@ Keep tokens in dedicated files, grouped by category:
 
 ```ts
 // tokens/colors.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const color = tokens.create('color', {
   // Brand colors
@@ -186,10 +188,12 @@ Keep styles co-located with components or in a separate `.styles.ts` file:
 
 ```tsx
 // Button.tsx
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { color, space } from '../tokens';
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { ... },
   variants: {
     intent: { primary: { ... }, secondary: { ... } },
@@ -206,10 +210,12 @@ export function Button({ variant = 'primary', children }) {
 
 ```ts
 // Button.styles.ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { color, space } from '../tokens';
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: { ... },
   variants: {
     intent: { primary: { ... }, secondary: { ... } },
@@ -273,7 +279,9 @@ For complex components, you can scope tokens to just that component:
 
 ```ts
 // components/Calendar/Calendar.tokens.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const calendar = tokens.create('calendar', {
   daySize: '40px',
@@ -284,7 +292,7 @@ export const calendar = tokens.create('calendar', {
 // Usage in Calendar.styles.ts
 import { calendar } from './Calendar.tokens';
 
-const calendarStyles = styles.component('calendar', {
+const calendarStyles = recipe('calendar', {
   base: {
     width: calendar.daySize,
     height: calendar.daySize,
@@ -321,11 +329,11 @@ const size = tokens.create('size', {
 For related components (like Form + Input + Label), use consistent namespacing:
 
 ```ts
-const form = styles.component('form', {
+const form = recipe('form', {
   base: { ... },
 });
 
-const input = styles.component('input', {
+const input = recipe('input', {
   base: { ... },
   variants: {
     state: {
@@ -335,7 +343,7 @@ const input = styles.component('input', {
   },
 });
 
-const label = styles.component('label', {
+const label = recipe('label', {
   base: { ... },
   variants: {
     required: {
@@ -358,7 +366,7 @@ const label = styles.component('label', {
 Use dimensioned variants for structured component APIs:
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -396,7 +404,7 @@ button({ intent: 'ghost', size: 'small' }); // Small ghost button
 Use layout components with flexible spacing:
 
 ```ts
-const stack = styles.component('stack', {
+const stack = recipe('stack', {
   base: {
     display: 'flex',
     flexDirection: 'column',
@@ -412,7 +420,7 @@ const stack = styles.component('stack', {
   defaultVariants: { gap: 2 },
 });
 
-const row = styles.component('row', {
+const row = recipe('row', {
   base: {
     display: 'flex',
     flexDirection: 'row',
@@ -434,7 +442,7 @@ const row = styles.component('row', {
 For simple on/off states, use boolean variants or flat configs:
 
 ```ts
-const card = styles.component('card', {
+const card = recipe('card', {
   base: { ... },
   elevated: {
     boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
@@ -459,7 +467,7 @@ cx(base, isElevated && elevated, isInteractive && interactive);
 For more complex state combinations, use dimensioned variants:
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { ... },
   variants: {
     intent: { primary: { ... }, secondary: { ... }, ghost: { ... } },
@@ -538,7 +546,7 @@ const highContrast = tokens.createTheme({
 
 ```ts
 // Good - consistent structure
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     padding: space[4],
     borderRadius: '8px',
@@ -557,7 +565,7 @@ const card = styles.component('card', {
 });
 
 // Avoid - inconsistent formatting
-const card = styles.component('card', {
+const card = recipe('card', {
   base: { padding: space[4], borderRadius: '8px', backgroundColor: color.surface },
   elevated: { boxShadow: shadow.md },
 });
@@ -568,7 +576,9 @@ const card = styles.component('card', {
 ```ts
 // 1. External imports
 import React from 'react';
-import { styles, tokens, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
+
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 // 2. Internal absolute imports
 import { color, space } from '@/tokens';
@@ -591,7 +601,7 @@ import { useCardState } from './useCardState';
 
 ### Why scopeId matters
 
-In semantic mode (the default), `styles.component('button', …)` produces class names like `button`. If two packages — or two files in the same app — both register a `'button'` namespace without a `scopeId`, their CSS rules silently overwrite each other. TypeStyles warns about this in development, but the fix is simple: always set a `scopeId`.
+In semantic mode (the default), `recipe('button', …)` produces class names like `button`. If two packages — or two files in the same app — both register a `'button'` namespace without a `scopeId`, their CSS rules silently overwrite each other. TypeStyles warns about this in development, but the fix is simple: always set a `scopeId`.
 
 ### For applications
 
@@ -601,7 +611,7 @@ Use `createTypeStyles` with a `scopeId` at the root of your styles:
 // src/styles.ts
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens } = createTypeStyles({
+export const { style, recipe, tokens } = createTypeStyles({
   scopeId: 'my-app',
 });
 ```
@@ -615,7 +625,7 @@ Published packages **must** use a `scopeId` to avoid colliding with consumer cod
 ```ts
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens } = createTypeStyles({
+export const { style, recipe, tokens } = createTypeStyles({
   scopeId: '@acme/ui',
   mode: 'hashed',
 });
@@ -642,12 +652,12 @@ Each file gets a unique hash-based scope, similar to CSS Modules.
 ```tsx
 // Bad - creates new styles on every render
 function Button({ children }) {
-  const button = styles.component('button', { base: { ... } }); // Don't do this
+  const button = recipe('button', { base: { ... } }); // Don't do this
   return <button className={button()}>{children}</button>;
 }
 
 // Good - define at module level
-const button = styles.component('button', { base: { ... } });
+const button = recipe('button', { base: { ... } });
 
 function Button({ children }) {
   return <button className={button()}>{children}</button>;
@@ -657,17 +667,19 @@ function Button({ children }) {
 ### Dynamic style values
 
 ```tsx
-import { styles, createVar, assignVars } from 'typestyles';
+import { createTypeStyles, createVar, assignVars } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
 
 // Bad - creates styles for every possible value
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { width: props.width }, // Don't do this
 });
 
 // Good - wire dynamic values through CSS custom properties
 const widthVar = createVar('buttonWidth');
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { display: 'inline-block', width: widthVar },
 });
 
@@ -684,18 +696,18 @@ function Button({ width, children }) {
 
 ```ts
 // File A
-const button = styles.component('button', { ... });
+const button = recipe('button', { ... });
 
 // File B
-const button = styles.component('button', { ... }); // Collision!
+const button = recipe('button', { ... }); // Collision!
 
 // Fix 1 - use descriptive names
-const iconButton = styles.component('icon-button', { ... });
-const textButton = styles.component('text-button', { ... });
+const iconButton = recipe('icon-button', { ... });
+const textButton = recipe('text-button', { ... });
 
 // Fix 2 (recommended) - use scopeId to isolate
-const { styles } = createTypeStyles({ scopeId: 'my-app' });
-const button = styles.component('button', { ... }); // "my-app-button"
+const { recipe } = createTypeStyles({ scopeId: 'my-app' });
+const button = recipe('button', { ... }); // "my-app-button"
 ```
 
 ## Summary

@@ -3,7 +3,7 @@ title: CSS primitives ladder (`css.*`, split property registration, progressive 
 status: approved
 date: 2026-07-24
 related: tokens-declare-schema-design.md
-supersedes: tokens-declare-schema-design.md (non-goals: ctx.vars / styles.property alignment)
+supersedes: tokens-declare-schema-design.md (non-goals: ctx.vars / property alignment)
 ---
 
 # CSS primitives ladder (`css.*`, split property registration, progressive disclosure)
@@ -19,11 +19,11 @@ Three other APIs still bundle registration and values into one object shape
 (`{ value, syntax, inherits, initial }`), and none expose a CSS-faithful
 layer with exact `--name` control:
 
-| API                          | Prefixing                      | `@property`          | Value emission               | Split declare/set? |
-| ---------------------------- | ------------------------------ | -------------------- | ---------------------------- | ------------------ |
-| `tokens.declare` / `create`  | namespace + `nameTemplate`     | declare-time         | `:root` batch per namespace  | Yes                |
-| `styles.property(id, opts?)` | `--{scope}-property-{id}`      | bundled with `value` | `:root` per property         | No                 |
-| `ctx.var` / `ctx.vars`       | `--{scope}-{component}-{path}` | bundled with `value` | merged into component `base` | No                 |
+| API                         | Prefixing                      | `@property`          | Value emission               | Split declare/set? |
+| --------------------------- | ------------------------------ | -------------------- | ---------------------------- | ------------------ |
+| `tokens.declare` / `create` | namespace + `nameTemplate`     | declare-time         | `:root` batch per namespace  | Yes                |
+| `property(id, opts?)`       | `--{scope}-property-{id}`      | bundled with `value` | `:root` per property         | No                 |
+| `ctx.var` / `ctx.vars`      | `--{scope}-{component}-{path}` | bundled with `value` | merged into component `base` | No                 |
 
 Power users migrating from hand-written CSS, Style Dictionary output, or
 third-party stylesheets need **exact `--name` control** without scope prefixing.
@@ -34,7 +34,7 @@ than reimplement.
 
 Internally, `registerAtPropertySchema` (declare-only) and
 `registerAtPropertyRule` (value-aware placeholder logic) already exist in
-`registered-property.ts`. `tokens.declare` uses the schema path. `styles.property`
+`registered-property.ts`. `tokens.declare` uses the schema path. `property`
 and `ctx.vars` still route through `registerRegisteredProperty`, which **requires**
 `value` when `syntax` is set — blocking declare-only registration at those tiers.
 
@@ -45,7 +45,7 @@ and `ctx.vars` still route through `registerRegisteredProperty`, which **require
   climbing past their comfort level.
 - Add a **`typestyles/css` subpath** with CSS-faithful emitters: exact `--name`
   control, no scope prefixing, declare and set are separate operations.
-- Split **`styles.property`** into `declare` / `set` (keep shorthand).
+- Split **`property`** into `declare` / `set` (keep shorthand).
 - Split **`ctx.vars`** into `declare` / values-in-styles (keep shorthand).
 - **Converge types**: one `PropertyRegistration` shape; value is never part of
   registration.
@@ -73,7 +73,7 @@ and `ctx.vars` still route through `registerRegisteredProperty`, which **require
 tokens.declare / tokens.create        ← design systems, themes, forward refs
         ↓ component-scoped or non-token properties
 ctx.vars.declare / ctx.var            ← component internal custom properties
-styles.property.declare / .set        ← global, scoped to a styles instance
+property.declare / .set        ← global, scoped to a createTypeStyles / createStyles instance
         ↓ exact --names, no prefixing
 css.atProperty / css.customProperty   ← mirrors the cascade spec
         ↓ unanticipated at-rules
@@ -253,7 +253,7 @@ css.atProperty('--ds-color-accent', {
 css.customProperty('--ds-color-accent', '#0066ff');
 
 const accent = css.var('--ds-color-accent');
-// styles.class('hero', { color: accent.var })
+// style('hero', { color: accent.var })
 
 // Dependent value: declare with placeholder, set real value separately
 css.atProperty('--ds-color-accent-subtle', { syntax: '<color>', inherits: false });
@@ -265,7 +265,7 @@ css.customProperty(
 
 ---
 
-## Tier 1 — `styles.property`
+## Tier 1 — `property`
 
 Scoped to a `createStyles` / `createTypeStyles` instance. Names follow
 `--{scopedNs}-property-{id}` (unchanged from today).
@@ -274,22 +274,22 @@ Scoped to a `createStyles` / `createTypeStyles` instance. Names follow
 
 ```ts
 // Split (new)
-styles.property.declare(
+property.declare(
   id: string,
   registration: PropertyRegistration,
 ): PropertyRef;
 
-styles.property.set(ref: PropertyRef, value: string | number): void;
+property.set(ref: PropertyRef, value: string | number): void;
 
 // Shorthand (unchanged entry point)
-styles.property(id: string, options?: PropertyOptions): PropertyRef;
+property(id: string, options?: PropertyOptions): PropertyRef;
 
 // Bare ref (unchanged)
-styles.property(id: string): PropertyRef;
+property(id: string): PropertyRef;
 ```
 
-`styles.property` is a **namespace object** with callable shorthand:
-`styles.property(id, opts?)` remains the default call signature; `declare` and
+`property` is a **namespace object** with callable shorthand:
+`property(id, opts?)` remains the default call signature; `declare` and
 `set` are properties on the same function object (similar to `tokens` exposing
 multiple methods).
 
@@ -319,7 +319,7 @@ multiple methods).
 
 ### Migration
 
-Existing `styles.property(id, { value, syntax, inherits })` call sites continue
+Existing `property(id, { value, syntax, inherits })` call sites continue
 to work via shorthand — no source changes required. Descriptor-only shape
 remains `PropertyOptions`.
 
@@ -369,12 +369,16 @@ Plain `string | number` leaves → register value in `varBaseDefaults`.
 
 ### `ctx.var.declare` / `ctx.var` shorthand
 
-Same pattern as `styles.property` for single-property cases.
+Same pattern as `property` for single-property cases.
 
 ### Example — declare structure, set in variants
 
 ```ts
-const badge = styles.component('badge', (c) => {
+import { createTypeStyles } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const badge = recipe('badge', (c) => {
   const v = c.vars.declare({
     textColor: { syntax: '<color>', inherits: false },
     borderWidth: true,
@@ -416,7 +420,7 @@ No API changes. Implementation refactor only:
 ┌─────────────────────────────────────────────────────────────┐
 │  tokens.declare / tokens.create                             │
 │  ctx.vars.declare / ctx.var.declare                         │
-│  styles.property.declare / .set                             │
+│  property.declare / .set                             │
 ├─────────────────────────────────────────────────────────────┤
 │  css.atProperty / css.customProperty / css.customProperties │
 │  (typestyles/css — thin public wrapper)                     │
@@ -442,7 +446,7 @@ No API changes. Implementation refactor only:
 | `packages/typestyles/package.json`                    | Add `"./css"` export                                                           |
 | `packages/typestyles/src/index.ts`                    | Re-export `PropertyRegistration`, `PropertyRef`; deprecated aliases            |
 
-### `styles.property` callable + namespace
+### `property` callable + namespace
 
 ```ts
 type StylesPropertyFn = {
@@ -458,7 +462,7 @@ optional future `tokens` branding).
 ### Build extraction and SSR
 
 All `css.*` calls use `insertRule` — same extraction path as `tokens.create` and
-`styles.property`. No bundler plugin changes expected. `getRegisteredCss()` includes
+`property`. No bundler plugin changes expected. `getRegisteredCss()` includes
 emitted rules identically.
 
 ### HMR
@@ -477,18 +481,18 @@ Sections:
 
 1. **When to use which tier** — decision tree from the ladder diagram.
 2. **`css.*` reference** — migration / exact-name use cases.
-3. **`styles.property` declare/set** — link from [API reference](/docs/api-reference).
+3. **`property` declare/set** — link from [API reference](/docs/api-reference).
 4. **`ctx.vars.declare`** — link from [Components](/docs/components).
 5. **Relationship to tokens** — `tokens.declare` is the design-system tier; link
    to [Tokens](/docs/tokens).
 
 Update existing docs:
 
-- `docs/content/docs/api-reference.md` — `styles.property.declare` / `.set`, `css` subpath.
+- `docs/content/docs/api-reference.md` — `property.declare` / `.set`, `css` subpath.
 - `docs/content/docs/tokens.md` — cross-link to css-primitives ladder.
 - `docs/content/docs/components.md` — `ctx.vars.declare` example.
 - `tokens-declare-schema-design.md` non-goals note — superseded by this spec for
-  `ctx.vars()` / `styles.property()` alignment.
+  `ctx.vars()` / `property()` alignment.
 
 Add to `docs/src/navigation.ts` under an appropriate group (e.g. "Core concepts"
 or nested under Tokens).
@@ -497,45 +501,45 @@ or nested under Tokens).
 
 ## Validation matrix (dev mode)
 
-| Check                                                         | Tier        | Result                   |
-| ------------------------------------------------------------- | ----------- | ------------------------ |
-| `styles.property.set(ref)` ref from different styles instance | styles      | throw                    |
-| `declare` duplicate id/path on same instance                  | styles, ctx | warn (existing behavior) |
-| `atProperty` / `declare` conflicting re-registration          | all         | throw                    |
-| `syntax` without placeholder and without `initial`            | all         | warn + skip `@property`  |
-| `initial` contains `var()` / `env()`                          | all         | warn + skip `@property`  |
-| `customProperty` without prior `atProperty`                   | css         | silent                   |
-| `name` missing `--` prefix                                    | css         | throw                    |
+| Check                                                | Tier         | Result                   |
+| ---------------------------------------------------- | ------------ | ------------------------ |
+| `property.set(ref)` ref from different instance      | createStyles | throw                    |
+| `declare` duplicate id/path on same instance         | styles, ctx  | warn (existing behavior) |
+| `atProperty` / `declare` conflicting re-registration | all          | throw                    |
+| `syntax` without placeholder and without `initial`   | all          | warn + skip `@property`  |
+| `initial` contains `var()` / `env()`                 | all          | warn + skip `@property`  |
+| `customProperty` without prior `atProperty`          | css          | silent                   |
+| `name` missing `--` prefix                           | css          | throw                    |
 
 ---
 
 ## Testing
 
-| Area                               | File                     | Cases                                                                      |
-| ---------------------------------- | ------------------------ | -------------------------------------------------------------------------- |
-| `css.atProperty` declare-only      | `css.test.ts` (new)      | emits `@property`, no `:root`; placeholder; explicit `initial`; skip paths |
-| `css.customProperties` merge       | `css.test.ts`            | batch emit; merge same selector; override                                  |
-| `styles.property.declare` / `.set` | `styles.test.ts`         | split emit; shorthand equivalence; cross-instance set throw                |
-| `ctx.vars.declare`                 | `component.test.ts`      | `@property` without base default; variant overrides                        |
-| Shorthand backward compat          | existing tests           | all current `styles.property` / `ctx.vars` tests pass unchanged            |
-| Token integration                  | `tokens.test.ts`         | refactor-only — no output change                                           |
-| Extraction                         | `webpack` / `vite` smoke | `css.*` import extracted like tokens                                       |
+| Area                          | File                     | Cases                                                                      |
+| ----------------------------- | ------------------------ | -------------------------------------------------------------------------- |
+| `css.atProperty` declare-only | `css.test.ts` (new)      | emits `@property`, no `:root`; placeholder; explicit `initial`; skip paths |
+| `css.customProperties` merge  | `css.test.ts`            | batch emit; merge same selector; override                                  |
+| `property.declare` / `.set`   | `styles.test.ts`         | split emit; shorthand equivalence; cross-instance set throw                |
+| `ctx.vars.declare`            | `component.test.ts`      | `@property` without base default; variant overrides                        |
+| Shorthand backward compat     | existing tests           | all current `property` / `ctx.vars` tests pass unchanged                   |
+| Token integration             | `tokens.test.ts`         | refactor-only — no output change                                           |
+| Extraction                    | `webpack` / `vite` smoke | `css.*` import extracted like tokens                                       |
 
 ---
 
 ## Migration guide
 
-### `styles.property` consumers
+### `property` consumers
 
 No change required when using shorthand. Optional migration to split form:
 
 ```ts
 // Before (still valid)
-const hue = styles.property('accent-hue', { value: '220', syntax: '<number>' });
+const hue = property('accent-hue', { value: '220', syntax: '<number>' });
 
 // After (explicit)
-const hue = styles.property.declare('accent-hue', { syntax: '<number>' });
-styles.property.set(hue, '220');
+const hue = property.declare('accent-hue', { syntax: '<number>' });
+property.set(hue, '220');
 ```
 
 ### `ctx.vars` consumers

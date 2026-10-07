@@ -27,10 +27,11 @@ describe('discoverDefaultExtractModules', () => {
 });
 
 describe('extractNamespaces', () => {
-  it('extracts styles.component namespaces as prefixes', () => {
+  it('extracts recipe namespaces as prefixes', () => {
     const code = `
-      import { styles } from 'typestyles';
-      const button = styles.component('button', {
+      import { createTypeStyles } from 'typestyles';
+      const { recipe } = createTypeStyles();
+      const button = recipe('button', {
         base: { color: 'red' },
       });
     `;
@@ -41,7 +42,8 @@ describe('extractNamespaces', () => {
 
   it('extracts styles.class namespaces as prefixes', () => {
     const code = `
-      import { styles } from 'typestyles';
+      import { createStyles } from 'typestyles';
+      const styles = createStyles();
       styles.class('card', { padding: '1rem' });
     `;
     const result = extractNamespaces(code);
@@ -51,7 +53,8 @@ describe('extractNamespaces', () => {
 
   it('extracts tokens.create namespaces as keys', () => {
     const code = `
-      import { tokens } from 'typestyles';
+      import { createTokens } from 'typestyles';
+      const tokens = createTokens();
       const color = tokens.create('color', { primary: '#0066ff' });
     `;
     const result = extractNamespaces(code);
@@ -61,7 +64,8 @@ describe('extractNamespaces', () => {
 
   it('extracts createTheme as theme keys', () => {
     const code = `
-      import { tokens } from 'typestyles';
+      import { createTokens } from 'typestyles';
+      const tokens = createTokens();
       const dark = tokens.createTheme('dark', { base: { color: { primary: '#fff' } } });
     `;
     const result = extractNamespaces(code);
@@ -92,11 +96,12 @@ describe('extractNamespaces', () => {
 
   it('extracts multiple namespaces from a single module', () => {
     const code = `
-      import { styles, tokens, keyframes } from 'typestyles';
+      import { createTypeStyles, keyframes } from 'typestyles';
+      const { recipe, tokens } = createTypeStyles();
       const color = tokens.create('color', { primary: '#0066ff' });
       const fadeIn = keyframes.create('fadeIn', { from: { opacity: 0 }, to: { opacity: 1 } });
-      const button = styles.component('button', { base: { color: color.primary } });
-      const card = styles.component('card', { base: { animation: fadeIn } });
+      const button = recipe('button', { base: { color: color.primary } });
+      const card = recipe('card', { base: { animation: fadeIn } });
     `;
     const result = extractNamespaces(code);
     expect(result.keys).toEqual(['tokens:color', 'keyframes:fadeIn']);
@@ -113,7 +118,8 @@ describe('extractNamespaces', () => {
 
   it('extracts styles.component namespaces as prefixes', () => {
     const code = `
-      import { styles } from 'typestyles';
+      import { createStyles } from 'typestyles';
+const styles = createStyles();
       const button = styles.component('button', {
         base: { color: 'red' },
       });
@@ -125,8 +131,9 @@ describe('extractNamespaces', () => {
 
   it('extracts global.style selectors as prefixes', () => {
     const code = `
-      import { global } from 'typestyles';
-      global.style('body', { margin: 0 });
+      import { createGlobal } from 'typestyles';
+      const global = createGlobal();
+      global.rule('body', { margin: 0 });
     `;
     const result = extractNamespaces(code);
     expect(result.prefixes).toEqual(['body']);
@@ -135,7 +142,8 @@ describe('extractNamespaces', () => {
 
   it('extracts global.fontFace as font-face prefixes', () => {
     const code = `
-      import { global } from 'typestyles';
+      import { createGlobal } from 'typestyles';
+      const global = createGlobal();
       global.fontFace('Inter', { src: "url('/Inter.woff2')" });
     `;
     const result = extractNamespaces(code);
@@ -393,9 +401,11 @@ export const acme = cdt({
     const plugin = mod.default();
     const transform = viteHookFn(plugin.transform);
     if (transform == null) throw new Error('expected plugin.transform');
-    const codeA = `import { styles } from 'typestyles';
+    const codeA = `import { createStyles } from 'typestyles';
+const styles = createStyles();
 styles.component('shared-ns', { base: { color: 'red' } });`;
-    const codeB = `import { styles } from 'typestyles';
+    const codeB = `import { createStyles } from 'typestyles';
+const styles = createStyles();
 styles.component('shared-ns', { base: { color: 'blue' } });`;
 
     const ctx = {
@@ -415,7 +425,8 @@ styles.component('shared-ns', { base: { color: 'blue' } });`;
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.ts'),
-      `import { tokens, createTheme } from 'typestyles';
+      `import { createTokens, createTheme } from 'typestyles';
+const tokens = createTokens();
 const color = tokens.create('vite-color', { primary: '#0066ff' });
 createTheme('vite-dark', { base: { 'vite-color': { primary: '#66aaff' } } });`,
     );
@@ -450,7 +461,8 @@ createTheme('vite-dark', { base: { 'vite-color': { primary: '#66aaff' } } });`,
     const mod = await import('./index');
     const plugin = mod.default();
     viteHookFn(plugin.configResolved)?.({ command: 'build' } as ResolvedConfig);
-    const code = `import { styles } from 'typestyles';
+    const code = `import { createStyles } from 'typestyles';
+const styles = createStyles();
 styles.component('x', { base: {} });`;
     const transform = viteHookFn(plugin.transform);
     if (transform == null) throw new Error('expected plugin.transform');

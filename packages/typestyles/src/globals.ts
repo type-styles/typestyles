@@ -30,10 +30,10 @@ function withLayer(
 
 /**
  * [Josh Comeau’s custom CSS reset](https://www.joshwcomeau.com/css/custom-css-reset/) as an array of
- * {@link GlobalStyleTuple}s — use with `global.apply(...reset())` or call `global.style` per tuple.
+ * {@link GlobalStyleTuple}s — use with `global.apply(...reset())`.
  *
- * With cascade layers, pass `{ layer: 'reset' }` (or your baseline layer) so these rules stay below
- * component layers — or set `globalLayer` on `createTypeStyles` / `createGlobal` and omit `layer` here.
+ * With cascade layers, pass `{ layer: 'reset' }` on the recipe options, or set `layers.global`
+ * on `createTypeStyles` and omit `layer` here.
  *
  * Released into the public domain by the author; this port keeps the same rules for convenience.
  *
@@ -43,9 +43,12 @@ function withLayer(
  * import { reset } from 'typestyles/globals';
  *
  * const { global } = createTypeStyles({
- *   layers: ['reset', 'tokens', 'components'] as const,
- *   tokenLayer: 'tokens',
- *   globalLayer: 'reset',
+ *   layers: {
+ *     order: ['reset', 'tokens', 'components'],
+ *     token: 'tokens',
+ *     style: 'components',
+ *     global: 'reset',
+ *   },
  * });
  * global.apply(...reset({ includeAppRootIsolation: false }));
  * ```

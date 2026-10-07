@@ -20,7 +20,9 @@ npm install typestyles
 ```
 
 ```tsx
-import { styles, tokens, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
+
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 // Define design tokens as CSS custom properties
 const color = tokens.create('color', {
@@ -31,7 +33,7 @@ const color = tokens.create('color', {
 });
 
 // Create component styles — callable AND destructurable
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -89,7 +91,7 @@ const { base } = button;
 TypeStyles generates class names that mirror your authored style names. If you write a variant called `intent: { primary: {...} }`, you get a class name `button-intent-primary` in the DOM. What you see in your code is what you see in DevTools.
 
 ```tsx
-const card = styles.component('card', {
+const card = recipe('card', {
   base: { padding: '16px', borderRadius: '8px' },
   elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
 });
@@ -107,7 +109,9 @@ const { base, elevated } = card;
 CSS custom properties are first-class citizens. Define your tokens once, use them everywhere — including in plain CSS files.
 
 ```tsx
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens, recipe } = createTypeStyles({ scopeId: 'app' });
 
 // Creates CSS custom properties on :root
 const spacing = tokens.create('spacing', {
@@ -119,7 +123,7 @@ const spacing = tokens.create('spacing', {
 });
 
 // Use in TypeStyles — fully typed, autocomplete works
-const layout = styles.component('layout', {
+const layout = recipe('layout', {
   base: {
     padding: spacing.md, // var(--spacing-md)
     gap: spacing.lg, // var(--spacing-lg)
@@ -157,9 +161,11 @@ TypeStyles works alongside existing CSS. Adopt it one component at a time.
 ```tsx
 // Use TypeStyles and plain CSS together
 import './legacy-styles.css';
-import { styles, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const newComponent = styles.component('new-component', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const newComponent = recipe('new-component', {
   base: { padding: '16px', borderRadius: '8px' },
 });
 
@@ -179,9 +185,11 @@ function MyComponent() {
 Styles compose naturally using the built-in `cx()` utility or by destructuring.
 
 ```tsx
-import { styles, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const text = styles.component('text', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const text = recipe('text', {
   base: { fontFamily: 'system-ui' },
   bold: { fontWeight: 700 },
   muted: { color: color.secondary },
@@ -197,9 +205,15 @@ const { base, heading, bold, muted } = text;
 Use the built-in `cx` utility to combine classes from different sources:
 
 ```tsx
-import { cx, styles } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const card = styles.class('card', { padding: '16px' });
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = style('card', { padding: '16px' });
+const text = recipe('text', {
+  base: { fontSize: '14px' },
+  muted: { color: '#6b7280' },
+});
 
 // Combine TypeStyles classes with external classes, conditionally
 const { base: textBase, muted } = text;
@@ -212,7 +226,9 @@ const { base: textBase, muted } = text;
 Write CSS selectors naturally. Media queries, pseudo-classes, combinators — it all works.
 
 ```tsx
-const nav = styles.component('nav', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const nav = recipe('nav', {
   base: {
     display: 'flex',
     gap: spacing.md,
@@ -247,11 +263,12 @@ You can colocate styles with components, but you're never forced to.
 
 ```tsx
 // Button.tsx — styles and component together
-import { styles, tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
+const { recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 const color = tokens.use('color'); // Reference tokens defined elsewhere
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     backgroundColor: color.primary,
@@ -274,8 +291,10 @@ Or keep styles separate:
 
 ```tsx
 // button.styles.ts
-import { styles } from 'typestyles';
-export const button = styles.component('button', {
+import { createTypeStyles } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+export const button = recipe('button', {
   base: { padding: '8px 16px' },
   variants: {
     intent: { primary: { backgroundColor: '#0066ff' } },
@@ -293,7 +312,7 @@ export function Button({ intent, children }) {
 
 TypeStyles operates at runtime with minimal overhead:
 
-1. **`styles.component()`** registers style definitions and returns a callable+destructurable object
+1. **`recipe()`** registers style definitions and returns a callable+destructurable object
 2. **Calling the object** composes class names from the variants you select (base always included)
 3. **Destructuring** gives you individual class strings for fine-grained control
 4. **CSS is injected** into a `<style>` element on first use (lazy injection)
@@ -317,13 +336,13 @@ Sync and async render functions are supported — `collectStyles` returns a `Pro
 
 ## API Reference
 
-### `styles.component(namespace, config)`
+### `recipe(namespace, config)`
 
 Creates a component style and returns a callable + destructurable object.
 
 ```tsx
 // Dimensioned variants
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px 16px' },
   variants: {
     intent: { primary: { color: 'blue' }, ghost: { color: 'gray' } },
@@ -338,7 +357,7 @@ button.base; // "button-base"
 button['intent-primary']; // "button-intent-primary"
 
 // Flat variants (simple boolean toggles)
-const card = styles.component('card', {
+const card = recipe('card', {
   base: { padding: '16px' },
   elevated: { boxShadow: '...' },
 });
@@ -348,12 +367,12 @@ card({ elevated: true }); // "card-base card-elevated"
 card.elevated; // "card-elevated"
 ```
 
-### `styles.class(name, properties)`
+### `style(name, properties)`
 
 Creates a single class with no variants. Returns the class name string.
 
 ```tsx
-const card = styles.class('card', { padding: '1rem' });
+const card = style('card', { padding: '1rem' });
 // card === "card"
 ```
 
@@ -402,23 +421,23 @@ See `tokens.createDarkMode`, `tokens.when`, and `tokens.colorMode` for layered l
 
 ### `createTypeStyles(options?)`
 
-For **libraries, design systems, or micro-frontends**, create a scoped **`styles` + `tokens` pair** so class names and CSS variables stay isolated—no global configuration:
+**Preferred entry.** Returns a flat `{ style, recipe, tokens, global, … }` API with one shared `scopeId` so class names and CSS variables stay isolated:
 
 ```tsx
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens } = createTypeStyles({
+export const { style, recipe, tokens, global } = createTypeStyles({
   scopeId: 'my-ui',
   mode: 'hashed',
   prefix: 'ui',
 });
 ```
 
-Supports the same options as `createStyles` and `createTokens`, plus optional **`layers`** for cascade layer wiring across both APIs. Pass optional **`utils`** to attach shorthand style expanders on the styles instance.
+Supports the same naming options as `createStyles` / `createTokens`, plus optional nested **`layers: { order, token, style, global? }`**. Pass optional **`utils`** to attach shorthand style expanders.
 
 ### `createStyles(options?)` and `createTokens(options?)`
 
-Configure **`styles`** and **`tokens`** separately when you need different options on each:
+Lower-level factories when you need styles or tokens alone:
 
 ```tsx
 import { createStyles, createTokens } from 'typestyles';
@@ -427,7 +446,7 @@ export const styles = createStyles({ scopeId: 'my-ui', mode: 'hashed', prefix: '
 export const tokens = createTokens({ scopeId: 'my-ui' });
 ```
 
-The default `import { styles, tokens } from 'typestyles'` remains `createStyles()` / `createTokens()` with default options for single-app use.
+Prefer `createTypeStyles({ scopeId })` so `style`, `recipe`, and `tokens` share one scope.
 
 ### `tokens.use(namespace)`
 
@@ -498,7 +517,7 @@ Runnable apps in [`examples/`](./examples/README.md) — each has its own README
 | [`rollup-app`](./examples/rollup-app)                   | `@typestyles/rollup` — vanilla JS                                 |
 | [`rolldown-app`](./examples/rolldown-app)               | Rolldown + Rollup-compatible plugin                               |
 | [`parcel-app`](./examples/parcel-app)                   | Runtime-only path (no bundler plugin)                             |
-| [`typewind`](./examples/typewind)                       | Tailwind-style utilities via `styles.class`                       |
+| [`typewind`](./examples/typewind)                       | Tailwind-style utilities via `style`                              |
 | [`design-system`](./examples/design-system)             | Framework-agnostic tokens and recipes                             |
 | [`react-design-system`](./examples/react-design-system) | React component library on typestyles                             |
 

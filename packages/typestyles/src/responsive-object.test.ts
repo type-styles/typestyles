@@ -266,7 +266,7 @@ describe('createGlobal integration', () => {
 
   it('serializes responsive global styles when breakpoints are configured', () => {
     const global = createGlobal({ scopeId: 'global-bp', breakpoints });
-    global.style('.container', { padding: { base: '8px', md: '16px' } });
+    global.rule('.container', { padding: { base: '8px', md: '16px' } });
     flushSync();
 
     const css = getRegisteredCss();
@@ -276,7 +276,7 @@ describe('createGlobal integration', () => {
   });
 });
 
-describe('styles.scope() integration', () => {
+describe('scope() integration', () => {
   beforeEach(() => {
     reset();
   });

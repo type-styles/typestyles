@@ -19,8 +19,13 @@ pure CSS — no JS positioning engine (Floating UI, Popper) required.
 TypeStyles has no DX for it today. Left uncovered, users write raw strings:
 
 ```ts
-styles.class('trigger', { anchorName: '--ts-tooltip-trigger' as any });
-styles.class('tooltip', {
+import { createTypeStyles } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
+
+// Today: raw strings, no typed refs
+style('trigger', { anchorName: '--ts-tooltip-trigger' as any });
+style('tooltip', {
   positionAnchor: '--ts-tooltip-trigger' as any,
   top: 'anchor(--ts-tooltip-trigger bottom, 8px)',
 });
@@ -98,8 +103,8 @@ createAnchorRef('tooltip-trigger'); // "--ts-tooltip-trigger"
 createAnchorRef('tooltip-trigger', { scopeId: 'my-app' }); // "--my-app-tooltip-trigger"
 ```
 
-Both module-level `createAnchorRef()` and `styles.anchorRef(label)` coexist — same
-pattern as `createContainerRef` / `styles.containerRef`.
+Both module-level `createAnchorRef()` and instance `anchorRef(label)` (on a `createTypeStyles` / `createStyles` API) coexist — same
+pattern as `createContainerRef` / instance `containerRef`.
 
 ### Property value typing — already covered by csstype, no `types.ts` changes
 
@@ -254,7 +259,7 @@ export function positionTry(
 ): PositionTryRef;
 ```
 
-`styles.positionTry(name, properties)` on a `createStyles()` instance passes `scopeId` /
+`positionTry(name, properties)` on a `createStyles()` instance passes `scopeId` /
 `prefix` from the instance naming config (mirrors scoped ref shorthands).
 
 ```ts
@@ -319,13 +324,15 @@ scrollable spanning areas).
 ### Tooltip with `position-area` (recommended)
 
 ```ts
-import { styles, createAnchorRef, positionTry, positionTryFallbacks } from 'typestyles';
+import { createTypeStyles, createAnchorRef, positionTry, positionTryFallbacks } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
 
 const tooltipAnchor = createAnchorRef('tooltip-trigger');
 
-styles.class('trigger', { anchorName: tooltipAnchor });
+style('trigger', { anchorName: tooltipAnchor });
 
-styles.class('tooltip', {
+style('tooltip', {
   position: 'fixed',
   positionAnchor: tooltipAnchor,
   positionArea: 'block-end',
@@ -337,13 +344,15 @@ styles.class('tooltip', {
 ### Tooltip with inset + `anchor()` (fine-grained control)
 
 ```ts
-import { styles, createAnchorRef, anchor, anchorSize } from 'typestyles';
+import { createTypeStyles, createAnchorRef, anchor, anchorSize } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
 
 const tooltipAnchor = createAnchorRef('tooltip-trigger');
 
-styles.class('trigger', { anchorName: tooltipAnchor });
+style('trigger', { anchorName: tooltipAnchor });
 
-styles.class('tooltip', {
+style('tooltip', {
   position: 'fixed',
   positionAnchor: tooltipAnchor,
   top: anchor(tooltipAnchor, 'bottom', '8px'),
@@ -360,7 +369,7 @@ const scrollableEnd = positionTry('bottom-scrollable', {
   positionArea: 'block-end span-all',
 });
 
-styles.class('menu', {
+style('menu', {
   position: 'fixed',
   positionAnchor: menuAnchor,
   positionArea: 'block-end',
@@ -376,7 +385,7 @@ styles.class('menu', {
 | `packages/typestyles/src/anchor.test.ts`   | New                                                                                                                                                                                      |
 | `packages/typestyles/src/css-math.ts`      | Add `anchor()`, `anchorSize()` (shares `CssMathValue`)                                                                                                                                   |
 | `packages/typestyles/src/css-math.test.ts` | Add cases                                                                                                                                                                                |
-| `packages/typestyles/src/styles.ts`        | `styles.anchorRef(label)` / `styles.positionTry(name, properties)`                                                                                                                       |
+| `packages/typestyles/src/styles.ts`        | instance `anchorRef(label)` / `positionTry(name, properties)`                                                                                                                            |
 | `packages/typestyles/src/types.ts`         | No changes — `anchorName`, `positionAnchor`, `positionArea`, `positionVisibility`, `positionTryFallbacks` are already fully typed via `csstype` 3.2.3's `Property`/`DataType` namespaces |
 | `packages/typestyles/src/index.ts`         | Re-export refs, builders, `positionTry`, `positionTryFallbacks`, `PositionTryTactic`, `PositionAreaKeyword`                                                                              |
 
@@ -399,16 +408,16 @@ Cross-link from `api-reference.md`.
 
 ## Testing
 
-| Area                               | Cases                                                                                |
-| ---------------------------------- | ------------------------------------------------------------------------------------ |
-| `createAnchorRef`                  | `--` prefix, scopeId vs prefix, empty label throws, sanitization                     |
-| `styles.anchorRef` / `positionTry` | scoping matches `containerRef`                                                       |
-| `anchor()` / `anchorSize()`        | with/without ref, with/without fallback, all side/dimension keywords                 |
-| `positionTry()`                    | emits `position-area` / `position-anchor` only; dedup; key scheme                    |
-| `positionTryFallbacks()`           | ref + tactic + area keyword mixing; combined tactic raw string; join order           |
-| Property keywords                  | `anchorName: 'none'`, `positionAnchor: 'auto' \| 'none'`                             |
-| Examples / docs                    | `position-area` base + `flip-block` fallback; no mixed inset/area in `@position-try` |
-| Extraction                         | anchor/position-try calls extracted like `tokens.create` (build smoke test)          |
+| Area                        | Cases                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------ |
+| `createAnchorRef`           | `--` prefix, scopeId vs prefix, empty label throws, sanitization                     |
+| `anchorRef` / `positionTry` | scoping matches `containerRef`                                                       |
+| `anchor()` / `anchorSize()` | with/without ref, with/without fallback, all side/dimension keywords                 |
+| `positionTry()`             | emits `position-area` / `position-anchor` only; dedup; key scheme                    |
+| `positionTryFallbacks()`    | ref + tactic + area keyword mixing; combined tactic raw string; join order           |
+| Property keywords           | `anchorName: 'none'`, `positionAnchor: 'auto' \| 'none'`                             |
+| Examples / docs             | `position-area` base + `flip-block` fallback; no mixed inset/area in `@position-try` |
+| Extraction                  | anchor/position-try calls extracted like `tokens.create` (build smoke test)          |
 
 ## Pre-implementation checklist
 

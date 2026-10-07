@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { atProperty } from './at-property';
-import { tokens } from './index';
+import { createTokens } from './tokens';
+const tokens = createTokens();
 import { getRegisteredCss, reset, flushSync } from './sheet';
 
 describe('atProperty', () => {

@@ -163,7 +163,7 @@ When editing a guide, use these repos as the source of truth. Paths are relative
 
 | Doc page             | Route                  | Example / source                                                                                                            |
 | -------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Styles               | `/docs/styles`         | [`examples/typewind`](../examples/typewind/README.md) (`styles.class`)                                                      |
+| Styles               | `/docs/styles`         | [`examples/typewind`](../examples/typewind/README.md) (`style`)                                                             |
 | Components           | `/docs/components`     | [`examples/react-design-system`](../examples/react-design-system/README.md)                                                 |
 | Style Composition    | `/docs/compose`        | [`examples/vite-app`](../examples/vite-app/README.md) · docs [`src/atoms.ts`](./src/atoms.ts)                               |
 | Dynamic styling      | `/docs/dynamic-styles` | Live demos in [`src/demos/`](./src/demos/)                                                                                  |

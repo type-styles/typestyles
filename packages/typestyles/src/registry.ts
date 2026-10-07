@@ -20,10 +20,10 @@ function isDev(): boolean {
  * by two different style definitions. Development-only; no-op in production.
  *
  * The owner key identifies the logical definition (`scope:class:name` /
- * `scope:component:namespace` for `styles.class` / `styles.component`,
- * payload-derived for `styles.hashClass`) so HMR re-registrations of the same
- * definition are not flagged — while `styles.class('button')` and
- * `styles.component('button')` (which share an emitted string under semantic
+ * `scope:component:namespace` for `style` / `recipe`,
+ * payload-derived for `style.hash`) so HMR re-registrations of the same
+ * definition are not flagged — while `style('button')` and
+ * `recipe('button')` (which share an emitted string under semantic
  * naming) still surface as a collision.
  */
 export function trackEmittedClassName(className: string, ownerKey: string): void {
@@ -75,8 +75,8 @@ const COLON = ':';
 
 /**
  * Drop reserved `scope:class:name` / `scope:component:namespace` keys so a module can
- * re-register after HMR. `namespaces` are the first arguments to `styles.component()` /
- * `styles.class()` (not the scope). Pass `kind` to release only one API's reservations.
+ * re-register after HMR. `namespaces` are the first arguments to `recipe()` /
+ * `style()` (not the scope). Pass `kind` to release only one API's reservations.
  */
 export function releaseReservedNamespacesForComponentOrClassNames(
   namespaces: readonly string[],
@@ -112,7 +112,7 @@ export function releaseReservedNamespacesForComponentOrClassNames(
   }
 }
 
-/** Vite plugin passes `.${namespace}-` prefixes for `styles.component()` invalidation. */
+/** Vite plugin passes `.${namespace}-` prefixes for `recipe()` invalidation. */
 export function namespacesFromTypestylesHmrPrefixes(prefixes: readonly string[]): string[] {
   const out: string[] = [];
   for (const p of prefixes) {

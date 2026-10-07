@@ -21,9 +21,11 @@ const fadeIn = keyframes.create('fadeIn', {
 The function returns the animation name as a string, which you can use directly in your styles:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const card = styles.component('card', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: {
     animation: `${fadeIn} 300ms ease`,
   },
@@ -50,14 +52,16 @@ const bounce = keyframes.create('bounce', {
 Reference keyframes in your style definitions using template literals:
 
 ```ts
-import { styles, keyframes } from 'typestyles';
+import { createTypeStyles, keyframes } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
 
 const spin = keyframes.create('spin', {
   from: { transform: 'rotate(0deg)' },
   to: { transform: 'rotate(360deg)' },
 });
 
-const loader = styles.component('loader', {
+const loader = recipe('loader', {
   base: {
     width: '24px',
     height: '24px',

@@ -14,7 +14,7 @@ describe('migrateSource', () => {
 
     expect(result.changed).toBe(true);
     expect(result.code).toContain(`from "typestyles"`);
-    expect(result.code).toContain(`styles.class("button"`);
+    expect(result.code).toContain(`style("button"`);
     expect(result.code).toContain('<button');
     expect(result.code).toContain('className');
   });
@@ -24,7 +24,7 @@ describe('migrateSource', () => {
     const result = migrateSource('emotion-input.ts', input);
 
     expect(result.changed).toBe(true);
-    expect(result.code).toContain(`styles.class("button"`);
+    expect(result.code).toContain(`style("button"`);
     expect(result.code).not.toContain(`css\``);
   });
 
@@ -44,7 +44,7 @@ function App() {
     expect(result.warnings).toHaveLength(0);
     expect(result.code).toContain('createVar');
     expect(result.code).toContain('assignVars');
-    expect(result.code).toContain('styles.class("button"');
+    expect(result.code).toContain('style("button"');
     expect(result.code).toContain('<button');
     expect(result.code).not.toContain('color="red"');
     expect(result.code).not.toContain('<Button');
@@ -58,7 +58,7 @@ function App() {
     expect(result.warnings).toHaveLength(0);
     expect(result.code).toContain('createVar');
     expect(result.code).toContain('assignVars');
-    expect(result.code).toContain('styles.class("box"');
+    expect(result.code).toContain('style("box"');
     expect(result.code).not.toContain('<Box');
     expect(result.code).not.toContain('width={200}');
   });
@@ -80,7 +80,7 @@ function App() {
 
     expect(result.changed).toBe(true);
     expect(result.warnings).toHaveLength(0);
-    expect(result.code).toContain('styles.component("button"');
+    expect(result.code).toContain('recipe("button"');
     expect(result.code).toContain('variants');
     expect(result.code).toContain('defaultVariants');
     expect(result.code).toContain('primary: true');
@@ -119,7 +119,7 @@ function App() {
 `.trim();
     const result = migrateSource('card.tsx', source);
     expect(result.changed).toBe(true);
-    expect(result.code).toContain(`styles.class("card"`);
+    expect(result.code).toContain(`style("card"`);
     expect(result.code).toContain('<div');
     expect(result.code).toContain('className');
     expect(result.code).not.toContain(`styled.div`);
@@ -135,7 +135,7 @@ const button = css\`
 `.trim();
     const result = migrateSource('button.ts', source);
     expect(result.changed).toBe(true);
-    expect(result.code).toContain(`styles.class("button"`);
+    expect(result.code).toContain(`style("button"`);
     expect(result.code).not.toContain(`css\``);
   });
 
@@ -148,7 +148,7 @@ const badge = css\`
 `.trim();
     const result = migrateSource('badge.ts', source);
     expect(result.changed).toBe(true);
-    expect(result.code).toContain(`styles.class("badge"`);
+    expect(result.code).toContain(`style("badge"`);
   });
 
   it('migrates styled(Component) wrapping another component', () => {
@@ -164,7 +164,7 @@ function App() {
 `.trim();
     const result = migrateSource('app.tsx', source);
     expect(result.changed).toBe(true);
-    expect(result.code).toContain(`styles.class("styled-button"`);
+    expect(result.code).toContain(`style("styled-button"`);
     expect(result.code).toContain('<Button');
     expect(result.code).toContain('className');
     // The JSX element tag should no longer be StyledButton
@@ -213,7 +213,7 @@ const copy = Button;
 
   it('adds styles to an existing typestyles import instead of creating a new one', () => {
     const source = `
-import { createVar } from 'typestyles';
+import { createTypeStyles, createVar } from 'typestyles';
 import { css } from '@emotion/react';
 const v = createVar();
 const button = css\`color: red;\`;
@@ -224,19 +224,20 @@ const button = css\`color: red;\`;
     const importCount = (result.code.match(/from ['"]typestyles['"]/g) ?? []).length;
     expect(importCount).toBe(1);
     expect(result.code).toContain('createVar');
-    expect(result.code).toContain('styles');
+    expect(result.code).toContain('createTypeStyles');
+    expect(result.code).toContain('style(');
   });
 
-  it('does not add a duplicate styles specifier when already present', () => {
+  it('does not duplicate createTypeStyles when style is already bound', () => {
     const source = `
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+const { style } = createTypeStyles();
 import { css } from '@emotion/react';
 const button = css\`color: red;\`;
 `.trim();
-    const result = migrateSource('already-styles.ts', source);
+    const result = migrateSource('already-style.ts', source);
     expect(result.changed).toBe(true);
-    // There should not be duplicate 'styles, styles' patterns
-    expect(result.code).not.toContain('styles, styles');
+    expect((result.code.match(/createTypeStyles\(\)/g) ?? []).length).toBe(1);
   });
 
   it('returns changed:false and original code when no migration applies', () => {
@@ -253,7 +254,7 @@ const primaryButton = css\`color: white;\`;
 `.trim();
     const result = migrateSource('kebab.ts', source);
     expect(result.changed).toBe(true);
-    expect(result.code).toContain(`styles.class("primary-button"`);
+    expect(result.code).toContain(`style("primary-button"`);
   });
 });
 
@@ -292,7 +293,7 @@ describe('runMigration', () => {
     const afterWrite = await readFile(filePath, 'utf8');
 
     expect(writeReport.summary.filesChanged).toBe(1);
-    expect(afterWrite).toContain('styles.class');
+    expect(afterWrite).toContain('style(');
   });
 
   it('returns correct summary counts', async () => {
@@ -379,6 +380,7 @@ describe('runMigration', () => {
       join(tempDir, 'warn.ts'),
       `
 import styled from 'styled-components';
+
 export const Btn = styled.button\`color: red;\`;
 `.trim(),
       'utf8',

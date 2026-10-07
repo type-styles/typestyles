@@ -12,7 +12,6 @@ import {
   flushSync,
   ensureDocumentStylesAttached,
 } from './sheet';
-import { globalStyle, globalFontFace, globalApply } from './global';
 import { createVar, assignVars } from './vars';
 import { cx } from './cx';
 import { mergeProps, combine } from './binding';
@@ -108,7 +107,15 @@ export type {
   OverrideConfigForNamespace,
 } from './theme-component-types';
 
-export { createStyles, createTokens, createTypeStyles, createGlobal };
+/** Primary app/library entry. Prefer this over the lower-level factories. */
+export { createTypeStyles };
+export type { TypeStylesApi, TypeStylesLayersConfig, StyleFn } from './create-type-styles';
+
+/**
+ * Lower-level factories (prefer {@link createTypeStyles} for apps).
+ * Kept for advanced splits and internal tests.
+ */
+export { createStyles, createTokens, createGlobal };
 
 export type { GlobalApiUnlayered, GlobalApiLayered } from './create-global';
 
@@ -256,66 +263,7 @@ export { themeConfigToSource } from './theme-types';
 export type { ThemeEmitLayerContext } from './theme';
 
 /**
- * Default style API (semantic class names, empty `scopeId`). Prefer `createStyles({ scopeId, mode, prefix })`
- * per package or micro-frontend for isolation.
- *
- * @example
- * ```ts
- * // Multi-variant component (CVA-style)
- * const button = styles.component('button', {
- *   base: { padding: '8px 16px' },
- *   variants: {
- *     intent: { primary: { backgroundColor: '#0066ff' } },
- *     size: { sm: { fontSize: '14px' }, lg: { fontSize: '18px' } },
- *   },
- *   defaultVariants: { intent: 'primary', size: 'sm' },
- * });
- *
- * button({ intent: 'primary', size: 'lg' })
- *
- * const card = styles.class('card', { padding: '1rem' });
- * ```
- */
-export const styles = createStyles();
-
-/**
- * Global CSS API for arbitrary selectors and font-face declarations.
- *
- * @example
- * ```ts
- * global.style('body', { margin: 0 });
- * global.apply(...reset());
- * global.fontFace('Inter', { src: "url('/Inter.woff2') format('woff2')", fontWeight: 400 });
- * global.fontFace('Inter', { src: [`local('Inter')`, "url('/Inter.woff2') format('woff2')"] });
- * ```
- */
-export const global = {
-  style: globalStyle,
-  apply: globalApply,
-  fontFace: globalFontFace,
-} as const;
-
-/**
- * Default token API (unscoped custom properties). Prefer `createTokens({ scopeId })` when multiple
- * bundles share a page.
- *
- * @example
- * ```ts
- * const color = tokens.create('color', { primary: '#0066ff' });
- * color.primary // "var(--color-primary)"
- *
- * const acme = tokens.createTheme({
- *   name: 'acme',
- *   tokens: {
- *     color: { primary: { light: '#ff6600', dark: '#66b3ff' } },
- *   },
- * });
- * ```
- */
-export const tokens = createTokens();
-
-/**
- * Keyframe animation API.
+ * Keyframe animation API (not scoped to a `createTypeStyles` instance).
  *
  * @example
  * ```ts
@@ -324,7 +272,7 @@ export const tokens = createTokens();
  *   to: { opacity: 1 },
  * });
  *
- * const card = styles.component('card', {
+ * const card = recipe('card', {
  *   base: { animation: `${fadeIn} 300ms ease` },
  * });
  * ```

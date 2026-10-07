@@ -30,8 +30,8 @@ function scopeRuleKey(
 
 /**
  * Emit proximity-correct component overrides via CSS `@scope`.
- * Serializes `overrides` with the same `serializeStyle` path as `styles.class` /
- * `styles.component`, registers rules through `insertRules`, and optionally wraps
+ * Serializes `overrides` with the same `serializeStyle` path as `style` /
+ * `recipe`, registers rules through `insertRules`, and optionally wraps
  * them in a cascade layer when `opts.layer` is set on a layered styles instance.
  */
 export function createScope(
@@ -51,10 +51,10 @@ export function createScope(
     const stack = classNaming.cascadeLayers;
     if (!stack) {
       throw new Error(
-        '[typestyles] `layer` in `styles.scope(…)` requires `createStyles({ layers: … })` on this styles instance.',
+        '[typestyles] `layer` in `scope(…)` requires `createStyles({ layers: … })` on this styles instance.',
       );
     }
-    assertOwnLayer(stack, opts.layer, 'styles.scope(…)');
+    assertOwnLayer(stack, opts.layer, 'scope(…)');
     insertRules(applyLayerToRules(scopedRules, opts.layer, stack));
     return;
   }

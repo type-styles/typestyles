@@ -1,4 +1,4 @@
-import { styles } from '../runtime';
+import { recipe } from '../runtime';
 import { designTokens as t } from '../tokens';
 
 const bp = '@media (max-width: 768px)';
@@ -9,7 +9,7 @@ const bp = '@media (max-width: 768px)';
  *
  * Apply `proseContent.root` on the wrapper around rendered markdown HTML.
  */
-export const proseContent = styles.component(
+export const proseContent = recipe(
   'docs-prose',
   {
     slots: ['root', 'tableWrap', 'headingAnchor'],

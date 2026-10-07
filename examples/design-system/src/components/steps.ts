@@ -1,7 +1,7 @@
-import { styles } from '../runtime';
+import { recipe } from '../runtime';
 import { designTokens as t } from '../tokens';
 
-export const steps = styles.component(
+export const steps = recipe(
   'steps',
   {
     slots: ['root'],

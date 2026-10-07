@@ -10,7 +10,7 @@ import type { CSSProperties } from './types';
  *
  * @example
  * ```ts
- * styles.class('card', {
+ * style('card', {
  *   padding: '16px',
  *   ...atRuleBlock(styles.container({ minWidth: 400 }), { padding: '24px' }),
  * });

@@ -36,14 +36,14 @@ function mergeInto(target: Record<string, unknown>, key: string, value: VariantO
 
 /**
  * Expand a {@link ThemeCondition} into a **spreadable** style fragment for recipe
- * slots / `styles.class` maps (nested `&` keys + optional `@media` wrappers).
+ * slots / `style` maps (nested `&` keys + optional `@media` wrappers).
  *
- * Use this inside `styles.component` — `conditional()` / `conditions[]` only work on
- * `styles.override`. Same `tokens.when.*` / `resolvedDarkWhen` builders as themes.
+ * Use this inside `recipe` — `conditional()` / `conditions[]` only work on
+ * `override`. Same `tokens.when.*` / `resolvedDarkWhen` builders as themes.
  *
  * @example
  * ```ts
- * styles.component('badge', {
+ * recipe('badge', {
  *   base: {
  *     color: '#111',
  *     ...styles.when(when.prefersDark, { color: '#eee' }),

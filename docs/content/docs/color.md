@@ -204,7 +204,9 @@ Values work in token custom properties as plain `<color>` strings — no `@prope
 All color functions accept token references since tokens are just CSS `var()` strings:
 
 ```ts
-import { styles, tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 import { color as colorFn } from 'typestyles/color';
 
 const themeColor = tokens.create('color', {
@@ -212,7 +214,7 @@ const themeColor = tokens.create('color', {
   secondary: '#6b7280',
 });
 
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     backgroundColor: colorFn.mix(themeColor.primary, 'white', 10),
     borderColor: colorFn.alpha(themeColor.secondary, 0.3),

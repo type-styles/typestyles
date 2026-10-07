@@ -10,14 +10,14 @@ npm install @typestyles/react typestyles react react-dom
 
 ## `createStyled` / `styled`
 
-Thin React wrapper over `styles.component` with typed variant props via `ComponentVariants`:
+Thin React wrapper over `recipe` from `createTypeStyles` with typed variant props via `ComponentVariants`:
 
 ```tsx
-import { createStyles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 import { createStyled, TypeStylesProvider } from '@typestyles/react';
 
-const styles = createStyles();
-const styled = createStyled(styles);
+const api = createTypeStyles({ scopeId: 'app' });
+const styled = createStyled(api);
 
 const Button = styled('button', {
   base: { padding: '8px 16px', border: 'none', borderRadius: '4px' },
@@ -32,7 +32,7 @@ const Button = styled('button', {
 
 function App() {
   return (
-    <TypeStylesProvider styles={styles}>
+    <TypeStylesProvider styles={api}>
       <Button intent="ghost">Click me</Button>
     </TypeStylesProvider>
   );
@@ -51,12 +51,12 @@ Point JSX at `@typestyles/react` and wrap your app in `TypeStylesProvider`:
 
 ```tsx
 /** @jsxImportSource @typestyles/react */
-import { styles } from './styles';
+import { api } from './styles';
 import { TypeStylesProvider } from '@typestyles/react';
 
 export function App() {
   return (
-    <TypeStylesProvider styles={styles}>
+    <TypeStylesProvider styles={api}>
       <div css={{ color: 'red', padding: '1rem' }}>Hello</div>
     </TypeStylesProvider>
   );
@@ -73,7 +73,7 @@ Or in `tsconfig.json`:
 }
 ```
 
-Inline style objects are converted to deterministic classes via `styles.hashClass` at runtime.
+Inline style objects are converted to deterministic classes via `style.hash` (or `hashClass` on a `createStyles()` instance) at runtime.
 
 ## Zero-runtime `css` prop (Babel)
 
@@ -102,13 +102,13 @@ Dynamic expressions (e.g. `css={condition && { color: 'red' }}`) are left unchan
 
 ## API
 
-| Export                          | Description                                                          |
-| ------------------------------- | -------------------------------------------------------------------- |
-| `createStyled(styles)`          | Returns a `styled(tag, config)` factory backed by `styles.component` |
-| `TypeStylesProvider`            | Supplies `styles` to the jsx runtime for `css` prop resolution       |
-| `resolveCssPropClass`           | Low-level helper: `css` object → merged `className`                  |
-| `@typestyles/react/jsx-runtime` | Drop-in jsx runtime with `css` prop support                          |
-| `@typestyles/react/babel`       | Babel plugin for zero-runtime static `css` props                     |
+| Export                          | Description                                                           |
+| ------------------------------- | --------------------------------------------------------------------- |
+| `createStyled(api)`             | Returns a `styled(tag, config)` factory backed by `recipe` on the API |
+| `TypeStylesProvider`            | Supplies the styles API to the jsx runtime for `css` prop resolution  |
+| `resolveCssPropClass`           | Low-level helper: `css` object → merged `className`                   |
+| `@typestyles/react/jsx-runtime` | Drop-in jsx runtime with `css` prop support                           |
+| `@typestyles/react/babel`       | Babel plugin for zero-runtime static `css` props                      |
 
 ## Future work
 

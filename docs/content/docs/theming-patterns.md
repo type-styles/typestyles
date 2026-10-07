@@ -5,7 +5,7 @@ description: Light/dark mode, multi-brand theming, and advanced theme strategies
 
 TypeStyles uses CSS custom properties for theming, making it flexible and powerful. This guide covers common theming patterns.
 
-**New here?** Start with [End-to-end theming](/docs/theming-end-to-end) — a walkthrough covering `declare` / `create`, `createTheme({ tokens })`, `styles.override` + `selectorPrefix`, and plain CSS.
+**New here?** Start with [End-to-end theming](/docs/theming-end-to-end) — a walkthrough covering `declare` / `create`, `createTheme({ tokens })`, `override` + `selectorPrefix`, and plain CSS.
 
 Coming from **StyleX**, **Panda**, **vanilla-extract**, or **Stitches**? Start with the [migration cheat sheet](/docs/migration#coming-from-cheat-sheet).
 
@@ -22,7 +22,7 @@ Defaults usually live on `:root` via `tokens.create`. Theme `tokens` / `colorMod
 | **`name`**       | Theme id → class `theme-{name}` (with `scopeId` prefix when set).                                        |
 | **`tokens`**     | Per-namespace overrides on `.theme-{name}` — use `{ light, dark }` leaves for CSS `light-dark()`.        |
 | **`modes`**      | Extra conditional layers: `{ id, overrides, when }` (see `tokens.when.*`, `tokens.colorMode.*` presets). |
-| **`components`** | Recipe overrides for `styles.component()` namespaces, scoped to `.theme-{name}` (see below).             |
+| **`components`** | Recipe overrides for `recipe()` namespaces, scoped to `.theme-{name}` (see below).                       |
 | **`replace`**    | Default `true`: reusing `name` replaces the previous theme registration.                                 |
 
 ```ts
@@ -216,7 +216,9 @@ granularity for callers that want different precision.
 
 ```ts
 // tokens.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 // Define your base tokens
 export const color = tokens.create('color', {
@@ -380,7 +382,9 @@ function App() {
 If you do not toggle a class yourself and only want dark tokens when `prefers-color-scheme: dark` matches:
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
@@ -400,7 +404,9 @@ Apply `appTheme.className` once on your root; dark overrides apply automatically
 
 ```ts
 // themes.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const light = {
   color: {
@@ -506,7 +512,9 @@ CSS custom properties cascade naturally, so the inner theme overrides only affec
 
 ```ts
 // components/Chart/Chart.tokens.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 // Chart-specific tokens that don't affect the rest of the app
 export const chartTheme = tokens.createTheme({
@@ -543,7 +551,9 @@ export function Chart({ data }) {
 
 ```ts
 // themes/seasonal.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const holidayTheme = tokens.createTheme({
   name: 'holiday',
@@ -596,7 +606,9 @@ export function useSeasonalTheme(): string | undefined {
 
 ```ts
 // themes/semantics.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 // Semantic color tokens
 export const successTheme = tokens.createTheme({
@@ -649,7 +661,9 @@ export function Alert({ type, children }) {
 
 ```ts
 // tokens/layers.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 // Layer 1: Primitives
 const primitives = tokens.create('primitives', {
@@ -681,7 +695,9 @@ const button = tokens.create('button', {
 When the user can pick light, dark, or system, and **light must win over system dark**, use `tokens.colorMode.systemWithLightDarkOverride`:
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
@@ -772,7 +788,9 @@ you need an isolated copy outside of `mergeThemeOverrides`.
 Sometimes a specific element should render with a **fixed** tone regardless of the page's ambient mode — a toast that is always dark even on a light page, a syntax-highlighted code block that stays dark in light mode. That is not "dark mode": it is a design decision fixed to one element. A descendant-scoped mode expresses exactly that — the marker attribute goes on the element itself, inside the themed subtree:
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const light = { color: { text: '#111827', surface: '#ffffff' } };
 const dark = { color: { text: '#e5e7eb', surface: '#0f172a' } };
@@ -819,7 +837,9 @@ Two properties worth knowing:
 
 ```ts
 // themes/accessibility.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const highContrastTheme = tokens.createTheme({
   name: 'high-contrast',
@@ -857,7 +877,9 @@ export function useHighContrast() {
 
 ```ts
 // tokens.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const color = tokens.create('color', {
   text: '#111827',
@@ -922,23 +944,27 @@ body,
 Or with typestyles global CSS:
 
 ```ts
-import { global } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-global.style('html', {
+const { global } = createTypeStyles({ scopeId: 'app' });
+
+global.rule('html', {
   transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease',
 });
 ```
 
-Use a scoped `global` from `createTypeStyles({ layers, globalLayer })` when you emit globals into a cascade layer (see [Cascade layers](/docs/cascade-layers)).
+Use a scoped `global` from `createTypeStyles({ layers: { order, token, style, global } })` when you emit globals into a cascade layer (see [Cascade layers](/docs/cascade-layers)).
 
 ### Animating typed tokens with `@property`
 
 The transition above works because `background-color`, `color`, and `border-color` are already-animatable CSS properties — the browser interpolates the _computed_ value across the style change regardless of how it was derived from `var(--…)`. Plain custom properties themselves don't get that for free: an **unregistered** `--token` is just a token stream, so a value that's only ever consumed as raw text — a gradient angle, a `filter` amount, the custom property itself via `transition: --token` — snaps discretely instead of animating.
 
-> **Register the token with `syntax` to make it interpolate.** `tokens.create` and `styles.property` both accept `{ value, syntax, inherits }` and register a typed [`@property`](https://developer.mozilla.org/en-US/docs/Web/CSS/@property) rule for the custom property. Once a token has a typed `syntax` (`<color>`, `<angle>`, `<number>`, …), the browser knows how to interpolate it directly — including inside values, like gradients, that a `transition` on a real CSS property can't reach.
+> **Register the token with `syntax` to make it interpolate.** `tokens.create` and `property` both accept `{ value, syntax, inherits }` and register a typed [`@property`](https://developer.mozilla.org/en-US/docs/Web/CSS/@property) rule for the custom property. Once a token has a typed `syntax` (`<color>`, `<angle>`, `<number>`, …), the browser knows how to interpolate it directly — including inside values, like gradients, that a `transition` on a real CSS property can't reach.
 
 ```ts
-import { tokens, styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, tokens } = createTypeStyles({ scopeId: 'app' });
 
 // A typed, animatable custom property — not just a plain token.
 const brand = tokens.create('brand', {
@@ -952,7 +978,7 @@ const dark = tokens.createTheme({
   },
 });
 
-const card = styles.class('card', {
+const card = style('card', {
   backgroundImage: `conic-gradient(from ${brand.angle.var}, #0066ff, #66b3ff, #0066ff)`,
   transition: `${brand.angle.name} 0.6s ease`,
 });
@@ -983,7 +1009,7 @@ tokens.create(
 
 Toggling `dark.className` now smoothly rotates the gradient across the theme switch — the browser tweens `--brand-angle` (`brand.angle.name`) from `20deg` to `260deg` frame by frame, then the `conic-gradient` re-renders each step, because `@property` told it `--brand-angle` is an `<angle>`. Without the registered `syntax`, the same class swap would snap the gradient to its new angle with no animation at all.
 
-This is a genuine capability gap versus compiler-first tools: StyleX's own documented capability list marks explicit `@property` output as unsupported ("compiles but invalid CSS output"), so an Astryx/StyleX theme can't emit this pattern — a smoothly animating gradient angle or color token on theme switch is structurally unavailable to it. TypeStyles tokens and `styles.property` emit real `@property` rules because they're just CSS, not compiler-owned output. See [Theming architecture: TypeStyles vs. StyleX (and Astryx)](/docs/framework-comparison#theming-architecture-typestyles-vs-stylex-and-astryx) for the fuller comparison, and [`styles.property`](/docs/api-reference#styles) / [`tokens.create`](/docs/tokens#custom-css-variable-names-nametemplate) for the full options.
+This is a genuine capability gap versus compiler-first tools: StyleX's own documented capability list marks explicit `@property` output as unsupported ("compiles but invalid CSS output"), so an Astryx/StyleX theme can't emit this pattern — a smoothly animating gradient angle or color token on theme switch is structurally unavailable to it. TypeStyles tokens and `property` emit real `@property` rules because they're just CSS, not compiler-owned output. See [Theming architecture: TypeStyles vs. StyleX (and Astryx)](/docs/framework-comparison#theming-architecture-typestyles-vs-stylex-and-astryx) for the fuller comparison, and [`property`](/docs/api-reference#styles) / [`tokens.create`](/docs/tokens#custom-css-variable-names-nametemplate) for the full options.
 
 ### Prevent flash during theme switch
 
@@ -1052,21 +1078,21 @@ app.get('/', (req, res) => {
 
 When a theme needs to change how a component looks beyond token overrides, pick the
 lightest option that fits. For recipe-shaped bulk restyling (base / variants /
-compounds) without writing class names, use [`styles.override()`](#typed-component-overrides)
+compounds) without writing class names, use [`override()`](#typed-component-overrides)
 first; fall back to Tier 1 vars or Tier 2 CSS when you need a single property or
 nested-theme proximity.
 
 ### Typed component overrides
 
-`styles.override(component, config, options?)` restyles a `styles.component()`
+`override(component, config, options?)` restyles a `recipe()`
 return with the same shape as the recipe — variant keys autocomplete from the
-recipe type, and you never pass class names. Call it on the **same** `styles`
-instance that created the component (design systems typically wrap this).
-Cross-instance calls — a component from `stylesA` passed to `stylesB.override` —
-are unsupported: emission uses **this** instance's sheet, breakpoints, and layer
-stack, so selectors may land in the wrong CSS.
+recipe type, and you never pass class names. Call it on the **same**
+`createTypeStyles` instance that created the component (design systems typically wrap this).
+Cross-instance calls — a component from one `createTypeStyles` instance passed to
+another instance's `override` — are unsupported: emission uses **this** instance's
+sheet, breakpoints, and layer stack, so selectors may land in the wrong CSS.
 
-With `@typestyles/vite` in serve mode, modules that call `styles.override` (or
+With `@typestyles/vite` in serve mode, modules that call `override` (or
 helpers that wrap it, such as `createDesignTheme` / `overrideComponent`, including
 renamed imports such as `createDesignTheme as cdt`) get HMR dispose tracking so
 theme edits update override CSS without a full reload. Re-registering the same
@@ -1074,13 +1100,18 @@ override keys always replaces the previous CSS. Recipe HMR still preserves
 override rules — theme modules own those registrations.
 
 ```ts
-import { createStyles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const styles = createStyles({
-  layers: ['components', 'overrides'] as const,
+const { recipe, override } = createTypeStyles({
+  scopeId: 'app',
+  layers: {
+    order: ['components', 'overrides'] as const,
+    token: 'components',
+    style: 'components',
+  },
 });
 
-const button = styles.component(
+const button = recipe(
   'button',
   {
     base: { borderRadius: '6px' },
@@ -1096,7 +1127,7 @@ const button = styles.component(
 );
 
 // App-global
-styles.override(
+override(
   button,
   {
     base: { borderRadius: '999px' },
@@ -1108,7 +1139,7 @@ styles.override(
 );
 
 // Theme-scoped (descendant prefix — not CSS `@scope`)
-styles.override(
+override(
   button,
   { base: { boxShadow: 'none' } },
   { selectorPrefix: '.theme-acme', layer: 'overrides' },
@@ -1118,7 +1149,7 @@ styles.override(
 Works for semantic, bem, template, and attribute naming modes (and flat / slot /
 multi-slot recipe shapes). Attribute mode emits selectors like
 `.button[data-intent="primary"]`; put overrides in a later cascade layer so they
-beat recipe CSS without fighting specificity. When `createStyles({ layers })`
+beat recipe CSS without fighting specificity. When `createTypeStyles({ layers })`
 includes an `"overrides"` layer, omitting `{ layer }` defaults to that name —
 custom stacks without `"overrides"` must pass `{ layer }` explicitly.
 
@@ -1126,10 +1157,10 @@ custom stacks without `"overrides"` must pass `{ layer }` explicitly.
 
 When a recipe exposes themeable surfaces with `c.vars()` or top-level config **`vars`**,
 consumers override them with the matching top-level **`vars`** block on
-`styles.override()` (typed logical keys) or token/theme CSS on the var host.
+`override()` (typed logical keys) or token/theme CSS on the var host.
 
 ```ts
-const sideNav = styles.component('side-nav', (c) => {
+const sideNav = recipe('side-nav', (c) => {
   const v = c.vars({
     border: { value: '#ccc', syntax: '<color>' as const },
     headingColor: '#111',
@@ -1145,7 +1176,7 @@ const sideNav = styles.component('side-nav', (c) => {
 });
 
 // sideNav.vars.border.var — same paths consumers override below
-styles.override(
+override(
   sideNav,
   {
     vars: { border: 'transparent', headingColor: 'var(--brand-heading)' },
@@ -1165,19 +1196,19 @@ if both set the same custom property, **`base` wins**.
 
 #### Mode-aware property values (`colorModes`)
 
-Register color modes once on the styles instance, then use `{ light, dark }` on color
+Register color modes once on the TypeStyles instance, then use `{ light, dark }` on color
 and image properties — they compile to `light-dark()`:
 
 ```ts
 import { createTypeStyles, colorModes } from 'typestyles';
 
-const { styles } = createTypeStyles({ scopeId: 'var-ui', colorModes });
+const { recipe, override } = createTypeStyles({ scopeId: 'var-ui', colorModes });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { borderColor: { light: 'red', dark: 'blue' } },
 });
 
-styles.override(button, {
+override(button, {
   base: { color: { light: '#111', dark: '#eee' } },
 });
 // => border-color: light-dark(red, blue); color: light-dark(#111, #eee)
@@ -1188,21 +1219,21 @@ styles.override(button, {
 properties (`padding`, `fontWeight`, …) should use `conditions` instead — dev warns if
 you pass mode objects on them. v1 supports at most two registered modes.
 
-#### Conditional styles in recipes (`styles.when`)
+#### Conditional styles in recipes (`when`)
 
-`conditions` / `conditional()` only work on **`styles.override`**. Inside a
-`styles.component` recipe (or `styles.class`), spread **`styles.when(condition, style)`**
+`conditions` / `conditional()` only work on **`override`**. Inside a
+`recipe` (or `style`), spread **`when(condition, style)`**
 so the same `tokens.when.*` / `resolvedDarkWhen` builders expand into nested `&` keys
 and `@media` wrappers:
 
 ```ts
 import { resolvedDarkWhen, when } from 'typestyles';
 
-styles.component('badge', {
+recipe('badge', {
   base: {
     color: '#111827',
-    ...styles.when(when.prefersDark, { color: '#e5e7eb' }),
-    ...styles.when(resolvedDarkWhen('data-mode', 'ancestor'), {
+    ...when(when.prefersDark, { color: '#e5e7eb' }),
+    ...when(resolvedDarkWhen('data-mode', 'ancestor'), {
       '&::after': { opacity: 0.85 },
     }),
   },
@@ -1211,7 +1242,7 @@ styles.component('badge', {
 
 That is equivalent to hand-writing selector maps (what some design systems call
 `atDarkMode`), without duplicating the condition contract themes already use.
-Also exported as **`whenStyle`** from `typestyles` when you are not on a `styles` instance.
+Also exported as **`whenStyle`** from `typestyles` when you are not on a TypeStyles instance.
 
 #### Conditional override blocks (`conditions`)
 
@@ -1223,7 +1254,7 @@ compiles `when` with the same `tokens.when.*` builders theme modes use:
 import { conditional } from 'typestyles';
 import { when } from 'typestyles'; // or tokens.when from your tokens instance
 
-styles.override(
+override(
   button,
   {
     base: {
@@ -1240,20 +1271,20 @@ styles.override(
 );
 ```
 
-`conditions` is reserved — do not put it on `styles.component()` recipe definitions.
-Use [`styles.when`](#conditional-styles-in-recipes-styleswhen) in recipes instead.
+`conditions` is reserved — do not put it on `recipe()` recipe definitions.
+Use [`when`](#conditional-styles-in-recipes-when) in recipes instead.
 
 `getComponentMeta(component)` reads the public `__tsMeta` blob (namespace, kind,
 naming mode, base class(es), per-option selector fragments). Renaming anything in
 that metadata is a breaking change — same contract as public class names.
 
 For nested conflicting theme regions, `selectorPrefix` has the same proximity
-footgun as plain descendant CSS — use Tier 1 vars or [`styles.scope()`](#tier-2--plain-css-against-semantic-class-names).
+footgun as plain descendant CSS — use Tier 1 vars or [`scope()`](#tier-2--plain-css-against-semantic-class-names).
 
 ### Tier 1 — component-scoped CSS custom properties (preferred)
 
 If a component author exposed a property as a CSS custom property (`ctx.vars` /
-`c.vars`), consumers override it per theme with **`styles.override({ vars })`** (typed
+`c.vars`), consumers override it per theme with **`override({ vars })`** (typed
 logical keys) or ordinary token/theme CSS on the var host. Custom properties inherit
 down the DOM and reset at each `.theme-*` boundary, so nested themes stay
 proximity-correct with no extra tooling.
@@ -1263,40 +1294,41 @@ See [Components — expose themeable properties as vars](/docs/components#expose
 ### Tier 2 — plain CSS against semantic class names
 
 For properties the author did not expose as vars, target the stable semantic class
-names from `styles.component()` (for example `button`, `button--intent-primary`).
+names from `recipe()` (for example `button`, `button--intent-primary`).
 See [Class naming](/docs/class-naming) and the [public contract](#public-semantic-class-names).
 
 **Non-nested themes:** a descendant selector in a later cascade layer is enough:
 
 ```ts
-import { createStyles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const styles = createStyles({
-  layers: ['components', 'overrides'] as const,
+const { recipe, style, override } = createTypeStyles({
+  scopeId: 'app',
+  layers: {
+    order: ['components', 'overrides'] as const,
+    token: 'components',
+    style: 'components',
+  },
 });
 
-const button = styles.component(
-  'button',
-  { base: { padding: '8px 16px' } },
-  { layer: 'components' },
-);
+const button = recipe('button', { base: { padding: '8px 16px' } }, { layer: 'components' });
 
 // In theme setup for `.theme-acme`:
-styles.class('.theme-acme .button', { borderRadius: '999px' }, { layer: 'overrides' });
+style('.theme-acme .button', { borderRadius: '999px' }, { layer: 'overrides' });
 ```
 
 **Nested conflicting themes:** when two `.theme-*` regions nest and both override the
 same component class, plain selectors tie on specificity and source order wins. Use
-`styles.scope()` so the nearest scoping root wins:
+`scope()` so the nearest scoping root wins:
 
 ```ts
-styles.scope({ root: '.theme-beta', to: '.theme-acme', layer: 'overrides' }, 'button', {
+scope({ root: '.theme-beta', to: '.theme-acme', layer: 'overrides' }, 'button', {
   backgroundColor: 'rebeccapurple',
   '&:hover': { opacity: 0.9 },
 });
 ```
 
-`styles.scope()` reuses the same `serializeStyle` / `applyLayerToRules` / `insertRules`
+`scope()` reuses the same `serializeStyle` / `applyLayerToRules` / `insertRules`
 pipeline as other TypeStyles APIs — pseudo-selectors and `@media` in `overrides` work
 unchanged.
 
@@ -1312,33 +1344,33 @@ theming an attribute-mode design system, put recipe CSS and overrides in ordered
 cascade layers so override precedence is explicit:
 
 ```ts
-const { styles } = createTypeStyles({
+const { recipe, override, scope } = createTypeStyles({
+  scopeId: 'app',
   mode: 'attribute',
-  layers: ['tokens', 'components', 'overrides', 'utilities'] as const,
-  tokenLayer: 'tokens',
+  layers: {
+    order: ['tokens', 'components', 'overrides', 'utilities'] as const,
+    token: 'tokens',
+    style: 'components',
+  },
 });
 
-const button = styles.component(
-  'button',
-  { base: { borderRadius: '6px' } },
-  { layer: 'components' },
-);
+const button = recipe('button', { base: { borderRadius: '6px' } }, { layer: 'components' });
 
-styles.scope({ root: '.theme-acme', layer: 'overrides' }, button.base, { borderRadius: '999px' });
-// Prefer styles.override(button, { base: { borderRadius: '999px' } }, { selectorPrefix: '.theme-acme', layer: 'overrides' })
+scope({ root: '.theme-acme', layer: 'overrides' }, button.base, { borderRadius: '999px' });
+// Prefer override(button, { base: { borderRadius: '999px' } }, { selectorPrefix: '.theme-acme', layer: 'overrides' })
 ```
 
 Use `components` for recipe CSS, `overrides` for theme or consumer restyles, and
 `utilities` for per-instance intent. A later layer wins without a specificity
-escalation. Prefer `styles.override()` for recipe-shaped restyles (including
-attribute variants); plain CSS / `styles.scope()` remain fine when you only need
+escalation. Prefer `override()` for recipe-shaped restyles (including
+attribute variants); plain CSS / `scope()` remain fine when you only need
 a base-class or ad-hoc selector.
 
 ## Public semantic class names
 
 In **`semantic` naming mode** (the default), every class emitted by
-`styles.component()` / `styles.class()` is a **public, semver-guarded surface**.
-Consumers may target those names in plain CSS, `styles.scope()`, `styles.override()`, or any other CSS
+`recipe()` / `style()` is a **public, semver-guarded surface**.
+Consumers may target those names in plain CSS, `scope()`, `override()`, or any other CSS
 tooling. Renaming a namespace or variant key is a **breaking change** — TypeScript will
 not catch a renamed string literal, so publishable design systems should opt into the
 [`@typestyles/no-removed-public-classname`](/docs/publishing-packages#guard-public-class-names)

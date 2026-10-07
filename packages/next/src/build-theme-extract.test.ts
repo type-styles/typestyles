@@ -11,7 +11,8 @@ describe('buildTypestylesForNext theme extraction', () => {
 
     writeFileSync(
       join(root, 'styles/typestyles-entry.ts'),
-      `import { tokens, createTheme } from 'typestyles';
+      `import { createTokens, createTheme } from 'typestyles';
+const tokens = createTokens();
 const color = tokens.create('next-color', { primary: '#0066ff' });
 createTheme('next-dark', { base: { 'next-color': { primary: '#66aaff' } } });
 `,

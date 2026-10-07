@@ -11,6 +11,10 @@ function memberPropertyName(node: TSESTree.MemberExpression): string | null {
 
 function isDefaultStylesCall(node: TSESTree.CallExpression): boolean {
   const { callee } = node;
+  // Flat API from an unscoped `createTypeStyles()` destructure (or legacy default export).
+  if (callee.type === 'Identifier') {
+    return callee.name === 'style' || callee.name === 'recipe';
+  }
   if (callee.type !== 'MemberExpression') return false;
   const method = memberPropertyName(callee);
   if (method !== 'class' && method !== 'component') return false;
@@ -27,11 +31,11 @@ export const noDefaultScopeInPackage = createRule({
     type: 'suggestion',
     docs: {
       description:
-        'Require a scoped styles factory (`createTypeStyles`/`createStyles` with `scopeId`) instead of the default `styles` export in publishable packages',
+        'Require a scoped styles factory (`createTypeStyles`/`createStyles` with `scopeId`) instead of unscoped `style` / `recipe` (or the legacy `styles` API) in publishable packages',
     },
     messages: {
       unscopedInPackage:
-        'Using the default `styles.{{method}}()` in a published package risks class-name collisions. Use `createTypeStyles({ scopeId: pkg.name })` or `createStyles({ scopeId })` instead.',
+        'Using unscoped `{{method}}()` in a published package risks class-name collisions. Use `createTypeStyles({ scopeId: pkg.name })` (or `createStyles({ scopeId })`) and call `style` / `recipe` from that instance.',
     },
     schema: [],
   },
@@ -41,12 +45,16 @@ export const noDefaultScopeInPackage = createRule({
       CallExpression(node) {
         if (!isDefaultStylesCall(node)) return;
 
-        const method = memberPropertyName(node.callee as TSESTree.MemberExpression);
+        const { callee } = node;
+        const method =
+          callee.type === 'Identifier'
+            ? callee.name
+            : (memberPropertyName(callee as TSESTree.MemberExpression) ?? 'style');
 
         context.report({
           node: node.callee,
           messageId: 'unscopedInPackage',
-          data: { method: method ?? 'class' },
+          data: { method },
         });
       },
     };

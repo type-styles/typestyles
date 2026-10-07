@@ -38,7 +38,7 @@ export default defineConfig({
 });
 ```
 
-Edit any file that calls `styles.component`, `styles.class`, `tokens.create`, etc. Styles update in place without a full page reload.
+Edit any file that calls `recipe`, `style`, `tokens.create`, etc. Styles update in place without a full page reload.
 
 ### Runtime in dev, zero-runtime in production (recommended)
 
@@ -96,7 +96,7 @@ import { DEFAULT_EXTRACT_MODULE_CANDIDATES, discoverDefaultExtractModules } from
 
 ```ts
 typestyles({
-  /** Default: true — fail the build on duplicate styles.component / styles.class namespaces */
+  /** Default: true — fail the build on duplicate recipe / style namespaces */
   warnDuplicates?: boolean;
 
   /**
@@ -142,7 +142,7 @@ Even with a convention entry present, this keeps `<style>` injection in producti
 
 **Extraction:** On `vite build`, matching entry modules are bundled and executed in Node via `@typestyles/build-runner`. The collected CSS is emitted as a static asset. In dev, the same extraction runs on demand when the browser requests `/typestyles.css` so your `<link>` href works without SPA fallback returning HTML.
 
-**Duplicate detection:** The plugin scans every source file for namespace strings (`styles.component('button', …)` → `.button-`). Collisions across files fail the build with a clear error.
+**Duplicate detection:** The plugin scans every source file for namespace strings (`recipe('button', …)` → `.button-`). Collisions across files fail the build with a clear error.
 
 ## Verify production output
 

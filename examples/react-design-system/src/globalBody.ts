@@ -1,6 +1,6 @@
 import { designTokens, global } from '@examples/design-system';
 
-global.style('body', {
+global.rule('body', {
   margin: 0,
   minHeight: '100%',
   fontFamily: designTokens.fontFamily.sans,

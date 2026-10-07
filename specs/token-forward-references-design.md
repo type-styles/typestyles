@@ -74,6 +74,10 @@ naming configuration and returns a lazy reference proxy **before** any values ex
 for that namespace.
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+
 const color = tokens.declare<DesignColorValues>('color');
 
 export const colorTokens = tokens.create('color', {
@@ -277,6 +281,10 @@ string like any other, so the `@property` placeholder logic applies to it exactl
 would to a hand-written reference.
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+
 const color = tokens.declare<DesignColorValues>('color');
 
 export const colorTokens = tokens.create('color', {

@@ -112,7 +112,7 @@ export function resolveVarOverrides(
     const registered = registry.byPath.get(path);
     if (!registered) {
       warnDev(
-        `Unknown component var "${path}" in styles.override() vars — ` +
+        `Unknown component var "${path}" in override() vars — ` +
           `declare it with c.vars() on the recipe.`,
       );
       continue;

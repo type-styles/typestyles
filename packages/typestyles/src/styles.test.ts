@@ -500,7 +500,7 @@ describe('createStylesWithUtils', () => {
   });
 });
 
-describe('styles.class and styles.component coexistence', () => {
+describe('style and recipe coexistence', () => {
   beforeEach(() => {
     reset();
     registeredNamespaces.clear();

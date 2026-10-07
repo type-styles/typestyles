@@ -34,16 +34,16 @@ Disallows mixing CSS shorthand and longhand in the same style object.
 
 ```ts
 // ❌ paddingTop is ignored unpredictably
-styles.class('card', {
+style('card', {
   padding: '8px',
   paddingTop: '16px',
 });
 
 // ✅ pick one
-styles.class('card', { padding: '8px 8px 8px 16px' });
+style('card', { padding: '8px 8px 8px 16px' });
 ```
 
-Applies to `styles.component`, `styles.class`, variant objects, and nested selectors inside those calls.
+Applies to `recipe`, `style`, variant objects, and nested selectors inside those calls. Also applies to legacy `styles.component` / `styles.class` on `createStyles()` instances.
 
 ### `@typestyles/no-invalid-unitless-value`
 
@@ -51,11 +51,11 @@ Catches bare number **strings** on properties that need units. TypeStyles auto-a
 
 ```ts
 // ❌ emits invalid `line-height: 24px` is fine, but `"24"` as string does not get px
-styles.class('text', { lineHeight: '24' });
+style('text', { lineHeight: '24' });
 
 // ✅
-styles.class('text', { lineHeight: 24 }); // → 24px where applicable
-styles.class('text', { lineHeight: '1.5' }); // unitless ratio as string
+style('text', { lineHeight: 24 }); // → 24px where applicable
+style('text', { lineHeight: '1.5' }); // unitless ratio as string
 ```
 
 Optional rule option `checkSuspiciousUnitlessNumbers` warns when a numeric literal is used on truly unitless properties (e.g. `lineHeight: 24` vs `lineHeight: 1.5`).
@@ -66,15 +66,15 @@ Disallows reusing the same logical namespace across the project:
 
 ```ts
 // file-a.ts
-styles.component('button', { base: { … } });
+recipe('button', { base: { … } });
 
 // file-b.ts — ❌ collision
-styles.component('button', { base: { … } });
+recipe('button', { base: { … } });
 ```
 
-Tracks `styles.component`, `styles.class`, `tokens.create`, `tokens.createTheme`, `keyframes.create`, and `global.style` / `global.fontFace` namespaces. Reports duplicates within a file and across files in the same ESLint run.
+Tracks `recipe`, `style`, `style.hash`, `tokens.create`, `tokens.createTheme`, `keyframes.create`, and `global.rule` / `global.fontFace` (and legacy `styles.component`, `styles.class`, `global.style` where used). Reports duplicates within a file and across files in the same ESLint run.
 
-> Bundler plugins (`@typestyles/vite`, etc.) also fail the build on duplicate `styles.component` / `styles.class` namespaces. ESLint catches the issue earlier in the editor.
+> Bundler plugins (`@typestyles/vite`, etc.) also fail the build on duplicate `recipe` / `style` namespaces. ESLint catches the issue earlier in the editor.
 
 ### `@typestyles/no-removed-public-classname` (opt-in)
 
@@ -89,13 +89,13 @@ Guards **publishable** design systems against semver-breaking semantic class ren
 
 Adding new class names never fails — only removals or renames do.
 
-**Diagnostics** are reported once per ESLint run (on `Program:exit`), not at the specific `styles.component()` call site. Treat them as project-level semver checks, similar to `no-duplicate-namespace`.
+**Diagnostics** are reported once per ESLint run (on `Program:exit`), not at the specific `recipe()` call site. Treat them as project-level semver checks, similar to `no-duplicate-namespace`.
 
 **Static analysis limits** (best-effort, not exhaustive):
 
 - Namespace must be a **string literal** — variables and template literals are skipped
-- Only direct `styles.component()` / `binding.component()` calls are found
-- Projects with multiple `createStyles({ scopeId })` configs only infer a default binding when all configs agree
+- Direct `recipe()` / `style()` calls and legacy `styles.component()` / `binding.component()` on `createStyles` bindings are found
+- Projects with multiple `createTypeStyles({ scopeId })` / `createStyles({ scopeId })` configs only infer a default binding when all configs agree
 
 ## Enable individual rules
 

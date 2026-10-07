@@ -145,19 +145,43 @@ function updateClassNameAttribute(
   }
 }
 
-function ensureTypestylesImport(ast: t.File, needsVars: boolean): void {
-  const requiredSpecifiers = new Set(['styles']);
-  if (needsVars) {
+function hasLocalBinding(ast: t.File, name: string): boolean {
+  for (const statement of ast.program.body) {
+    if (!t.isVariableDeclaration(statement)) continue;
+    for (const declarator of statement.declarations) {
+      if (t.isIdentifier(declarator.id) && declarator.id.name === name) return true;
+      if (t.isObjectPattern(declarator.id)) {
+        for (const prop of declarator.id.properties) {
+          if (t.isObjectProperty(prop) && t.isIdentifier(prop.value) && prop.value.name === name) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function ensureTypestylesRuntime(
+  ast: t.File,
+  needs: { style: boolean; recipe: boolean; vars: boolean },
+): void {
+  const requiredSpecifiers = new Set<string>(['createTypeStyles']);
+  if (needs.vars) {
     requiredSpecifiers.add('createVar');
     requiredSpecifiers.add('assignVars');
   }
 
   let typestylesImport: t.ImportDeclaration | null = null;
+  let lastImportIndex = -1;
 
-  for (const statement of ast.program.body) {
-    if (t.isImportDeclaration(statement) && statement.source.value === 'typestyles') {
-      typestylesImport = statement;
-      break;
+  for (let i = 0; i < ast.program.body.length; i++) {
+    const statement = ast.program.body[i];
+    if (t.isImportDeclaration(statement)) {
+      lastImportIndex = i;
+      if (statement.source.value === 'typestyles' && typestylesImport == null) {
+        typestylesImport = statement;
+      }
     }
   }
 
@@ -168,21 +192,43 @@ function ensureTypestylesImport(ast: t.File, needsVars: boolean): void {
     ast.program.body.unshift(
       t.importDeclaration(buildSpecifiers(requiredSpecifiers), t.stringLiteral('typestyles')),
     );
-    return;
-  }
+    lastImportIndex = 0;
+  } else {
+    for (const name of requiredSpecifiers) {
+      const hasSpecifier = typestylesImport.specifiers.some(
+        (specifier) =>
+          t.isImportSpecifier(specifier) &&
+          t.isIdentifier(specifier.imported, { name }) &&
+          t.isIdentifier(specifier.local, { name }),
+      );
 
-  for (const name of requiredSpecifiers) {
-    const hasSpecifier = typestylesImport.specifiers.some(
-      (specifier) =>
-        t.isImportSpecifier(specifier) &&
-        t.isIdentifier(specifier.imported, { name }) &&
-        t.isIdentifier(specifier.local, { name }),
-    );
-
-    if (!hasSpecifier) {
-      typestylesImport.specifiers.push(t.importSpecifier(t.identifier(name), t.identifier(name)));
+      if (!hasSpecifier) {
+        typestylesImport.specifiers.push(t.importSpecifier(t.identifier(name), t.identifier(name)));
+      }
     }
   }
+
+  const destructureProps: t.ObjectProperty[] = [];
+  if (needs.style && !hasLocalBinding(ast, 'style')) {
+    destructureProps.push(
+      t.objectProperty(t.identifier('style'), t.identifier('style'), false, true),
+    );
+  }
+  if (needs.recipe && !hasLocalBinding(ast, 'recipe')) {
+    destructureProps.push(
+      t.objectProperty(t.identifier('recipe'), t.identifier('recipe'), false, true),
+    );
+  }
+
+  if (destructureProps.length === 0) return;
+
+  const factoryDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.objectPattern(destructureProps),
+      t.callExpression(t.identifier('createTypeStyles'), []),
+    ),
+  ]);
+  ast.program.body.splice(lastImportIndex + 1, 0, factoryDecl);
 }
 
 function cleanupUnusedImports(ast: t.File): void {
@@ -195,7 +241,7 @@ function cleanupUnusedImports(ast: t.File): void {
         if (
           path.node.source.value === 'typestyles' &&
           t.isImportSpecifier(specifier) &&
-          (specifier.local.name === 'styles' ||
+          (specifier.local.name === 'createTypeStyles' ||
             specifier.local.name === 'createVar' ||
             specifier.local.name === 'assignVars')
         ) {
@@ -364,7 +410,7 @@ function migrateBooleanVariantTemplate(
   declaration.node.declarations = [
     t.variableDeclarator(
       t.identifier(componentConstName),
-      t.callExpression(t.memberExpression(t.identifier('styles'), t.identifier('component')), [
+      t.callExpression(t.identifier('recipe'), [
         t.stringLiteral(toKebabCase(variableName)),
         componentConfig,
       ]),
@@ -441,7 +487,7 @@ function migrateInterpolatedTemplate(
     ...varDeclarators,
     t.variableDeclarator(
       t.identifier(classConstName),
-      t.callExpression(t.memberExpression(t.identifier('styles'), t.identifier('class')), [
+      t.callExpression(t.identifier('style'), [
         t.stringLiteral(toKebabCase(variableName)),
         objectExpression,
       ]),
@@ -486,6 +532,8 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
   const cssTagNames = new Set<string>();
   const styledTransforms = new Map<string, StyledTransform>();
   let needsVars = false;
+  let needsStyle = false;
+  let needsRecipe = false;
 
   traverse(ast, {
     ImportDeclaration(path) {
@@ -573,6 +621,7 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
             styledTransforms,
           )
         ) {
+          needsRecipe = true;
           changed = true;
           return;
         }
@@ -588,6 +637,7 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
           )
         ) {
           needsVars = true;
+          needsStyle = true;
           changed = true;
         }
         return;
@@ -621,10 +671,10 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
 
         const classConstName = path.scope.generateUidIdentifier(`${variableName}Class`).name;
         path.node.id = t.identifier(classConstName);
-        path.node.init = t.callExpression(
-          t.memberExpression(t.identifier('styles'), t.identifier('class')),
-          [t.stringLiteral(toKebabCase(variableName)), objectExpression],
-        );
+        path.node.init = t.callExpression(t.identifier('style'), [
+          t.stringLiteral(toKebabCase(variableName)),
+          objectExpression,
+        ]);
 
         styledTransforms.set(variableName, {
           originalName: variableName,
@@ -634,15 +684,17 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
           propVars: [],
           variantProps: [],
         });
+        needsStyle = true;
         changed = true;
         return;
       }
 
       if (t.isIdentifier(path.node.init.tag) && cssTagNames.has(path.node.init.tag.name)) {
-        path.node.init = t.callExpression(
-          t.memberExpression(t.identifier('styles'), t.identifier('class')),
-          [t.stringLiteral(toKebabCase(variableName)), objectExpression],
-        );
+        path.node.init = t.callExpression(t.identifier('style'), [
+          t.stringLiteral(toKebabCase(variableName)),
+          objectExpression,
+        ]);
+        needsStyle = true;
         changed = true;
       }
     },
@@ -691,7 +743,11 @@ export function migrateSource(filePath: string, source: string): FileMigrationRe
   }
 
   if (changed) {
-    ensureTypestylesImport(ast, needsVars);
+    ensureTypestylesRuntime(ast, {
+      style: needsStyle,
+      recipe: needsRecipe,
+      vars: needsVars,
+    });
     cleanupUnusedImports(ast);
   }
 

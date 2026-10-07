@@ -24,7 +24,7 @@ The MCP server at `https://typestyles.dev/mcp` exposes read-only tools:
 - **`search_docs`** — keyword search across all pages
 - **`get_doc`** — full clean markdown for one page by slug
 - **`list_docs`** — all pages grouped by sidebar category
-- **`lookup_api`** — API reference sections by symbol (e.g. `styles.component`)
+- **`lookup_api`** — API reference sections by symbol (e.g. `recipe`)
 - **`get_examples`** — code blocks from the docs by topic
 - **`get_changelog`** — package changelogs, optionally one version
 

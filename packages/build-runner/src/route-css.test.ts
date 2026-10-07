@@ -20,7 +20,7 @@ describe('collectAndWriteRouteCss', () => {
     );
     writeFileSync(
       join(root, 'styles/home.ts'),
-      `import { styles } from 'typestyles';\nstyles.class('home', { color: 'red' });\n`,
+      `import { createTypeStyles } from 'typestyles';\nconst { style } = createTypeStyles();\nstyle('home', { color: 'red' });\n`,
     );
     writeFileSync(
       join(root, 'app/about/page.tsx'),
@@ -28,7 +28,7 @@ describe('collectAndWriteRouteCss', () => {
     );
     writeFileSync(
       join(root, 'styles/about.ts'),
-      `import { styles } from 'typestyles';\nstyles.class('about', { color: 'blue' });\n`,
+      `import { createStyles } from 'typestyles';\nconst styles = createStyles();\nstyles.class('about', { color: 'blue' });\n`,
     );
 
     const collectCss = async (loaders: Array<() => unknown | Promise<unknown>>) =>

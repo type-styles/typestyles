@@ -89,7 +89,7 @@ export function splitApiReferenceSections(markdown: string): Record<string, stri
   }
   flush();
 
-  // Index dotted method symbols from bullet lines like `- styles.component(...)`
+  // Index dotted method symbols from bullet lines like `- recipe(...)`
   for (const [key, section] of Object.entries({ ...sections })) {
     const methodRe = /-\s+`([a-zA-Z0-9_.]+)\([^`]*\)`/g;
     let m: RegExpExecArray | null;

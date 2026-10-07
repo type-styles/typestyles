@@ -595,7 +595,7 @@ export interface Theme<E extends Record<string, CreateTokenValues> = Record<stri
 }
 
 /**
- * The object returned by calling a `styles.component()` instance created with
+ * The object returned by calling a `recipe()` instance created with
  * `mode: 'attribute'`.
  *
  * - `className` — the single base class (no per-option classes exist in attribute mode).
@@ -624,7 +624,7 @@ export interface ComponentAttrsResult {
  * also accept {@link CSSValue} so unconstrained inference that widens keywords to `string` (e.g.
  * `{ flexWrap: 'wrap', columnGap: tokenString }`) stays assignable — otherwise sibling token
  * `string`s widen `'wrap'` → `string`, which is not assignable to csstype unions like `FlexWrap`
- * and can make `styles.component` fall through to the wrong overload (Issue #149). An open string
+ * and can make `recipe` fall through to the wrong overload (Issue #149). An open string
  * index still accepts **`[v.name]: value`** from {@link ComponentInternalVarRef}, literal custom
  * properties (`--foo`), and nested selectors / at-rules (`&:hover`, `@media`, …) — without a
  * `CSSProperties | Record<string, unknown>` union that weakens key completions when the type is
@@ -763,7 +763,7 @@ export type InferComponentVarRefTreeDefinitions<T> = T extends {
   : never;
 
 /**
- * Context passed to `styles.component(namespace, (ctx) => { ... })` to declare internal custom properties.
+ * Context passed to `recipe(namespace, (ctx) => { ... })` to declare internal custom properties.
  */
 /** Proxy tree returned by `ctx.vars({ … })` — leaves are `{ name, var }`, nested objects are sub-trees. */
 export type ComponentVarRefTree<T> = (T extends ComponentVarDefinitions
@@ -808,7 +808,7 @@ export type ComponentConfigContext = {
 };
 
 /**
- * The full config object passed to styles.component() with dimensioned variants. How `variants`
+ * The full config object passed to recipe() with dimensioned variants. How `variants`
  * compiles (discrete classes, `&[data-x="y"]` attributes, or BEM modifier classes) is selected by
  * `createStyles({ mode })`, not by anything in this config — see {@link ComponentAttrsReturn} and
  * `specs/semantic-and-attribute-mode.md` / `specs/classname-template-mode.md`.
@@ -842,7 +842,7 @@ export type ComponentConfig<V extends VariantDefinitions> = {
  * **`variants`**, **`defaultVariants`**, **`compoundVariants`**, and **`slots`** are forbidden
  * on this shape so TypeScript does not pick the flat overload for CVA-style or slot configs.
  * Nested variant maps can otherwise satisfy {@link CSSProperties} too loosely (index signatures),
- * which produced wrong callable types for `styles.component(ns, (ctx) => ({ variants: … }), { layer })`
+ * which produced wrong callable types for `recipe(ns, (ctx) => ({ variants: … }), { layer })`
  * when cascade layers are enabled.
  */
 export type FlatComponentConfig<K extends string> = {
@@ -993,7 +993,7 @@ export type SlotComponentFunction<
 };
 
 /**
- * Config for `styles.component` may be a plain object or a function that receives {@link ComponentConfigContext}.
+ * Config for `recipe` may be a plain object or a function that receives {@link ComponentConfigContext}.
  */
 export type ComponentConfigInput<V extends VariantDefinitions> =
   | ComponentConfig<V>
@@ -1019,7 +1019,7 @@ export type MultiSlotConfigInput<Slots extends readonly string[]> =
  *
  * @example
  * ```ts
- * const button = styles.component('button', {
+ * const button = recipe('button', {
  *   variants: {
  *     intent: { primary: {...}, ghost: {...} },
  *     size:   { sm: {...}, lg: {...} },
@@ -1035,7 +1035,7 @@ export type ComponentVariants<T> = T extends (selections?: ComponentSelections<i
   : never;
 
 // ---------------------------------------------------------------------------
-// styles.compose — merged variant inference
+// compose — merged variant inference
 // ---------------------------------------------------------------------------
 
 /** Input accepted by {@link compose}: component fn, class string, or falsy skip. */

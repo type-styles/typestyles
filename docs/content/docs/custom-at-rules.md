@@ -10,7 +10,7 @@ TypeStyles supports all CSS at-rules and advanced selectors through special key 
 Use the `&` prefix for pseudo-classes:
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     backgroundColor: '#0066ff',
@@ -56,7 +56,7 @@ const button = styles.component('button', {
 ### Form-related pseudo-classes
 
 ```ts
-const input = styles.component('input', {
+const input = recipe('input', {
   base: {
     border: '1px solid #e5e7eb',
 
@@ -91,7 +91,7 @@ const input = styles.component('input', {
 ### Structural pseudo-classes
 
 ```ts
-const list = styles.component('list', {
+const list = recipe('list', {
   item: {
     padding: '8px 0',
     borderBottom: '1px solid #e5e7eb',
@@ -130,7 +130,7 @@ const list = styles.component('list', {
 ### Child selectors
 
 ```ts
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     padding: '16px',
   },
@@ -161,7 +161,7 @@ const card = styles.component('card', {
 ### Sibling selectors
 
 ```ts
-const form = styles.component('form', {
+const form = recipe('form', {
   base: {
     display: 'flex',
     flexDirection: 'column',
@@ -189,7 +189,7 @@ const form = styles.component('form', {
 ## Attribute selectors
 
 ```ts
-const link = styles.component('link', {
+const link = recipe('link', {
   base: {
     color: '#0066ff',
     textDecoration: 'none',
@@ -234,20 +234,22 @@ All CSS attribute selector operators are supported:
 
 ## `:has()`, `:is()`, and `:where()` helpers
 
-Use **`styles.has`**, **`styles.is`**, and **`styles.where`** (or the named exports `has`, `is`, `where` from `typestyles`) to build `&`-nested keys the same way **`styles.container`** builds `@container` keys. Each helper returns a string suitable as an object key; multiple arguments become a comma-separated list inside the pseudo-class.
+Use **`has`**, **`is`**, and **`where`** (or the named exports `has`, `is`, `where` from `typestyles`) to build `&`-nested keys the same way **`container`** builds `@container` keys. Each helper returns a string suitable as an object key; multiple arguments become a comma-separated list inside the pseudo-class.
 
 - **`:where()`** — wraps a selector list at **zero specificity**, so library defaults are easy for consumers to override.
 - **`:is()`** — groups selectors; specificity is that of the most specific argument in the list.
 - **`:has()`** — accepts a [relative selector list](https://drafts.csswg.org/selectors/#relative-real-selector-list) (parent / descendant-aware styling).
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const nav = styles.class('nav', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const nav = style('nav', {
   display: 'flex',
-  [styles.where('.nav')]: { gap: '8px' },
-  [styles.has('.active')]: { borderBottom: '2px solid blue' },
-  [styles.is(':hover', ':focus-visible')]: { outline: '2px solid blue' },
+  [where('.nav')]: { gap: '8px' },
+  [has('.active')]: { borderBottom: '2px solid blue' },
+  [is(':hover', ':focus-visible')]: { outline: '2px solid blue' },
 });
 ```
 
@@ -260,7 +262,7 @@ You can still author raw nested keys (e.g. `'&:has(.active)'`, `'&:is(:hover, :f
 Use the `@` prefix for media queries:
 
 ```ts
-const layout = styles.component('layout', {
+const layout = recipe('layout', {
   container: {
     display: 'grid',
     gridTemplateColumns: '1fr',
@@ -288,7 +290,7 @@ const layout = styles.component('layout', {
 ### Complex media queries
 
 ```ts
-const hero = styles.component('hero', {
+const hero = recipe('hero', {
   base: {
     padding: '48px 16px',
 
@@ -321,7 +323,7 @@ const hero = styles.component('hero', {
 ### Combining media queries with pseudo-classes
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
 
@@ -345,9 +347,11 @@ const button = styles.component('button', {
 `typestyles` exports a `mediaQueries` constant with ready-to-use `@media (...)` strings for common features that don't come from your configured breakpoints — motion, contrast, and hover/pointer capability preferences. Each value is grouped by feature, then by the literal CSS keyword:
 
 ```ts
-import { styles, mediaQueries } from 'typestyles';
+import { createTypeStyles, mediaQueries } from 'typestyles';
 
-const card = styles.component('card', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: {
     transition: 'transform 200ms ease',
 
@@ -366,10 +370,10 @@ For `prefers-color-scheme`, viewport orientation, or width breakpoints, see [`@t
 
 ### Viewport breakpoints from config
 
-When you register breakpoints on `createTypeStyles` / `createStyles`, use **`styles.breakpoint()`** and **`styles.media()`** for nested viewport rules instead of repeating `` `@media (min-width: …)` `` strings.
+When you register breakpoints on `createTypeStyles` / `createStyles`, use **`breakpoint()`** and **`media()`** for nested viewport rules instead of repeating `` `@media (min-width: …)` `` strings.
 
 ```ts
-const { styles } = createTypeStyles({
+const { recipe, media, breakpoint, atRuleBlock } = createTypeStyles({
   scopeId: 'app',
   breakpoints: {
     sm: '(min-width: 640px)',
@@ -378,60 +382,62 @@ const { styles } = createTypeStyles({
   },
 });
 
-const layout = styles.component('layout', {
+const layout = recipe('layout', {
   container: {
     display: 'grid',
     gridTemplateColumns: '1fr',
 
     // Spreadable block helper
-    ...styles.media('md', {
+    ...media('md', {
       gridTemplateColumns: 'repeat(2, 1fr)',
     }),
 
     // Same pattern as container queries: breakpoint key + atRuleBlock
-    ...styles.atRuleBlock(styles.breakpoint('lg'), {
+    ...atRuleBlock(breakpoint('lg'), {
       gridTemplateColumns: 'repeat(3, 1fr)',
     }),
   },
 });
 ```
 
-`styles.breakpoint(name)` uses the configured media condition as-is. Pass a second argument to target a width/height feature (`min`, `max`, `minHeight`, `maxHeight`) — useful when the stored condition is `(min-width: …)` but you need `(max-width: …)` with the same token value:
+`breakpoint(name)` uses the configured media condition as-is. Pass a second argument to target a width/height feature (`min`, `max`, `minHeight`, `maxHeight`) — useful when the stored condition is `(min-width: …)` but you need `(max-width: …)` with the same token value:
 
 ```ts
-...styles.atRuleBlock(styles.breakpoint('md', 'max'), {
+...atRuleBlock(breakpoint('md', 'max'), {
   padding: '12px',
 });
 ```
 
 Feature overrides apply to **single-feature** conditions like `(min-width: 768px)`. Compound queries such as `(min-width: 768px) and (orientation: landscape)` are left unchanged (a dev warning is logged if you pass a feature).
 
-For `styles.media()`, use the **three-argument** form when the feature is an object — the two-argument form treats the second value as nested styles:
+For `media()`, use the **three-argument** form when the feature is an object — the two-argument form treats the second value as nested styles:
 
 ```ts
 // ✓ feature override + block
-...styles.media('md', { max: true }, { padding: '12px' }),
+...media('md', { max: true }, { padding: '12px' }),
 
 // ✗ `{ max: true }` is treated as CSS properties, not a feature
-...styles.media('md', { max: true }),
+...media('md', { max: true }),
 ```
 
-**TypeScript:** breakpoint names are typed from your `breakpoints` map when it is a `const` object; `breakpoint('md')` infers a literal `@media …` key like `container()`. For dynamic names, spread `styles.atRuleBlock(styles.breakpoint(name), nested)` or use a plain `'@media …'` key.
+**TypeScript:** breakpoint names are typed from your `breakpoints` map when it is a `const` object; `breakpoint('md')` infers a literal `@media …` key like `container()`. For dynamic names, spread `atRuleBlock(breakpoint(name), nested)` or use a plain `'@media …'` key.
 
 ## Container queries
 
-Container queries respond to the size of a container, not the viewport. You can write plain `'@container …'` keys (they serialize like `@media`), or use **`styles.container()`** / **`container()`** for typed size features and named containers.
+Container queries respond to the size of a container, not the viewport. You can write plain `'@container …'` keys (they serialize like `@media`), or use **`container()`** / **`container()`** for typed size features and named containers.
 
-### Typed keys with `styles.container()`
+### Typed keys with `container()`
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const card = styles.class('card', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = style('card', {
   containerType: 'inline-size',
   padding: '16px',
 
-  [styles.container({ minWidth: 400 })]: {
+  [container({ minWidth: 400 })]: {
     padding: '24px',
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
@@ -441,44 +447,44 @@ const card = styles.class('card', {
 
 `container({ … })` accepts camelCase size features (`minWidth`, `maxInlineSize`, `orientation`, …). Numbers become `px` (except `aspectRatio`, where a number is emitted as-is—prefer a string like `'16 / 9'` when needed). Multiple features compile to one condition joined with `and`.
 
-**TypeScript:** object and two-argument forms infer a **literal** `` `@container …` `` template, so **`[styles.container(…)]`** can sit next to longhands (`padding`, `display`, …) without `as CSSProperties`. When the `@container` text is only known as a generic **`string`** at compile time, spread **`styles.atRuleBlock(key, nested)`** (or the `atRuleBlock` export) instead. A **string literal** one-arg call also narrows, e.g. `[styles.container('(min-width: 1px)')]: { … }`.
+**TypeScript:** object and two-argument forms infer a **literal** `` `@container …` `` template, so **`[container(…)]`** can sit next to longhands (`padding`, `display`, …) without `as CSSProperties`. When the `@container` text is only known as a generic **`string`** at compile time, spread **`atRuleBlock(key, nested)`** (or the `atRuleBlock` export) instead. A **string literal** one-arg call also narrows, e.g. `[container('(min-width: 1px)')]: { … }`.
 
 ### Named container queries
 
 Set `containerName` on the element that establishes the container, then target it by name:
 
 ```ts
-const sidebar = styles.class('sidebar', {
+const sidebar = style('sidebar', {
   containerType: 'inline-size',
   containerName: 'sidebar',
   width: '280px',
 });
 
-const sidebarItem = styles.class('sidebar-item', {
+const sidebarItem = style('sidebar-item', {
   // Either form:
-  [styles.container('sidebar', { minWidth: 250 })]: {
+  [container('sidebar', { minWidth: 250 })]: {
     flexDirection: 'row',
   },
-  // [styles.container({ name: 'sidebar', minWidth: 250 })]: { ... },
+  // [container({ name: 'sidebar', minWidth: 250 })]: { ... },
 });
 ```
 
 ### Typed container names (`containerRef` / `createContainerRef`)
 
-**`styles.containerRef(label)`** returns a **human-readable** `container-name` you can reuse in TypeScript instead of repeating string literals: **`{scopeId}-{label}`** when `scopeId` is set on the styles instance, otherwise **`{prefix}-{label}`** (same defaults as `createStyles`). Use that value for both `containerName` and the first argument to `styles.container(…)`.
+**`containerRef(label)`** returns a **human-readable** `container-name` you can reuse in TypeScript instead of repeating string literals: **`{scopeId}-{label}`** when `scopeId` is set on the styles instance, otherwise **`{prefix}-{label}`** (same defaults as `createStyles`). Use that value for both `containerName` and the first argument to `container(…)`.
 
 ```ts
-const shell = styles.containerRef('product-shell');
+const shell = containerRef('product-shell');
 
-const root = styles.class('shell-root', {
+const root = style('shell-root', {
   containerType: 'inline-size',
   containerName: shell,
 });
 
-const body = styles.class('shell-body', {
+const body = style('shell-body', {
   display: 'flex',
   flexDirection: 'column',
-  ...styles.atRuleBlock(styles.container(shell, { minWidth: 480 }), {
+  ...atRuleBlock(container(shell, { minWidth: 480 }), {
     flexDirection: 'row',
   }),
 });
@@ -494,14 +500,14 @@ For anything beyond the typed helper (e.g. `style()`, `not (…)`), pass a singl
 
 ```ts
 {
-  [styles.container('style(--theme: dark)')]: { color: '#fff' },
+  [container('style(--theme: dark)')]: { color: '#fff' },
 }
 ```
 
 ### Manual keys (equivalent)
 
 ```ts
-const card = styles.class('card', {
+const card = style('card', {
   containerType: 'inline-size',
   containerName: 'card',
   padding: '12px',
@@ -520,16 +526,16 @@ const card = styles.class('card', {
 
 ## Supports queries
 
-Feature detection with `@supports`. You can write plain `'@supports …'` keys (they serialize like `@media`), or use **`styles.supports()`** / **`supports()`** for typed declaration features and raw conditions.
+Feature detection with `@supports`. You can write plain `'@supports …'` keys (they serialize like `@media`), or use **`supports()`** / **`supports()`** for typed declaration features and raw conditions.
 
-### Typed keys with `styles.supports()`
+### Typed keys with `supports()`
 
 ```ts
-const backdrop = styles.component('backdrop', {
+const backdrop = recipe('backdrop', {
   base: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
 
-    [styles.supports({ backdropFilter: 'blur(4px)' })]: {
+    [supports({ backdropFilter: 'blur(4px)' })]: {
       backdropFilter: 'blur(4px)',
       backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
@@ -539,25 +545,25 @@ const backdrop = styles.component('backdrop', {
 
 `supports({ … })` accepts camelCase CSS properties (`display`, `backdropFilter`, `gridTemplateColumns`, …). Multiple declarations compile to one condition joined with `and`.
 
-**TypeScript:** single-declaration object forms and string-literal raw conditions infer a **literal** `` `@supports …` `` template, so **`[styles.supports(…)]`** can sit next to longhands without `as CSSProperties`. When the `@supports` text is only known as a generic **`string`** at compile time, spread **`styles.atRuleBlock(key, nested)`** instead.
+**TypeScript:** single-declaration object forms and string-literal raw conditions infer a **literal** `` `@supports …` `` template, so **`[supports(…)]`** can sit next to longhands without `as CSSProperties`. When the `@supports` text is only known as a generic **`string`** at compile time, spread **`atRuleBlock(key, nested)`** instead.
 
 ### Complex supports queries
 
 ```ts
-const grid = styles.component('grid', {
+const grid = recipe('grid', {
   base: {
     // Fallback layout
     display: 'flex',
     flexWrap: 'wrap',
 
     // Use grid if supported
-    [styles.supports({ display: 'grid' })]: {
+    [supports({ display: 'grid' })]: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     },
 
     // Use subgrid if supported
-    [styles.supports({ gridTemplateColumns: 'subgrid' })]: {
+    [supports({ gridTemplateColumns: 'subgrid' })]: {
       gridTemplateColumns: 'subgrid',
     },
   },
@@ -567,7 +573,7 @@ const grid = styles.component('grid', {
 For `not`, `selector()`, or other syntax that does not map to a single declaration object, pass a raw condition string:
 
 ```ts
-[styles.supports('not (display: grid)')]: { display: 'flex' },
+[supports('not (display: grid)')]: { display: 'flex' },
 ```
 
 ## Layer (cascade layers)
@@ -575,7 +581,7 @@ For `not`, `selector()`, or other syntax that does not map to a single declarati
 CSS cascade layers for organizing styles:
 
 ```ts
-const reset = styles.component('reset', {
+const reset = recipe('reset', {
   base: {
     // Apply to @layer reset
     '@layer reset': {
@@ -586,7 +592,7 @@ const reset = styles.component('reset', {
   },
 });
 
-const components = styles.component('components', {
+const components = recipe('components', {
   button: {
     '@layer components': {
       padding: '8px 16px',
@@ -602,7 +608,7 @@ While typestyles supports deep nesting, it's best to keep it shallow:
 
 ```ts
 // ✅ Good - 2-3 levels deep
-const nav = styles.component('nav', {
+const nav = recipe('nav', {
   base: {
     display: 'flex',
 
@@ -617,7 +623,7 @@ const nav = styles.component('nav', {
 });
 
 // ❌ Avoid - too deep, hard to maintain
-const deep = styles.component('deep', {
+const deep = recipe('deep', {
   base: {
     '& div': {
       '& span': {
@@ -635,7 +641,7 @@ const deep = styles.component('deep', {
 ## Complex real-world example
 
 ```ts
-const dataTable = styles.component('data-table', {
+const dataTable = recipe('data-table', {
   container: {
     overflowX: 'auto',
     containerType: 'inline-size',
@@ -714,7 +720,7 @@ TypeStyles converts these nested objects to flat CSS:
 **Input:**
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px',
     '&:hover': {

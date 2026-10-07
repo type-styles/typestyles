@@ -1,6 +1,8 @@
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-export const button = styles.component('svelte-button', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+export const button = recipe('svelte-button', {
   base: {
     padding: '10px 16px',
     borderRadius: '8px',

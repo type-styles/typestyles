@@ -8,18 +8,18 @@ Full migration guide: [typestyles.dev/docs/migration](https://typestyles.dev/doc
 
 ## What it transforms
 
-| Source                              | Becomes                                             |
-| ----------------------------------- | --------------------------------------------------- |
-| `styled.div\`...\``                 | `styles.class('div', { ... })` + `className` on JSX |
-| `styled(Button)\`...\``             | `styles.class('button', { ... })` + `className`     |
-| `` css`...` `` (Emotion)            | `styles.class(...)`                                 |
-| Static template literals            | CSS object properties (via PostCSS parser)          |
-| `` `${props => props.x}` ``         | `createVar` + `assignVars` + `styles.class`         |
-| `` `${props => props.x ? A : B}` `` | `styles.component` variants + JSX rewrite           |
-| `` `${({ x }) => x}` ``             | `createVar` + `assignVars` (destructured params)    |
-| `@media` in templates               | Nested `'@media (…)'` objects in style definitions  |
+| Source                              | Becomes                                            |
+| ----------------------------------- | -------------------------------------------------- |
+| `styled.div\`...\``                 | `style('div', { ... })` + `className` on JSX       |
+| `styled(Button)\`...\``             | `style('button', { ... })` + `className`           |
+| `` css`...` `` (Emotion)            | `style(...)`                                       |
+| Static template literals            | CSS object properties (via PostCSS parser)         |
+| `` `${props => props.x}` ``         | `createVar` + `assignVars` + `style`               |
+| `` `${props => props.x ? A : B}` `` | `recipe` variants + JSX rewrite                    |
+| `` `${({ x }) => x}` ``             | `createVar` + `assignVars` (destructured params)   |
+| `@media` in templates               | Nested `'@media (…)'` objects in style definitions |
 
-The codemod rewrites JSX usage for styled components it can safely transform and adds the required `import { styles } from 'typestyles'`.
+The codemod rewrites JSX usage for styled components it can safely transform and adds `createTypeStyles` plus a `style` binding when needed (`import { createTypeStyles } from 'typestyles'`).
 
 ## What it skips (with warnings)
 
@@ -29,7 +29,7 @@ Honest automation beats silent breakage:
 - **Exported styled components** — avoids changing your public API shape without review
 - **Non-JSX references** to styled component variables
 
-Prop-based patterns like `` `${props => props.color}` `` and `` `${(props) => props.width}px` `` are converted to [`createVar` + `assignVars`](https://typestyles.dev/docs/dynamic-styles). Boolean prop ternaries like `` `${props => props.primary ? '#0066ff' : '#6b7280'}` `` become `styles.component` variants. Suffix text after the interpolation (e.g. `px`) is applied at the call site.
+Prop-based patterns like `` `${props => props.color}` `` and `` `${(props) => props.width}px` `` are converted to [`createVar` + `assignVars`](https://typestyles.dev/docs/dynamic-styles). Boolean prop ternaries like `` `${props => props.primary ? '#0066ff' : '#6b7280'}` `` become `recipe` variants. Suffix text after the interpolation (e.g. `px`) is applied at the call site.
 
 ## Installation
 
@@ -107,9 +107,11 @@ export function App() {
 **After:**
 
 ```tsx
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.class('button', {
+const { style } = createTypeStyles();
+
+const button = style('button', {
   padding: '8px 16px',
   background: '#0066ff',
   color: 'white',
@@ -124,7 +126,7 @@ export function App() {
 }
 ```
 
-For components with variants, follow up manually with `styles.component()` — see the [styled-components migration section](https://typestyles.dev/docs/migration#from-styled-components).
+For components with variants, follow up manually with `recipe()` — see the [styled-components migration section](https://typestyles.dev/docs/migration#from-styled-components). Consider `createTypeStyles({ scopeId: 'your-app' })` for production apps.
 
 ## Programmatic API
 
@@ -150,7 +152,7 @@ await runMigration(process.cwd(), {
 1. **Dry-run** on a branch and review diffs
 2. **Fix warnings** — convert dynamic templates to vars or inline styles
 3. **Apply with `--write`**
-4. **Refactor** repeated `styles.class` calls into `styles.component` with variants
+4. **Refactor** repeated `style()` calls into `recipe()` with variants
 5. **Add tokens** — replace hard-coded colors/spacing with `tokens.create`
 6. **Enable extraction** — add `@typestyles/vite` or your bundler plugin for production zero-runtime
 

@@ -1,9 +1,12 @@
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens, global } = createTypeStyles({
+export const { style, recipe, tokens, global } = createTypeStyles({
   scopeId: 'typewind',
   mode: 'semantic',
-  layers: ['tokens', 'components', 'utilities'] as const,
-  tokenLayer: 'tokens',
-  globalLayer: 'tokens',
+  layers: {
+    order: ['tokens', 'components', 'utilities'],
+    token: 'tokens',
+    style: 'components',
+    global: 'tokens',
+  },
 });

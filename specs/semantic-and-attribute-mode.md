@@ -11,7 +11,7 @@ base-class naming. Tracked as a new P6 / follow-on P5 item in
 `IMPROVEMENTS.md` once this spec is accepted.
 
 **Motivation:** var-ui is the reference design system for TypeStyles. Its
-typed theming work (`styles.override()` + theme `components` config) wants:
+typed theming work (`override()` + theme `components` config) wants:
 
 1. Readable, unambiguous public class names when a system stays on discrete
    classes.
@@ -40,7 +40,7 @@ var-ui roadmap item after this ships.
 
 ## Non-goals
 
-- `styles.override()` / `__meta` (separate spec; this work is prerequisite
+- `override()` / `__meta` (separate spec; this work is prerequisite
   substrate — see [Relationship to typed overrides](#relationship-to-typed-overrides)).
 - Changing `mode: 'bem'` public output (strict BEM without dimension names
   remains available for consumers who want it and accept the collision
@@ -116,9 +116,9 @@ Rules:
 - **Flat (non-dimensioned) components** use the same template with
   `dimension: undefined`: the `base` key is the block and each other key is a
   modifier (`card`, `card--elevated`).
-- **`styles.class()`** keeps today's behavior: `${scope}${name}` with no
-  template call. Note this means `styles.class('button')` and a dimensioned
-  `styles.component('button')` base now resolve to the same string `button`;
+- **`style()`** keeps today's behavior: `${scope}${name}` with no
+  template call. Note this means `style('button')` and a dimensioned
+  `recipe('button')` base now resolve to the same string `button`;
   the existing unscoped-collision registry warning applies, and the migration
   guide calls this out.
 - **Compound variants change strategy.** Today's default semantic emits a
@@ -143,7 +143,7 @@ export function resolveClassNameTemplate(cfg: ClassNamingConfig): ClassNameTempl
 }
 ```
 
-Dimensioned + flat + slot + multi-slot `styles.component()` under
+Dimensioned + flat + slot + multi-slot `recipe()` under
 `mode: 'semantic'`
 use `createTemplateDimensionedComponent` /
 `createSemanticFlatComponent` /
@@ -288,7 +288,11 @@ Breaking for any consumer who relied on `data-fontWeight` / verbatim casing
    is the full active variant map (shared across slots for a given call).
 
 ```ts
-const dialog = styles.component('dialog', {
+import { createTypeStyles } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app', mode: 'attribute' });
+
+const dialog = recipe('dialog', {
   slots: ['root', 'trigger', 'content'],
   base: {
     root: { display: 'grid' },
@@ -343,7 +347,7 @@ of markup tree, and matches class-mode's "modifier classes ride on the
 element they style."
 
 **Type-level:** lift the slots exclusion from the attribute-mode
-`styles.component` overloads. Add slot overloads to `AttributeComponentFn`
+`recipe` overloads. Add slot overloads to `AttributeComponentFn`
 (and the layered variant) returning `Record<Slots[number],
 ComponentAttrsResult>` for slot-with-variants and `Record<Slots[number],
 string>` for multi-slot-without-variants; name a `SlotAttrsReturn` type for
@@ -384,19 +388,19 @@ Flat attribute components follow Part A's semantic flat naming (`card`,
 Document (components + theming docs) the endorsed pairing:
 
 ```ts
-const { styles, tokens } = createTypeStyles({
+const { style, recipe, tokens } = createTypeStyles({
   mode: 'attribute',
   layers: ['tokens', 'components', 'overrides', 'utilities'] as const,
   tokenLayer: 'tokens',
 });
 
-styles.component('button', config, { layer: 'components' });
+recipe('button', config, { layer: 'components' });
 
 // Theme / consumer restyle — later layer wins regardless of
 // `.button[data-intent=primary]` vs `.button` specificity.
-styles.scope(
+scope(
   { root: '.theme-acme', layer: 'overrides' },
-  button.base, // stable public class; future: styles.override(button, …)
+  button.base, // stable public class; future: override(button, …)
   { borderRadius: '999px' },
 );
 ```
@@ -410,13 +414,13 @@ Rules of thumb for authors:
    beats overrides).
 4. Do **not** escalate specificity to win overrides when layers are on.
 
-`styles.scope(…, button.base, …)` restyles only the base class, not a
+`scope(…, button.base, …)` restyles only the base class, not a
 `[data-…]` variant state. Variant-level overrides need hand-written attribute
-selectors or the future `styles.override()` / `__meta` API — B.4's layer
+selectors or the future `override()` / `__meta` API — B.4's layer
 guidance covers base-class overrides only.
 
 Nested conflicting theme regions remain the existing `@scope` /
-`styles.scope()` proximity story (see `specs/component-override-contract.md`)
+`scope()` proximity story (see `specs/component-override-contract.md`)
 — this spec does not re-solve that.
 
 Attribute mode does not require layers to _function_, but design-system
@@ -439,7 +443,7 @@ spec is a prerequisite and constrains that API:
   never invented descendant chains.
 
 Ship Part A + B first (or in the same release train before override
-emission tests); then implement `styles.override()` / `__tsMeta`.
+emission tests); then implement `override()` / `__tsMeta`.
 
 ---
 
@@ -501,7 +505,7 @@ After publishing the engine release:
 1. `createTypeStyles({ mode: 'attribute', layers: […, 'overrides', …] })`.
 2. Update React wrappers for `ComponentAttrsResult` / per-slot props.
 3. Regenerate classname snapshots / public contract.
-4. Proceed with typed `components` / `styles.override()` against attribute
+4. Proceed with typed `components` / `override()` against attribute
    `__meta`.
 
 ---
@@ -602,13 +606,13 @@ After publishing the engine release:
 | Attribute slot attrs   | On every slot (not root-only / descendants)                      |
 | Attribute naming       | Always kebab-case from dimension key                             |
 | Override precedence    | Cascade layers (`overrides` after `components`), not specificity |
-| `styles.override()`    | Out of scope here; metadata must be selector-aware               |
+| `override()`           | Out of scope here; metadata must be selector-aware               |
 
 ---
 
 ## Open follow-ups (explicitly deferred)
 
 - Codemod for old semantic class strings in consumer CSS.
-- `styles.override()` + `__meta` engine API (var-ui V7 dependency).
+- `override()` + `__meta` engine API (var-ui V7 dependency).
 - Optional root-only attrs mode if a future recipe metadata format
   describes slot DOM ancestry (not planned).

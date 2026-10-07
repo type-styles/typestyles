@@ -1,11 +1,11 @@
 ---
 title: Styles
-description: Create and compose style variants with styles.component
+description: Create and compose style variants with recipe
 ---
 
-The `styles` API lets you define named style variants and compose them at the call site.
+The TypeStyles **`style`** and **`recipe`** APIs let you define named style variants and compose them at the call site. Create one runtime per app or package with **`createTypeStyles`**.
 
-`styles.component()` is the unified API for creating component styles. It supports both **flat** configs (simple named variants) and **dimensioned** configs (typed `variants`, `compoundVariants`, `defaultVariants`). For the full dimensioned variant API, see [Components](/docs/components).
+`recipe()` is the unified API for creating component styles. It supports both **flat** configs (simple named variants) and **dimensioned** configs (typed `variants`, `compoundVariants`, `defaultVariants`). For the full dimensioned variant API, see [Components](/docs/components).
 
 ## How TypeStyles runs
 
@@ -16,24 +16,26 @@ The `styles` API lets you define named style variants and compose them at the ca
 
 ## Choosing an API
 
-| You want to…                                                            | Use                                     | Why                                                                                         |
-| ----------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Style a component with base + flat toggles (`elevated`, `compact`)      | `styles.component` (flat config)        | Small surface area; base applies automatically when you call the function.                  |
-| Build typed variant axes (`intent`, `size`) with defaults and compounds | `styles.component` (dimensioned config) | First-class variant model: `variants`, `compoundVariants`, `defaultVariants`.               |
-| One reusable class from a single style object                           | `styles.class`                          | One class string, no variant machinery.                                                     |
-| Merge several style groups                                              | `styles.compose`                        | Reuse groups without repeating objects.                                                     |
-| Join class names conditionally                                          | `cx()` from `'typestyles'`              | Filters falsy values; pairs well with props from parents (not tied to a `styles` instance). |
+| You want to…                                                            | Use                           | Why                                                                                           |
+| ----------------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------- |
+| Style a component with base + flat toggles (`elevated`, `compact`)      | `recipe` (flat config)        | Small surface area; base applies automatically when you call the function.                    |
+| Build typed variant axes (`intent`, `size`) with defaults and compounds | `recipe` (dimensioned config) | First-class variant model: `variants`, `compoundVariants`, `defaultVariants`.                 |
+| One reusable class from a single style object                           | `style`                       | One class string, no variant machinery.                                                       |
+| Merge several style groups                                              | `compose`                     | Reuse groups without repeating objects.                                                       |
+| Join class names conditionally                                          | `cx()` from `'typestyles'`    | Filters falsy values; pairs well with props from parents (not tied to a TypeStyles instance). |
 
-**Practical default:** one [`createTypeStyles`](/docs/api-reference#createtypestyles-options) module per app or package; then use `styles.component` for UI components, `styles.class` for one-off utilities, and `import { cx } from 'typestyles'` when you merge external `className` strings.
+**Practical default:** one [`createTypeStyles`](/docs/api-reference#createtypestyles-options) module per app or package; then use `recipe` for UI components, `style` for one-off utilities, and `import { cx } from 'typestyles'` when you merge external `className` strings.
 
 ## Creating styles (flat config)
 
-Call `styles.component(namespace, definitions)` with a unique namespace and an object of variant names to style definitions:
+Call `recipe(namespace, definitions)` with a unique namespace and an object of variant names to style definitions:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const card = styles.component('card', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: {
     padding: '16px',
     borderRadius: '8px',
@@ -66,7 +68,7 @@ To use **hashed** or **hash-only** class strings instead (for example in a desig
 For typed variant dimensions, use the full variant config:
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px 16px', borderRadius: '6px' },
   variants: {
     intent: {
@@ -94,7 +96,7 @@ See [Components](/docs/components) for `compoundVariants`, boolean variants, and
 Use the `&` prefix for pseudo-classes and nested selectors, just like in CSS:
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     '&:hover': { opacity: 0.9 },
@@ -108,7 +110,7 @@ const button = styles.component('button', {
 Attribute selectors work with `&`-prefixed nested selectors, including all CSS attribute selector operators:
 
 ```ts
-const trigger = styles.component('trigger', {
+const trigger = recipe('trigger', {
   base: {
     // exact match
     '&[data-state="open"]': { opacity: 1 },
@@ -131,14 +133,16 @@ const trigger = styles.component('trigger', {
 
 ### `:has()`, `:is()`, and `:where()` helpers
 
-For grouped or low-specificity pseudos, use **`styles.has`**, **`styles.is`**, and **`styles.where`** (or import `has`, `is`, `where` from `typestyles`). They mirror the ergonomics of **`styles.container()`** and **`styles.supports()`** for at-rule queries: small builders that return typed nested keys and infer **literal** templates from your arguments, so you can mix them with ordinary properties without `as CSSProperties`.
+For grouped or low-specificity pseudos, use **`has`**, **`is`**, and **`where`** from your TypeStyles instance (or import `has`, `is`, `where` from `typestyles`). They mirror the ergonomics of **`container()`** and **`supports()`** for at-rule queries: small builders that return typed nested keys and infer **literal** templates from your arguments, so you can mix them with ordinary properties without `as CSSProperties`.
 
 ```ts
-const nav = styles.class('nav', {
+const { style, where, has, is } = createTypeStyles({ scopeId: 'app' });
+
+const nav = style('nav', {
   display: 'flex',
-  [styles.where('.nav')]: { gap: '8px' },
-  [styles.has('.active')]: { borderBottom: '2px solid blue' },
-  [styles.is(':hover', ':focus-visible')]: { outline: '2px solid dodgerblue' },
+  [where('.nav')]: { gap: '8px' },
+  [has('.active')]: { borderBottom: '2px solid blue' },
+  [is(':hover', ':focus-visible')]: { outline: '2px solid dodgerblue' },
 });
 ```
 
@@ -146,18 +150,20 @@ const nav = styles.class('nav', {
 
 ## Composing styles
 
-Use `styles.compose()` to combine multiple component style functions or class strings:
+Use `compose()` to combine multiple component style functions or class strings:
 
 ```ts
-const base = styles.component('base', {
+const { recipe, compose } = createTypeStyles({ scopeId: 'app' });
+
+const base = recipe('base', {
   base: { padding: '8px', borderRadius: '4px' },
 });
 
-const primary = styles.component('primary', {
+const primary = recipe('primary', {
   base: { backgroundColor: '#0066ff', color: 'white' },
 });
 
-const button = styles.compose(base, primary);
+const button = compose(base, primary);
 ```
 
 See the [Style Composition](/docs/compose) guide for more details.
@@ -167,9 +173,11 @@ See the [Style Composition](/docs/compose) guide for more details.
 Use the built-in `cx()` utility to conditionally join class strings:
 
 ```ts
-import { styles, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const card = styles.component('card', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: { padding: '16px' },
   elevated: { boxShadow: '0 4px 8px rgba(0,0,0,0.1)' },
 });
@@ -182,12 +190,12 @@ cx(base, isElevated && elevated, customClassName);
 
 ## Utility shortcuts
 
-Define reusable shorthand properties (similar to Stitches `utils`) on your **`createStyles`** instance so class names, scope, and layers stay on one API — no global registration.
+Define reusable shorthand properties (similar to Stitches `utils`) on your **`createTypeStyles`** instance so class names, scope, and layers stay on one API — no global registration.
 
 ```ts
-import { createStyles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const styles = createStyles({
+const { style, recipe } = createTypeStyles({
   scopeId: 'my-app',
   utils: {
     marginX: (value: string | number) => ({
@@ -205,18 +213,18 @@ const styles = createStyles({
   },
 });
 
-const avatar = styles.class('avatar', {
+const avatar = style('avatar', {
   size: 40,
   marginX: 8,
 });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { paddingY: 8 },
   compact: { paddingY: 4 },
 });
 ```
 
-The returned API is utility-aware (`class`, `hashClass`, `component` accept your utility keys). If you already use the default `import { styles } from 'typestyles'`, you can instead call **`styles.withUtils({ … })`** to get the same behavior from a second object — prefer **`createStyles({ utils })`** when you want a single exported styles instance.
+The returned API is utility-aware (`style`, `style.hash`, and `recipe` accept your utility keys).
 
 Utility keys are fully typed from your utility definitions and can be mixed with normal CSS properties.
 

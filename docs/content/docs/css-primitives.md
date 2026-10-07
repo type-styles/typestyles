@@ -11,7 +11,7 @@ TypeStyles exposes several APIs for CSS custom properties and `@property` regist
 tokens.declare / tokens.create        ← design systems, themes, forward refs
         ↓ component-scoped or non-token properties
 ctx.vars.declare / ctx.var            ← component internal custom properties
-styles.property.declare / .set        ← global, scoped to a styles instance
+property.declare / .set        ← global, scoped to a styles instance
         ↓ exact --names, no prefixing
 css.atProperty / css.customProperty   ← mirrors the cascade spec
         ↓ unanticipated at-rules
@@ -28,7 +28,7 @@ Is it internal to one component (variant-driven values)?
   └─ yes → ctx.vars.declare / ctx.var  ([Components](/docs/components))
 
 Is it global but scoped to your styles instance?
-  └─ yes → styles.property.declare / .set
+  └─ yes → property.declare / .set
 
 Do you need exact --names (Style Dictionary, legacy CSS, third-party)?
   └─ yes → css.atProperty / css.customProperty  (typestyles/css)
@@ -58,7 +58,7 @@ tokens.declare('color', {
 });
 
 css.atProperty('--ds-accent', atProperty.color);
-styles.property.declare('overlay-opacity', atProperty.number);
+property.declare('overlay-opacity', atProperty.number);
 ```
 
 Each preset is `{ syntax, inherits, initial }` — the same shape as `PropertyRegistration`. Helpers:
@@ -95,7 +95,7 @@ css.atProperty('--ds-color-accent', atProperty.color);
 css.customProperty('--ds-color-accent', '#0066ff');
 
 const accent = css.var('--ds-color-accent');
-// styles.class('hero', { color: accent.var })
+// style('hero', { color: accent.var })
 
 // Dependent value: declare with placeholder, set real value separately
 css.atProperty('--ds-color-accent-subtle', { syntax: '<color>', inherits: false });
@@ -122,28 +122,30 @@ css.customProperties(':root', sdValues);
 
 For greenfield TypeStyles apps, prefer `tokens.create` with `nameTemplate` — see [Style Dictionary & W3C tokens](/docs/style-dictionary#matching-external-css-names).
 
-## `styles.property.declare` / `.set`
+## `property.declare` / `.set`
 
 Global custom properties scoped to a `createStyles` / `createTypeStyles` instance. Names follow `--{scope}-property-{id}` (unchanged from the shorthand).
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 
 // Split form — declare structure, set value separately
-const hue = styles.property.declare('accent-hue', { syntax: '<number>' });
-styles.property.set(hue, '220');
+const hue = property.declare('accent-hue', { syntax: '<number>' });
+property.set(hue, '220');
 
 // Shorthand (unchanged) — declare + set in one call
-const radius = styles.property('corner-radius', {
+const radius = property('corner-radius', {
   syntax: '<length>',
   value: '8px',
 });
 
 // Bare ref — no emission
-const ref = styles.property('accent-hue');
+const ref = property('accent-hue');
 ```
 
-Existing `styles.property(id, { value, syntax, inherits })` call sites continue to work via the shorthand.
+Existing `property(id, { value, syntax, inherits })` call sites continue to work via the shorthand.
 
 See [API reference — `styles`](/docs/api-reference#styles) for the full signature.
 
@@ -152,7 +154,7 @@ See [API reference — `styles`](/docs/api-reference#styles) for the full signat
 Component-scoped custom properties: `--{scope}-{component}-{path}`. There is no `ctx.vars.set()` — values are set where they always were: `[ref.name]: value` in `base`, variants, and compound variants.
 
 ```ts
-const badge = styles.component('badge', (c) => {
+const badge = recipe('badge', (c) => {
   const v = c.vars.declare({
     textColor: { syntax: '<color>', inherits: false },
     borderWidth: true,

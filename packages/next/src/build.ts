@@ -98,10 +98,13 @@ export async function buildTypestylesForNext(
   const resolvedModules = resolveExtractModulesForNext(root, modules);
   const enableRouteCss = options.routeCss ?? discoverNextAppRoutesEnabled(root, appDir);
 
+  let extractNonce = 0;
   const loaders = resolvedModules.map((mod) => {
     const abs = resolve(root, mod);
     const href = pathToFileURL(abs).href;
-    return () => import(href);
+    // Cache-bust so a later route-CSS pass can re-import and re-register styles
+    // into an isolated sheet (Node ESM caches bare `import(href)` forever).
+    return () => import(`${href}?typestyles-extract=${++extractNonce}`);
   });
   const css = await collectStylesFromModules(loaders);
   const outAbs = resolve(root, cssOutFile);

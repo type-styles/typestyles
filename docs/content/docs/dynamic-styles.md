@@ -12,11 +12,13 @@ This keeps your extracted CSS static while still letting each element pick its o
 Define a var reference in your styles, then set its value on each instance:
 
 ```ts
-import { styles, createVar, assignVars } from 'typestyles';
+import { createTypeStyles, createVar, assignVars } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
 
 const progressFill = createVar('progressFill');
 
-const progress = styles.component('progress', {
+const progress = recipe('progress', {
   base: {
     height: '8px',
     borderRadius: '4px',
@@ -88,7 +90,7 @@ Prefer `createVar` over raw inline styles when the property is part of a compone
 const barColor = createVar('barColor');
 const barWidth = createVar('barWidth');
 
-const chartBar = styles.component('chart-bar', {
+const chartBar = recipe('chart-bar', {
   base: {
     background: barColor,
     width: barWidth,
@@ -114,7 +116,7 @@ Provide a CSS fallback as the second argument — useful when a var might not be
 ```ts
 const accent = createVar('accent', '#0066ff');
 
-const badge = styles.component('badge', {
+const badge = recipe('badge', {
   base: {
     color: accent,
     fontWeight: 600,

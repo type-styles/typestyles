@@ -239,7 +239,7 @@ function finishComponentResult<T extends object>(
  *
  * **Dimensioned variants** (recommended for multi-axis variants):
  * ```ts
- * const button = styles.component('button', {
+ * const button = recipe('button', {
  *   base: { padding: '8px 16px' },
  *   variants: {
  *     intent: {
@@ -268,7 +268,7 @@ function finishComponentResult<T extends object>(
  *
  * **Flat variants** (simple boolean-style toggles):
  * ```ts
- * const card = styles.component('card', {
+ * const card = recipe('card', {
  *   base: { padding: '16px', borderRadius: '8px' },
  *   elevated: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
  *   compact: { padding: '8px' },
@@ -284,7 +284,7 @@ function finishComponentResult<T extends object>(
  *
  * **Function config** — declare internal custom properties for variant-driven styling:
  * ```ts
- * const badge = styles.component('badge', (c) => {
+ * const badge = recipe('badge', (c) => {
  *   const v = c.vars({
  *     textColor: '#333',
  *     borderColor: { value: '#ccc', syntax: '<color>' },
@@ -311,7 +311,7 @@ function finishComponentResult<T extends object>(
  *
  * ```ts
  * const styles = createStyles({ mode: 'attribute' });
- * const button = styles.component('button', {
+ * const button = recipe('button', {
  *   base: { padding: '8px 16px' },
  *   variants: {
  *     variant: {
@@ -378,14 +378,20 @@ export function createComponent(
     typeof buildOptions === 'string' ? { layer: buildOptions } : (buildOptions ?? {});
   const { layer, varDefinitions } = options;
 
+  let emitLayer = layer;
   if (classNaming.cascadeLayers) {
-    if (layer == null || layer === '') {
+    emitLayer =
+      layer != null && layer !== ''
+        ? layer
+        : classNaming.styleLayer != null && classNaming.styleLayer !== ''
+          ? classNaming.styleLayer
+          : undefined;
+    if (emitLayer == null || emitLayer === '') {
       throw new Error(
-        `[typestyles] \`layer\` is required in the third argument when using \`createStyles({ layers })\` — ` +
-          `e.g. styles.component('${namespace}', config, { layer: '…' }).`,
+        `[typestyles] \`layer\` is required for recipe('${namespace}', …) when using cascade layers without a factory \`layers.style\` / \`styleLayer\` default.`,
       );
     }
-    assertOwnLayer(classNaming.cascadeLayers, layer, `styles.component('${namespace}', …)`);
+    assertOwnLayer(classNaming.cascadeLayers, emitLayer, `recipe('${namespace}', …)`);
   }
 
   const {
@@ -410,7 +416,7 @@ export function createComponent(
           classNaming,
           namespace,
           resolved as MultiSlotConfig<readonly string[]>,
-          layer,
+          emitLayer,
         ),
       );
     }
@@ -419,7 +425,7 @@ export function createComponent(
         classNaming,
         namespace,
         resolved as MultiSlotConfig<readonly string[]>,
-        layer,
+        emitLayer,
       ),
     );
   }
@@ -431,7 +437,7 @@ export function createComponent(
           classNaming,
           namespace,
           resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
-          layer,
+          emitLayer,
         ),
       );
     }
@@ -445,7 +451,7 @@ export function createComponent(
           classNaming,
           namespace,
           resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
-          layer,
+          emitLayer,
         ),
       );
     }
@@ -454,7 +460,7 @@ export function createComponent(
         classNaming,
         namespace,
         resolved as SlotComponentConfig<readonly string[], SlotVariantDefinitions<string>>,
-        layer,
+        emitLayer,
       ),
     );
   }
@@ -463,7 +469,7 @@ export function createComponent(
     const dimensionedConfig = resolved as ComponentConfig<VariantDefinitions>;
     if (classNaming.mode === 'attribute') {
       return finish(
-        createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, layer),
+        createAttributeDimensionedComponent(classNaming, namespace, dimensionedConfig, emitLayer),
       );
     }
     if (
@@ -472,10 +478,10 @@ export function createComponent(
       classNaming.mode === 'template'
     ) {
       return finish(
-        createTemplateDimensionedComponent(classNaming, namespace, dimensionedConfig, layer),
+        createTemplateDimensionedComponent(classNaming, namespace, dimensionedConfig, emitLayer),
       );
     }
-    return finish(createDimensionedComponent(classNaming, namespace, dimensionedConfig, layer));
+    return finish(createDimensionedComponent(classNaming, namespace, dimensionedConfig, emitLayer));
   }
   claimComponentNamespace(classNaming, namespace);
   if (classNaming.mode === 'semantic' || classNaming.mode === 'attribute') {
@@ -484,12 +490,12 @@ export function createComponent(
         classNaming,
         namespace,
         resolved as FlatComponentConfig<string>,
-        layer,
+        emitLayer,
       ),
     );
   }
   return finish(
-    createFlatComponent(classNaming, namespace, resolved as FlatComponentConfig<string>, layer),
+    createFlatComponent(classNaming, namespace, resolved as FlatComponentConfig<string>, emitLayer),
   );
 }
 
@@ -499,13 +505,13 @@ export function createComponent(
 
 function registryKeyForComponent(classNaming: ClassNamingConfig, namespace: string): string {
   const scope = classNaming.scopeId || 'default';
-  // Distinct from `scope:class:…` so `styles.class('button')` and
-  // `styles.component('button')` do not trigger each other's HMR invalidation.
+  // Distinct from `scope:class:…` so `style('button')` and
+  // `recipe('button')` do not trigger each other's HMR invalidation.
   return `${scope}:component:${namespace}`;
 }
 
 /**
- * Reserves the logical namespace so nested `styles.component` calls cannot bypass duplicate
+ * Reserves the logical namespace so nested `recipe` calls cannot bypass duplicate
  * detection.
  *
  * Called once per dispatch branch in `createComponent`, after `resolveComponentConfig()` has
@@ -520,7 +526,7 @@ function claimComponentNamespace(classNaming: ClassNamingConfig, namespace: stri
   const key = registryKeyForComponent(classNaming, namespace);
   if (process.env.NODE_ENV !== 'production' && registeredNamespaces.has(key)) {
     if (!classNaming.scopeId) {
-      warnUnscopedCollision(namespace, 'styles.component');
+      warnUnscopedCollision(namespace, 'recipe');
     }
     invalidateComponentNamespaceForDev(
       namespace,

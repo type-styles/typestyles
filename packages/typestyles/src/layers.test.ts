@@ -114,13 +114,16 @@ describe('cascade layers', () => {
   });
 
   it('createTypeStyles shares stack between styles and tokens', () => {
-    const { styles, tokens } = createTypeStyles({
+    const { style, tokens } = createTypeStyles({
       scopeId: 'ds',
-      layers: ['tokens', 'components'] as const,
-      tokenLayer: 'tokens',
+      layers: {
+        order: ['tokens', 'components'],
+        token: 'tokens',
+        style: 'components',
+      },
     });
     tokens.create('space', { md: '16px' });
-    styles.class('card', { padding: '8px' }, { layer: 'components' });
+    style('card', { padding: '8px' }, { layer: 'components' });
     flushSync();
     const css = getRegisteredCss();
     expect(css).toContain('@layer tokens, components;');
@@ -131,8 +134,11 @@ describe('cascade layers', () => {
   it('tokens.create can override tokenLayer', () => {
     const { tokens } = createTypeStyles({
       scopeId: 'ov',
-      layers: ['tokens', 'components'] as const,
-      tokenLayer: 'tokens',
+      layers: {
+        order: ['tokens', 'components'],
+        token: 'tokens',
+        style: 'components',
+      },
     });
     tokens.create('space', { md: '8px' });
     tokens.create('radius', { sm: '4px' }, { layer: 'components' });
@@ -174,11 +180,14 @@ describe('cascade layers', () => {
   });
 
   it('snapshots consolidated layered CSS for a small design-system shape', async () => {
-    const { styles, tokens } = createTypeStyles({
+    const { recipe, tokens } = createTypeStyles({
       scopeId: 'vui',
       mode: 'attribute',
-      layers: ['reset', 'base', 'tokens', 'components', 'overrides', 'utilities'] as const,
-      tokenLayer: 'tokens',
+      layers: {
+        order: ['reset', 'base', 'tokens', 'components', 'overrides', 'utilities'],
+        token: 'tokens',
+        style: 'components',
+      },
       colorModes,
     });
 
@@ -197,7 +206,7 @@ describe('cascade layers', () => {
       },
     });
 
-    styles.component(
+    recipe(
       'button',
       (c) => {
         const bg = c.var('bg', {

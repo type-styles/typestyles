@@ -1,4 +1,4 @@
-styles.component('button', {
+recipe('button', {
   base: { color: 'red' },
   variants: {
     intent: {

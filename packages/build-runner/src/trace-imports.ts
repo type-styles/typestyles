@@ -103,9 +103,11 @@ export async function traceTypestylesModules(
   return [...traced].sort();
 }
 
-/** Load a traced module for style extraction. */
+let moduleLoadNonce = 0;
+
+/** Load a traced module for style extraction (cache-busted so re-runs re-register styles). */
 export function createModuleLoader(root: string, modulePath: string): () => Promise<unknown> {
   const abs = resolve(root, modulePath);
   const href = pathToFileURL(abs).href;
-  return () => import(href);
+  return () => import(`${href}?typestyles-extract=${++moduleLoadNonce}`);
 }

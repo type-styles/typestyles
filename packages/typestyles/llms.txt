@@ -16,14 +16,14 @@ pnpm add typestyles @typestyles/vite   # Vite + zero-runtime
 ```ts
 import { combine, createTypeStyles, cx, mergeProps } from 'typestyles';
 
-export const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+export const { style, recipe, tokens, global } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.create('color', {
   primary: '#0066ff',
   surface: '#ffffff',
 });
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -45,15 +45,20 @@ export const button = styles.component('button', {
 
 ## Key APIs
 
-- `createTypeStyles({ scopeId, mode?, prefix?, layers? })` — scoped `styles` + `tokens` instance
-- `styles.component(namespace, config)` — CVA-style variants (`base`, `variants`, `defaultVariants`, `compoundVariants`)
-- `styles.class(name, properties)` — single class
+- `createTypeStyles({ scopeId, mode?, prefix?, layers? })` — preferred entry; flat `{ style, recipe, tokens, global, … }`
+- `recipe(namespace, config)` — CVA-style variants (`base`, `variants`, `defaultVariants`, `compoundVariants`)
+- `style(name, properties)` — single named class
+- `style.hash(properties)` — deterministic hashed class
 - `tokens.create(namespace, values)` — CSS custom properties (`--{scopeId}-…`)
-- `tokens.createTheme(name, config)` — theme class overrides
+- `tokens.createTheme({ name, tokens, … })` — theme class overrides
+- `global.rule` / `global.rules` / `global.apply` / `global.fontFace` — globals (not component-scoped)
 - `cx(...classes)` — join class names (handles falsy values); warns in dev on attribute-mode recipe results
 - `mergeProps(result, ...classNames)` — spread recipe attrs + merged `className` (attribute mode default binding)
 - `combine(...parts)` — merge multiple recipe slots onto one element (class union + compatible attrs)
-- `styles.compose(...fns)` — compose style functions
+- `compose(...fns)` — compose style functions
+- Nested layers: `layers: { order, token, style, global? }`
+
+Lower-level: `createStyles` / `createTokens` / `createGlobal` (no root `styles` / `tokens` / `global` singletons).
 
 Detailed API: https://typestyles.dev/docs/api-reference.md
 
@@ -68,10 +73,11 @@ Guide: https://typestyles.dev/docs/zero-runtime.md
 ## Common mistakes
 
 - **Missing side-effect entry** — build extraction only sees imported style modules
-- **Default unscoped `styles`** in libraries — use `createTypeStyles({ scopeId: 'pkg' })` per package
-- **Dynamic class strings** — use variants or `styles.hashClass`, not template literals for one-off classes
+- **Unscoped `style` / `recipe`** in libraries — use `createTypeStyles({ scopeId: 'pkg' })` per package
+- **Dynamic class strings** — use variants or `style.hash`, not template literals for one-off classes
 - **Forgetting `scopeId`** when multiple bundles share a page — token/class collisions
 - **SSR without server helpers** — import from `typestyles/server` for streaming/collection
+- **Importing removed singletons** — `import { styles }` / `import { tokens }` / `import { global }` from `typestyles` no longer exist
 
 ## Subpath exports
 

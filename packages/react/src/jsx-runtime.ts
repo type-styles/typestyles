@@ -3,6 +3,7 @@ import { jsx as reactJsx, jsxs as reactJsxs, Fragment as ReactFragment } from 'r
 import type { CSSProperties } from 'typestyles';
 import { resolveCssPropClass } from './css-prop';
 import { TypeStylesContext } from './context';
+import { resolveHashClass } from './resolve-hash-class';
 import type { WithCssProp } from './types';
 
 function processCssProp<P extends Record<string, unknown>>(
@@ -32,12 +33,12 @@ function wrapJsx<P extends Record<string, unknown>>(
 
   if (props.css != null && styles == null) {
     throw new Error(
-      '[@typestyles/react] The `css` prop requires a `TypeStylesProvider` with a `styles` instance. ' +
-        'Wrap your app in `<TypeStylesProvider styles={styles}>`, or use the Babel plugin for zero-runtime css props.',
+      '[@typestyles/react] The `css` prop requires a `TypeStylesProvider` with a styles instance. ' +
+        'Wrap your app in `<TypeStylesProvider styles={api}>` (from `createTypeStyles()`), or use the Babel plugin for zero-runtime css props.',
     );
   }
 
-  const nextProps = styles ? processCssProp(props, styles.hashClass) : (props as P);
+  const nextProps = styles ? processCssProp(props, resolveHashClass(styles)) : (props as P);
   return factory(type, nextProps, key);
 }
 

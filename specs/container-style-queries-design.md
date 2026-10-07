@@ -25,7 +25,7 @@ container('style(--theme: dark)'); // "@container style(--theme: dark)"
 ```
 
 So style queries technically "work" already — untyped. The gap is **type safety**
-tied to TypeStyles' own custom-property system: `styles.property.declare()`,
+tied to TypeStyles' own custom-property system: `property.declare()`,
 `ctx.vars.declare()`, and `tokens.declare()` all return `PropertyRef`s with known
 names. Since browser support for style queries is custom-properties-only anyway,
 this is a near-exact match for what TypeStyles already owns.
@@ -48,7 +48,7 @@ this is a near-exact match for what TypeStyles already owns.
 ### `container.style(ref, value?)`
 
 `container` becomes a callable-plus-namespace object (same `Object.assign` shape as
-`styles.property` — see `css-primitives-design.md`'s `StylesPropertyFn`), adding
+`property` — see `css-primitives-design.md`'s `StylesPropertyFn`), adding
 `.style` alongside the existing call signatures.
 
 ```ts
@@ -67,19 +67,21 @@ Accepts a raw `` `--${string}` `` too, for interop with hand-authored or
 third-party custom properties not declared through TypeStyles — consistent with how
 `container(rawCondition: string)` already accepts arbitrary strings today. Does not
 require registration discipline (no throw if the name wasn't declared via
-`styles.property`/`ctx.vars`/`tokens.declare`) — same "silent, plain custom props are
+`property`/`ctx.vars`/`tokens.declare`) — same "silent, plain custom props are
 valid CSS" stance `css-primitives-design.md`'s validation matrix already takes for
 `css.customProperty` on an undeclared name.
 
 ### Example
 
 ```ts
-import { styles, tokens } from 'typestyles';
+import { createTypeStyles, atRuleBlock, container } from 'typestyles';
+
+const { style, tokens } = createTypeStyles({ scopeId: 'app' });
 
 const theme = tokens.declare('theme', { mode: { syntax: '<custom-ident>' } });
 
-styles.class('card', {
-  base: { padding: '16px' },
+style('card', {
+  padding: '16px',
   ...atRuleBlock(container.style(theme.mode, 'dark'), { background: '#1a1a2e' }),
 });
 ```
@@ -99,7 +101,7 @@ queries already use.
 ## Documentation
 
 Add a "Style queries" subsection to the existing container-queries doc page,
-cross-linking `tokens.declare` / `styles.property.declare` / `ctx.vars.declare` as
+cross-linking `tokens.declare` / `property.declare` / `ctx.vars.declare` as
 the `PropertyRef` sources. No new page needed — this is additive to existing docs.
 
 ## Testing

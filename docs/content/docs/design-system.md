@@ -145,7 +145,9 @@ Meaningful tokens that reference primitives:
 
 ```ts
 // tokens/semantic/colors.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 import { primitiveColors } from '../primitives/colors';
 
 export const color = tokens.create('color', {
@@ -189,7 +191,9 @@ export const color = tokens.create('color', {
 
 ```ts
 // tokens/semantic/spacing.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 import { primitiveSpacing } from '../primitives/spacing';
 
 export const space = tokens.create('space', {
@@ -215,7 +219,9 @@ Split typography into **separate token namespaces** so scale names like `normal`
 
 ```ts
 // tokens/semantic/typography.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 import { primitiveTypography } from '../primitives/typography';
 
 export const font = tokens.create('font', {
@@ -275,7 +281,9 @@ Component-specific tokens:
 
 ```ts
 // tokens/components/button.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 import { color, space, font, fontWeight } from '../semantic';
 
 export const button = tokens.create('button', {
@@ -324,7 +332,9 @@ export const button = tokens.create('button', {
 
 ```ts
 // tokens/components/card.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 import { color, space } from '../semantic';
 
 export const card = tokens.create('card', {
@@ -396,7 +406,7 @@ Create documentation for your tokens:
 // Always use tokens, never hardcode values
 
 // ❌ Bad
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px', // Hardcoded
     backgroundColor: '#3b82f6', // Hardcoded
@@ -404,7 +414,7 @@ const button = styles.component('button', {
 });
 
 // ✅ Good
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: `${buttonToken.paddingHorizontalMd} ${buttonToken.paddingVerticalMd}`,
     backgroundColor: buttonToken.primaryBackground,
@@ -418,7 +428,9 @@ const button = styles.component('button', {
 
 ```ts
 // tokens/themes/dark.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 import { primitiveColors } from '../primitives/colors';
 
 export const darkTheme = tokens.createTheme({
@@ -450,7 +462,9 @@ export const darkTheme = tokens.createTheme({
 
 ```ts
 // tokens/themes/high-contrast.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const highContrastTheme = tokens.createTheme({
   name: 'high-contrast',

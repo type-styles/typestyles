@@ -4,9 +4,10 @@ import { extractNamespaces, moduleNeedsOverrideHmr, TYPESTYLES_IMPORT_RE } from 
 describe('extractNamespaces', () => {
   it('extracts component and token namespaces', () => {
     const code = `
-      import { styles, tokens } from 'typestyles';
+      import { createTypeStyles } from 'typestyles';
+      const { recipe, tokens } = createTypeStyles();
       tokens.create('color', { primary: '#0066ff' });
-      styles.component('button', { base: { color: 'red' } });
+      recipe('button', { base: { color: 'red' } });
     `;
     const result = extractNamespaces(code);
     expect(result.keys).toEqual(['tokens:color']);
@@ -38,19 +39,19 @@ describe('extractNamespaces', () => {
   });
 
   it('matches typestyles package imports', () => {
-    expect(TYPESTYLES_IMPORT_RE.test("import { styles } from 'typestyles'")).toBe(true);
+    expect(TYPESTYLES_IMPORT_RE.test("import { createTypeStyles } from 'typestyles'")).toBe(true);
     expect(TYPESTYLES_IMPORT_RE.test("import { styles } from './typestyles'")).toBe(false);
   });
 });
 
 describe('moduleNeedsOverrideHmr', () => {
   it('detects styles.override and design-system sugar', () => {
-    expect(moduleNeedsOverrideHmr('styles.override(button, { base: {} });')).toBe(true);
+    expect(moduleNeedsOverrideHmr('override(button, { base: {} });')).toBe(true);
     expect(moduleNeedsOverrideHmr('export const acme = createDesignTheme({ name: "acme" });')).toBe(
       true,
     );
     expect(moduleNeedsOverrideHmr('overrideComponent(button, { base: {} });')).toBe(true);
-    expect(moduleNeedsOverrideHmr("styles.component('button', { base: {} });")).toBe(false);
+    expect(moduleNeedsOverrideHmr("recipe('button', { base: {} });")).toBe(false);
   });
 
   it('detects renamed createDesignTheme / overrideComponent imports', () => {
@@ -80,7 +81,8 @@ describe('moduleNeedsOverrideHmr', () => {
     expect(
       moduleNeedsOverrideHmr(`
         // createDesignTheme({ name: 'docs-only' })
-        import { styles } from 'typestyles';
+        import { createStyles } from 'typestyles';
+const styles = createStyles();
         styles.component('button', { base: { color: 'red' } });
       `),
     ).toBe(false);

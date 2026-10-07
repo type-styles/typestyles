@@ -20,7 +20,7 @@ custom property names: `tokens.create`'s `nameTemplate` option replaced what
 would otherwise be an ever-growing set of naming flags with a single
 `(ctx) => string` hook, closing the gap for migration/interop conventions
 without a new code path per convention. `mode: 'template'` closes the same
-gap for `styles.component()` class names — a design system that authors
+gap for `recipe()` class names — a design system that authors
 SUIT CSS, a prefixed BEM variant, or any house convention should not have to
 wait for `typestyles` to ship a named mode for it, or hand-roll `'&.foo'`
 nested-selector keys the way `specs/attribute-driven-variants.md` and
@@ -33,8 +33,8 @@ conventions.
 | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Function, not string tokens**                                             | A `'{block}__{element}--{modifier}'` token string can't express conditional logic (omit `__element` when absent), custom casing, or anything the token vocabulary didn't anticipate — the same reasoning `token-name-template.md` used to reject config flags for `nameTemplate`. One function covers every convention with one code path.                            |
 | **BEM becomes a preset, not a parallel implementation**                     | `mode: 'bem'` is reimplemented internally as `mode: 'template'` plus a built-in `BEM_TEMPLATE` constant. This removes the duplicated block/element/modifier logic in `component.ts` and proves the template mechanism is expressive enough to cover a real convention before shipping it as the extensibility point. `mode: 'bem'`'s public behavior does not change. |
-| **Scoped to structured naming, not every class**                            | Only dimensioned and slot/multi-slot `styles.component()` configs — the cases with real block/element/modifier structure — call `classNameTemplate`. `styles.class()` and flat (non-dimensioned) configs behave like `semantic`, unaffected — same as `bem`/`attribute` already do.                                                                                   |
-| **Instance-level only**                                                     | `classNameTemplate` is set once via `createStyles`/`createTypeStyles`, like every other `mode`. No per-`styles.component()` override — a departure from `nameTemplate`'s per-namespace override, deliberately, since `mode` has never been a per-component knob for any existing naming mode.                                                                         |
+| **Scoped to structured naming, not every class**                            | Only dimensioned and slot/multi-slot `recipe()` configs — the cases with real block/element/modifier structure — call `classNameTemplate`. `style()` and flat (non-dimensioned) configs behave like `semantic`, unaffected — same as `bem`/`attribute` already do.                                                                                                    |
+| **Instance-level only**                                                     | `classNameTemplate` is set once via `createStyles`/`createTypeStyles`, like every other `mode`. No per-`recipe()` override — a departure from `nameTemplate`'s per-namespace override, deliberately, since `mode` has never been a per-component knob for any existing naming mode.                                                                                   |
 | **Dev-mode collision detection generalizes, doesn't duplicate**             | BEM's existing `devWarnBemModifierCollision` becomes the general-purpose collision check for any template's output, not a BEM-only helper.                                                                                                                                                                                                                            |
 | **HMR invalidation degrades the same way hashed/compact/atomic already do** | An arbitrary function's output prefix isn't predictable without calling it, so dev-mode HMR invalidation for `mode: 'template'` is best-effort — an existing, documented limitation shared with `hashed`/`compact`/`atomic`, not a new one.                                                                                                                           |
 
@@ -67,7 +67,7 @@ set without `classNameTemplate` — the same fail-fast pattern
 export type ClassNameContext = {
   /** Sanitized scope segment from `scopeId`, `''` when unscoped. */
   scope: string;
-  /** `styles.component()` namespace, e.g. `'button'`. */
+  /** `recipe()` namespace, e.g. `'button'`. */
   namespace: string;
   /** Slot name for slot/multi-slot components (`'root'` is passed as `undefined`, matching BEM's root→block rule); `undefined` for non-slot components. */
   element: string | undefined;
@@ -205,7 +205,7 @@ const styles = createStyles({
   already return `null` today).
 - `emittedClassName`/`buildSingleClassName`/`buildComponentClassName`: add
   `cfg.mode === 'template'` to the existing
-  `semantic || attribute || bem` branches, since flat/`styles.class()`
+  `semantic || attribute || bem` branches, since flat/`style()`
   output under `template` mode is unaffected by the template (semantic
   fallback, per the scope decision above).
 
@@ -237,19 +237,19 @@ Export `ClassNameContext`, `ClassNameTemplate` alongside the existing
 `ComponentConfigInput`/overloads in `component.ts`'s public function
 signatures are unaffected — `classNameTemplate` lives on `ClassNamingConfig`
 (the `createStyles`/`createTypeStyles` argument), not on
-`styles.component()`'s per-call config, consistent with every other mode.
+`recipe()`'s per-call config, consistent with every other mode.
 
 ## Interaction with existing modes
 
-| Concern                                                   | Behavior                                                                                                                                                                                          |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mode: 'bem'` public behavior                             | Unchanged. `component-bem-variants.test.ts` runs unmodified as the regression check for the refactor.                                                                                             |
-| `mode: 'attribute'`                                       | Untouched — attribute mode emits `&[data-x="y"]` selectors under one base class, not discrete classes; structurally different from block/element/modifier composition, out of scope here.         |
-| `styles.class()` under `mode: 'template'`                 | Semantic-style output (`{scopePrefix}{name}`), `classNameTemplate` never called.                                                                                                                  |
-| Flat `styles.component()` config under `mode: 'template'` | Semantic-style output (`{scopePrefix}{namespace}-{key}`), `classNameTemplate` never called.                                                                                                       |
-| `scopeId`                                                 | Passed into `ctx.scope` pre-sanitized (same `semanticScopePrefix` sanitization every other mode uses) — templates don't need to sanitize it themselves, only compose it.                          |
-| `cascadeLayers`                                           | Orthogonal — `layer` requirement and `@layer` wrapping apply identically regardless of naming mode.                                                                                               |
-| Dev-mode HMR invalidation                                 | Best-effort for `template` mode (returns `null` from `emittedComponentClassPrefix`), same documented limitation `hashed`/`compact`/`atomic` already have — not a new gap introduced by this spec. |
+| Concern                                         | Behavior                                                                                                                                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode: 'bem'` public behavior                   | Unchanged. `component-bem-variants.test.ts` runs unmodified as the regression check for the refactor.                                                                                             |
+| `mode: 'attribute'`                             | Untouched — attribute mode emits `&[data-x="y"]` selectors under one base class, not discrete classes; structurally different from block/element/modifier composition, out of scope here.         |
+| `style()` under `mode: 'template'`              | Semantic-style output (`{scopePrefix}{name}`), `classNameTemplate` never called.                                                                                                                  |
+| Flat `recipe()` config under `mode: 'template'` | Semantic-style output (`{scopePrefix}{namespace}-{key}`), `classNameTemplate` never called.                                                                                                       |
+| `scopeId`                                       | Passed into `ctx.scope` pre-sanitized (same `semanticScopePrefix` sanitization every other mode uses) — templates don't need to sanitize it themselves, only compose it.                          |
+| `cascadeLayers`                                 | Orthogonal — `layer` requirement and `@layer` wrapping apply identically regardless of naming mode.                                                                                               |
+| Dev-mode HMR invalidation                       | Best-effort for `template` mode (returns `null` from `emittedComponentClassPrefix`), same documented limitation `hashed`/`compact`/`atomic` already have — not a new gap introduced by this spec. |
 
 ## Testing
 
@@ -327,7 +327,7 @@ entry, once merged.
   Guiding Principles); sugar could wrap the function later without API
   churn, exactly the framing `token-name-template.md` used for the same
   question on `nameTemplate`.
-- **Per-`styles.component()` override of `classNameTemplate`** —
+- **Per-`recipe()` override of `classNameTemplate`** —
   instance-level only, unlike `nameTemplate`'s per-namespace override on
   `tokens.create`. `mode` has never been a per-component knob for any
   existing naming mode; this doesn't start now.

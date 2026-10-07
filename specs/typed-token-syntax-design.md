@@ -29,7 +29,7 @@ compatibility either.
 - **`create({ decl })` ref compatibility** — assigning a `SyntaxRef<'<length>'>` to a
   declared `<color>` path is a type error. Plain `string` / `number` literals remain
   valid on declared paths (the schema defines the slot; the author supplies the value).
-- **`styles()` property checking** — when a style value is a `SyntaxRef`, it must be
+- **`style()` / recipe property checking** — when a style value is a `SyntaxRef`, it must be
   compatible with the target CSS property. Plain `string` / `number` literals are always
   allowed (escape hatch).
 - **`tokens.use()` brand preservation** — rehydrated refs keep their `SyntaxRef<S>`
@@ -110,7 +110,7 @@ Produced only by:
 
 - `tokens.declare()` proxy for schema leaves with `syntax`
 - `ctx.vars.declare()` for component internal vars with `syntax`
-- `styles.property.declare()` (aligned in a follow-up if not in v1)
+- `property.declare()` (aligned in a follow-up if not in v1)
 
 `RegisteredPropertyRef` becomes a type alias for `SyntaxRef<string>` or is replaced
 outright. Existing `{ name, var, toString, valueOf }` runtime shape is unchanged.
@@ -204,7 +204,7 @@ Each leaf checks ref compatibility; plain strings always pass.
 Dev-mode runtime validation from `tokens-declare-schema-design.md` is unchanged (path
 in schema, namespace alignment, etc.). This spec adds **compile-time** ref checks only.
 
-### 2. `styles()` / `CSSProperties`
+### 2. `style()` / recipe objects / `CSSProperties`
 
 Extend csstype-mapped longhands to also accept compatible `SyntaxRef` values:
 
@@ -265,7 +265,9 @@ narrowing in v1.
 ### Declare + create + styles
 
 ```ts
-const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.declare('color', {
   bg: { syntax: '<color>', inherits: false },
@@ -295,7 +297,7 @@ tokens.create(
   { decl: color },
 );
 
-export const card = styles({
+export const card = style('card', {
   backgroundColor: color.bg,
   color: color.text,
   padding: space.md,
@@ -310,6 +312,11 @@ export const card = styles({
 ### Semantic layer
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+// assumes `color` / `space` from declare + create above
+
 const semantic = tokens.declare('semantic', {
   buttonBg: { syntax: '<color>', inherits: false },
   buttonPad: { syntax: '<length>' },
@@ -328,7 +335,12 @@ tokens.create(
 ### Component internal vars
 
 ```ts
-styles.component('button', (ctx) => {
+import { createTypeStyles } from 'typestyles';
+
+const { recipe, tokens } = createTypeStyles({ scopeId: 'app' });
+// assumes `color` from tokens.declare / tokens.create above
+
+recipe('button', (ctx) => {
   const v = ctx.vars.declare({
     bg: { syntax: '<color>' },
     radius: { syntax: '<length>' },
@@ -347,9 +359,13 @@ styles.component('button', (ctx) => {
 ### Undeclared namespace (unchanged)
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { style, tokens } = createTypeStyles({ scopeId: 'app' });
+
 const space = tokens.create('space', { sm: '8px', md: '16px' });
 // space.sm: string — no SyntaxRef, no property checking
-styles({ padding: space.sm }); // always OK
+style('box', { padding: space.sm }); // always OK
 ```
 
 ## Implementation
@@ -392,8 +408,8 @@ type CSSPropertiesWithSyntax = CSSPropertiesBase & SyntaxAwareLonghands;
 | `create({ decl })`  | color ref on color path ✓; length ref on color path ✗ (`@ts-expect-error`) |
 | `create({ decl })`  | plain string on syntax path ✓                                              |
 | Mode-aware leaves   | `{ light, dark }` on `<color>` path ✓                                      |
-| `styles()`          | `SyntaxRef<'<color>'>` on `color` ✓, on `width` ✗                          |
-| `styles()`          | plain `'#fff'` on any property ✓                                           |
+| `style()` / recipe  | `SyntaxRef<'<color>'>` on `color` ✓, on `width` ✗                          |
+| `style()` / recipe  | plain `'#fff'` on any property ✓                                           |
 | `[ref.name]: value` | syntax-checked when key is `SyntaxRef.name`                                |
 | `tokens.use(decl)`  | preserves `SyntaxRef<S>`                                                   |
 | Compatibility       | `<length>` ref assignable to `width` (expects `<length-percentage>`)       |
@@ -421,7 +437,7 @@ runtime behavior unchanged).
 | `css.colorMix()` → `SyntaxRef<'<color>'>`         | Needs helper design; raw strings OK in v1   |
 | Typed `calc` / `clamp` return types               | Same                                        |
 | Shorthand property narrowing                      | CSS shorthand grammar is too complex for v1 |
-| `styles.property.declare()` alignment             | Follow-up with `ctx.vars` if not bundled    |
+| `property.declare()` alignment                    | Follow-up with `ctx.vars` if not bundled    |
 | Custom `syntax` string literals beyond presets    | Fall back to `SyntaxRef<string>`            |
 | Stricter literal validation (`#${string}` colors) | Diminishing returns; schema is the contract |
 
