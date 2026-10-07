@@ -1,5 +1,11 @@
 # typestyles
 
+## 0.27.0
+
+### Minor Changes
+
+- [#246](https://github.com/type-styles/typestyles/pull/246) [`1b93cff`](https://github.com/type-styles/typestyles/commit/1b93cffb0f10abebfdbfe8e23177926949b90560) Thanks [@dbanksdesign](https://github.com/dbanksdesign)! - Add `Theme.source` and typed `Theme.override()` for deriving child themes from a root `createTheme`. Override patches are deep-partials of the parent token tree (excess keys error). Remove `createTheme({ from })` — fork with `theme.override({ name, tokens })` instead. Rename `ThemeSurface` → `Theme`, `ThemePreset` → `ThemeSource`, and `ThemeSurfaceOverrideInput` → `ThemeOverrideInput`. Raise main-entry gzip budget (+400 B) for override/source runtime.
+
 ## 0.26.1
 
 ### Patch Changes
