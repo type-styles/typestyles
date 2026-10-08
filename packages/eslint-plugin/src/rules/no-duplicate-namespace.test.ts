@@ -10,11 +10,11 @@ describe('no-duplicate-namespace', () => {
   ruleTester.run('no-duplicate-namespace', noDuplicateNamespace, {
     valid: [
       {
-        code: `styles.class('card', { padding: 8 })`,
+        code: `style('card', { padding: 8 })`,
         filename: 'a.ts',
       },
       {
-        code: `styles.class('hero', { display: 'flex' })`,
+        code: `style('hero', { display: 'flex' })`,
         filename: 'b.ts',
       },
       {
@@ -25,8 +25,8 @@ describe('no-duplicate-namespace', () => {
     invalid: [
       {
         code: `
-            styles.class('card', { padding: 8 });
-            styles.class('card', { margin: 0 });
+            style('card', { padding: 8 });
+            style('card', { margin: 0 });
           `,
         filename: 'dup.ts',
         errors: [{ messageId: 'duplicateInFile' }],
@@ -41,7 +41,7 @@ describe('no-duplicate-namespace / cross file', () => {
   ruleTester.run('no-duplicate-namespace-seed', noDuplicateNamespace, {
     valid: [
       {
-        code: `styles.component('button', { base: { color: 'red' } })`,
+        code: `recipe('button', { base: { color: 'red' } })`,
         filename: 'first.ts',
       },
     ],
@@ -52,7 +52,7 @@ describe('no-duplicate-namespace / cross file', () => {
     valid: [],
     invalid: [
       {
-        code: `styles.class('button', { padding: 4 })`,
+        code: `style('button', { padding: 4 })`,
         filename: 'second.ts',
         errors: [{ messageId: 'duplicateAcrossFiles' }],
       },

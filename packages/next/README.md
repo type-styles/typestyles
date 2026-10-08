@@ -227,9 +227,11 @@ import { TypestylesStylesheet } from '@typestyles/next';
 
 ```tsx
 // app/page.tsx
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: {
     padding: '12px 24px',
     backgroundColor: '#0066ff',
@@ -252,8 +254,10 @@ export default function Home() {
 ### With Design Tokens
 
 ```tsx
-// app/tokens.ts
-import { tokens } from 'typestyles';
+// app/styles.ts
+import { createTypeStyles } from 'typestyles';
+
+export const { recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const colors = tokens.create('color', {
   primary: '#0066ff',
@@ -267,10 +271,9 @@ export const spacing = tokens.create('space', {
 });
 
 // app/page.tsx
-import { styles } from 'typestyles';
-import { colors, spacing } from './tokens';
+import { recipe, colors, spacing } from './styles';
 
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     padding: spacing.md,
     backgroundColor: colors.primary,
@@ -287,8 +290,10 @@ export default function Page() {
 
 ```tsx
 // app/layout.tsx
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 import { getRegisteredCss } from '@typestyles/next';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const darkTheme = tokens.createTheme('dark', {
   base: {

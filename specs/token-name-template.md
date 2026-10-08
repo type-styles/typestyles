@@ -109,6 +109,10 @@ createTokens({
 ### `tokens.create` option
 
 ```ts
+import { createTokens } from 'typestyles';
+
+const tokens = createTokens({ scopeId: 'app' });
+
 tokens.create(
   'color',
   { brand: { 500: '#0066ff' } },
@@ -164,6 +168,10 @@ When migrating, sometimes **only** `tokens.use()` is needed — but when a
 namespace is both created and consumed, names must match an external sheet:
 
 ```ts
+import { createTokens } from 'typestyles';
+
+const tokens = createTokens({ scopeId: 'app' });
+
 tokens.create('space', spaceScale, {
   nameTemplate: () => `--spacing`, // invalid — must include path; illustrative only
 });
@@ -176,6 +184,10 @@ tokens.create('space', spaceScale, {
 ### Align Open Props / third-party naming
 
 ```ts
+import { createTokens } from 'typestyles';
+
+const tokens = createTokens({ scopeId: 'app' });
+
 tokens.create('size', sizes, {
   nameTemplate: ({ path }) => `--size-${path}`, // matches open-props convention
 });
@@ -358,7 +370,7 @@ Mark `IMPROVEMENTS.md` item shipped with PR link.
 - **Component internal `c.var()` names** — `ComponentConfigContext` uses
   `scopedTokenNamespace` + sanitized paths; unification is a follow-up only if
   a concrete need appears.
-- **`styles.property()` global registered properties** — unrelated API surface.
+- **`property()` global registered properties** — unrelated API surface.
 - **Runtime mutation of templates after `create()`** — templates are fixed at
   registration; changing them requires a new namespace or new `createTokens`
   instance.

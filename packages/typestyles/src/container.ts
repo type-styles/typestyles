@@ -200,12 +200,12 @@ export type CreateContainerRefOptions = {
  * ```ts
  * const shell = createContainerRef('product-shell', { scopeId: 'my-app' });
  *
- * styles.class('shell', {
+ * style('shell', {
  *   containerType: 'inline-size',
  *   containerName: shell,
  * });
  *
- * styles.class('shell-body', {
+ * style('shell-body', {
  *   ...styles.atRuleBlock(styles.container(shell, { minWidth: 480 }), { flexDirection: 'row' }),
  * });
  * ```
@@ -254,7 +254,7 @@ function conditionFromFeatures(features: ContainerQueryFeatures): string {
  *
  * @example Size query
  * ```ts
- * styles.class('card', {
+ * style('card', {
  *   containerType: 'inline-size',
  *   ...styles.atRuleBlock(styles.container({ minWidth: 400 }), { padding: '24px' }),
  * });
@@ -262,7 +262,7 @@ function conditionFromFeatures(features: ContainerQueryFeatures): string {
  *
  * @example Named container
  * ```ts
- * styles.class('item', {
+ * style('item', {
  *   ...styles.atRuleBlock(styles.container('sidebar', { minWidth: 300 }), {
  *     flexDirection: 'row',
  *   }),

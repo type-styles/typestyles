@@ -1,4 +1,4 @@
-# `styles.override()` + Component `__tsMeta` Contract
+# `override()` + Component `__tsMeta` Contract
 
 Recipe-shaped, fully typed component restyling for any TypeStyles consumer —
 override `base` / `variants` / `compoundVariants` (and per-slot blocks) with
@@ -7,7 +7,7 @@ inferred from the recipe, **no class names in user code**.
 
 This is the engine capability var-ui's typed theming DX
 (`createDesignTheme({ components })`, `overrideComponent`) compiles down to.
-It also stands alone for apps that call `styles.override` directly.
+It also stands alone for apps that call `override` directly.
 
 **Status:** implemented. Prerequisite
 [`semantic-and-attribute-mode.md`](./semantic-and-attribute-mode.md) has
@@ -26,7 +26,11 @@ substrate.
 ## The DX
 
 ```ts
-const button = styles.component('button', {
+import { createTypeStyles } from 'typestyles';
+
+const { recipe, override } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: { borderRadius: '6px' },
   variants: {
     intent: {
@@ -42,7 +46,7 @@ const button = styles.component('button', {
 });
 
 // App-global restyle
-styles.override(button, {
+override(button, {
   base: { borderRadius: '999px' },
   variants: {
     intent: {
@@ -59,7 +63,7 @@ styles.override(button, {
 });
 
 // Theme-scoped (descendant prefix — see options below)
-styles.override(
+override(
   button,
   { base: { boxShadow: 'none' } },
   { selectorPrefix: '.theme-acme', layer: 'overrides' },
@@ -69,7 +73,7 @@ styles.override(
 Slot recipes keep their authoring shape:
 
 ```ts
-styles.override(alert, {
+override(alert, {
   base: { root: { borderStyle: 'dashed' } },
   variants: { tone: { danger: { icon: { scale: '1.2' } } } },
 });
@@ -80,7 +84,7 @@ styles.override(alert, {
 ## Goals
 
 1. **Infer types from the recipe** — no registry, no codegen; works for any
-   `styles.component()` return.
+   `recipe()` return.
 2. **Mode-aware emission** — semantic / bem / template / attribute (and flat /
    slot / multi-slot shapes) all work from one API via `__tsMeta`.
 3. **Layers-first precedence** — overrides land in a later cascade layer;
@@ -93,7 +97,7 @@ styles.override(alert, {
 
 - Adding new variant _options_ to a recipe from an override (future).
 - Per-mode style blocks inside overrides (use mode-aware tokens instead).
-- Replacing `styles.scope()` — `@scope` remains the nested-theme proximity
+- Replacing `scope()` — `@scope` remains the nested-theme proximity
   escape hatch; `override` does not invent proximity.
 - Typed `c.vars()` access in override configs (phase 2; reserve `vars` key).
 - Design-system sugar (`createDesignTheme`, themeable registries) — consumer
@@ -118,7 +122,7 @@ Dimensioned components expose destructurable keys like
 - Attribute mode has **no** per-option classes; variants are selector
   fragments (`[data-intent="primary"]`) under a base class.
 
-So every `styles.component()` return attaches a **non-enumerable** metadata
+So every `recipe()` return attaches a **non-enumerable** metadata
 blob at create time.
 
 ### Shape
@@ -126,7 +130,7 @@ blob at create time.
 Private key `__tsMeta` (consistent with compose meta `__tsCm`) — not an
 enumerable `'__meta'` string that shows up in `Object.keys` / accidental
 spreads. Public TypeScript accessor: `getComponentMeta(component)`.
-`styles.override` reads it internally.
+`override` reads it internally.
 
 Discriminate on `kind` so emission does not guess at the `variants` shape:
 
@@ -143,8 +147,8 @@ type SlotVariantSelectorMap = {
 type ComponentMetaBase = {
   namespace: string;
   /**
-   * Naming mode of the creating `styles` instance. Emission branches on this
-   * (class conjunction vs attribute conjunction).
+   * Naming mode of the creating `createTypeStyles` / `createStyles` instance.
+   * Emission branches on this (class conjunction vs attribute conjunction).
    */
   namingMode: ClassNamingMode;
 };
@@ -201,7 +205,7 @@ Notes:
 
 ### Attachment sites
 
-Every successful `styles.component()` creator path attaches meta before
+Every successful `recipe()` creator path attaches meta before
 return — including paths that today skip `attachComposeMeta` (attribute
 dimensioned + attribute slot):
 
@@ -227,12 +231,12 @@ meta instead of scraping destructurable keys; not required for v1.
 
 Export `getComponentMeta` (and the `ComponentMeta` / `Override*` types) from the
 main `typestyles` entry alongside other public helpers. `createOverride` is
-**internal** — not a public export; call `styles.override` on the creating
+**internal** — not a public export; call `override` on the creating
 instance.
 
 ---
 
-## Part B — `styles.override()`
+## Part B — `override()`
 
 ### Signature
 
@@ -247,8 +251,8 @@ type OverrideOptions<L extends string = string> = {
   /**
    * Selector prefix inserted before the component selector, e.g. `.theme-acme`.
    * Emits `.theme-acme .button--intent-primary { … }` (descendant combinator).
-   * This is **not** CSS `@scope` — see `styles.scope()` for proximity.
-   * Named `selectorPrefix` (not `scope`) to avoid colliding with `styles.scope`.
+   * This is **not** CSS `@scope` — see `scope()` for proximity.
+   * Named `selectorPrefix` (not `scope`) to avoid colliding with `scope`.
    */
   selectorPrefix?: string;
   /** Cascade layer name; must be on the instance's `layers` stack when set. */
@@ -256,9 +260,9 @@ type OverrideOptions<L extends string = string> = {
 };
 ```
 
-When the styles instance is created with `layers`, type `layer` as
-`L` from that stack (same pattern as layered `styles.scope` / `styles.class`).
-`OverrideFn<L>` threads that constraint through `styles.override`.
+When the instance is created with `layers`, type `layer` as
+`L` from that stack (same pattern as layered `scope` / `style`).
+`OverrideFn<L>` threads that constraint through `override`.
 
 ### Override config shapes
 
@@ -270,8 +274,8 @@ keys and mixed nested-selector objects assignable the same way recipes are.
 `CSSValue` on known props also keeps widened CSS keywords assignable when mixed with token
 `string`s (see Issue #149). No `defaultVariants`. No new option keys in v1.
 
-Style blocks go through the same `serializeStyle` path as `styles.scope` /
-`styles.component` (cast at the boundary, same as `component.ts` today) —
+Style blocks go through the same `serializeStyle` path as `scope` /
+`recipe` (cast at the boundary, same as `component.ts` today) —
 nested selectors (`&:hover`), at-rules, and responsive object values (when the
 instance has `breakpoints`) all work.
 
@@ -330,7 +334,7 @@ Pseudo-algorithm:
    - If `selectorPrefix`, wrap each selector as
      `${prefix} ${selector}` (descendant). Do **not** wrap in `@scope`.
    - If `layer`, require `cascadeLayers` on this instance (throw like
-     `styles.scope` when missing), then `assertOwnLayer` + `applyLayerToRules`.
+     `scope` when missing), then `assertOwnLayer` + `applyLayerToRules`.
    - `insertRules` with stable keys that include prefix + layer + selector +
      property key so dedup / HMR / SSR extraction behave like other traffic.
 
@@ -397,14 +401,14 @@ variants → compounds) + conjunction specificity give the natural ordering.
 **Dev guidance when layers are configured:**
 
 - If `options.layer` is omitted and the stack includes `"overrides"`,
-  `styles.override` **defaults to that layer** so callers cannot accidentally
+  `override` **defaults to that layer** so callers cannot accidentally
   emit unlayered CSS that beats the entire `@layer` stack (including
   `utilities`).
 - If the stack has layers but no `"overrides"` name, **`layer` is required** —
-  omit it and `styles.override` throws (same class of footgun as emitting
+  omit it and `override` throws (same class of footgun as emitting
   unlayered).
 - If `layer` is set but the instance has no `layers`, **throw** (same error
-  shape as `styles.scope`).
+  shape as `scope`).
 
 ### Design point 4 — nested themes
 
@@ -414,24 +418,25 @@ the same proximity footgun as Tier 2 plain CSS (`component-override-contract.md`
 **Do not** pretend `override` solves that — document:
 
 1. Prefer Tier 1 component vars for nested-theme-sensitive properties.
-2. Use `styles.scope({ root: '.theme-acme' }, …)` when proximity matters.
+2. Use `scope({ root: '.theme-acme' }, …)` when proximity matters.
 3. Optional later: `override(..., { scopeRoot: '.theme-acme' })` that emits
    `@scope` instead of a prefix — **out of scope for v1**.
 
 ### Design point 5 — same-instance by convention
 
-`styles.override` always uses **this** styles instance's sheet, breakpoints,
-and layer stack. Call it on the same `styles` that created the component.
+`override` always uses **this** instance's sheet, breakpoints,
+and layer stack. Call it on the same `createTypeStyles` / `createStyles`
+API that created the component.
 
 No runtime instance-id check and no styles ref on `__tsMeta`. Design systems
 enforce the binding by architecture: var-ui's single shared
 `createTypeStyles` in `runtime.ts`, with `overrideComponent` /
 `createDesignTheme({ components })` compiling to that instance's
-`styles.override` (see var-ui `typed-component-theming.md`). Apps that call
-`styles.override` directly are already on the creating instance.
+`override` (see var-ui `typed-component-theming.md`). Apps that call
+`override` directly are already on the creating instance.
 
-Cross-instance misuse (component from `stylesA`, `stylesB.override(…)`) is
-unsupported — document prominently in theming docs and the `styles.override`
+Cross-instance misuse (component from instance A, `override(…)` from instance B) is
+unsupported — document prominently in theming docs and the `override`
 JSDoc. Design systems must wrap the creating instance (var-ui pattern).
 
 ### Runtime validation (JS / typos)
@@ -446,12 +451,12 @@ In development, warn (do not throw) on:
 
 Emit only the valid entries.
 
-### Interaction with `styles.scope()`
+### Interaction with `scope()`
 
 | API                    | Use when                                                        |
 | ---------------------- | --------------------------------------------------------------- |
-| `styles.override`      | Typed, recipe-shaped bulk restyle; theme prefix + layer         |
-| `styles.scope`         | Single class + `@scope` proximity; escape hatch / nested themes |
+| `override`             | Typed, recipe-shaped bulk restyle; theme prefix + layer         |
+| `scope`                | Single class + `@scope` proximity; escape hatch / nested themes |
 | Hand CSS / Tier 1 vars | Cheapest single-property or inheritance-correct nested themes   |
 
 `override` may internally share serialization helpers with `scope`, but it
@@ -464,7 +469,7 @@ does not call `scope` for the default `selectorPrefix` path.
 Typed component vars in the override config:
 
 ```ts
-styles.override(button, {
+override(button, {
   vars: { background: tokens.color.accent.subtle },
 });
 ```
@@ -508,8 +513,8 @@ parameters and in `__tsMeta`. Reserve the `vars` key in `OverrideConfig` as
 ## Implementation tasks
 
 1. **`__tsMeta` + `getComponentMeta`** — types (kind-discriminated), attach
-   helper, wire into all supported `styles.component` return paths.
-2. **`styles.override`** — overloads, `OverrideConfig` types, emission
+   helper, wire into all supported `recipe` return paths.
+2. **`override`** — overloads, `OverrideConfig` types, emission
    (including compound `:is()`), options (`selectorPrefix`, `layer`),
    same-instance docs, layered-without-layer dev warn.
 3. **Tests** — type-level + CSS snapshots + warning tests.
@@ -521,23 +526,23 @@ parameters and in `__tsMeta`. Reserve the `vars` key in `OverrideConfig` as
 
 ## Explicit decisions (locked)
 
-| Topic                     | Decision                                                                                                                                                                                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Metadata key              | Non-enumerable `__tsMeta` (+ `getComponentMeta`); not enumerable `__meta`                                                                                                                                                                         |
-| Meta shape                | Discriminated union on `kind` (dimensioned / flat / slot / multi-slot)                                                                                                                                                                            |
-| Options naming            | `selectorPrefix` + `layer` — not `scope` (avoids `@scope` confusion)                                                                                                                                                                              |
-| Compound overrides        | Conjunction of option selectors; arrays → `:is(...)` like recipe compounds; no new public classes                                                                                                                                                 |
-| Attribute / slots         | Selectors local to the slot element; no invented descendant trees                                                                                                                                                                                 |
-| Nested theme proximity    | Document footgun; use vars or `styles.scope`; no `@scope` in override v1                                                                                                                                                                          |
-| Same-instance binding     | Document-only; design systems wrap the creating instance (var-ui pattern); no runtime check                                                                                                                                                       |
-| Override HMR              | Vite injects `createOverrideHmrSlot` for `styles.override` / `createDesignTheme` / `overrideComponent` (including renamed + `import * as` bindings); dispose drops tracked `override:` keys; conflicting override CSS is always replaced (upsert) |
-| Layer optional            | Optional like `scope`; default to `"overrides"` when that layer exists; throw if layered without `"overrides"` and no `{ layer }`; throw if `layer` set without `layers`                                                                          |
-| Emission order            | base → variants → compounds                                                                                                                                                                                                                       |
-| Style block type          | `VariantOptionStyle` (same as recipes), not strict `CSSProperties`                                                                                                                                                                                |
-| `selectorPrefix` format   | Unconstrained string; callers own validity (no dev validation in v1)                                                                                                                                                                              |
-| Atomic / hashed / compact | Unsupported in override v1 (dev warn + skip)                                                                                                                                                                                                      |
-| New variant options       | Out of scope                                                                                                                                                                                                                                      |
-| Typed `vars` in override  | Phase 2; reserve the name                                                                                                                                                                                                                         |
+| Topic                     | Decision                                                                                                                                                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Metadata key              | Non-enumerable `__tsMeta` (+ `getComponentMeta`); not enumerable `__meta`                                                                                                                                                                  |
+| Meta shape                | Discriminated union on `kind` (dimensioned / flat / slot / multi-slot)                                                                                                                                                                     |
+| Options naming            | `selectorPrefix` + `layer` — not `scope` (avoids `@scope` confusion)                                                                                                                                                                       |
+| Compound overrides        | Conjunction of option selectors; arrays → `:is(...)` like recipe compounds; no new public classes                                                                                                                                          |
+| Attribute / slots         | Selectors local to the slot element; no invented descendant trees                                                                                                                                                                          |
+| Nested theme proximity    | Document footgun; use vars or `scope`; no `@scope` in override v1                                                                                                                                                                          |
+| Same-instance binding     | Document-only; design systems wrap the creating instance (var-ui pattern); no runtime check                                                                                                                                                |
+| Override HMR              | Vite injects `createOverrideHmrSlot` for `override` / `createDesignTheme` / `overrideComponent` (including renamed + `import * as` bindings); dispose drops tracked `override:` keys; conflicting override CSS is always replaced (upsert) |
+| Layer optional            | Optional like `scope`; default to `"overrides"` when that layer exists; throw if layered without `"overrides"` and no `{ layer }`; throw if `layer` set without `layers`                                                                   |
+| Emission order            | base → variants → compounds                                                                                                                                                                                                                |
+| Style block type          | `VariantOptionStyle` (same as recipes), not strict `CSSProperties`                                                                                                                                                                         |
+| `selectorPrefix` format   | Unconstrained string; callers own validity (no dev validation in v1)                                                                                                                                                                       |
+| Atomic / hashed / compact | Unsupported in override v1 (dev warn + skip)                                                                                                                                                                                               |
+| New variant options       | Out of scope                                                                                                                                                                                                                               |
+| Typed `vars` in override  | Phase 2; reserve the name                                                                                                                                                                                                                  |
 
 ---
 
@@ -549,9 +554,9 @@ None — ready to implement.
 
 ## Relationship to other specs
 
-| Spec                                | Relationship                                                               |
-| ----------------------------------- | -------------------------------------------------------------------------- |
-| `semantic-and-attribute-mode.md`    | Prerequisite naming + attribute completeness (landed)                      |
-| `component-override-contract.md`    | Tier 1/2 + `styles.scope` remain; bulk config deferred item closed by this |
-| `classname-template-mode.md`        | Semantic/bem/template meta records template output class names             |
-| var-ui `typed-component-theming.md` | Consumer sugar over this API; establishes same-instance by shared runtime  |
+| Spec                                | Relationship                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| `semantic-and-attribute-mode.md`    | Prerequisite naming + attribute completeness (landed)                     |
+| `component-override-contract.md`    | Tier 1/2 + `scope` remain; bulk config deferred item closed by this       |
+| `classname-template-mode.md`        | Semantic/bem/template meta records template output class names            |
+| var-ui `typed-component-theming.md` | Consumer sugar over this API; establishes same-instance by shared runtime |

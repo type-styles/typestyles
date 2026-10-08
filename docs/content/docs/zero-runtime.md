@@ -11,7 +11,7 @@ Typestyles supports an optional **build extraction** mode through its bundler in
 - The typestyles runtime is replaced with a no-op stub (`~0 bytes` when tree-shaken).
 - No `<style>` injection happens in the browser — the CSS file is served directly.
 
-The same `styles.component`, `tokens.create`, and `keyframes.create` APIs work identically in both modes.
+The same `recipe()`, `tokens.create()`, and `keyframes.create()` APIs work identically in both modes.
 
 **Runnable examples** (monorepo root, after `pnpm install`):
 
@@ -52,10 +52,12 @@ Theme and token CSS needs no separate build step. Because extraction is execute-
 
 ```ts
 // src/typestyles-entry.ts
-import { tokens, createTheme } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const color = tokens.create('color', { primary: '#0066ff', surface: '#ffffff' });
-createTheme({ name: 'dark', tokens: { color: { primary: '#66aaff', surface: '#111111' } } });
+tokens.createTheme({ name: 'dark', tokens: { color: { primary: '#66aaff', surface: '#111111' } } });
 ```
 
 ```css
@@ -74,7 +76,7 @@ This means TypeStyles never needs a "did you forget to build your theme" runtime
 
 The one thing to get right is the same as for component styles: the modules calling `tokens.create` / `createTheme` must be reachable from your [convention entry](#vite) (or explicit `extract.modules`).
 
-**Design systems with many recipes:** add a registry module (for example `src/themeable-refs.ts`) that side-effect-imports every recipe file and exports `getRegisteredComponentRefs(styles)` from your `createTypeStyles` runtime. Wire it with Vite `extract.registeredComponentsModule: 'src/themeable-refs.ts'`, or set `extract.include: 'allRegisteredComponents'` to auto-append a convention registry file when present (`src/themeable-refs.ts`, `src/typestyles/themeable-refs.ts`, …). The plain `typestyles-entry` side-effect imports are not enough on their own — the registry module must pull in each recipe so `styles.component()` runs during extract. Full theme + override walkthrough: [End-to-end theming](/docs/theming-end-to-end).
+**Design systems with many recipes:** add a registry module (for example `src/themeable-refs.ts`) that side-effect-imports every recipe file and exports `getRegisteredComponentRefs(ts)` from your `createTypeStyles` runtime. Wire it with Vite `extract.registeredComponentsModule: 'src/themeable-refs.ts'`, or set `extract.include: 'allRegisteredComponents'` to auto-append a convention registry file when present (`src/themeable-refs.ts`, `src/typestyles/themeable-refs.ts`, …). The plain `typestyles-entry` side-effect imports are not enough on their own — the registry module must pull in each recipe so `recipe()` runs during extract. Full theme + override walkthrough: [End-to-end theming](/docs/theming-end-to-end).
 
 To guard against a theme module dropping out of the entry graph, assert on a token variable or theme class with `verifyTypestylesBuild()` (see [Verify extraction in CI](#verify-extraction-in-ci)):
 
@@ -346,9 +348,9 @@ The `modules` array should list files that register styles either directly or by
 ```ts
 // src/styles/index.ts
 export * from './tokens'; // tokens.create(...)
-export * from './button'; // styles.component(...)
-export * from './card'; // styles.component(...)
-export * from './typography'; // styles.component(...)
+export * from './button'; // recipe(...)
+export * from './card'; // recipe(...)
+export * from './typography'; // recipe(...)
 ```
 
 ```ts

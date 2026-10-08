@@ -1,4 +1,6 @@
-import { tokens } from 'typestyles';
+import { createTokens } from 'typestyles';
+
+const tokens = createTokens({ scopeId: 'app' });
 
 export const color = tokens.create('color', {
   primary: '#0066ff',

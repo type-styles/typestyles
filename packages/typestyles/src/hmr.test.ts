@@ -328,7 +328,7 @@ describe('invalidateKeys', () => {
     expect(selectors.sort()).toEqual(['.button-group', '.buttongroup']);
   });
 
-  it('preserves styles.override rules when a component namespace is invalidated', () => {
+  it('preserves override rules when a component namespace is invalidated', () => {
     const styles = createStyles();
     const button = styles.component('hmr-ov-btn', {
       base: { color: 'black' },
@@ -353,7 +353,7 @@ describe('invalidateKeys', () => {
     expect(css).not.toContain('color: blue');
   });
 
-  it('updates styles.override CSS when the same keys are re-registered with new values', () => {
+  it('updates override CSS when the same keys are re-registered with new values', () => {
     const styles = createStyles();
     const button = styles.component('hmr-ov-replace', {
       base: { color: 'black' },
@@ -457,12 +457,12 @@ describe('invalidateKeys', () => {
     const css = getRegisteredCss();
     expect(css).not.toContain('border-radius: 999px');
     expect(css).not.toContain('font-weight: 700');
-    // Recipe CSS from styles.component is untouched.
+    // Recipe CSS from recipe is untouched.
     expect(css).toContain('color: black');
     expect(css).toContain('color: blue');
   });
 
-  it('invalidates styles.class rules without dropping component modifiers', () => {
+  it('invalidates style rules without dropping component modifiers', () => {
     insertRule('.button', '.button { color: red; }');
     insertRule('.button--intent-primary', '.button--intent-primary { color: blue; }');
     insertRule('.button:hover', '.button:hover { opacity: 0.9; }');

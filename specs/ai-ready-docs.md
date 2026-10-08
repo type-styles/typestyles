@@ -129,14 +129,14 @@ changelog index, and the MCP endpoint.
 
 ### 2.2 Tools
 
-| Tool            | Input                           | Returns                                                                                                 |
-| --------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `search_docs`   | `query: string`                 | Ranked MiniSearch hits: title, slug, snippet, category, md URL                                          |
-| `get_doc`       | `slug: string`                  | Full clean markdown of the page                                                                         |
-| `list_docs`     | —                               | Categories → `{ slug, title, description }` in nav order                                                |
-| `lookup_api`    | `symbol: string`                | The heading-section of `api-reference.md` matching the symbol (e.g. `styles.component`, `nameTemplate`) |
-| `get_examples`  | `topic: string`                 | Code blocks from the docs whose nearest heading/page matches the topic, with source-page links          |
-| `get_changelog` | `pkg: string, version?: string` | Changelog markdown for the package, optionally one version's entry                                      |
+| Tool            | Input                           | Returns                                                                                        |
+| --------------- | ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `search_docs`   | `query: string`                 | Ranked MiniSearch hits: title, slug, snippet, category, md URL                                 |
+| `get_doc`       | `slug: string`                  | Full clean markdown of the page                                                                |
+| `list_docs`     | —                               | Categories → `{ slug, title, description }` in nav order                                       |
+| `lookup_api`    | `symbol: string`                | The heading-section of `api-reference.md` matching the symbol (e.g. `recipe`, `nameTemplate`)  |
+| `get_examples`  | `topic: string`                 | Code blocks from the docs whose nearest heading/page matches the topic, with source-page links |
+| `get_changelog` | `pkg: string, version?: string` | Changelog markdown for the package, optionally one version's entry                             |
 
 Doc pages are additionally exposed as MCP **resources**
 (`typestyles://docs/<slug>`, `text/markdown`).

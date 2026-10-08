@@ -1,6 +1,6 @@
 ---
 title: End-to-end theming
-description: Build and apply a TypeStyles theme — tokens, createTheme, styles.override, and mount
+description: Build and apply a TypeStyles theme — tokens, createTheme, override, and mount
 ---
 
 A complete theming setup with TypeStyles: design tokens, a theme surface class, recipe overrides, and mounting in the DOM. Consumers can customize with TypeStyles APIs or plain CSS that targets the same class names and custom properties.
@@ -9,13 +9,13 @@ For more patterns (multi-brand, condition scopes, `@property` animation), see [T
 
 ## What you get
 
-| Piece                                    | CSS / DOM                                                                         |
-| ---------------------------------------- | --------------------------------------------------------------------------------- |
-| `tokens.create` / `declare`              | `:root { --app-color-… }`                                                         |
-| `tokens.createTheme({ name, … })`        | `.theme-app-brand { --app-color-… }` (+ optional `light-dark()`, `@media`, attrs) |
-| `styles.component`                       | Readable recipe classes (`button--intent-primary`)                                |
-| `styles.override(…, { selectorPrefix })` | `.theme-app-brand .button { … }`                                                  |
-| Plain CSS                                | Same class and `--*` names — consumers can theme without TypeStyles               |
+| Piece                             | CSS / DOM                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `tokens.create` / `declare`       | `:root { --app-color-… }`                                                         |
+| `tokens.createTheme({ name, … })` | `.theme-app-brand { --app-color-… }` (+ optional `light-dark()`, `@media`, attrs) |
+| `recipe`                          | Readable recipe classes (`button--intent-primary`)                                |
+| `override(…, { selectorPrefix })` | `.theme-app-brand .button { … }`                                                  |
+| Plain CSS                         | Same class and `--*` names — consumers can theme without TypeStyles               |
 
 ## Walkthrough
 
@@ -29,11 +29,14 @@ Light and dark belong on the **token leaves** (`{ light, dark }`) when you regis
 // typestyles.ts
 import { colorModes, createTypeStyles } from 'typestyles';
 
-export const { styles, tokens } = createTypeStyles({
+export const { recipe, tokens, override } = createTypeStyles({
   scopeId: 'app',
   colorModes,
-  layers: ['tokens', 'components', 'overrides'] as const,
-  tokenLayer: 'tokens',
+  layers: {
+    order: ['tokens', 'components', 'overrides'] as const,
+    token: 'tokens',
+    style: 'components',
+  },
 });
 ```
 
@@ -70,10 +73,10 @@ export const color = tokens.create(
 
 ```ts
 // components/button.ts
-import { styles } from '../typestyles';
+import { recipe } from '../typestyles';
 import { color } from '../tokens/color';
 
-export const button = styles.component(
+export const button = recipe(
   'button',
   {
     base: {
@@ -122,7 +125,7 @@ export const brand = tokens.createTheme({
       glow: { default: '#a78bfa' },
     },
   },
-  // Same as styles.override(button, …, { selectorPrefix: `.${brand.className}` })
+  // Same as override(button, …, { selectorPrefix: `.${brand.className}` })
   components: {
     button: ({ tokens: t }) => ({
       base: { boxShadow: `0 0 0 3px ${t.brand.glow.default}` },
@@ -139,11 +142,11 @@ Side-effect-import these modules from your [typestyles entry](/docs/zero-runtime
 
 ```ts
 // themes/brand-overrides.ts
-import { styles } from '../typestyles';
+import { override } from '../typestyles';
 import { button } from '../components/button';
 import { brand } from './brand';
 
-styles.override(
+override(
   button,
   { variants: { intent: { ghost: { textDecoration: 'underline' } } } },
   { selectorPrefix: `.${brand.className}`, layer: 'overrides' },
@@ -199,7 +202,7 @@ Or override tokens from **plain CSS** (no TypeStyles in the consumer app):
 Theme-scoped recipe restyles use a **descendant** prefix (not CSS `@scope`):
 
 ```ts
-styles.override(
+override(
   button,
   { base: { borderRadius: '999px' } },
   {
@@ -224,7 +227,7 @@ Prefer this (or `createTheme({ components })`) over hand-written class strings. 
 
 1. Export a shared `createTypeStyles({ scopeId, colorModes })` runtime.
 2. `tokens.declare` the schema, then `tokens.create(…, { decl })` with mode-aware `{ light, dark }` leaves for defaults.
-3. Register recipes with `styles.component` on that same runtime.
+3. Register recipes with `recipe` on that same runtime.
 4. Document that apps call `tokens.createTheme({ name, tokens, … })` with **overrides only**, then apply `theme.className`.
 5. Document `selectorPrefix: \`.${theme.className}\``(or theme`components`) for recipe restyles.
 6. Keep class and `--*` names stable so consumers can also theme from plain CSS.

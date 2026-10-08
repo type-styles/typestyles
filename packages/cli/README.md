@@ -12,7 +12,7 @@ pnpm add -D @typestyles/cli
 
 ### `typestyles snapshot`
 
-Snapshot semantic class names from `styles.class()` / `styles.component()` call sites.
+Snapshot semantic class names from `style()` / `recipe()` call sites (and legacy `styles.class` / `styles.component` on `createStyles()` instances).
 Use with `@typestyles/no-removed-public-classname` to guard breaking renames in
 publishable packages.
 

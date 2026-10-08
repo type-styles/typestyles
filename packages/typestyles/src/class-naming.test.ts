@@ -82,7 +82,7 @@ describe('class naming modes', () => {
     }
   });
 
-  it('styles.class respects naming mode', () => {
+  it('style respects naming mode', () => {
     const styles = createStyles({ mode: 'hashed', prefix: 't' });
     const cls = styles.class('hero', { display: 'flex' });
     expect(cls).toMatch(/^t-hero-/);
@@ -210,7 +210,7 @@ describe('class name collision detection (dev)', () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
-  it('errors when styles.class and styles.component share an emitted base class', () => {
+  it('errors when style and recipe share an emitted base class', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const styles = createStyles();
     styles.class('button', { color: 'red' });
@@ -236,7 +236,7 @@ describe('unscoped collision warning (dev)', () => {
     const b = createStyles();
     a.component('card', { base: { color: 'red' } });
     b.component('card', { base: { color: 'blue' } });
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("styles.component('card'"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("recipe('card'"));
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('without a scopeId'));
   });
 
@@ -260,7 +260,7 @@ describe('unscoped collision warning (dev)', () => {
     b.component('tag', { base: { color: 'blue' } });
     c.component('tag', { base: { color: 'green' } });
     const unscopedCalls = warnSpy.mock.calls.filter(
-      (args) => typeof args[0] === 'string' && args[0].includes("styles.component('tag'"),
+      (args) => typeof args[0] === 'string' && args[0].includes("recipe('tag'"),
     );
     expect(unscopedCalls).toHaveLength(1);
   });

@@ -408,6 +408,12 @@ function collectBindings(sourceFile: ts.SourceFile): Map<string, StylesBindingCo
 }
 
 function calleeMethodName(expr: ts.Expression): string | null {
+  // New flat API: `style(...)` / `recipe(...)`
+  if (ts.isIdentifier(expr)) {
+    if (expr.text === 'style') return 'class';
+    if (expr.text === 'recipe') return 'component';
+    return null;
+  }
   if (!ts.isPropertyAccessExpression(expr)) return null;
   if (ts.isIdentifier(expr.name)) return expr.name.text;
   return null;
@@ -428,8 +434,8 @@ function stylesBindingFromCallee(
     if (binding) return binding;
     if (expr.expression.text === 'styles' && defaultConfig) return defaultConfig;
   }
-  if (ts.isIdentifier(expr) && expr.text === 'styles') {
-    return bindings.get('styles') ?? defaultConfig ?? { mode: 'semantic', scopeId: '' };
+  if (ts.isIdentifier(expr)) {
+    return bindings.get(expr.text) ?? defaultConfig ?? { mode: 'semantic', scopeId: '' };
   }
   return defaultConfig ?? { mode: 'semantic', scopeId: '' };
 }

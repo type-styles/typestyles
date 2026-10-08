@@ -5,14 +5,28 @@ import { colorModes, createTypeStyles } from 'typestyles';
  * Omit `layers` for flat CSS (default); enable layers when integrating with global CSS
  * that uses `@layer`.
  */
-export const { styles, tokens, global } = createTypeStyles({
+export const {
+  style,
+  recipe,
+  tokens,
+  global,
+  container,
+  containerRef,
+  atRuleBlock,
+  compose,
+  override,
+  scope,
+} = createTypeStyles({
   scopeId: 'example-ds',
   mode: 'semantic',
   colorModes,
-  layers: ['tokens', 'components', 'utilities'] as const,
-  tokenLayer: 'tokens',
-  /** Baseline globals (e.g. `body`) share the token layer so they cascade with `:root` theme CSS. */
-  globalLayer: 'tokens',
+  layers: {
+    order: ['tokens', 'components', 'utilities'],
+    token: 'tokens',
+    style: 'components',
+    /** Baseline globals (e.g. `body`) share the token layer so they cascade with `:root` theme CSS. */
+    global: 'tokens',
+  },
 });
 
 /**

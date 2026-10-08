@@ -1,45 +1,41 @@
-import { styles } from '../runtime';
+import { recipe } from '../runtime';
 import { designTokens as t } from '../tokens';
 
-export const textAreaField = styles.component(
-  'text-area-field',
-  {
-    slots: ['root', 'label', 'input', 'description', 'error'],
-    root: {
-      display: 'grid',
-      gap: t.space[1],
+export const textAreaField = recipe('text-area-field', {
+  slots: ['root', 'label', 'input', 'description', 'error'],
+  root: {
+    display: 'grid',
+    gap: t.space[1],
+  },
+  label: {
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.medium,
+    color: t.color.text.primary,
+  },
+  input: {
+    border: `1px solid ${t.color.border.default}`,
+    borderRadius: t.radius.md,
+    padding: `${t.space[2]} ${t.space[3]}`,
+    fontSize: t.fontSize.md,
+    backgroundColor: t.color.background.surface,
+    color: t.color.text.primary,
+    minHeight: '88px',
+    resize: 'vertical',
+    '&:focus': {
+      outline: `2px solid ${t.color.border.focus}`,
+      outlineOffset: '1px',
+      borderColor: t.color.border.focus,
     },
-    label: {
-      fontSize: t.fontSize.md,
-      fontWeight: t.fontWeight.medium,
-      color: t.color.text.primary,
-    },
-    input: {
-      border: `1px solid ${t.color.border.default}`,
-      borderRadius: t.radius.md,
-      padding: `${t.space[2]} ${t.space[3]}`,
-      fontSize: t.fontSize.md,
-      backgroundColor: t.color.background.surface,
-      color: t.color.text.primary,
-      minHeight: '88px',
-      resize: 'vertical',
-      '&:focus': {
-        outline: `2px solid ${t.color.border.focus}`,
-        outlineOffset: '1px',
-        borderColor: t.color.border.focus,
-      },
-      '&::placeholder': {
-        color: t.color.text.secondary,
-      },
-    },
-    description: {
-      fontSize: t.fontSize.sm,
+    '&::placeholder': {
       color: t.color.text.secondary,
     },
-    error: {
-      fontSize: t.fontSize.sm,
-      color: t.color.danger.default,
-    },
   },
-  { layer: 'components' },
-);
+  description: {
+    fontSize: t.fontSize.sm,
+    color: t.color.text.secondary,
+  },
+  error: {
+    fontSize: t.fontSize.sm,
+    color: t.color.danger.default,
+  },
+});

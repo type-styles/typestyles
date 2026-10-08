@@ -3,7 +3,7 @@ import type { ResolvedCascadeLayers } from './layers';
 import { trackEmittedClassName } from './registry';
 
 /**
- * How generated class names are formed for `styles.class`, `styles.component`,
+ * How generated class names are formed for `style`, `recipe`,
  * and related APIs.
  *
  * - `semantic` — readable names like `button`, `button--intent-primary` (default).
@@ -11,16 +11,16 @@ import { trackEmittedClassName } from './registry';
  * - `hashed` — stable hash from namespace, variant segment, and declarations, with a short namespace slug for debugging.
  * - `compact` — hash-only names (shortest) for whole style objects; same collision properties as `hashed` when `scopeId` differs.
  * - `atomic` — one class per CSS declaration; identical declarations dedupe across the codebase.
- * - `attribute` — dimensioned `styles.component()` variants compile to `&[data-{dimension}="{option}"]`
+ * - `attribute` — dimensioned `recipe()` variants compile to `&[data-{dimension}="{option}"]`
  *   selectors under one base class instead of discrete classes; the call returns
  *   `{ className, attrs, props }`. See `specs/semantic-and-attribute-mode.md`.
- * - `bem` — dimensioned/slot `styles.component()` variants compile to BEM modifier classes
+ * - `bem` — dimensioned/slot `recipe()` variants compile to BEM modifier classes
  *   (`block--modifier`, `block__element--modifier`); the base/root class drops the `-base` suffix.
- *   See `specs/classname-template-mode.md`. `styles.class()` and flat configs behave like `semantic`.
+ *   See `specs/classname-template-mode.md`. `style()` and flat configs behave like `semantic`.
  * - `template` — like `bem`, but the block/element/modifier class name is decided by a
  *   user-supplied `classNameTemplate: (ctx) => string` instead of a fixed convention.
  *   `mode: 'bem'` is itself implemented as a built-in preset of this same mechanism. See
- *   `specs/classname-template-mode.md`. `styles.class()` and flat configs behave like `semantic`.
+ *   `specs/classname-template-mode.md`. `style()` and flat configs behave like `semantic`.
  */
 export type ClassNamingMode =
   | 'semantic'
@@ -33,14 +33,14 @@ export type ClassNamingMode =
 
 /**
  * Passed to `classNameTemplate` for every base/element/modifier class name a `mode: 'bem'` or
- * `mode: 'template'` dimensioned/slot `styles.component()` call needs to emit. One call per
+ * `mode: 'template'` dimensioned/slot `recipe()` call needs to emit. One call per
  * class — `dimension`/`modifier` are both `undefined` when naming a base/block/element class
  * itself, both set when naming a modifier class.
  */
 export type ClassNameContext = {
   /** Sanitized scope prefix from `scopeId` (already includes a trailing `-`), `''` when unscoped. */
   scope: string;
-  /** `styles.component()` namespace, e.g. `'button'`. */
+  /** `recipe()` namespace, e.g. `'button'`. */
   namespace: string;
   /** Slot name for slot/multi-slot components (`'root'` is passed as `undefined`, matching BEM's root→block rule); `undefined` for non-slot components. */
   element: string | undefined;
@@ -60,7 +60,7 @@ export type ClassNamingConfig = {
   /** Prefix for hashed / compact / atomic output and for `hashClass`. Default `ts`. */
   prefix: string;
   /**
-   * Package, app, or per-file id: same logical `styles.component` / `styles.class` name under different
+   * Package, app, or per-file id: same logical `recipe` / `style` name under different
    * scopes produces different classes — in `semantic` mode the sanitized scope is prefixed onto the
    * class name (`my-ui-button`); in `hashed`/`compact`/`atomic` mode it is mixed into the hash. This matches
    * how `tokens.create` scopes custom property names. In development, re-registering the same
@@ -69,10 +69,16 @@ export type ClassNamingConfig = {
    */
   scopeId: string;
   /**
-   * When set (via `createStyles({ layers: … })`), every `class` / `hashClass` / `component`
-   * call must pass `{ layer: … }` and emitted rules are wrapped in `@layer`.
+   * When set (via `createStyles({ layers: … })` / `createTypeStyles({ layers })`), emitted
+   * rules are wrapped in `@layer`. Prefer factory `styleLayer` (or `layers.style`) so callers
+   * can omit per-call `{ layer }`; otherwise each `style` / `recipe` / `hash` call must pass it.
    */
   cascadeLayers?: ResolvedCascadeLayers;
+  /**
+   * Default `@layer` for `style` / `recipe` / `hash` when the call omits `{ layer }`.
+   * Set via `createTypeStyles({ layers: { style } })` or `createStyles({ styleLayer })`.
+   */
+  styleLayer?: string;
   /**
    * Breakpoint names → media query conditions (without `@media` wrapper).
    * Enables `{ base, md, lg }` shorthand on CSS property values.
@@ -87,8 +93,8 @@ export type ClassNamingConfig = {
   colorModes?: readonly string[];
   /**
    * Required when `mode: 'template'`. Decides the class name for every base/element and
-   * modifier class a dimensioned or slot `styles.component()` call emits. Not called for
-   * `styles.class()` or flat (non-dimensioned) configs — those stay semantic-style. See
+   * modifier class a dimensioned or slot `recipe()` call emits. Not called for
+   * `style()` or flat (non-dimensioned) configs — those stay semantic-style. See
    * `ClassNameContext` and `specs/classname-template-mode.md`.
    */
   classNameTemplate?: ClassNameTemplate;
@@ -133,7 +139,7 @@ export function hashString(input: string): string {
  * @example
  * ```ts
  * const styles = createStyles({ scopeId: fileScopeId(import.meta) });
- * styles.component('button', { base: { padding: '8px' } });
+ * recipe('button', { base: { padding: '8px' } });
  * ```
  */
 export function fileScopeId(meta: { url: string }): string {
@@ -179,7 +185,7 @@ function ownerKey(cfg: ClassNamingConfig, namespace: string, kind: 'class' | 'co
 }
 
 /**
- * The emitted class-name prefix shared by every class a `styles.component(namespace, …)`
+ * The emitted class-name prefix shared by every class a `recipe(namespace, …)`
  * call produces under this naming config (no leading dot). `null` in `compact`/`atomic`/
  * `template` mode — hash-only names have no per-namespace prefix, and an arbitrary
  * `classNameTemplate` function's output prefix isn't predictable without calling it; atomic
@@ -197,7 +203,7 @@ export function emittedComponentClassPrefix(
 }
 
 /**
- * The emitted class name a `styles.class(name, …)` call produces under this naming config.
+ * The emitted class name a `style(name, …)` call produces under this naming config.
  * `null` in `hashed`/`compact`/`atomic` mode — the name is derived from the serialized
  * properties, which aren't available before they're computed.
  */
@@ -212,7 +218,7 @@ export function emittedClassName(cfg: ClassNamingConfig, name: string): string |
   return null;
 }
 
-/** `styles.class(name, …)` */
+/** `style(name, …)` */
 export function buildSingleClassName(
   cfg: ClassNamingConfig,
   name: string,
@@ -245,7 +251,7 @@ export function buildSingleClassName(
 }
 
 /**
- * `styles.component` / components with `slots`: logical namespace plus
+ * `recipe` / components with `slots`: logical namespace plus
  * a variant segment (`base`, `intent-primary`, `root-trigger-primary`, …).
  */
 export function buildComponentClassName(

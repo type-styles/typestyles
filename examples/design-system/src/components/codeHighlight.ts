@@ -1,4 +1,4 @@
-import { styles } from '../runtime';
+import { recipe } from '../runtime';
 import { designTokens as t } from '../tokens';
 
 const s = t.syntax;
@@ -20,7 +20,7 @@ function scopeSelectorList(list: string): string {
  * Compose **`codeHljsScope.root`** on a page shell (e.g. docs layout root) so selectors apply
  * inside `[data-codeblock]` wrappers.
  */
-export const codeHljsScope = styles.component(
+export const codeHljsScope = recipe(
   'ds-hljs',
   {
     slots: ['root'],

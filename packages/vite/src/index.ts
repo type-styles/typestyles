@@ -23,13 +23,13 @@ export type { TypestylesExtractOptions };
  * Regex patterns to extract namespace strings from typestyles API calls.
  *
  * Matches:
- *   styles.component('button', ...)   → prefix ".button-"
- *   styles.class('card', ...)         → prefix ".card-"
+ *   recipe('button', ...)   → prefix ".button-"
+ *   style('card', ...)         → prefix ".card-"
  *   tokens.create('color', ...)       → key "tokens:color"
  *   tokens.createTheme({ name: 'dark', … })   → key "theme:dark"
  *   createTheme('dark', …)                    → key "theme:dark" (low-level positional)
  *   keyframes.create('fadeIn', ...)   → key "keyframes:fadeIn"
- *   global.style('body', ...)         → prefix "body"
+ *   global.rule('body', ...)         → prefix "body"
  *   global.fontFace('Inter', ...)     → prefix "font-face:Inter"
  */
 

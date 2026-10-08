@@ -19,7 +19,7 @@ pnpm vite-app dev     # or next-app, typewind, vue-app, …
 | [rollup-app](./rollup-app)                   | `pnpm rollup-app build`   | `@typestyles/rollup`                                              |
 | [rolldown-app](./rolldown-app)               | `pnpm rolldown-app build` | Rolldown + Rollup-compatible plugin                               |
 | [parcel-app](./parcel-app)                   | `pnpm parcel-app dev`     | Runtime-only path (no typestyles bundler plugin)                  |
-| [typewind](./typewind)                       | `pnpm typewind dev`       | Tailwind-style utilities via `styles.class`                       |
+| [typewind](./typewind)                       | `pnpm typewind dev`       | Tailwind-style utilities via `style`                              |
 | [design-system](./design-system)             | _(library)_               | Framework-agnostic tokens and recipes                             |
 | [react-design-system](./react-design-system) | _(library)_               | React components on top of the design system                      |
 

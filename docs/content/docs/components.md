@@ -1,11 +1,11 @@
 ---
 title: Components
-description: Build typed variant APIs with styles.component
+description: Build typed variant APIs with recipe
 ---
 
-`styles.component()` is the first-class API for variant-driven component styling.
+`recipe()` is the first-class API for variant-driven component styling.
 
-`styles.component()` is the unified API for all component styling. For flat configs (no dimensioned `variants`), see [Styles](/docs/styles).
+`recipe()` is the unified API for all component styling. For flat configs (no dimensioned `variants`), see [Styles](/docs/styles).
 
 Use the dimensioned config when you want a typed interface with:
 
@@ -13,6 +13,12 @@ Use the dimensioned config when you want a typed interface with:
 - `variants` dimensions
 - `compoundVariants` for combinations
 - `defaultVariants`
+
+```ts
+import { createTypeStyles } from 'typestyles';
+
+export const { recipe, style, override, tokens } = createTypeStyles({ scopeId: 'app' });
+```
 
 ## Basic component
 
@@ -25,7 +31,7 @@ The live example defines a dimensioned `button` with `intent` and `size` variant
 Use `compoundVariants` for styles that should apply only when multiple variant values match.
 
 ```ts
-const badge = styles.component('badge', {
+const badge = recipe('badge', {
   variants: {
     tone: {
       success: { color: '#166534' },
@@ -59,7 +65,7 @@ badge({ tone: 'danger', size: 'lg' }); // no matching compound rule
 Boolean variant dimensions are represented with `"true"` / `"false"` option keys.
 
 ```ts
-const input = styles.component('input', {
+const input = recipe('input', {
   base: { border: '1px solid #d1d5db' },
   variants: {
     invalid: {
@@ -80,10 +86,10 @@ input({ invalid: true }); // "input input--invalid-true"
 
 Pass a `slots` array for components with multiple parts (for example root, trigger, and panel). `base`, `variants`, `compoundVariants`, and `defaultVariants` can each target specific slot keys.
 
-TypeScript infers each slot name from the array literal, so the return value is typed with those keys (for example `tabs.root`, `tabs.trigger`) and unknown keys are errors. You do not need `as const` on `slots` when you pass an inline array inside `styles.component(...)`.
+TypeScript infers each slot name from the array literal, so the return value is typed with those keys (for example `tabs.root`, `tabs.trigger`) and unknown keys are errors. You do not need `as const` on `slots` when you pass an inline array inside `recipe(...)`.
 
 ```ts
-const tabs = styles.component('tabs', {
+const tabs = recipe('tabs', {
   slots: ['root', 'trigger', 'content'],
   base: {
     root: { display: 'grid' },
@@ -121,7 +127,7 @@ type AppShellVariantDefs = {
   };
 };
 
-export const appShell = styles.component<typeof APP_SHELL_SLOTS, AppShellVariantDefs>('app-shell', {
+export const appShell = recipe<typeof APP_SHELL_SLOTS, AppShellVariantDefs>('app-shell', {
   slots: APP_SHELL_SLOTS,
   base: { root: { display: 'grid' } },
   variants: {
@@ -139,10 +145,10 @@ For **class-based** modes (`semantic` / `bem` / `template`), a `compoundVariants
 
 ## Data and ARIA selectors
 
-`styles.component` supports all CSS selectors:
+`recipe` supports all CSS selectors:
 
 ```ts
-const accordionTrigger = styles.component('accordion-trigger', {
+const accordionTrigger = recipe('accordion-trigger', {
   base: {
     '&[data-state="open"]': { fontWeight: 600 },
     '&[aria-expanded="true"]': { color: '#1d4ed8' },
@@ -159,9 +165,9 @@ markup) rather than as discrete classes. Set `mode: 'attribute'` on
 option to a selector on its single semantic base class:
 
 ```ts
-const styles = createStyles({ mode: 'attribute' });
+const { recipe, style } = createTypeStyles({ mode: 'attribute' });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px 16px', borderRadius: '6px' },
   variants: {
     variant: {
@@ -221,7 +227,7 @@ with the rest of the condition.
 ### Attribute slots
 
 ```ts
-const dialog = styles.component('dialog', {
+const dialog = recipe('dialog', {
   slots: ['root', 'content'],
   base: { root: { display: 'grid' }, content: { padding: '8px' } },
   variants: {
@@ -242,12 +248,12 @@ a descendant selector.
 
 ## BEM variant naming
 
-Some design systems author class names as BEM (Block Element Modifier). Set `mode: 'bem'` and dimensioned/slot `styles.component()` variants compile to BEM modifier classes instead of the default `{namespace}-{dimension}-{option}` naming:
+Some design systems author class names as BEM (Block Element Modifier). Set `mode: 'bem'` and dimensioned/slot `recipe()` variants compile to BEM modifier classes instead of the default `{namespace}-{dimension}-{option}` naming:
 
 ```ts
-const styles = createStyles({ mode: 'bem' });
+const { recipe, style } = createTypeStyles({ mode: 'bem' });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px 16px', borderRadius: '6px' },
   variants: {
     variant: {
@@ -277,7 +283,7 @@ Compound variants compile to a chained modifier-class selector (`.button--primar
 **Multi-part components** work via `slots`, mapping onto the `root`/`trigger`/`content` convention already used elsewhere in this doc: the `root` slot is the bare block class; every other slot is a BEM element (`block__element`):
 
 ```ts
-const dialog = styles.component('dialog', {
+const dialog = recipe('dialog', {
   slots: ['root', 'trigger', 'content'],
   base: { root: { display: 'grid' }, trigger: { cursor: 'pointer' } },
   variants: {
@@ -292,11 +298,11 @@ dialog({ size: 'lg' });
 // { root: "dialog", trigger: "dialog__trigger dialog__trigger--lg", content: "dialog__content dialog__content--lg" }
 ```
 
-**The collision caveat:** BEM has no dimension namespace, so two _different_ dimensions producing the same option string collide on the identical class name (e.g. `intent: 'primary'` and `theme: 'primary'` both want `button--primary`). This is inherent to BEM, not a typestyles limitation — `styles.component()` warns in dev when it happens, rather than silently letting one CSS rule clobber the other in the cascade. Choose non-colliding option names across a component's dimensions.
+**The collision caveat:** BEM has no dimension namespace, so two _different_ dimensions producing the same option string collide on the identical class name (e.g. `intent: 'primary'` and `theme: 'primary'` both want `button--primary`). This is inherent to BEM, not a typestyles limitation — `recipe()` warns in dev when it happens, rather than silently letting one CSS rule clobber the other in the cascade. Choose non-colliding option names across a component's dimensions.
 
 Like [`mode: 'attribute'`](#attribute-driven-variants), `mode: 'bem'` is an
-instance-wide setting — no per-component override. `styles.class()` is unaffected;
-flat (non-dimensioned) `styles.component()` configs retain their historical hyphen
+instance-wide setting — no per-component override. `style()` is unaffected;
+flat (non-dimensioned) `recipe()` configs retain their historical hyphen
 names under `bem`, rather than the semantic `card` / `card--elevated` grammar.
 
 ## Generic classname template
@@ -304,7 +310,7 @@ names under `bem`, rather than the semantic `card` / `card--elevated` grammar.
 `mode: 'bem'` is itself a preset of a more general mechanism: `mode: 'template'` lets you supply your own `classNameTemplate: (ctx) => string` function, so any block/element/modifier naming convention — SUIT CSS, a prefixed/ITCSS scheme, a house style — works without waiting for `typestyles` to ship a named mode for it.
 
 ```ts
-const styles = createStyles({
+const { recipe, style } = createTypeStyles({
   mode: 'template',
   classNameTemplate: ({ scope, namespace, element, dimension, modifier }) => {
     const base = element ? `${scope}${namespace}__${element}` : `${scope}${namespace}`;
@@ -314,21 +320,21 @@ const styles = createStyles({
 ```
 
 `classNameTemplate` is called once per emitted class for dimensioned and slot/multi-slot
-`styles.component()` configs — never for `styles.class()` or flat (non-dimensioned)
+`recipe()` configs — never for `style()` or flat (non-dimensioned)
 configs, which retain their historical hyphen naming in template mode. It receives:
 
 - `scope` — the sanitized `scopeId` prefix (already includes a trailing `-`), `''` when unscoped.
-- `namespace` — the `styles.component()` name, e.g. `'button'`.
+- `namespace` — the `recipe()` name, e.g. `'button'`.
 - `element` — the slot name for slot/multi-slot components (`undefined` for the `root` slot or non-slot components).
 - `dimension` — the variant dimension name, `undefined` when naming a base/block/element class.
 - `modifier` — the variant option value, `undefined` when naming a base/block/element class.
 
-`classNameTemplate` is **required** when `mode: 'template'` — `createStyles` throws immediately without it.
+`classNameTemplate` is **required** when `mode: 'template'` — `createTypeStyles` throws immediately without it.
 
 ### SUIT CSS
 
 ```ts
-const styles = createStyles({
+const { recipe, style } = createTypeStyles({
   mode: 'template',
   classNameTemplate: ({ scope, namespace, element, modifier }) => {
     const Block = `${scope}${namespace[0].toUpperCase()}${namespace.slice(1)}`;
@@ -337,7 +343,7 @@ const styles = createStyles({
   },
 });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px' },
   variants: { intent: { primary: { color: '#0066ff' } } },
 });
@@ -348,7 +354,7 @@ button['intent-primary']; // "Button--primary"
 ### Prefixed / ITCSS convention
 
 ```ts
-const styles = createStyles({
+const { recipe, style } = createTypeStyles({
   mode: 'template',
   classNameTemplate: ({ scope, namespace, element, modifier }) => {
     const base = element ? `c-${scope}${namespace}-${element}` : `c-${scope}${namespace}`;
@@ -362,7 +368,7 @@ const styles = createStyles({
 `mode: 'bem'`'s modifier classes have no dimension namespace, so two dimensions sharing an option name collide (see the collision caveat above). A `classNameTemplate` can fold `dimension` into the class name to avoid this entirely:
 
 ```ts
-const styles = createStyles({
+const { recipe, style } = createTypeStyles({
   mode: 'template',
   classNameTemplate: ({ scope, namespace, element, dimension, modifier }) => {
     const base = element ? `${scope}${namespace}__${element}` : `${scope}${namespace}`;
@@ -382,7 +388,7 @@ Like `mode: 'bem'` and `mode: 'attribute'`, `mode: 'template'` is an instance-wi
 CVA config maps directly:
 
 - `cva(base, { variants, compoundVariants, defaultVariants })`
-- to `styles.component(name, { base, variants, compoundVariants, defaultVariants })`
+- to `recipe(name, { base, variants, compoundVariants, defaultVariants })`
 
 The main difference is class generation/injection is handled by typestyles.
 
@@ -397,7 +403,7 @@ the component return for override typing. Use the returned ref tree in styles an
 `vars: v` when you want `OverrideConfigFor<typeof recipe>` to infer theme keys.
 
 ```ts
-export const sideNav = styles.component('side-nav', (c) => {
+export const sideNav = recipe('side-nav', (c) => {
   const v = c.vars({
     border: { value: '1px solid #ccc', syntax: '<color>' as const },
     headingColor: { value: '#111', syntax: '<color>' as const },
@@ -425,7 +431,7 @@ export const sideNavVarDefinitions = {
   headingColor: { value: '#111', syntax: '<color>' as const },
 } as const;
 
-export const sideNav = styles.component('side-nav', (c) => {
+export const sideNav = recipe('side-nav', (c) => {
   const v = c.vars(sideNavVarDefinitions);
   return {
     vars: v,
@@ -439,14 +445,14 @@ export const sideNav = styles.component('side-nav', (c) => {
 ```
 
 `c.vars()` alone is enough at runtime (refs on `sideNav.vars`, `__varDefinitions`
-auto-stamped). Add `vars: v` when you want typed `styles.override({ vars })` without a
+auto-stamped). Add `vars: v` when you want typed `override({ vars })` without a
 second generic on `OverrideConfigFor`.
 
 Object configs work too when you wire styles with `var(--…)` literals or register
 matching defs in a callback:
 
 ```ts
-const chip = styles.component('chip', {
+const chip = recipe('chip', {
   vars: {
     background: { value: '#fff', syntax: '<color>' as const },
     foreground: { value: '#111', syntax: '<color>' as const },
@@ -472,7 +478,7 @@ The [design-system example](/docs/design-system) uses this pattern throughout
 When defaults live only in variants — or you want `@property` without a dummy value in the descriptor — use `ctx.vars.declare`:
 
 ```ts
-const badge = styles.component('badge', (c) => {
+const badge = recipe('badge', (c) => {
   const v = c.vars.declare({
     textColor: { syntax: '<color>', inherits: false },
     borderWidth: true,
@@ -499,11 +505,11 @@ See [CSS primitives](/docs/css-primitives) for the full progressive-disclosure l
 
 ### Override internal vars in themes
 
-Theme consumers use the same top-level **`vars`** key on `styles.override()` — assignment
+Theme consumers use the same top-level **`vars`** key on `override()` — assignment
 leaves instead of descriptor leaves.
 
 ```ts
-styles.override(
+override(
   sideNav,
   {
     vars: {
@@ -547,10 +553,10 @@ See [Theming patterns — override vars](/docs/theming-patterns#override-compone
 
 ## Responsive property values
 
-Register breakpoints once on your styles instance, then use `{ base, md, lg }` shorthand on individual CSS properties instead of repeating full `@media` keys beside every property.
+Register breakpoints once on your TypeStyles instance, then use `{ base, md, lg }` shorthand on individual CSS properties instead of repeating full `@media` keys beside every property.
 
 ```ts
-const { styles } = createTypeStyles({
+const { recipe } = createTypeStyles({
   scopeId: 'app',
   breakpoints: {
     sm: '(min-width: 640px)',
@@ -560,7 +566,7 @@ const { styles } = createTypeStyles({
   },
 });
 
-const container = styles.component('container', {
+const container = recipe('container', {
   base: {
     width: '100%',
     paddingLeft: { base: '1rem', md: '1.5rem' },
@@ -582,8 +588,8 @@ This compiles to the same CSS you would write with explicit `'@media (min-width:
 
 - `base` is the mobile-first default; `_` is an alias (Panda migration).
 - Breakpoint values are media conditions **without** the `@media` wrapper — same strings as `@typestyles/props` `{ '@media': '(min-width: 640px)' }`.
-- Values must be scalars (`string | number`); for nested style blocks per breakpoint, use [`styles.media()` / `styles.breakpoint()`](/docs/custom-at-rules#viewport-breakpoints-from-config) instead of hand-written `@media` keys.
-- Responsive objects work in `styles.class`, `styles.component`, `styles.scope`, and `createTypeStyles({ breakpoints }).global.style` (or `createGlobal({ breakpoints }).style`). The root `global` export has no breakpoint registry — use a factory instance.
+- Values must be scalars (`string | number`); for nested style blocks per breakpoint, use [`media()` / `breakpoint()`](/docs/custom-at-rules#viewport-breakpoints-from-config) instead of hand-written `@media` keys.
+- Responsive objects work in `style`, `recipe`, `scope`, and `createTypeStyles({ breakpoints }).global.rule` (or `createGlobal({ breakpoints }).rule`). Use a `createTypeStyles` / `createGlobal` instance — there is no root singleton.
 
 **Before (manual media keys):**
 
@@ -608,13 +614,13 @@ For atomic utility props with responsive class names, use [`@typestyles/props`](
 You can derive breakpoints from media tokens:
 
 ```ts
-const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+const { recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 const media = tokens.create('media', {
   sm: '(min-width: 640px)',
   md: '(min-width: 768px)',
 });
 
-const stylesWithMedia = createStyles({
+const { recipe: recipeWithMedia } = createTypeStyles({
   scopeId: 'app',
   breakpoints: { fromTokens: media, lg: '(min-width: 1024px)' },
 });

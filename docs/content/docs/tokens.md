@@ -7,7 +7,7 @@ Tokens are design primitives (colors, spacing, etc.) exposed as CSS custom prope
 
 ## Scoped token instances
 
-The default `import { tokens } from 'typestyles'` is unscoped. For a **package or micro-frontend** that shares the page with other TypeStyles bundles, call **`createTokens({ scopeId })`** once and reuse that instance so custom properties and theme classes do not collide:
+For a **package or micro-frontend** that shares the page with other TypeStyles bundles, call **`createTypeStyles({ scopeId })`** or **`createTokens({ scopeId })`** once and reuse that instance so custom properties and theme classes do not collide:
 
 ```ts
 import { createTokens } from 'typestyles';
@@ -18,18 +18,20 @@ const color = tokens.create('color', { primary: '#0066ff' });
 // var(--acme-ui-color-primary)
 ```
 
-See [Class naming](/docs/class-naming) for how this pairs with `createStyles({ scopeId })` for styles.
+See [Class naming](/docs/class-naming) for how this pairs with `createTypeStyles({ scopeId })` for styles.
 
 To share a **cascade layer** stack with styles, use **`createTypeStyles`** or pass **`layers`** and **`tokenLayer`** to `createTokens` (see [Cascade layers](/docs/cascade-layers)).
 
 ## Creating tokens
 
-TypeStyles offers several tiers for custom properties — from design tokens down to exact-name migration helpers. [Tokens](/docs/tokens) (`tokens.declare` / `tokens.create`) is the top rung for design systems; see [CSS primitives](/docs/css-primitives) for the full ladder and when to use `ctx.vars`, `styles.property`, or `typestyles/css`.
+TypeStyles offers several tiers for custom properties — from design tokens down to exact-name migration helpers. [Tokens](/docs/tokens) (`tokens.declare` / `tokens.create`) is the top rung for design systems; see [CSS primitives](/docs/css-primitives) for the full ladder and when to use `ctx.vars`, `property`, or `typestyles/css`.
 
 Use `tokens.create(prefix, object)` to define a set of tokens:
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const space = tokens.create('space', {
   xs: '4px',
@@ -144,7 +146,9 @@ reference proxy you can use while building values — in the same namespace or
 another one before it exists:
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.declare('color', {
   background: { app: { syntax: '<color>', inherits: false } },
@@ -223,7 +227,7 @@ leaves with `syntax` (for example `{ syntax: '<color>', inherits: false }`) retu
   literals (you still set values like `'#0066ff'`), compatible `SyntaxRef` values, and
   mode-aware `{ light, dark }` leaves. Assigning a `SyntaxRef<'<length>'>` to a
   `<color>` path is a type error.
-- **`styles()` / component styles** — when the value is a `SyntaxRef`, it must match the
+- **`style()` / `recipe()` styles** — when the value is a `SyntaxRef`, it must match the
   target CSS property (`color.bg` on `backgroundColor` ✓, on `width` ✗). Plain
   `string` literals are always allowed (escape hatch).
 - **`tokens.use(decl)`** — preserves `SyntaxRef<S>` from the declared schema.
@@ -239,7 +243,7 @@ already emitted at declare time.
 ```ts
 import { createTypeStyles } from 'typestyles';
 
-const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+const { style, tokens } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.declare('color', {
   bg: { syntax: '<color>', inherits: false },
@@ -252,14 +256,14 @@ const space = tokens.declare('space', {
 
 tokens.create('color', { bg: '#0a0a0a', text: '#fafafa' }, { decl: color });
 
-export const card = styles({
+export const card = style('card', {
   backgroundColor: color.bg,
   color: color.text,
   padding: space.md,
 });
 
 // Type errors:
-// styles({ width: color.bg })
+// style('x', { width: color.bg })
 // tokens.create('color', { bg: space.md }, { decl: color })
 ```
 

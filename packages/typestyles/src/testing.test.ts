@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resetAll, onAfterReset, createTestHarness } from './testing';
 import { reset } from './sheet';
-import { styles, flushSync, getRegisteredCss } from './index';
+import { createStyles, flushSync, getRegisteredCss } from './index';
+const styles = createStyles();
 
 describe('resetAll', () => {
   it('calls core reset()', () => {

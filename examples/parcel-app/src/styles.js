@@ -1,6 +1,8 @@
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-export const heading = styles.component('parcel-heading', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+export const heading = recipe('parcel-heading', {
   base: {
     fontSize: '24px',
     fontWeight: 700,

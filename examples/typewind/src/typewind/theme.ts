@@ -62,7 +62,7 @@ export const brand = tokens.create('brand', {
   '600': '#2563eb',
 });
 
-global.style('body', {
+global.rule('body', {
   margin: 0,
   fontFamily:
     'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',

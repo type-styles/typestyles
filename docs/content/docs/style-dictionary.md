@@ -134,7 +134,7 @@ Keep the DTCG-derived primitives **separate** from your semantic token layer, so
 import { createTypeStyles } from 'typestyles';
 import { color as corePrimitives, space as corePrimitivesSpace } from './generated/primitives';
 
-export const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+export const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const color = tokens.create('color', {
   brand: corePrimitives['brand-500'],

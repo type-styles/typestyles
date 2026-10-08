@@ -10,14 +10,16 @@ TypeStyles supports CSS animations through the `keyframes` API. This guide cover
 ### Fade in
 
 ```ts
-import { keyframes, styles } from 'typestyles';
+import { createTypeStyles, keyframes } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
 
 const fadeIn = keyframes.create('fadeIn', {
   from: { opacity: 0 },
   to: { opacity: 1 },
 });
 
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     animation: `${fadeIn} 300ms ease`,
   },
@@ -114,7 +116,7 @@ const spin = keyframes.create('spin', {
   to: { transform: 'rotate(360deg)' },
 });
 
-const spinner = styles.component('spinner', {
+const spinner = recipe('spinner', {
   base: {
     display: 'inline-block',
     width: '24px',
@@ -147,7 +149,7 @@ const pulse = keyframes.create('pulse', {
   '50%': { opacity: 0.5 },
 });
 
-const skeleton = styles.component('skeleton', {
+const skeleton = recipe('skeleton', {
   base: {
     backgroundColor: '#e5e7eb',
     borderRadius: '4px',
@@ -165,7 +167,7 @@ const shake = keyframes.create('shake', {
   '20%, 40%, 60%, 80%': { transform: 'translateX(4px)' },
 });
 
-const input = styles.component('input', {
+const input = recipe('input', {
   base: { ... },
   error: {
     borderColor: '#ef4444',
@@ -188,7 +190,7 @@ const bounce = keyframes.create('bounce', {
   },
 });
 
-const notification = styles.component('notification', {
+const notification = recipe('notification', {
   badge: {
     animation: `${bounce} 1s infinite`,
   },
@@ -205,7 +207,7 @@ const pageFadeIn = keyframes.create('pageFadeIn', {
   to: { opacity: 1 },
 });
 
-const pageLayout = styles.component('page', {
+const pageLayout = recipe('page', {
   container: {
     animation: `${pageFadeIn} 300ms ease`,
   },
@@ -228,7 +230,7 @@ const listItemFadeIn = keyframes.create('listItemFadeIn', {
 });
 
 // Delay classes for stagger effect
-const list = styles.component('list', {
+const list = recipe('list', {
   item: {
     opacity: 0,
     animation: `${listItemFadeIn} 300ms ease forwards`,
@@ -275,7 +277,7 @@ const buttonPress = keyframes.create('buttonPress', {
   '100%': { transform: 'scale(1)' },
 });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     transition: 'transform 100ms ease',
 
@@ -303,7 +305,7 @@ const checkmark = keyframes.create('checkmark', {
   },
 });
 
-const checkbox = styles.component('checkbox', {
+const checkbox = recipe('checkbox', {
   base: { ... },
 
   checkmark: {
@@ -322,7 +324,7 @@ const checkbox = styles.component('checkbox', {
 ### Hover lift effect
 
 ```ts
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     transition: 'transform 200ms ease, box-shadow 200ms ease',
   },
@@ -375,7 +377,7 @@ const modalContentSlideOut = keyframes.create('modalContentSlideOut', {
   },
 });
 
-const modal = styles.component('modal', {
+const modal = recipe('modal', {
   backdrop: {
     position: 'fixed',
     inset: 0,
@@ -436,7 +438,7 @@ const toastProgress = keyframes.create('toastProgress', {
   to: { transform: 'scaleX(0)' },
 });
 
-const toast = styles.component('toast', {
+const toast = recipe('toast', {
   base: {
     padding: '16px 20px',
     borderRadius: '8px',
@@ -484,7 +486,7 @@ const shimmer = keyframes.create('shimmer', {
   '100%': { backgroundPosition: '200% 0' },
 });
 
-const skeleton = styles.component('skeleton', {
+const skeleton = recipe('skeleton', {
   base: {
     backgroundColor: '#e5e7eb',
     borderRadius: '4px',
@@ -536,7 +538,7 @@ const scrollIndicator = keyframes.create('scrollIndicator', {
   },
 });
 
-const scrollCue = styles.component('scroll-cue', {
+const scrollCue = recipe('scroll-cue', {
   base: {
     display: 'flex',
     flexDirection: 'column',
@@ -588,7 +590,7 @@ const badAnimation = keyframes.create('badAnimation', {
 
 ```ts
 // Respect reduced motion preference
-const animated = styles.component('animated', {
+const animated = recipe('animated', {
   base: {
     '@media (prefers-reduced-motion: reduce)': {
       animation: 'none',
@@ -614,7 +616,7 @@ const enter = 'cubic-bezier(0, 0, 0.2, 1)';
 const exit = 'cubic-bezier(0.4, 0, 1, 1)';
 
 // Usage
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     transition: `transform 200ms ${springy}`,
   },
@@ -712,7 +714,7 @@ export const presets = {
 } as const;
 
 // Usage
-const modal = styles.component('modal', {
+const modal = recipe('modal', {
   enter: {
     animation: presets.fade.in,
   },

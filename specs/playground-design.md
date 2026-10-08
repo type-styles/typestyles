@@ -88,14 +88,15 @@ import { useState } from 'react';
 import { createTypeStyles } from 'typestyles';
 import { createStyled, TypeStylesProvider } from '@typestyles/react';
 
-const { styles, tokens } = createTypeStyles({ scopeId: 'playground' });
+const api = createTypeStyles({ scopeId: 'playground' });
+const { tokens } = api;
 
 const color = tokens.create('color', {
   primary: '#0066ff',
   surface: '#ffffff',
 });
 
-const styled = createStyled(styles);
+const styled = createStyled(api);
 
 const Button = styled('button', {
   base: {
@@ -122,7 +123,7 @@ export default function App() {
   const [intent, setIntent] = useState<'primary' | 'ghost'>('primary');
 
   return (
-    <TypeStylesProvider styles={styles}>
+    <TypeStylesProvider styles={api}>
       <div style={{ padding: '2rem', display: 'flex', gap: '1rem' }}>
         <Button
           intent={intent}

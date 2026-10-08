@@ -6,6 +6,8 @@ Guidance for coding agents working in the **typestyles** monorepo.
 
 CSS-in-TypeScript: type-safe style objects, design tokens as CSS custom properties, human-readable class names, and optional zero-runtime extraction via bundler plugins (`@typestyles/vite`, `@typestyles/next`, etc.).
 
+**Public entry:** `createTypeStyles({ scopeId, layers? })` → `{ style, recipe, tokens, global, … }`. Prefer that over lower-level `createStyles` / `createTokens` / `createGlobal`. Cascade layers use nested config: `layers: { order, token, style, global? }`. Globals: `global.rule` / `global.rules` / `global.apply` / `global.fontFace`.
+
 - **Docs site:** https://typestyles.dev
 - **AI doc index:** https://typestyles.dev/llms.txt
 - **Full markdown bundle:** https://typestyles.dev/llms-full.txt
@@ -89,5 +91,5 @@ pnpm --filter typestyles build
 
 - Styles must be **imported** from a side-effect entry (e.g. `typestyles-entry.ts`) for build extraction to emit CSS
 - Use `createTypeStyles({ scopeId })` per package/micro-frontend for token/class isolation
-- Prefer `styles.component` + variants over ad-hoc string class names
+- Prefer `recipe` + variants (from `createTypeStyles`) over ad-hoc string class names
 - SSR: use `typestyles/server` helpers; see `docs/content/docs/ssr.md`

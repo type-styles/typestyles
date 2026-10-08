@@ -14,10 +14,12 @@ npm install @typestyles/open-props
 ## Quick Start
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { sizes, radius, color, font } from '@typestyles/open-props';
 
-const card = styles.component('card', {
+const card = recipe('card', {
   padding: sizes['4'],
   borderRadius: radius['3'],
   backgroundColor: color['gray-2'],
@@ -285,10 +287,12 @@ masksCornerCuts['6']; // var(--masks-corner-cuts-6)
 All tokens work seamlessly with typestyles:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { sizes, radius, color, shadow, fontSize } from '@typestyles/open-props';
 
-const button = styles.component('button', {
+const button = recipe('button', {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -312,7 +316,9 @@ const button = styles.component('button', {
 You can mix Open Props with your own custom tokens:
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 import { color, sizes } from '@typestyles/open-props';
 
 // Your custom tokens
@@ -322,7 +328,7 @@ const brand = tokens.create('brand', {
 });
 
 // Use both together
-const container = styles.component('container', {
+const container = recipe('container', {
   backgroundColor: brand.primary, // var(--brand-primary)
   padding: sizes['4'], // var(--size-4)
   borderColor: color['gray-3'], // var(--color-gray-3)

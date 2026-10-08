@@ -28,7 +28,7 @@ import { heading } from './styles.js';
 app.innerHTML = `<h1 class="${heading()}">typestyles + Parcel (runtime)</h1>`;
 ```
 
-- `styles.component` registers CSS on module load
+- `recipe` registers CSS on module load
 - Browser bundle includes the typestyles runtime (~15 KB gzip)
 - CSS injects via a managed `<style>` element on first use
 - `scripts/verify-build.mjs` confirms the bundle contains expected class helpers

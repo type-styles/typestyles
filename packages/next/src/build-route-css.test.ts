@@ -12,7 +12,7 @@ describe('buildTypestylesForNext route CSS', () => {
 
     writeFileSync(
       join(root, 'styles/typestyles-entry.ts'),
-      `import { styles } from 'typestyles';\nstyles.class('shared', { margin: '0' });\n`,
+      `import { createTypeStyles } from 'typestyles';\nconst { style } = createTypeStyles();\nstyle('shared', { margin: '0' });\n`,
     );
     writeFileSync(
       join(root, 'app/layout.tsx'),
@@ -20,11 +20,11 @@ describe('buildTypestylesForNext route CSS', () => {
     );
     writeFileSync(
       join(root, 'app/page.tsx'),
-      `import { styles } from 'typestyles';\nstyles.class('home', { color: 'red' });\nexport default function Home() { return null; }\n`,
+      `import { createStyles } from 'typestyles';\nconst styles = createStyles();\nstyles.class('home', { color: 'red' });\nexport default function Home() { return null; }\n`,
     );
     writeFileSync(
       join(root, 'app/about/page.tsx'),
-      `import { styles } from 'typestyles';\nstyles.class('about', { color: 'blue' });\nexport default function About() { return null; }\n`,
+      `import { createStyles } from 'typestyles';\nconst styles = createStyles();\nstyles.class('about', { color: 'blue' });\nexport default function About() { return null; }\n`,
     );
 
     try {

@@ -1,7 +1,9 @@
 import './typestyles-entry.js';
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const title = styles.component('esbuild-title', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const title = recipe('esbuild-title', {
   base: {
     fontSize: '24px',
     fontWeight: 700,

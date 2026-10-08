@@ -14,9 +14,11 @@ Since typestyles returns regular class names, test your components the same way 
 ```tsx
 // Button.tsx
 import type { ReactNode } from 'react';
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: { padding: '8px 16px' },
   primary: { backgroundColor: '#0066ff' },
   large: { fontSize: '18px' },
@@ -85,7 +87,7 @@ When variants are applied conditionally, test both states:
 ```tsx
 import { cx } from 'typestyles';
 
-const btn = styles.component('button', {
+const btn = recipe('button', {
   base: { padding: '8px 16px' },
   loading: { cursor: 'wait', opacity: 0.8 },
 });
@@ -157,7 +159,7 @@ it('matches snapshot', () => {
 
 ### Class naming mode
 
-If you use [hashed, compact, or atomic class naming](/docs/class-naming) in tests, prefer a dedicated **`createStyles({ mode, prefix, scopeId })`** instance in that file so naming options never leak. The default **`import { styles } from 'typestyles'`** is a single shared instance. Always call **`reset()`** (from `typestyles`) in `beforeEach` when tests inject CSS. Assertions that depend on exact class strings may need snapshots or prefix-based checks when `mode` is not `semantic`.
+If you use [hashed, compact, or atomic class naming](/docs/class-naming) in tests, prefer a dedicated **`createTypeStyles({ mode, prefix, scopeId })`** (or **`createStyles({ mode, prefix, scopeId })`**) instance in that file so naming options never leak. Always call **`reset()`** (from `typestyles`) in `beforeEach` when tests inject CSS. Assertions that depend on exact class strings may need snapshots or prefix-based checks when `mode` is not `semantic`.
 
 ## CSS testing strategies
 
@@ -231,7 +233,9 @@ Test that tokens generate the expected CSS:
 
 ```ts
 // tokens.test.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 describe('tokens', () => {
   it('creates color token references', () => {
@@ -384,11 +388,13 @@ For library authors or design systems, you might want to snapshot the generated 
 
 ```ts
 // styles.test.ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 
 describe('Button styles', () => {
   it('generates consistent class names', () => {
-    const button = styles.component('button', {
+    const button = recipe('button', {
       base: { padding: '8px' },
       primary: { color: 'blue' },
     });

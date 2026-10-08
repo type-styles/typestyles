@@ -16,20 +16,20 @@ import { global } from './typestyles';
  */
 global.apply(...reset({ includeAppRootIsolation: false }));
 
-global.style('html body', {
+global.rule('html body', {
   background: t.color.background.app,
   fontFamily: t.fontFamily.sans,
   MozOsxFontSmoothing: 'grayscale',
 });
 
-global.style('html[data-style="new-wave"] body', {
+global.rule('html[data-style="new-wave"] body', {
   backgroundColor: t.color.background.app,
   backgroundImage: `linear-gradient(135deg, transparent 0 72%, ${t.color.accent.subtle} 72% 78%, transparent 78%),
     radial-gradient(circle at 8% 12%, ${t.color.accent.default} 0 5px, transparent 6px)`,
   backgroundAttachment: 'fixed',
 });
 
-global.style('html[data-style="ai-glow"] body', {
+global.rule('html[data-style="ai-glow"] body', {
   backgroundColor: t.color.background.app,
   backgroundImage: `radial-gradient(circle at 12% 10%, color-mix(in oklch, #F0ABFC 34%, transparent) 0 12rem, transparent 24rem),
     radial-gradient(circle at 88% 14%, color-mix(in oklch, #67E8F9 36%, transparent) 0 11rem, transparent 25rem),
@@ -39,24 +39,24 @@ global.style('html[data-style="ai-glow"] body', {
   backgroundAttachment: 'fixed',
 });
 
-global.style('html[data-style="windows-95"] body', {
+global.rule('html[data-style="windows-95"] body', {
   backgroundColor: t.color.background.app,
   backgroundImage: 'none',
 });
 
-global.style('html[data-style="classic-system"] body', {
+global.rule('html[data-style="classic-system"] body', {
   backgroundColor: t.color.background.app,
   backgroundImage: `repeating-linear-gradient(45deg, transparent 0 2px, ${t.color.background.subtle} 2px 4px)`,
   backgroundAttachment: 'fixed',
 });
 
-global.style(
+global.apply(
   selection({
     backgroundColor: t.color.accent.subtle,
     color: t.color.text.primary,
   }),
 );
 
-global.style('html:root', {
+global.rule('html:root', {
   scrollBehavior: 'smooth',
 });

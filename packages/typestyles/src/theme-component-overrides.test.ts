@@ -8,8 +8,8 @@ describe('createTheme({ components })', () => {
   });
 
   it('applies scoped overrides for registered namespaces', () => {
-    const { styles, tokens } = createTypeStyles({ scopeId: 'tc' });
-    styles.component('button', {
+    const { recipe, tokens } = createTypeStyles({ scopeId: 'tc' });
+    recipe('button', {
       base: { color: 'black' },
       variants: { size: { sm: { fontSize: '12px' }, lg: { fontSize: '16px' } } },
     });
@@ -31,8 +31,8 @@ describe('createTheme({ components })', () => {
   });
 
   it('accepts components on the theme input object', () => {
-    const { styles, tokens } = createTypeStyles({ scopeId: 'tc3' });
-    styles.component('button', { base: { color: 'black' } });
+    const { recipe, tokens } = createTypeStyles({ scopeId: 'tc3' });
+    recipe('button', { base: { color: 'black' } });
 
     tokens.createTheme({
       name: 'brand',

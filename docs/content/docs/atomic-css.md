@@ -5,9 +5,9 @@ description: Type-safe atomic CSS utilities with @typestyles/props
 
 The `@typestyles/props` package provides a type-safe way to generate atomic CSS utility classes, similar to Tailwind CSS but with full TypeScript inference and zero runtime overhead.
 
-Runtime APIs such as `styles.class`, `styles.component`, and `styles.hashClass` use a separate naming system; to change those class strings (semantic vs hashed), see [Class naming](/docs/class-naming).
+Runtime APIs such as `style`, `recipe`, and `hash` use a separate naming system; to change those class strings (semantic vs hashed), see [Class naming](/docs/class-naming).
 
-**Compare approaches:** this package (`defineProperties` + `createProps`) powers layout utilities on the docs site ([`docs/src/atoms.ts`](https://github.com/type-styles/typestyles/blob/main/docs/src/atoms.ts)). For hand-written `styles.class` utilities (Tailwind-style), see [examples/typewind](https://github.com/type-styles/typestyles/blob/main/examples/typewind/README.md).
+**Compare approaches:** this package (`defineProperties` + `createProps`) powers layout utilities on the docs site ([`docs/src/atoms.ts`](https://github.com/type-styles/typestyles/blob/main/docs/src/atoms.ts)). For hand-written `style` utilities (Tailwind-style), see [examples/typewind](https://github.com/type-styles/typestyles/blob/main/examples/typewind/README.md).
 
 ## Installation
 
@@ -265,7 +265,9 @@ const css = getRegisteredCss();
 Combine atomic utilities with component-specific styles using `styles.compose()`:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { createProps, defineProperties } from '@typestyles/props';
 
 const atoms = createProps(
@@ -279,7 +281,7 @@ const atoms = createProps(
   }),
 );
 
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     borderRadius: '8px',
     border: '1px solid #e5e5e5',

@@ -74,9 +74,11 @@ When `extract.modules` resolves (or a [convention entry](https://typestyles.dev/
 ```astro
 ---
 // src/components/Card.astro
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const card = styles.component('card', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: { padding: '16px', borderRadius: '8px' },
 });
 ---

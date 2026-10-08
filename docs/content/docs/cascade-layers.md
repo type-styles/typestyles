@@ -5,7 +5,7 @@ description: Opt-in CSS cascade layers for predictable specificity against globa
 
 By default, TypeStyles emits **flat** rules (no `@layer`), matching legacy behavior and keeping the API surface small.
 
-When you opt in with a **`layers`** tuple on `createStyles`, `createTokens`, or the unified **`createTypeStyles`** factory, TypeStyles:
+When you opt in with a **`layers`** config on `createStyles`, `createTokens`, or the unified **`createTypeStyles`** factory, TypeStyles:
 
 1. Registers a single **`@layer a, b, c;`** preamble (once per distinct stack) so order is deterministic.
 2. Wraps each emitted rule block in **`@layer <name> { … }`** for the `layer` you pass on each style call (runtime CSSOM still inserts one block at a time).
@@ -14,21 +14,24 @@ When you opt in with a **`layers`** tuple on `createStyles`, `createTokens`, or 
 
 ## `createTypeStyles` (recommended for design systems)
 
-One config object gives you matching **`scopeId`**, **`layers`**, and **`tokenLayer`** for both class CSS and token/theme CSS:
+One config object gives you matching **`scopeId`**, **`layers`**, and default layers for both class CSS and token/theme CSS:
 
 ```ts
 import { createTypeStyles } from 'typestyles';
 
-const { styles, tokens } = createTypeStyles({
+const { style, recipe, tokens } = createTypeStyles({
   scopeId: 'ds',
   mode: 'semantic',
-  layers: ['reset', 'tokens', 'components', 'utilities'] as const,
-  tokenLayer: 'tokens',
+  layers: {
+    order: ['reset', 'tokens', 'components', 'utilities'] as const,
+    token: 'tokens',
+    style: 'components',
+  },
 });
 
-const reset = styles.class('reset', { margin: 0, padding: 0 }, { layer: 'reset' });
+const reset = style('reset', { margin: 0, padding: 0 }, { layer: 'reset' });
 
-const button = styles.component(
+const button = recipe(
   'button',
   {
     base: { padding: '8px 16px' },
@@ -67,14 +70,15 @@ Conceptual output:
 
 ## `createStyles` only
 
-Pass **`layers`** as a `const` tuple (or as `{ order, prependFrameworkLayers? }`). Every **`styles.class`**, **`styles.hashClass`**, and **`styles.component`** call must include **`{ layer: '…' }`**. Layer names must appear in the tuple (not in `prependFrameworkLayers`, which only affects ordering against external frameworks).
+Pass **`layers`** as a `const` tuple (or as `{ order, prependFrameworkLayers? }`) plus **`styleLayer`** for the default. Layer names must appear in the stack (not in `prependFrameworkLayers`, which only affects ordering against external frameworks). Override per call with **`{ layer: '…' }`**.
 
 ```ts
 const styles = createStyles({
   layers: { order: ['components'], prependFrameworkLayers: ['bootstrap'] },
+  styleLayer: 'components',
 });
 
-styles.class('card', { padding: '1rem' }, { layer: 'components' });
+styles.class('card', { padding: '1rem' });
 ```
 
 ## `createTokens` with layers

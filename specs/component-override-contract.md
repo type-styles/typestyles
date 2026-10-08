@@ -59,19 +59,19 @@ For a property the author didn't anticipate exposing as a var. Two cases:
   No new API. Document it as already-supported so nobody reaches for new
   tooling they don't need.
 - **Nested/conflicting:** needs `@scope` for proximity-correctness, per the
-  problem statement above. This is what `styles.scope()` (below) is for.
+  problem statement above. This is what `scope()` (below) is for.
 
 ---
 
 ## Part A — the public contract
 
-**Promise:** once a package ships a `styles.component()` call in `semantic`
+**Promise:** once a package ships a `recipe()` call in `semantic`
 naming mode, its emitted class names (`{namespace}-{variant-segment}`
 combinations) are public API. A consumer is entitled to target them directly
-with plain CSS, `styles.scope()`, or any other CSS tooling. Renaming a
+with plain CSS, `scope()`, or any other CSS tooling. Renaming a
 namespace or a variant key is a breaking change under that package's normal
 versioning rules — nothing about the type system catches this today (a
-renamed _string literal_ passed to `styles.component('button', …)` produces no
+renamed _string literal_ passed to `recipe('button', …)` produces no
 compiler error anywhere, unlike a renamed export), so it has to be promised and
 defended deliberately, not left implicit.
 
@@ -85,7 +85,7 @@ decision guide; component-authoring docs: the var-exposure guideline).
 
 ---
 
-## Part B — `styles.scope()`
+## Part B — `scope()`
 
 ```ts
 function scope(
@@ -96,7 +96,7 @@ function scope(
 ```
 
 - `overrides` is compiled via the **existing** `serializeStyle('.' + className,
-overrides)` (`css.ts`) — the same serializer `styles.class`/`styles.component`
+overrides)` (`css.ts`) — the same serializer `style`/`recipe`
   already use. It already recurses through pseudo-selectors and nested at-rules,
   so `:hover`, `@media`, etc. inside `overrides` work with no new logic.
 - Each resulting rule is wrapped: ``@scope (${opts.root})${opts.to ? ` to
@@ -112,7 +112,7 @@ overrides)` (`css.ts`) — the same serializer `styles.class`/`styles.component`
   is, with no bundler-plugin changes required.
 - **Not** folded into the `tokens.when` / `createTheme` condition engine as a
   new condition type. That engine's declaration payload is a `ThemeOverrides`
-  map (`--namespace-key: value` pairs); `styles.scope()`'s payload is arbitrary
+  map (`--namespace-key: value` pairs); `scope()`'s payload is arbitrary
   `CSSProperties`. Conflating the two shapes to save one file would complicate
   `createTheme` for a narrower, comparatively rare use case. Keeping this as a
   separate function keeps the change's blast radius to one new file.
@@ -121,7 +121,7 @@ overrides)` (`css.ts`) — the same serializer `styles.class`/`styles.component`
 Document this plainly as an opt-in escalation for the nested-conflict case —
 consumers targeting older browsers stay on the Tier 2 non-nested pattern
 (plain selector + layer) and accept the documented "last-registered wins"
-caveat if they do have nested conflicting themes. `styles.scope()` is offered,
+caveat if they do have nested conflicting themes. `scope()` is offered,
 not mandatory.
 
 ---
@@ -129,8 +129,8 @@ not mandatory.
 ## Part C — breaking-rename detection
 
 Restated in TypeStyles' own terms: a semantic-mode class name is a direct,
-mechanical function of the string literal passed to `styles.component()` /
-`styles.class()`. Changing that literal is invisible to TypeScript — unlike a
+mechanical function of the string literal passed to `recipe()` /
+`style()`. Changing that literal is invisible to TypeScript — unlike a
 renamed export, it produces no compiler error at any call site — so it's
 exactly the class of "silently-changed output with no type error" problem
 `@typestyles/eslint-plugin` already exists to catch (duplicate-namespace
@@ -140,7 +140,7 @@ detection, scopeId guardrails).
 
 - A checked-in snapshot file (e.g. `.typestyles-public-classnames.json`) lists
   every namespace + variant-key combination a package has shipped, generated
-  by statically walking `styles.component`/`styles.class` call sites (reusing
+  by statically walking `recipe`/`style` call sites (reusing
   the AST-scanning the existing eslint-plugin rules already perform to find
   these calls) and computing the class name string the same way
   `class-naming.ts` does.
@@ -162,7 +162,7 @@ detection, scopeId guardrails).
 
 ## Testing
 
-- **`scope.test.ts`**: `styles.scope()` produces the expected `@scope (...) to
+- **`scope.test.ts`**: `scope()` produces the expected `@scope (...) to
 (...) { .class { ... } }` string for a plain properties object and for one
   containing a pseudo-selector (confirms `serializeStyle`'s existing recursion
   is reused correctly, not reimplemented); the `layer` option nests `@layer`
@@ -176,7 +176,7 @@ detection, scopeId guardrails).
 
 ## Implementation Tasks
 
-### Task 1 — `styles.scope()` in core
+### Task 1 — `scope()` in core
 
 Implement per Part B, reusing `serializeStyle`, `applyLayerToRules`,
 `insertRules`.
@@ -187,7 +187,7 @@ layer-wrapping logic was written (both reused from existing files).
 ### Task 2 — Two-tier override docs
 
 Add the Tier 1 / Tier 2 decision guide to the theming docs page: "expose a var
-if a component author anticipated the need; use `styles.scope()` only for
+if a component author anticipated the need; use `scope()` only for
 nested-theme conflicts; use a plain selector + layer for everything else."
 Include the browser-support callout for `@scope`.
 
@@ -207,7 +207,7 @@ Task 2's guide.
 Build `typestyles snapshot --write` (or fold into an existing CLI
 entry point if one exists by the time this is implemented) per Part C.
 
-**Done when:** running it against a real `styles.component()`-using package
+**Done when:** running it against a real `recipe()`-using package
 (e.g. var-ui's `@var-ui/core`) produces a snapshot file listing its current
 namespace/variant class names.
 
@@ -244,7 +244,7 @@ PR reference.
   snapshot). Acknowledging a rename is a deliberate step via the Task 4
   script, not an automatic one.
 - **A bulk config-object API** for authoring many component overrides in one
-  call. `styles.scope()` is a single-call primitive by design; if bulk
+  call. `scope()` is a single-call primitive by design; if bulk
   authoring ergonomics become a real pain point later, that's a follow-up
   spec, not part of this one.
 

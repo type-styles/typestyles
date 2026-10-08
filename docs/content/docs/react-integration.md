@@ -13,10 +13,12 @@ TypeStyles works seamlessly with React. This guide shows common patterns for int
 
 ```tsx
 // components/Button/Button.tsx
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 import { color, space } from '../../tokens';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -121,11 +123,13 @@ function App() {
 
 ```tsx
 // components/Box/Box.tsx
-import { cx, styles } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { space } from '../../tokens';
 import type { ElementType, ComponentPropsWithoutRef } from 'react';
 
-const box = styles.component('box', {
+const box = recipe('box', {
   base: {},
   flex: { display: 'flex' },
   block: { display: 'block' },
@@ -263,11 +267,13 @@ export function Box<T extends ElementType = 'div'>({
 
 ```tsx
 // components/Card/Card.tsx
-import { cx, styles } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { color, space } from '../../tokens';
 import { createContext, useContext, type ReactNode } from 'react';
 
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     borderRadius: '8px',
     backgroundColor: color.surface,
@@ -288,20 +294,20 @@ const card = styles.component('card', {
 
 const { elevated, interactive } = card;
 
-const cardHeader = styles.component('card-header', {
+const cardHeader = recipe('card-header', {
   base: {
     padding: `${space.md} ${space.lg}`,
     borderBottom: `1px solid ${color.border}`,
   },
 });
 
-const cardBody = styles.component('card-body', {
+const cardBody = recipe('card-body', {
   base: {
     padding: space.lg,
   },
 });
 
-const cardFooter = styles.component('card-footer', {
+const cardFooter = recipe('card-footer', {
   base: {
     padding: `${space.md} ${space.lg}`,
     borderTop: `1px solid ${color.border}`,
@@ -383,11 +389,13 @@ function Example() {
 
 ```tsx
 // components/Input/Input.tsx
-import { cx, styles } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { color, space } from '../../tokens';
 import { forwardRef } from 'react';
 
-const inputWrapper = styles.component('input-wrapper', {
+const inputWrapper = recipe('input-wrapper', {
   base: {
     display: 'flex',
     flexDirection: 'column',
@@ -395,7 +403,7 @@ const inputWrapper = styles.component('input-wrapper', {
   },
 });
 
-const inputLabel = styles.component('input-label', {
+const inputLabel = recipe('input-label', {
   base: {
     fontSize: '14px',
     fontWeight: 500,
@@ -403,7 +411,7 @@ const inputLabel = styles.component('input-label', {
   },
 });
 
-const inputHelper = styles.component('input-helper', {
+const inputHelper = recipe('input-helper', {
   base: {
     fontSize: '12px',
     color: color.textMuted,
@@ -418,7 +426,7 @@ const inputHelper = styles.component('input-helper', {
   defaultVariants: { tone: 'neutral' },
 });
 
-const input = styles.component('input', {
+const input = recipe('input', {
   base: {
     width: '100%',
     padding: `${space.sm} ${space.md}`,
@@ -498,11 +506,13 @@ Input.displayName = 'Input';
 
 ```tsx
 // components/Grid/Grid.tsx
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { space } from '../../tokens';
 import type { ReactNode } from 'react';
 
-const grid = styles.component('grid', {
+const grid = recipe('grid', {
   base: { display: 'grid' },
   variants: {
     columns: {

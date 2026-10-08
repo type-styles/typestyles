@@ -75,10 +75,10 @@ This means you've created two different styles with the same namespace:
 
 ```ts
 // File A
-const button = styles.component('button', { ... });
+const button = recipe('button', { ... });
 
 // File B
-const button = styles.component('button', { ... }); // Same namespace!
+const button = recipe('button', { ... }); // Same namespace!
 ```
 
 ### How to fix
@@ -87,13 +87,13 @@ Use unique, descriptive namespaces:
 
 ```ts
 // ✅ Good - descriptive names
-const iconButton = styles.component('icon-button', { ... });
-const textButton = styles.component('text-button', { ... });
-const submitButton = styles.component('submit-button', { ... });
+const iconButton = recipe('icon-button', { ... });
+const textButton = recipe('text-button', { ... });
+const submitButton = recipe('submit-button', { ... });
 
 // ❌ Bad - generic names that collide
-const button = styles.component('button', { ... });
-const button2 = styles.component('button', { ... }); // Collision!
+const button = recipe('button', { ... });
+const button2 = recipe('button', { ... }); // Collision!
 ```
 
 ## TypeScript errors
@@ -128,7 +128,7 @@ No overload matches this call.
 You're passing an invalid variant:
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { ... },
   primary: { ... },
 });
@@ -156,11 +156,15 @@ Cannot find module 'typestyles' or its corresponding type declarations.
 
    ```ts
    // ✅ Correct
-   import { styles } from 'typestyles';
-
-   // ❌ Incorrect
-   import { styles } from './typestyles';
+   import { createTypeStyles } from 'typestyles';
    ```
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+// ❌ Incorrect
+import { recipe } from './typestyles';
+
+````
 
 3. Restart TypeScript server in your editor
 
@@ -184,7 +188,7 @@ const html = renderToString(<App />);
 // ✅ Correct
 const { html, css } = collectStyles(() => renderToString(<App />));
 // Include css in your HTML response
-```
+````
 
 For Next.js, follow the [SSR guide](/docs/ssr) and use `@typestyles/next` (`getRegisteredCss`, `TypestylesStylesheet`, or `@typestyles/next/server` helpers) so the document matches what App Router streams.
 
@@ -294,7 +298,9 @@ TypeError: Cannot read property 'create' of undefined
 
 ```ts
 // ✅ Correct
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 
 // ❌ Incorrect
 import styles from 'typestyles'; // Wrong! Use named import
@@ -347,7 +353,7 @@ button {
 1. Use more specific selectors:
 
    ```ts
-   const button = styles.component('button', {
+   const button = recipe('button', {
      base: {
        color: 'blue',
        // Increase specificity
@@ -372,7 +378,7 @@ button {
 Styles from parent components affecting children:
 
 ```ts
-const parent = styles.component('parent', {
+const parent = recipe('parent', {
   base: {
     '& button': { color: 'red' }, // Affects ALL buttons inside
   },
@@ -382,13 +388,13 @@ const parent = styles.component('parent', {
 **Fix:** Be more specific or avoid nesting:
 
 ```ts
-const parent = styles.component('parent', {
+const parent = recipe('parent', {
   base: {
     // Don't use & button, style specific class instead
   },
 });
 
-const childButton = styles.component('child-button', {
+const childButton = recipe('child-button', {
   base: {
     color: 'red',
   },
@@ -398,7 +404,7 @@ const childButton = styles.component('child-button', {
 ### Media queries not working
 
 ```ts
-const responsive = styles.component('responsive', {
+const responsive = recipe('responsive', {
   base: {
     '@media (max-width: 768px)': {
       display: 'none',
@@ -499,10 +505,12 @@ const darkTheme = tokens.createTheme({
 
 ```ts
 // ✅ This file will be transformed
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 
 // ❌ This file won't be transformed
-import { styles } from '../path/to/typestyles';
+import { recipe } from '../path/to/typestyles';
 ```
 
 ## Performance issues

@@ -111,16 +111,19 @@ export function createViewTimelineRef(
 ```
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
 const progress = createScrollTimelineRef('article-progress');
 
 // Declared on the scroller
-styles.class('article', {
+style('article', {
   scrollTimelineName: progress,
   scrollTimelineAxis: 'block',
 });
 
 // Consumed on any element (named timelines aren't limited to descendants)
-styles.class('progress-bar', {
+style('progress-bar', {
   animationName: fillBar,
   animationTimeline: progress,
   animationRange: animationRange('0%', '100%'),
@@ -131,9 +134,12 @@ Named **view** timeline (symmetric to scroll — declare on the observed element
 on the animated element or the same element):
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
 const reveal = createViewTimelineRef('hero-reveal');
 
-styles.class('hero', {
+style('hero', {
   viewTimelineName: reveal,
   viewTimelineAxis: 'block',
   viewTimelineInset: '10%',
@@ -198,11 +204,13 @@ as `calc`/`clamp`.
 ### Reveal-on-scroll (`view()` + view ranges)
 
 ```ts
-import { styles, keyframes, view, animationRange } from 'typestyles';
+import { createTypeStyles, keyframes, view, animationRange } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
 
 const fadeIn = keyframes.create('fade-in', { from: { opacity: 0 }, to: { opacity: 1 } });
 
-styles.class('hero', {
+style('hero', {
   animationName: fadeIn,
   animationTimeline: view({ axis: 'block' }),
   animationRange: animationRange('entry 25%', 'entry 75%'),
@@ -212,11 +220,13 @@ styles.class('hero', {
 ### Scroll progress (`scroll()` + progress ranges)
 
 ```ts
-import { styles, keyframes, scroll, animationRange } from 'typestyles';
+import { createTypeStyles, keyframes, scroll, animationRange } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
 
 const fillBar = keyframes.create('fill-bar', { from: { width: '0%' }, to: { width: '100%' } });
 
-styles.class('progress-bar', {
+style('progress-bar', {
   animationName: fillBar,
   animationTimeline: scroll({ axis: 'block' }),
   animationRange: animationRange('0%', '100%'),
@@ -246,7 +256,11 @@ function entryTransition(config) {
 ```
 
 ```ts
-styles.class('popover', {
+import { createTypeStyles } from 'typestyles';
+
+const { style } = createTypeStyles({ scopeId: 'app' });
+
+style('popover', {
   ...entryTransition({
     from: { opacity: 0, scale: 0.95, display: 'none' },
     to: { opacity: 1, scale: 1, display: 'block' },
@@ -278,7 +292,7 @@ instant in Safari even with this helper. Note it in docs; not a TypeStyles bug.
 | `packages/typestyles/src/starting-style.ts`         | New — `entryTransition` only (~10 lines today; separate from scroll-animations so `@starting-style` helpers can grow without bloating the timeline module) |
 | `packages/typestyles/src/starting-style.test.ts`    | New                                                                                                                                                        |
 | `packages/typestyles/src/css-math.ts`               | No change — scroll/view are separate file since they're timeline-shaped, not calc-shaped; cross-reference in docs only                                     |
-| `packages/typestyles/src/styles.ts`                 | `styles.scrollTimelineRef(label)` / `styles.viewTimelineRef(label)`, mirroring `containerRef`/`anchorRef`                                                  |
+| `packages/typestyles/src/styles.ts`                 | instance `scrollTimelineRef(label)` / `viewTimelineRef(label)`, mirroring `containerRef`/`anchorRef`                                                       |
 | `packages/typestyles/src/types.ts`                  | Verify timeline/range properties on base `CSSProperties`; add if missing. Narrow `animationTimeline` to `AnimationTimelineValue`                           |
 | `packages/typestyles/src/index.ts`                  | Re-export all of the above                                                                                                                                 |
 

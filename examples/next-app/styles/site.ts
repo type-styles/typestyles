@@ -9,39 +9,32 @@ import { createTypeStyles } from 'typestyles';
  * so app shell classes participate in `@layer` ordering with the library. Globals
  * for the document root sit in the `tokens` layer (see `globalLayer`).
  */
-const { styles, global } = createTypeStyles({
+const { style, global } = createTypeStyles({
   scopeId: 'example-app',
   mode: 'semantic',
-  layers: ['tokens', 'components', 'utilities'] as const,
-  tokenLayer: 'tokens',
-  globalLayer: 'tokens',
+  layers: {
+    order: ['tokens', 'components', 'utilities'],
+    token: 'tokens',
+    style: 'components',
+    global: 'tokens',
+  },
 });
 
-const componentLayer = { layer: 'components' } as const;
-
-global.style('html', {
+global.rule('html', {
   minHeight: '100%',
   backgroundColor: t.color.background.app,
   color: t.color.text.primary,
 });
 
 export const site = {
-  page: styles.class(
-    'app-site-page',
-    {
-      maxWidth: '920px',
-      margin: '0 auto',
-      padding: '32px 20px',
-    },
-    componentLayer,
-  ),
-  header: styles.class(
-    'app-site-header',
-    {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '10px',
-    },
-    componentLayer,
-  ),
+  page: style('app-site-page', {
+    maxWidth: '920px',
+    margin: '0 auto',
+    padding: '32px 20px',
+  }),
+  header: style('app-site-header', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  }),
 } as const;

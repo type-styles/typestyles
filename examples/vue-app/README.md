@@ -39,7 +39,7 @@ import { button } from './styles';
 </template>
 ```
 
-- `styles.component` with boolean variants in `src/styles.ts`
+- `recipe` with boolean variants in `src/styles.ts`
 - No Vue-specific adapter — typestyles returns class name strings
 - Same dev/prod split as the React Vite example (runtime + HMR in dev, extracted CSS on build)
 

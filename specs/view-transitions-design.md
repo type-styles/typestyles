@@ -37,7 +37,7 @@ defaults in older engines — progressive enhancement, not a hard dependency.
 
 - Typed, scoped `view-transition-name` references, consistent with `createContainerRef()`.
 - Typed selector builders for the four transition pseudo-elements, usable with
-  `global.style()`.
+  `global.rule()`.
 - `view-transition-class` support for styling a group of elements' transitions with
   one rule.
 - Works in the zero-runtime extraction path — everything here is static CSS.
@@ -81,7 +81,7 @@ export function createViewTransitionRef(
 ```
 
 Identical implementation to `createContainerRef` (`sanitizeClassSegment`, throw on
-empty label). `styles.viewTransitionRef(label)` is the instance-scoped shorthand.
+empty label). `viewTransitionRef(label)` is the instance-scoped shorthand.
 
 ```ts
 createViewTransitionRef('card'); // "ts-card"
@@ -100,7 +100,7 @@ export function createViewTransitionClassRef(
 ): ViewTransitionClassRef;
 ```
 
-`styles.viewTransitionClassRef(label)` is the instance-scoped shorthand (mirrors
+`viewTransitionClassRef(label)` is the instance-scoped shorthand (mirrors
 `viewTransitionRef`).
 
 ### Property value typing
@@ -116,7 +116,7 @@ type-check without `as any`. CSS `none` is allowed on both properties.
 ### `viewTransition.*` pseudo-element selectors
 
 Transition pseudo-elements aren't descendants of any authored selector, so these
-return **bare** selector strings for use with `global.style()`, not `&`-relative
+return **bare** selector strings for use with `global.rule()`, not `&`-relative
 nested keys.
 
 ```ts
@@ -139,7 +139,7 @@ user-agent page-level transition group (elements not assigned their own
 
 **v1 scope:** only `groupByClass` is provided for class-based targeting. Style
 `::view-transition-old(.class)` / `::view-transition-new(.class)` via raw selector
-strings passed to `global.style()` until demand justifies `oldByClass` / `newByClass`
+strings passed to `global.rule()` until demand justifies `oldByClass` / `newByClass`
 helpers.
 
 `'*'` and `'root'` are accepted directly (not just via a cast) because global and
@@ -149,41 +149,46 @@ page-level defaults are common starting points before naming individual elements
 
 ```ts
 import {
-  styles,
-  global,
+  createTypeStyles,
   keyframes,
   createViewTransitionRef,
   createViewTransitionClassRef,
   viewTransition,
 } from 'typestyles';
 
+const { style, global } = createTypeStyles({ scopeId: 'app' });
+
 const cardTransition = createViewTransitionRef('card');
 const cardGroup = createViewTransitionClassRef('shared-card');
 
-styles.class('card', {
+style('card', {
   viewTransitionName: cardTransition,
   viewTransitionClass: cardGroup,
 });
 
-global.style(viewTransition.old(cardTransition), { animationDuration: '200ms' });
-global.style(viewTransition.new(cardTransition), { animationTimingFunction: 'ease-out' });
-global.style(viewTransition.group(cardTransition), { animationDuration: '400ms' });
-global.style(viewTransition.groupByClass(cardGroup), { animationDuration: '400ms' });
+global.rule(viewTransition.old(cardTransition), { animationDuration: '200ms' });
+global.rule(viewTransition.new(cardTransition), { animationTimingFunction: 'ease-out' });
+global.rule(viewTransition.group(cardTransition), { animationDuration: '400ms' });
+global.rule(viewTransition.groupByClass(cardGroup), { animationDuration: '400ms' });
 
 // Default crossfade for everything, before naming individual elements
-global.style(viewTransition.old('*'), { animationDuration: '150ms' });
-global.style(viewTransition.new('*'), { animationDuration: '150ms' });
+global.rule(viewTransition.old('*'), { animationDuration: '150ms' });
+global.rule(viewTransition.new('*'), { animationDuration: '150ms' });
 
 // Page-level (root) transition group
-global.style(viewTransition.group('root'), { animationDuration: '300ms' });
+global.rule(viewTransition.group('root'), { animationDuration: '300ms' });
 ```
 
 Custom morph animation via `keyframes.create()` on the transition pseudo-elements:
 
 ```ts
+import { createTypeStyles, keyframes, createViewTransitionRef, viewTransition } from 'typestyles';
+
+const { global } = createTypeStyles({ scopeId: 'app' });
+const cardTransition = createViewTransitionRef('card');
 const slideOut = keyframes.create('vt-slide-out', { to: { transform: 'translateX(-100%)' } });
 
-global.style(viewTransition.old(cardTransition), {
+global.rule(viewTransition.old(cardTransition), {
   animationName: slideOut,
   animationDuration: '300ms',
   animationFillMode: 'both',
@@ -223,12 +228,12 @@ low-risk addition, not because it needs its own subsystem.
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `packages/typestyles/src/view-transitions.ts`      | New — refs, `viewTransition.*`, `enableViewTransitions`                                                     |
 | `packages/typestyles/src/view-transitions.test.ts` | New                                                                                                         |
-| `packages/typestyles/src/styles.ts`                | `styles.viewTransitionRef(label)` / `styles.viewTransitionClassRef(label)` instance methods                 |
+| `packages/typestyles/src/styles.ts`                | `viewTransitionRef(label)` / `viewTransitionClassRef(label)` instance methods                               |
 | `packages/typestyles/src/types.ts`                 | Verify properties on base `CSSProperties`; narrow to `ViewTransitionNameValue` / `ViewTransitionClassValue` |
 | `packages/typestyles/src/index.ts`                 | Re-export refs, `viewTransition`, `enableViewTransitions`                                                   |
 
 No changes needed to `serialize-style.ts` or `global.ts` — `viewTransition.*` returns
-plain selector strings consumed by the existing `global.style(selector, properties)`
+plain selector strings consumed by the existing `global.rule(selector, properties)`
 signature.
 
 ## Documentation
@@ -248,7 +253,7 @@ under `prefers-reduced-motion: reduce` — no new API). Cross-link from
 | Area                                                       | Cases                                                                  |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `createViewTransitionRef` / `createViewTransitionClassRef` | scoping, sanitization, empty-label throw                               |
-| `styles.viewTransitionRef` / `viewTransitionClassRef`      | scoping matches `containerRef`                                         |
+| `viewTransitionRef` / `viewTransitionClassRef`             | scoping matches `containerRef`                                         |
 | `viewTransition.*`                                         | all four pseudo-elements + `groupByClass` (`.${ref}`), `'*'`, `'root'` |
 | `viewTransitionName` / `viewTransitionClass`               | `'none'` serializes correctly                                          |
 | `enableViewTransitions`                                    | dedup on repeated call; emits `navigation: auto` only                  |

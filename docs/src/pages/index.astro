@@ -9,13 +9,13 @@ const docsBySlug = Object.fromEntries(docs.map((doc) => [doc.slug, { slug: doc.s
 
 const heroSample = `import { createTypeStyles } from 'typestyles';
 
-const { styles, tokens } = createTypeStyles({
+const { style, recipe, tokens } = createTypeStyles({
   scopeId: 'app',
 });
 
 const color = tokens.create('color', { accent: '#2563eb' });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     border: '1px solid #000',
     transition: 'transform 120ms ease',
@@ -34,7 +34,7 @@ const tokenSample = `const spacing = tokens.create('spacing', {
   lg: '24px',
 });
 
-export const card = styles.component('card', {
+export const card = recipe('card', {
   base: {
     padding: spacing.md,
     gap: spacing.lg,

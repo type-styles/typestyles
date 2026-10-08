@@ -618,9 +618,7 @@ describe('styles.override() + __tsMeta', () => {
       );
 
       styles.override({} as typeof button, { base: { color: 'red' } });
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('requires a styles.component() return'),
-      );
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('requires a recipe() return'));
 
       const hashed = createStyles({ mode: 'hashed' });
       const hashedBtn = hashed.component('ov-hashed-btn', { base: { color: 'black' } });

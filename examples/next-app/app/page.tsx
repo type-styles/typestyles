@@ -18,7 +18,7 @@ import {
   TextField,
 } from '@examples/react-design-system';
 import { site } from '@/styles/site';
-import { tokens } from 'typestyles';
+import { tokens } from '@examples/design-system';
 
 const sunsetTheme = tokens.createTheme({
   name: 'ds-sunset',

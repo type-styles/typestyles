@@ -36,7 +36,8 @@ describe('runTypestylesBuild (tree-shaking of imported barrel exports)', () => {
     await writeFile(
       libFile,
       `
-import { styles } from 'typestyles';
+import { createStyles } from 'typestyles';
+const styles = createStyles();
 
 export const FixtureButton = styles.component('fixture-tree-shake-button', {
   base: { padding: '8px' },
@@ -48,7 +49,7 @@ export const FixtureButton = styles.component('fixture-tree-shake-button', {
     // Simulates a consumer's extraction-entry barrel import: it imports the
     // library only via a namespace, and never destructures/reads a named
     // export off it. Under esbuild's default tree shaking, this makes the
-    // library's internal `styles.component(...)` call look like dead code.
+    // library's internal `recipe(...)` call look like dead code.
     // The unrelated global assignment below has nothing to do with `lib` —
     // it just keeps this entry file itself from being pruned to nothing, the
     // same way a real consumer entry has other, unrelated content.
@@ -102,7 +103,8 @@ export { lib };
     await writeFile(
       libFile,
       `
-import { styles } from 'typestyles';
+import { createStyles } from 'typestyles';
+const styles = createStyles();
 
 export const FixtureBareButton = styles.component('fixture-tree-shake-bare-button', {
   base: { padding: '8px' },

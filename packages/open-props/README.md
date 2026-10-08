@@ -27,14 +27,18 @@ No additional CSS file is required — importing a token module registers the cu
 ## Quick start
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 import { sizes, radius, color, font } from '@typestyles/open-props';
 
-const card = styles.component('card', {
-  padding: sizes['4'],
-  borderRadius: radius['3'],
-  backgroundColor: color['gray-2'],
-  fontFamily: font['sans'],
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
+  base: {
+    padding: sizes['4'],
+    borderRadius: radius['3'],
+    backgroundColor: color['gray-2'],
+    fontFamily: font['sans'],
+  },
 });
 ```
 
@@ -96,17 +100,21 @@ spacing['4']; // var(--size-4)
 ## Mix with custom tokens
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 import { color, sizes } from '@typestyles/open-props';
+
+const { recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 const brand = tokens.create('brand', {
   primary: '#ff6b6b',
 });
 
-const hero = styles.component('hero', {
-  padding: sizes['6'],
-  backgroundColor: brand.primary,
-  color: color['gray-0'],
+const hero = recipe('hero', {
+  base: {
+    padding: sizes['6'],
+    backgroundColor: brand.primary,
+    color: color['gray-0'],
+  },
 });
 ```
 
@@ -115,8 +123,10 @@ const hero = styles.component('hero', {
 Open Props tokens are CSS custom properties — override them like any typestyles token:
 
 ```tsx
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 import { color } from '@typestyles/open-props';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 const dark = tokens.createTheme('dark', {
   base: {

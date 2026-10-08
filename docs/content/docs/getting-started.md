@@ -57,7 +57,7 @@ That's it. In dev you get runtime injection + HMR. In production, `typestyles.cs
 
 ## Your first styles
 
-Use [`createTypeStyles`](/docs/api-reference#createtypestyles-options) once so `styles` and `tokens` share one **`scopeId`** (namespaced CSS variables and predictable class names). Put the module in a file you import from your UI — the live example below includes the full source and a `className` usage snippet.
+Call [`createTypeStyles`](/docs/api-reference#createtypestyles-options) once and destructure **`style`**, **`recipe`**, and **`tokens`** so they share one **`scopeId`** (namespaced CSS variables and predictable class names). Put the module in a file you import from your UI — the live example below includes the full source and a `className` usage snippet.
 
 <!-- doc-live-demo id="getting-started-button" -->
 
@@ -83,14 +83,14 @@ Full index: [examples/README.md](https://github.com/type-styles/typestyles/blob/
 
 ## Next steps
 
-| Topic                                              | What you will learn                                                               |
-| -------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [Zero-runtime extraction](/docs/zero-runtime)      | Production static CSS with Vite, Next.js, Rollup, esbuild, webpack                |
-| [Styles](/docs/styles)                             | Flat vs dimensioned `styles.component`, `styles.class`, composition, mental model |
-| [Components](/docs/components)                     | Variants, compounds, multipart `slots`                                            |
-| [Tokens](/docs/tokens)                             | Namespaces, themes, `tokens.use`                                                  |
-| [Framework comparison](/docs/framework-comparison) | How TypeStyles compares to other tools                                            |
-| [Migration](/docs/migration)                       | Coming from StyleX, Panda, vanilla-extract, Stitches, Emotion                     |
-| [End-to-end theming](/docs/theming-end-to-end)     | Tokens, themes, overrides, and mounting in one walkthrough                        |
-| [Design system with tokens](/docs/design-system)   | Primitives → semantics → components                                               |
-| [Class naming](/docs/class-naming)                 | Semantic vs hashed output                                                         |
+| Topic                                              | What you will learn                                                |
+| -------------------------------------------------- | ------------------------------------------------------------------ |
+| [Zero-runtime extraction](/docs/zero-runtime)      | Production static CSS with Vite, Next.js, Rollup, esbuild, webpack |
+| [Styles](/docs/styles)                             | Flat vs dimensioned `recipe`, `style`, composition, mental model   |
+| [Components](/docs/components)                     | Variants, compounds, multipart `slots`                             |
+| [Tokens](/docs/tokens)                             | Namespaces, themes, `tokens.use`                                   |
+| [Framework comparison](/docs/framework-comparison) | How TypeStyles compares to other tools                             |
+| [Migration](/docs/migration)                       | Coming from StyleX, Panda, vanilla-extract, Stitches, Emotion      |
+| [End-to-end theming](/docs/theming-end-to-end)     | Tokens, themes, overrides, and mounting in one walkthrough         |
+| [Design system with tokens](/docs/design-system)   | Primitives → semantics → components                                |
+| [Class naming](/docs/class-naming)                 | Semantic vs hashed output                                          |

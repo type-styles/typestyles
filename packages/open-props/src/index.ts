@@ -1,6 +1,7 @@
-import { tokens, type TokenRef } from 'typestyles';
+import { createTokens, type TokenRef } from 'typestyles';
 
-export { tokens };
+/** Unscoped token API for Open Props namespaces (consumers may prefer `createTypeStyles` + their own scope). */
+export const tokens = createTokens();
 export type { TokenRef };
 
 export const sizes = tokens.create('size', {

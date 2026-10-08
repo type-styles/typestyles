@@ -40,7 +40,8 @@ describe('typestyles astro integration', () => {
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'src/typestyles-entry.ts'),
-      `import { tokens, createTheme } from 'typestyles';
+      `import { createTokens, createTheme } from 'typestyles';
+const tokens = createTokens();
 const color = tokens.create('astro-color', { primary: '#0066ff' });
 createTheme('astro-dark', { base: { 'astro-color': { primary: '#66aaff' } } });`,
     );

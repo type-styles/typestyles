@@ -32,7 +32,7 @@ mixing schema concerns (syntax, inherits, initial) with runtime values in one ob
 
 ## Non-goals
 
-- Changing `ctx.vars()` / `styles.property()` in this spec — aligned in `css-primitives-design.md`.
+- Changing `ctx.vars()` / `property()` in this spec — aligned in `css-primitives-design.md`.
 - Automatic detection of declared-but-never-created namespaces beyond ordinary CSS
   undefined-custom-property behavior.
 - Solving cascade-layer concerns beyond what `layers` / `tokenLayer` already handle.
@@ -45,6 +45,10 @@ Reserves a namespace, emits `@property` for schema leaves with `syntax`, and ret
 typed reference proxy usable before and during `create()`.
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+
 const color = tokens.declare('color', {
   background: { app: { syntax: '<color>', inherits: false } },
   accent: {
@@ -60,6 +64,11 @@ const color = tokens.declare('color', {
 Sets `:root` custom property values. Values are plain `string | number` only.
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+// assumes `color` from tokens.declare above
+
 tokens.create(
   'color',
   {
@@ -83,6 +92,10 @@ tokens.create(
 ### Simple namespace — no `declare()` required
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+
 export const spacing = tokens.create('spacing', {
   sm: '8px',
   md: '16px',
@@ -156,6 +169,10 @@ Multiple `declare()` calls on the same namespace deep-merge schemas, mirroring
 `create()`:
 
 ```ts
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
+
 const color = tokens.declare('color', {
   accent: { default: { syntax: '<color>', inherits: false } },
 });
@@ -339,7 +356,7 @@ Same rules as the current implementation:
 - `@property` registration inside `create()` for declared namespaces.
 - Var UI `cref()` workaround and hand-maintained parallel ref types.
 
-`TokenDescriptor` may remain for `ctx.vars()` and `styles.property()` until a follow-up
+`TokenDescriptor` may remain for `ctx.vars()` and `property()` until a follow-up
 spec aligns those APIs.
 
 ## Var UI migration (before → after)

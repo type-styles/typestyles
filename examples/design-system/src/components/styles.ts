@@ -1,7 +1,7 @@
-import { styles } from '../runtime';
+import { recipe } from '../runtime';
 import { designTokens as t } from '../tokens';
 
-export const layout = styles.component(
+export const layout = recipe(
   'ds-layout',
   {
     base: {
@@ -31,7 +31,7 @@ export const layout = styles.component(
   { layer: 'utilities' },
 );
 
-export const text = styles.component(
+export const text = recipe(
   'ds-text',
   {
     base: {

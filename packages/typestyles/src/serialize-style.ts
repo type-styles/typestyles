@@ -142,7 +142,7 @@ function serializeStyleExpanded(selector: string, properties: CSSProperties): CS
     if (prop === 'conditions') {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(
-          '[typestyles] "conditions" is reserved for `styles.override()` style blocks — omit it from component recipes and plain style objects.',
+          '[typestyles] "conditions" is reserved for `override()` style blocks — omit it from component recipes and plain style objects.',
         );
       }
       continue;

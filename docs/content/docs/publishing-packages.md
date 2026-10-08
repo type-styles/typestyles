@@ -5,15 +5,15 @@ description: Safe defaults and collision-proof patterns for npm-published librar
 
 If you publish a package that ships TypeStyles components, you need class-name
 isolation out of the box. Two npm packages that both call
-`styles.component('button', …)` without a `scopeId` will silently overwrite each
+`recipe('button', …)` without a `scopeId` will silently overwrite each
 other's CSS in the consuming app.
 
 This guide covers the setup that prevents that.
 
 ## The problem
 
-The default `styles` and `tokens` exports use an empty `scopeId`. In semantic
-mode (the default), `styles.component('button', …)` emits class names like
+Calling `createTypeStyles()` without a `scopeId` (or importing unscoped helpers) uses an empty scope. In semantic
+mode (the default), `recipe('button', …)` emits class names like
 `button`. If a consumer installs two packages that both define a `'button'`
 namespace, the later import wins — no error, no warning, just broken styles.
 
@@ -32,19 +32,19 @@ Use `createTypeStyles` with your package name as `scopeId` and `hashed` mode:
 // src/styles.ts
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens, global } = createTypeStyles({
+export const { style, recipe, tokens, global } = createTypeStyles({
   scopeId: '@acme/ui',
   mode: 'hashed',
 });
 ```
 
-Then import `styles` and `tokens` from this module throughout your package:
+Then import `recipe`, `style`, and `tokens` from this module throughout your package:
 
 ```ts
 // src/components/Button.styles.ts
-import { styles } from '../styles';
+import { recipe } from '../styles';
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -95,9 +95,9 @@ risk of colliding with their own or other packages' tokens.
 ## ESLint enforcement
 
 The `@typestyles/eslint-plugin` includes a `no-default-scope-in-package` rule
-that flags direct use of the default `styles.class()` and `styles.component()`
-exports — the ones without a `scopeId`. Enable it in your package's ESLint
-config:
+that flags `createTypeStyles()` / `createStyles()` calls that omit `scopeId`
+(and legacy unscoped `styles.class` / `styles.component` usage). Enable it in
+your package's ESLint config:
 
 ```js
 // eslint.config.js
@@ -122,10 +122,9 @@ export default [
 ];
 ```
 
-The rule reports on `styles.class(…)` and `styles.component(…)` — the default
-exports. Calls on custom bindings (e.g. `myStyles.class(…)` from
-`createTypeStyles`) are fine, because the factory requires you to set a
-`scopeId`.
+Recommended package setup is fine: create a scoped factory once, then call
+`style` / `recipe` / `hash` from that instance (including via re-exports from a
+`runtime.ts`). The rule watches the factory call, not every `style(…)` site.
 
 ## Checklist
 
@@ -150,7 +149,7 @@ A complete library setup:
 // src/styles.ts
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens, global } = createTypeStyles({
+export const { style, recipe, tokens, global } = createTypeStyles({
   scopeId: '@acme/ui',
   mode: 'hashed',
 });
@@ -170,10 +169,10 @@ export const color = tokens.create('color', {
 
 ```ts
 // src/components/Button.styles.ts
-import { styles } from '../styles';
+import { recipe } from '../styles';
 import { color } from '../tokens/color';
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -229,7 +228,7 @@ intentional breaking rename, bump semver and regenerate the snapshot with
 
 The rule reports **once per ESLint run** (project-level), not at individual call
 sites. Snapshot scanning is static and best-effort: string-literal namespaces only,
-direct `styles.component()` / `styles.class()` calls, and a single inferred
+direct `recipe()` / `style()` calls, and a single inferred
 `scopeId` when all `createStyles` configs match. See the
 [`@typestyles/no-removed-public-classname` README](https://github.com/type-styles/typestyles/tree/main/packages/eslint-plugin#typestylesno-removed-public-classname-opt-in)
 for full limits.

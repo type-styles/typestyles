@@ -2,14 +2,15 @@
 import { createTypeStyles } from 'typestyles';
 import { TypeStylesProvider } from '@typestyles/react';
 
-const { styles, tokens } = createTypeStyles({ scopeId: 'playground' });
+const api = createTypeStyles({ scopeId: 'playground' });
+const { recipe, tokens } = api;
 
 const color = tokens.create('color', {
   accent: '#7c3aed',
   surface: '#faf5ff',
 });
 
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     padding: '1.5rem',
     borderRadius: '12px',
@@ -21,7 +22,7 @@ const card = styles.component('card', {
 
 export default function App() {
   return (
-    <TypeStylesProvider styles={styles}>
+    <TypeStylesProvider styles={api}>
       <div style={{ padding: '2rem' }}>
         <div
           className={card()}

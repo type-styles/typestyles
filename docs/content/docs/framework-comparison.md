@@ -64,10 +64,10 @@ Each snippet is a **typed** `intent` (`primary` = filled, `ghost` = outline). Re
 ```ts
 import { createTypeStyles } from 'typestyles';
 
-const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 const color = tokens.create('color', { primary: '#2563eb', surface: '#ffffff' });
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -267,12 +267,12 @@ TypeStyles theme surfaces also carry a general condition engine—`tokens.when` 
 
 ### Component overrides: plain CSS vs. a config DSL
 
-- **TypeStyles** — [`styles.component`](/docs/components) emits **semantic, deterministic class names** (`button--intent-primary`). A consumer restyling a component writes ordinary CSS targeting that class—any property, any selector, any stylesheet—and [cascade layers](/docs/cascade-layers) keep override order predictable.
+- **TypeStyles** — [`recipe`](/docs/components) emits **semantic, deterministic class names** (`button--intent-primary`). A consumer restyling a component writes ordinary CSS targeting that class—any property, any selector, any stylesheet—and [cascade layers](/docs/cascade-layers) keep override order predictable.
 - **StyleX / Astryx** — Hashed atomic classes can't be targeted from outside the compiler, so Astryx exposes overrides through an **`@scope` + data-attribute configuration DSL**: you can override what the DSL anticipates, in the shapes it anticipates.
 
 ### Animatable typed tokens: `@property` vs. unsupported
 
-- **TypeStyles** — `tokens.create` leaves and [`styles.property`](/docs/api-reference#styles) accept `{ value, syntax, inherits }` and emit a real **`@property`** rule for that custom property. A typed token (`<color>`, `<angle>`, `<number>`, …) is interpolated by the browser directly — including inside values a `transition` on an ordinary CSS property can't reach, like a gradient's angle. See [Animating typed tokens with `@property`](/docs/theming-patterns#animating-typed-tokens-with-property) for a worked theme-switch example.
+- **TypeStyles** — `tokens.create` leaves and [`property`](/docs/api-reference#styles) accept `{ value, syntax, inherits }` and emit a real **`@property`** rule for that custom property. A typed token (`<color>`, `<angle>`, `<number>`, …) is interpolated by the browser directly — including inside values a `transition` on an ordinary CSS property can't reach, like a gradient's angle. See [Animating typed tokens with `@property`](/docs/theming-patterns#animating-typed-tokens-with-property) for a worked theme-switch example.
 - **StyleX / Astryx** — StyleX's own documented capability list marks explicit `@property` output as unsupported ("compiles but invalid CSS output"). A smoothly animating gradient angle or color token on theme switch is structurally unavailable to a compiled StyleX/Astryx theme, independent of how the rest of its theming DSL evolves.
 
 The pattern across all four: a StyleX-based system must **generate an escape hatch** for each theming capability its compiler forecloses—or simply cannot reach it. TypeStyles ships the underlying primitives—real custom properties, readable class names, cascade layers, typed `@property`—so the capability is the default, not the workaround.
@@ -304,7 +304,7 @@ Start with [Migration](/docs/migration) — jump links for the common compilers:
 - [From vanilla-extract](/docs/migration#from-vanilla-extract) — `recipe`, theme contracts
 - [From Stitches](/docs/migration#from-stitches) — variants, `$tokens`, `createTheme`
 
-Panda- and CVA-like APIs map closely to **`styles.component`**. Emotion and CSS Modules map well to **`styles.class`** plus [`cx`](/docs/compose) from `'typestyles'`.
+Panda- and CVA-like APIs map closely to **`recipe`**. Emotion and CSS Modules map well to **`style`** plus [`cx`](/docs/compose) from `'typestyles'`.
 
 ## Related docs
 

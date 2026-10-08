@@ -1,19 +1,19 @@
 /**
  * Style registration for the getting-started live demo.
  * Imported only by `@typestyles/build-runner` (see registry `modulePath`) so
- * `styles.component('button', …)` does not collide with `@examples/design-system`
+ * `recipe('button', …)` does not collide with `@examples/design-system`
  * in the Vite duplicate-namespace check.
  */
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+export const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const color = tokens.create('color', {
   primary: '#0066ff',
   surface: '#ffffff',
 });
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',

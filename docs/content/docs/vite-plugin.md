@@ -130,7 +130,7 @@ export default defineConfig({
 
 When you save a file that imports from `typestyles`, the plugin:
 
-1. **Extracts namespaces**: Parses your code to find all `styles.component()`, `tokens.create()`, `createTheme()` / `tokens.createTheme({ name })`, and `keyframes.create()` calls (see [End-to-end theming](/docs/theming-end-to-end) for the theme + override pattern)
+1. **Extracts namespaces**: Parses your code to find all `recipe()`, `tokens.create()`, `createTheme()` / `tokens.createTheme({ name })`, and `keyframes.create()` calls (see [End-to-end theming](/docs/theming-end-to-end) for the theme + override pattern)
 
 2. **Injects HMR code**: Adds Vite's `import.meta.hot` handlers to the module
 
@@ -148,17 +148,21 @@ Create a simple Vite app with typestyles:
 
 ```ts
 // src/tokens.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const color = tokens.create('color', {
   primary: '#0066ff',
 });
 
 // src/styles.ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { color } from './tokens';
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     backgroundColor: color.primary,
     padding: '8px 16px',

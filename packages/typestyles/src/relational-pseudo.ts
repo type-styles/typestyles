@@ -62,7 +62,7 @@ function joinSelectorListArguments(parts: readonly string[]): string {
  *
  * @example
  * ```ts
- * styles.class('nav', {
+ * style('nav', {
  *   base: { display: 'flex' },
  *   [has('.active')]: { borderBottom: '2px solid blue' },
  * });

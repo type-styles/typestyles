@@ -76,7 +76,7 @@ import { resolveColorModes, type ColorModeMap } from './color-modes';
  *
  * @example
  * ```ts
- * const card = styles.class('card', {
+ * const card = style('card', {
  *   padding: '1rem',
  *   borderRadius: '0.5rem',
  *   backgroundColor: 'white',
@@ -88,8 +88,8 @@ import { resolveColorModes, type ColorModeMap } from './color-modes';
  */
 function registryKeyForClass(classNaming: ClassNamingConfig, name: string): string {
   const scope = classNaming.scopeId || 'default';
-  // Distinct from `scope:component:…` so `styles.class('button')` and
-  // `styles.component('button')` do not trigger each other's HMR invalidation.
+  // Distinct from `scope:component:…` so `style('button')` and
+  // `recipe('button')` do not trigger each other's HMR invalidation.
   return `${scope}:class:${name}`;
 }
 
@@ -99,7 +99,7 @@ function registryKeyForClass(classNaming: ClassNamingConfig, name: string): stri
  *
  * In **development**, a second registration for the same scope + name clears the prior rule(s)
  * for that class (same as `typestyles/hmr` invalidation, and the same trade-off
- * `styles.component` already makes — see `claimComponentNamespace` in `component.ts`). Some
+ * `recipe` already makes — see `claimComponentNamespace` in `component.ts`). Some
  * bundlers/frameworks re-run a module before `import.meta.hot.dispose` fires — or, for
  * multi-environment SSR (the Vite Environment API, or RSC frameworks like Waku), re-run the same
  * module once per environment within a single process — so this keeps re-execution from throwing.
@@ -109,11 +109,29 @@ function claimClassNamespace(classNaming: ClassNamingConfig, name: string): void
   const regKey = registryKeyForClass(classNaming, name);
   if (process.env.NODE_ENV !== 'production' && registeredNamespaces.has(regKey)) {
     if (!classNaming.scopeId) {
-      warnUnscopedCollision(name, 'styles.class');
+      warnUnscopedCollision(name, 'style');
     }
     invalidateClassNamespaceForDev(emittedClassName(classNaming, name) ?? undefined);
   }
   registeredNamespaces.add(regKey);
+}
+
+function resolveStyleEmitLayer(
+  classNaming: ClassNamingConfig,
+  layer: string | undefined,
+  context: string,
+): string | undefined {
+  if (!classNaming.cascadeLayers) {
+    return undefined;
+  }
+  const resolved = layer != null && layer !== '' ? layer : classNaming.styleLayer;
+  if (resolved == null || resolved === '') {
+    throw new Error(
+      `[typestyles] \`layer\` is required for ${context} when using cascade layers without a factory \`layers.style\` / \`styleLayer\` default.`,
+    );
+  }
+  assertOwnLayer(classNaming.cascadeLayers, resolved, context);
+  return resolved;
 }
 
 export function createClass(
@@ -132,14 +150,8 @@ export function createClass(
     'class',
   );
   if (classNaming.cascadeLayers) {
-    if (layer == null || layer === '') {
-      throw new Error(
-        `[typestyles] \`layer\` is required in the third argument when using \`createStyles({ layers })\` — ` +
-          `e.g. styles.class('${name}', { … }, { layer: '…' }).`,
-      );
-    }
-    assertOwnLayer(classNaming.cascadeLayers, layer, `styles.class('${name}', …)`);
-    insertRules(applyLayerToRules(rules, layer, classNaming.cascadeLayers));
+    const resolved = resolveStyleEmitLayer(classNaming, layer, `style('${name}', …)`);
+    insertRules(applyLayerToRules(rules, resolved!, classNaming.cascadeLayers));
   } else {
     insertRules(rules);
   }
@@ -155,14 +167,14 @@ export function createClass(
  *
  * @example
  * ```ts
- * const button = styles.hashClass({
+ * const button = hash({
  *   padding: '8px 12px',
  *   borderRadius: '8px',
  * });
  *
- * const danger = styles.hashClass(
+ * const danger = hash(
  *   { backgroundColor: 'red', color: 'white' },
- *   'danger'
+ *   { label: 'danger' },
  * );
  * ```
  */
@@ -176,14 +188,8 @@ export function createHashClass(
   if (cfg.mode === 'atomic') {
     const { classNames, rules } = decomposeAtomicStyle(cfg, properties);
     if (classNaming.cascadeLayers) {
-      if (layer == null || layer === '') {
-        throw new Error(
-          '[typestyles] `layer` is required in the options argument when using `createStyles({ layers })` — ' +
-            'e.g. styles.hashClass({ … }, { layer: `utilities` }).',
-        );
-      }
-      assertOwnLayer(classNaming.cascadeLayers, layer, 'styles.hashClass(…)');
-      insertRules(applyLayerToRules(rules, layer, classNaming.cascadeLayers));
+      const resolved = resolveStyleEmitLayer(classNaming, layer, 'hash(…)');
+      insertRules(applyLayerToRules(rules, resolved!, classNaming.cascadeLayers));
     } else {
       insertRules(rules);
     }
@@ -207,14 +213,8 @@ export function createHashClass(
     colorModes: classNaming.colorModes,
   });
   if (classNaming.cascadeLayers) {
-    if (layer == null || layer === '') {
-      throw new Error(
-        '[typestyles] `layer` is required in the options argument when using `createStyles({ layers })` — ' +
-          'e.g. styles.hashClass({ … }, { layer: `utilities` }).',
-      );
-    }
-    assertOwnLayer(classNaming.cascadeLayers, layer, 'styles.hashClass(…)');
-    insertRules(applyLayerToRules(rules, layer, classNaming.cascadeLayers));
+    const resolved = resolveStyleEmitLayer(classNaming, layer, 'hash(…)');
+    insertRules(applyLayerToRules(rules, resolved!, classNaming.cascadeLayers));
   } else {
     insertRules(rules);
   }
@@ -237,9 +237,9 @@ import {
  *
  * @example
  * ```ts
- * const base = styles.component('base', { base: { padding: '8px' } });
- * const primary = styles.component('primary', { base: { color: 'blue' } });
- * const button = styles.compose(base, primary);
+ * const base = recipe('base', { base: { padding: '8px' } });
+ * const primary = recipe('primary', { base: { color: 'blue' } });
+ * const button = compose(base, primary);
  *
  * button(); // "base primary"
  * ```
@@ -302,7 +302,7 @@ export type StylesApi = ComponentRegistryApi & {
   readonly atRuleBlock: typeof atRuleBlockFn;
   /**
    * Expand a `ThemeCondition` into nested `&` / `@media` keys for recipe slots (see `whenStyle` export).
-   * Prefer this inside `styles.component`; use `conditional()` + `conditions[]` on `styles.override`.
+   * Prefer this inside `recipe`; use `conditional()` + `conditions[]` on `override`.
    */
   readonly when: typeof whenStyleFn;
   /**
@@ -438,7 +438,7 @@ export type StylesApi = ComponentRegistryApi & {
   override: OverrideFn;
 };
 
-/** Options argument for `styles.component()` — `layer` required when `createStyles({ layers })` is used. */
+/** Options argument for `recipe()` — `layer` required when `createStyles({ layers })` is used. */
 export type ComponentCreateOptions<L extends string = string> = {
   readonly layer?: L;
   readonly varDefinitions?: ComponentVarDefinitions;
@@ -470,6 +470,11 @@ export type CreateStylesInput = Partial<Omit<ClassNamingConfig, 'cascadeLayers'>
    * Ignored by `createStyles` alone (passing it here avoids repeating the key at the factory).
    */
   tokenLayer?: string;
+  /**
+   * Default `@layer` for `class` / `hashClass` / `component` when the call omits `{ layer }`.
+   * Prefer setting this via `createTypeStyles({ layers: { style } })`.
+   */
+  styleLayer?: string;
   /**
    * When set, prefer the overloads that return `StylesWithUtilsApi` — this field exists so combined
    * option objects type-check; do not rely on `createStyles(options?: CreateStylesInput)` alone for utils.
@@ -595,10 +600,10 @@ export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = 
     overrides: CSSPropertiesWithUtils<U>,
   ) => void;
   override: OverrideFn<L>;
-  class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<L>) => string;
+  class: (name: string, properties: CSSPropertiesWithUtils<U>, options?: LayerOption<L>) => string;
   hashClass: (
     properties: CSSPropertiesWithUtils<U>,
-    options: LayerOption<L> & { label?: string },
+    options?: LayerOption<L> & { label?: string },
   ) => string;
   component: LayeredComponentFnWithUtils<L>;
   compose: typeof compose;
@@ -722,6 +727,7 @@ export function createStyles(
   const {
     layers,
     tokenLayer: tokenLayerHint,
+    styleLayer,
     utils,
     breakpoints: breakpointsConfig,
     colorModes: colorModesConfig,
@@ -734,12 +740,20 @@ export function createStyles(
     );
   }
 
+  if (process.env.NODE_ENV !== 'production' && styleLayer !== undefined && !layers) {
+    console.warn('[typestyles] `styleLayer` on `createStyles` is ignored without `layers`.');
+  }
+
   const cascadeLayers = layers ? resolveCascadeLayers(layers, namingPartial.scopeId) : undefined;
+  if (cascadeLayers && styleLayer != null && styleLayer !== '') {
+    assertOwnLayer(cascadeLayers, styleLayer, 'createStyles({ styleLayer })');
+  }
   const breakpoints = resolveBreakpoints(breakpointsConfig);
   const colorModes = resolveColorModes(colorModesConfig);
   const classNaming = mergeClassNaming({
     ...namingPartial,
     cascadeLayers,
+    styleLayer: cascadeLayers ? styleLayer : undefined,
     breakpoints,
     colorModes,
   });
@@ -834,16 +848,11 @@ function buildStylesRuntimeApi(
         is: isNested,
         where: whereNested,
         property,
-        class: (name: string, properties: CSSProperties, options: LayerOption<string>) => {
-          const layer = options.layer;
-          return createClass(classNaming, name, properties, layer);
+        class: (name: string, properties: CSSProperties, options?: { layer?: string }) => {
+          return createClass(classNaming, name, properties, options?.layer);
         },
-        hashClass: (
-          properties: CSSProperties,
-          options: LayerOption<string> & { label?: string },
-        ) => {
-          const { layer, label } = options;
-          return createHashClass(classNaming, properties, label, layer);
+        hashClass: (properties: CSSProperties, options?: { layer?: string; label?: string }) => {
+          return createHashClass(classNaming, properties, options?.label, options?.layer);
         },
         component: componentImpl as unknown as LayeredComponentFn<string>,
         withUtils: <U extends StyleUtils>(utils: U) =>
@@ -894,6 +903,7 @@ function buildStylesRuntimeApi(
 }
 
 export type StylesWithUtilsApi<U extends StyleUtils> = ComponentRegistryApi & {
+  readonly classNaming: Readonly<ClassNamingConfig>;
   readonly container: typeof containerQuery;
   readonly containerRef: (label: string) => ContainerNameRef;
   readonly supports: typeof supportsQuery;
@@ -1095,6 +1105,7 @@ export function createStylesWithUtils<U extends StyleUtils>(
 
   return attachComponentRegistryMethods(
     {
+      classNaming,
       container: containerQuery,
       containerRef,
       supports: supportsQuery,
@@ -1172,6 +1183,7 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
 
   return attachComponentRegistryMethods(
     {
+      classNaming,
       container: containerQuery,
       containerRef,
       supports: supportsQuery,
@@ -1182,12 +1194,12 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
       has: hasNested,
       is: isNested,
       where: whereNested,
-      class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<string>) =>
-        createClass(classNaming, name, apply(properties), options.layer),
+      class: (name: string, properties: CSSPropertiesWithUtils<U>, options?: LayerOption<string>) =>
+        createClass(classNaming, name, apply(properties), options?.layer),
       hashClass: (
         properties: CSSPropertiesWithUtils<U>,
-        options: LayerOption<string> & { label?: string },
-      ) => createHashClass(classNaming, apply(properties), options.label, options.layer),
+        options?: LayerOption<string> & { label?: string },
+      ) => createHashClass(classNaming, apply(properties), options?.label, options?.layer),
       component: component as unknown as LayeredComponentFnWithUtils<string>,
       compose,
       scope: (

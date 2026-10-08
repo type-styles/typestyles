@@ -111,7 +111,7 @@ export function attachComponentMeta(target: object, meta: ComponentMeta): void {
 }
 
 /**
- * Read the public component metadata blob attached by `styles.component()`.
+ * Read the public component metadata blob attached by `recipe()`.
  * Returns `undefined` when the value is not a TypeStyles component return.
  */
 export function getComponentMeta(component: object): ComponentMeta | undefined {

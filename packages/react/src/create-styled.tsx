@@ -12,6 +12,7 @@ import type {
   FlatComponentConfigInput,
   FlatComponentReturn,
   StylesApi,
+  TypeStylesApi,
   VariantDefinitions,
 } from 'typestyles';
 import { cx } from 'typestyles';
@@ -42,6 +43,16 @@ export type StyledFactory = {
   ): StyledComponentType<Tag, FlatComponentReturn<K>>;
 };
 
+type RecipeFactory = StylesApi['component'];
+
+/** Accepts `createTypeStyles()` (preferred) or a lower-level `createStyles()` instance. */
+export type StyledApi = Pick<TypeStylesApi, 'recipe'> | StylesApi;
+
+function resolveRecipeFactory(api: StyledApi): RecipeFactory {
+  if ('recipe' in api) return api.recipe;
+  return api.component;
+}
+
 function resolveStyledArgs(
   tag: ElementType,
   configOrNamespace:
@@ -68,7 +79,9 @@ function resolveStyledArgs(
   };
 }
 
-export function createStyled(styles: StylesApi): StyledFactory {
+export function createStyled(api: StyledApi): StyledFactory {
+  const makeRecipe = resolveRecipeFactory(api);
+
   function styled<Tag extends ElementType>(
     tag: Tag,
     configOrNamespace:
@@ -82,7 +95,7 @@ export function createStyled(styles: StylesApi): StyledFactory {
       namespace,
       config,
     } = resolveStyledArgs(tag, configOrNamespace, maybeConfig);
-    const recipe = styles.component(namespace, config as ComponentConfigInput<VariantDefinitions>);
+    const recipe = makeRecipe(namespace, config as ComponentConfigInput<VariantDefinitions>);
     const variantKeys = getVariantKeysFromConfig(
       config as Record<string, unknown> | ((ctx: unknown) => Record<string, unknown>),
     );

@@ -52,14 +52,14 @@ export type OverrideOptions<L extends string = string> = {
   /**
    * Selector prefix inserted before the component selector, e.g. `.theme-acme`.
    * Emits `.theme-acme .button--intent-primary { … }` (descendant combinator).
-   * This is **not** CSS `@scope` — see `styles.scope()` for proximity.
+   * This is **not** CSS `@scope` — see `scope()` for proximity.
    */
   selectorPrefix?: string;
   /** Cascade layer name; must be on the instance's `layers` stack when set. */
   layer?: L;
 };
 
-/** Leaf values assignable to a component internal var in `styles.override({ vars })`. */
+/** Leaf values assignable to a component internal var in `override({ vars })`. */
 export type ComponentVarAssignValue = string | number | CSSVarRef | { light: string; dark: string };
 
 /** Map logical definition tree → partial assignment tree for override `vars`. */
@@ -174,19 +174,19 @@ function validateConditionalOverride(entry: ConditionalOverride, index: number):
   for (const key of Object.keys(entry)) {
     if (!CONDITIONAL_OVERRIDE_KEYS.has(key)) {
       console.warn(
-        `[typestyles] Unknown key "${key}" in styles.override() conditions[${index}] — allowed: id, when, style.`,
+        `[typestyles] Unknown key "${key}" in override() conditions[${index}] — allowed: id, when, style.`,
       );
       ok = false;
     }
   }
 
   if (!entry.when) {
-    console.warn(`[typestyles] styles.override() conditions[${index}] is missing "when".`);
+    console.warn(`[typestyles] override() conditions[${index}] is missing "when".`);
     ok = false;
   }
 
   if (entry.style == null) {
-    console.warn(`[typestyles] styles.override() conditions[${index}] is missing "style".`);
+    console.warn(`[typestyles] override() conditions[${index}] is missing "style".`);
     ok = false;
   }
 
@@ -202,10 +202,10 @@ function insertOverrideRules(
     const stack = classNaming.cascadeLayers;
     if (!stack) {
       throw new Error(
-        '[typestyles] `layer` in `styles.override(…)` requires `createStyles({ layers: … })` on this styles instance.',
+        '[typestyles] `layer` in `override(…)` requires `createStyles({ layers: … })` on this styles instance.',
       );
     }
-    assertOwnLayer(stack, options.layer, 'styles.override(…)');
+    assertOwnLayer(stack, options.layer, 'override(…)');
     insertRules(applyLayerToRules(keyed, options.layer, stack));
     return;
   }
@@ -336,7 +336,7 @@ function validateCompoundSelections(
   for (const [dimension, expected] of Object.entries(selections)) {
     const optionMap = variants[dimension];
     if (!optionMap) {
-      warnDev(`Unknown variant dimension "${dimension}" in styles.override() compoundVariants.`);
+      warnDev(`Unknown variant dimension "${dimension}" in override() compoundVariants.`);
       ok = false;
       continue;
     }
@@ -345,7 +345,7 @@ function validateCompoundSelections(
       const key = normalizeOptionKey(value);
       if (key == null || optionMap[key] == null) {
         warnDev(
-          `Unknown variant option "${dimension}.${String(value)}" in styles.override() compoundVariants.`,
+          `Unknown variant option "${dimension}.${String(value)}" in override() compoundVariants.`,
         );
         ok = false;
       }
@@ -412,7 +412,7 @@ function emitVarOverrides(
   const registry = meta.varRegistry;
   if (!registry) {
     warnDev(
-      'styles.override() `vars` was set but the component has no registered internal vars ' +
+      'override() `vars` was set but the component has no registered internal vars ' +
         '(declare them with top-level config `vars` or `c.vars()` in the recipe).',
     );
     return;
@@ -420,7 +420,7 @@ function emitVarOverrides(
 
   const hostClass = resolveVarHostClass(meta, registry);
   if (!hostClass) {
-    warnDev('styles.override() `vars` requires a resolvable var host class on the component.');
+    warnDev('override() `vars` requires a resolvable var host class on the component.');
     return;
   }
 
@@ -473,7 +473,7 @@ function resolveOverrideLayer(
     return 'overrides';
   }
   throw new Error(
-    '[typestyles] `styles.override(…)` on a layered styles instance requires `{ layer: … }` ' +
+    '[typestyles] `override(…)` on a layered styles instance requires `{ layer: … }` ' +
       '(or include an `"overrides"` layer in `createStyles({ layers })` to default). ' +
       `Expected one of: ${stack.ownOrder.map((l) => `"${l}"`).join(', ')}.`,
   );
@@ -515,9 +515,7 @@ function emitDimensionedOverride(
 ): void {
   if (config.base) {
     if (!meta.base) {
-      warnDev(
-        'styles.override() `base` requires a component with a base class (meta.base is empty).',
-      );
+      warnDev('override() `base` requires a component with a base class (meta.base is empty).');
     } else {
       emitStyledSelector(classNaming, `.${meta.base}`, config.base, options);
     }
@@ -527,13 +525,13 @@ function emitDimensionedOverride(
     for (const [dimension, optionsMap] of Object.entries(config.variants)) {
       if (!optionsMap) continue;
       if (!meta.variants[dimension]) {
-        warnDev(`Unknown variant dimension "${dimension}" in styles.override().`);
+        warnDev(`Unknown variant dimension "${dimension}" in override().`);
         continue;
       }
       for (const [option, style] of Object.entries(optionsMap)) {
         if (!style) continue;
         if (meta.variants[dimension]?.[option] == null) {
-          warnDev(`Unknown variant option "${dimension}.${option}" in styles.override().`);
+          warnDev(`Unknown variant option "${dimension}.${option}" in override().`);
           continue;
         }
         const selector = resolveVariantSelector(meta, dimension, option);
@@ -563,9 +561,7 @@ function emitFlatOverride(
 ): void {
   if (config.base) {
     if (!meta.base) {
-      warnDev(
-        'styles.override() `base` requires a component with a base class (meta.base is empty).',
-      );
+      warnDev('override() `base` requires a component with a base class (meta.base is empty).');
     } else {
       emitStyledSelector(classNaming, `.${meta.base}`, config.base, options);
     }
@@ -574,7 +570,7 @@ function emitFlatOverride(
   for (const [key, style] of Object.entries(config)) {
     if (key === 'base' || key === 'vars' || style == null || typeof style !== 'object') continue;
     if (!meta.variants[key]) {
-      warnDev(`Unknown flat variant "${key}" in styles.override().`);
+      warnDev(`Unknown flat variant "${key}" in override().`);
       continue;
     }
     emitStyledSelector(classNaming, `.${meta.variants[key]}`, style as VariantOptionStyle, options);
@@ -591,12 +587,12 @@ function emitMultiSlotOverride(
   for (const [slot, style] of Object.entries(config.base)) {
     if (!style) continue;
     if (!meta.base[slot] && !meta.slots.includes(slot)) {
-      warnDev(`Unknown slot "${slot}" in styles.override().`);
+      warnDev(`Unknown slot "${slot}" in override().`);
       continue;
     }
     const baseClass = meta.base[slot];
     if (!baseClass) {
-      warnDev(`Unknown slot "${slot}" in styles.override().`);
+      warnDev(`Unknown slot "${slot}" in override().`);
       continue;
     }
     emitStyledSelector(classNaming, `.${baseClass}`, style, options);
@@ -614,7 +610,7 @@ function emitSlotOverride(
       if (!style) continue;
       const baseClass = meta.base[slot];
       if (!baseClass) {
-        warnDev(`Unknown slot "${slot}" in styles.override().`);
+        warnDev(`Unknown slot "${slot}" in override().`);
         continue;
       }
       emitStyledSelector(classNaming, `.${baseClass}`, style, options);
@@ -629,7 +625,7 @@ function emitSlotOverride(
         for (const [slot, style] of Object.entries(slotStyles)) {
           if (!style) continue;
           if (!meta.variants[slot]?.[dimension]?.[option]) {
-            warnDev(`Unknown slot variant "${slot}.${dimension}.${option}" in styles.override().`);
+            warnDev(`Unknown slot variant "${slot}.${dimension}.${option}" in override().`);
             continue;
           }
           const selector = resolveSlotVariantSelector(meta, slot, dimension, option);
@@ -647,7 +643,7 @@ function emitSlotOverride(
         const slotVariants = meta.variants[slot];
         const baseClass = meta.base[slot];
         if (!slotVariants || !baseClass) {
-          warnDev(`Unknown slot "${slot}" in styles.override() compoundVariants.`);
+          warnDev(`Unknown slot "${slot}" in override() compoundVariants.`);
           continue;
         }
         if (!validateCompoundSelections(slotVariants, selections)) continue;
@@ -674,13 +670,13 @@ export function createOverride(
 ): void {
   const meta = getComponentMeta(component);
   if (!meta) {
-    warnDev('styles.override() requires a styles.component() return with metadata.');
+    warnDev('override() requires a recipe() return with metadata.');
     return;
   }
 
   if (!SUPPORTED_OVERRIDE_MODES.has(meta.namingMode)) {
     warnDev(
-      `styles.override() does not support naming mode "${meta.namingMode}" in v1 (supported: semantic, bem, template, attribute).`,
+      `override() does not support naming mode "${meta.namingMode}" in v1 (supported: semantic, bem, template, attribute).`,
     );
     return;
   }
@@ -733,7 +729,7 @@ export type InferVarDefinitions<C> = C extends {
   : never;
 
 /**
- * Infer the `styles.override()` config shape from a component return type.
+ * Infer the `override()` config shape from a component return type.
  * Branches mirror {@link OverrideFn}.
  */
 export type OverrideConfigFor<
@@ -751,7 +747,7 @@ export type OverrideConfigFor<
         ? SlotOverrideConfig<Slots, V, Vars>
         : never;
 
-/** Overload surface mirrored on `styles.override`. */
+/** Overload surface mirrored on `override`. */
 export type OverrideFn<L extends string = string> = {
   /** Recipes with stamped `__varDefinitions` (config `vars` or `{ varDefinitions }` option). */
   <C extends { readonly __varDefinitions: ComponentVarDefinitions }>(

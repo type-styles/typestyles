@@ -9,14 +9,14 @@ If you are adopting the variant API, start with [Components](/docs/components). 
 
 ## Coming from… (cheat sheet)
 
-| If you know…                    | Start here                                                                   | Closest TypeStyles concepts                                                                                                     |
-| ------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **StyleX**                      | [From StyleX](#from-stylex)                                                  | `stylex.create` → `styles.component` / `styles.class`; `defineVars` → `tokens.create`; `createTheme` → `tokens.createTheme`     |
-| **Panda CSS**                   | [From Panda CSS](#from-panda-css)                                            | `cva` / recipes → `styles.component`; config tokens → `tokens.create`; semantic / `_dark` → `createTheme` or mode-aware leaves  |
-| **vanilla-extract**             | [From vanilla-extract](#from-vanilla-extract)                                | `recipe` → `styles.component`; `createThemeContract` → `tokens.declare` / `tokens.create`; `createTheme` → `tokens.createTheme` |
-| **Stitches**                    | [From Stitches](#from-stitches)                                              | `styled` + variants → `styles.component`; theme + `$token` → `tokens.create`; `createTheme` → `tokens.createTheme`              |
-| **CVA**                         | [From CVA](#from-cva-class-variance-authority)                               | Same variant shape; TypeStyles emits the CSS                                                                                    |
-| **Emotion / styled-components** | [From Emotion](#from-emotion) / [styled-components](#from-styled-components) | Tagged templates → style objects + recipes                                                                                      |
+| If you know…                    | Start here                                                                   | Closest TypeStyles concepts                                                                                           |
+| ------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **StyleX**                      | [From StyleX](#from-stylex)                                                  | `stylex.create` → `recipe` / `style`; `defineVars` → `tokens.create`; `createTheme` → `tokens.createTheme`            |
+| **Panda CSS**                   | [From Panda CSS](#from-panda-css)                                            | `cva` / recipes → `recipe`; config tokens → `tokens.create`; semantic / `_dark` → `createTheme` or mode-aware leaves  |
+| **vanilla-extract**             | [From vanilla-extract](#from-vanilla-extract)                                | `recipe` → `recipe`; `createThemeContract` → `tokens.declare` / `tokens.create`; `createTheme` → `tokens.createTheme` |
+| **Stitches**                    | [From Stitches](#from-stitches)                                              | `styled` + variants → `recipe`; theme + `$token` → `tokens.create`; `createTheme` → `tokens.createTheme`              |
+| **CVA**                         | [From CVA](#from-cva-class-variance-authority)                               | Same variant shape; TypeStyles emits the CSS                                                                          |
+| **Emotion / styled-components** | [From Emotion](#from-emotion) / [styled-components](#from-styled-components) | Tagged templates → style objects + recipes                                                                            |
 
 **Mental model shared across all four:** TypeStyles themes are **CSS custom properties on a stable class** (`.theme-{name}`), not a closed compiler vocabulary. Consumers can override with TypeStyles **or** plain CSS (`--*` / class selectors). Readable recipe classes (`button--intent-primary`) stay targetable outside the framework.
 
@@ -45,7 +45,7 @@ Attribute mode changes:
 1. Regenerate `@typestyles/cli` public-classname snapshots and update ESLint fixtures.
 2. Search tests / e2e selectors for `-base`, `-compound-`, and old hyphen slot names.
 3. Update any hand-written CSS that targeted the old public classes.
-4. Prefer distinct namespaces for `styles.class` vs `styles.component` when they would share a base string — both emit `button` for `'button'`, and the sheet keeps only the first base rule.
+4. Prefer distinct namespaces for `style` vs `recipe` when they would share a base string — both emit `button` for `'button'`, and the sheet keeps only the first base rule.
 
 See [Class naming](/docs/class-naming) and [Attribute-driven variants](/docs/components#attribute-driven-variants).
 
@@ -53,7 +53,7 @@ See [Class naming](/docs/class-naming) and [Attribute-driven variants](/docs/com
 
 Panda and typestyles share many concepts (component variants, tokens, utilities), so migration is mostly API shape changes rather than a full styling rewrite.
 
-### `css()` to `styles.class()` or `styles.component()`
+### `css()` to `style()` or `recipe()`
 
 **Before (Panda CSS):**
 
@@ -70,18 +70,20 @@ const className = css({
 **After (typestyles):**
 
 ```tsx
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const className = styles.class('card', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const className = style('card', {
   display: 'flex',
   gap: '16px',
   '&:hover': { opacity: 0.9 },
 });
 ```
 
-For reusable variant families, prefer `styles.component()` instead of a single class.
+For reusable variant families, prefer `recipe()` instead of a single class.
 
-### `cva()` / `defineRecipe()` to `styles.component()`
+### `cva()` / `defineRecipe()` to `recipe()`
 
 **Before (Panda CSS):**
 
@@ -103,9 +105,11 @@ const button = cva({
 **After (typestyles):**
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: { fontWeight: 500 },
   variants: {
     intent: {
@@ -206,7 +210,7 @@ atoms({
 
 ### Slot components (Panda `sva`)
 
-If you use Panda `sva` (multipart slot variants), use `styles.component` with a `slots` configuration so each part maps to a named slot. See [Components](/docs/components).
+If you use Panda `sva` (multipart slot variants), use `recipe` with a `slots` configuration so each part maps to a named slot. See [Components](/docs/components).
 
 ## From styled-components
 
@@ -239,11 +243,13 @@ const Button = styled.button`
 **After (typestyles):**
 
 ```tsx
-import { styles, tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.use('color');
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -288,7 +294,7 @@ const Box = styled.div`
 **After:**
 
 ```tsx
-const box = styles.component('box', {
+const box = recipe('box', {
   base: {
     display: 'inline-block',
   },
@@ -338,9 +344,11 @@ function Button({ children }) {
 **After (typestyles):**
 
 ```tsx
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     backgroundColor: '#0066ff',
@@ -372,12 +380,14 @@ className={cx(base, isPrimary && primary, isLarge && large)}
 
 **After:**
 
-When all classes come from one `styles.component` recipe, you can call it with variant overrides or combine pieces with `cx()`:
+When all classes come from one `recipe` recipe, you can call it with variant overrides or combine pieces with `cx()`:
 
 ```tsx
-import { styles, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: { padding: '8px' },
   variants: {
     intent: {
@@ -400,10 +410,12 @@ className={cx(base, isPrimary && intentPrimary, isLarge && sizeLarge)}
 When you need to combine classes from different sources (multiple style groups, external class strings, or conditional expressions), use the built-in `cx` utility:
 
 ```tsx
-import { cx, styles } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const card = styles.class('card', { padding: '16px' });
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = style('card', { padding: '16px' });
+const button = recipe('button', {
   base: { padding: '8px' },
   primary: { backgroundColor: 'blue' },
 });
@@ -414,7 +426,7 @@ className={cx(card, button(), isPrimary && primary, isActive && 'active', extern
 
 ## From CVA (Class Variance Authority)
 
-`styles.component` maps closely to CVA's mental model:
+`recipe` maps closely to CVA's mental model:
 
 - `variants`
 - `compoundVariants`
@@ -455,9 +467,11 @@ export const button = cva('inline-flex rounded font-medium', {
 **After (typestyles):**
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-export const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+export const button = recipe('button', {
   base: {
     display: 'inline-flex',
     borderRadius: '8px',
@@ -505,7 +519,7 @@ button({ size: 'lg' }); // base + primary + lg
 
 ## From Stitches
 
-### Variants → `styles.component()`
+### Variants → `recipe()`
 
 **Before (Stitches):**
 
@@ -539,9 +553,11 @@ const Button = styled('button', {
 **After (typestyles):**
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: {
     padding: '8px 12px',
   },
@@ -611,7 +627,7 @@ const Button = styled('button', {
 ```ts
 import { createTypeStyles } from 'typestyles';
 
-const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.create('color', {
   primary: 'blue',
@@ -628,7 +644,7 @@ const dark = tokens.createTheme({
   },
 });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     backgroundColor: color.primary, // → var(--app-color-primary)
     color: color.text,
@@ -647,7 +663,7 @@ Stitches themes are a JS object layered through `$` refs. TypeStyles themes are 
 
 ## From vanilla-extract
 
-### `recipe()` → `styles.component()`
+### `recipe()` → `recipe()`
 
 **Before (vanilla-extract `recipe`):**
 
@@ -673,9 +689,11 @@ export const button = recipe({
 **After (typestyles):**
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-export const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+export const button = recipe('button', {
   base: {
     borderRadius: '6px',
   },
@@ -723,7 +741,7 @@ export const brandText = style({
 ```ts
 import { createTypeStyles } from 'typestyles';
 
-const { styles, tokens } = createTypeStyles({ scopeId: 'app' });
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 // Contract + default values (like createTheme that also defines the vars)
 const color = tokens.create('color', {
@@ -742,7 +760,7 @@ const dark = tokens.createTheme({
   },
 });
 
-export const brandText = styles.class('brand-text', {
+export const brandText = style('brand-text', {
   color: color.brand, // → var(--app-color-brand)
 });
 ```
@@ -762,7 +780,7 @@ export const brandText = styles.class('brand-text', {
 
 StyleX is compiler-first (atomic classes, `.stylex.js` vars). TypeStyles keeps the same _ideas_ — style objects, CSS variables, theme classes — without requiring a Babel/SWC plugin on day one.
 
-### `stylex.create` → `styles.class` / `styles.component`
+### `stylex.create` → `style` / `recipe`
 
 **Before (StyleX):**
 
@@ -797,9 +815,11 @@ const styles = stylex.create({
 **After (typestyles):**
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const button = recipe('button', {
   base: {
     paddingInline: '16px',
     paddingBlock: '8px',
@@ -827,7 +847,7 @@ const button = styles.component('button', {
 </button>
 ```
 
-For one-off style bags without variants, use `styles.class('name', { … })` instead of a recipe.
+For one-off style bags without variants, use `style('name', { … })` instead of a recipe.
 
 ### `defineVars` + `createTheme` → `tokens.create` + `tokens.createTheme`
 
@@ -911,7 +931,9 @@ function Button({ primary, children }) {
 **After (typestyles):**
 
 ```tsx
-import { styles, tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe, tokens } = createTypeStyles({ scopeId: 'app' });
 
 const color = tokens.create('color', {
   primary: '#0066ff',
@@ -920,7 +942,7 @@ const color = tokens.create('color', {
   secondaryHover: '#4b5563',
 });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -977,7 +999,9 @@ module.exports = {
 **After (tokens.ts):**
 
 ```ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const color = tokens.create('color', {
   primary: '#0066ff',
@@ -995,9 +1019,11 @@ export const space = tokens.create('space', {
 You can use Tailwind and typestyles together during migration:
 
 ```tsx
-import { styles, cx } from 'typestyles';
+import { createTypeStyles, cx } from 'typestyles';
 
-const card = styles.component('card', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const card = recipe('card', {
   base: {
     // New styles with typestyles
     boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
@@ -1050,9 +1076,11 @@ function Button({ variant, children }) {
 **After (button.styles.ts):**
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-export const button = styles.component('button', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+export const button = recipe('button', {
   base: {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -1092,7 +1120,11 @@ CSS Modules `:global` becomes typestyles without nesting:
 **After:**
 
 ```ts
-const tooltip = styles.component('tooltip', {
+import { createTypeStyles } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+const tooltip = recipe('tooltip', {
   base: {
     position: 'absolute',
   },
@@ -1135,7 +1167,7 @@ Migrating from plain CSS gives you type safety and better organization.
 
    ```ts
    // After
-   const button = styles.component('button', {
+   const button = recipe('button', {
      base: {
        padding: '8px 16px',
        backgroundColor: color.primary,
@@ -1159,7 +1191,7 @@ If you are migrating from the previous `styles.create()` API:
 **Before:**
 
 ```ts
-const button = styles.create('button', {
+const button = recipe('button', {
   base: { padding: '8px 16px' },
   primary: { backgroundColor: '#0066ff' },
   large: { fontSize: '18px' },
@@ -1173,7 +1205,7 @@ button('base', isPrimary && 'primary');
 **After (flat config):**
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px 16px' },
   primary: { backgroundColor: '#0066ff' },
   large: { fontSize: '18px' },
@@ -1190,7 +1222,7 @@ cx(button(), isPrimary && primary);
 **After (dimensioned config -- recommended for variants like intent/size):**
 
 ```ts
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px 16px' },
   variants: {
     intent: {
@@ -1210,7 +1242,7 @@ button({ intent: 'primary', size: 'large' });
 
 ### Key changes
 
-1. `styles.create()` is removed; use `styles.component()` instead.
+1. `styles.create()` is removed; use `recipe()` instead.
 2. Base styles are auto-applied when calling as a function -- no need to pass `'base'` explicitly.
 3. The return is both callable AND destructurable.
 4. Use `cx()` (exported from `'typestyles'`) for conditional class joining.
@@ -1258,7 +1290,7 @@ After migration, your JavaScript bundle may be slightly smaller (no CSS parsing 
 
 | Pattern                  | StyleX                               | Panda                     | vanilla-extract                     | Stitches                    | typestyles                             |
 | ------------------------ | ------------------------------------ | ------------------------- | ----------------------------------- | --------------------------- | -------------------------------------- |
-| **Variants**             | Multiple `create` styles + `props()` | `cva` / recipes           | `recipe`                            | `styled` + `variants`       | `styles.component`                     |
+| **Variants**             | Multiple `create` styles + `props()` | `cva` / recipes           | `recipe`                            | `styled` + `variants`       | `recipe`                               |
 | **Tokens**               | `defineVars`                         | `theme.tokens` in config  | `createThemeContract` / `createVar` | `theme` on `createStitches` | `tokens.create`                        |
 | **Themes**               | `createTheme`                        | semantic tokens / `_dark` | `createTheme(vars, …)`              | `createTheme`               | `tokens.createTheme({ name, tokens })` |
 | **Token refs in styles** | `vars.color`                         | `blue.500` strings        | `vars.color.brand`                  | `$primary`                  | `color.primary` → `var(--…)`           |
@@ -1271,11 +1303,11 @@ The `@typestyles/migrate` package includes an early CLI to help with static migr
 
 ### Scope in this first version
 
-- Converts static tagged templates (`styled.*`, `styled(...)`, and `css\`...\``) into `styles.class(...)`or`styles.component(...)` when boolean prop variants are detected.
+- Converts static tagged templates (`styled.*`, `styled(...)`, and `css\`...\``) into `style(...)`or`recipe(...)` when boolean prop variants are detected.
 - Rewrites JSX usage for safely transformable styled components.
 - Skips unsupported template interpolations (theme access, non-literal ternaries, etc.) and emits warnings instead of doing unsafe rewrites.
 - Converts prop-based interpolations such as `` `${props => props.color}` `` to `createVar` + `assignVars`.
-- Converts boolean prop ternaries such as `` `${props => props.primary ? '#0066ff' : '#6b7280'}` `` to `styles.component` variants.
+- Converts boolean prop ternaries such as `` `${props => props.primary ? '#0066ff' : '#6b7280'}` `` to `recipe` variants.
 - Supports destructured prop params (`` `${({ color }) => color}` ``) and `@media` blocks in static templates.
 
 ### Usage
@@ -1303,13 +1335,13 @@ Useful options:
 - Exported styled components are skipped to avoid accidental API-shape changes.
 - Complex non-JSX references to styled component variables are skipped.
 
-Prop-based interpolations (for example `` `${(props) => props.color}` `` or `` `${props => props.width}px` ``) are converted to `createVar` + `assignVars` at JSX call sites. Boolean prop ternaries become `styles.component` variants. Destructured prop params and `@media` blocks in static templates are supported.
+Prop-based interpolations (for example `` `${(props) => props.color}` `` or `` `${props => props.width}px` ``) are converted to `createVar` + `assignVars` at JSX call sites. Boolean prop ternaries become `recipe` variants. Destructured prop params and `@media` blocks in static templates are supported.
 
 ## Troubleshooting migration issues
 
 ### Styles not applying
 
-- Check that the namespace in `styles.component()` is unique
+- Check that the namespace in `recipe()` is unique
 - Verify the component is being rendered (lazy injection means CSS only appears when used)
 - Use DevTools to confirm class names are being applied
 

@@ -8,7 +8,7 @@
 
 ## Background
 
-In attribute mode, `styles.component()` resolves to `ComponentAttrsResult`:
+In attribute mode, `recipe()` resolves to `ComponentAttrsResult`:
 
 ```ts
 interface ComponentAttrsResult {

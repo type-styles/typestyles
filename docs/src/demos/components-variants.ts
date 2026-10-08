@@ -1,8 +1,8 @@
-import { createStyles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const styles = createStyles();
+const { recipe } = createTypeStyles({ scopeId: 'docs-variants' });
 
-export const button = styles.component('variant-button', {
+export const button = recipe('variant-button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -27,11 +27,11 @@ export const button = styles.component('variant-button', {
   },
 });
 
-export const demoSourceCode = `import { createStyles } from 'typestyles';
+export const demoSourceCode = `import { createTypeStyles } from 'typestyles';
 
-const styles = createStyles();
+const { recipe } = createTypeStyles({ scopeId: 'docs-variants' });
 
-const button = styles.component('variant-button', {
+const button = recipe('variant-button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',

@@ -11,11 +11,11 @@ TypeStyles is designed to be fast. This guide explains how it works under the ho
 
 TypeStyles operates at runtime with minimal overhead. The timings below are **rough orders of magnitude** and will vary by device and bundle.
 
-| Operation                               | Cost (typical) | Frequency                 |
-| --------------------------------------- | -------------- | ------------------------- |
-| `styles.component()` / `styles.class()` | sub-ms         | Once per style definition |
-| `button()` / `cx(...)`                  | very small     | Every render              |
-| CSS injection                           | sub-ms         | Once per unique rule      |
+| Operation              | Cost (typical) | Frequency                 |
+| ---------------------- | -------------- | ------------------------- |
+| `recipe()` / `style()` | sub-ms         | Once per style definition |
+| `button()` / `cx(...)` | very small     | Every render              |
+| CSS injection          | sub-ms         | Once per unique rule      |
 
 **What this means:**
 
@@ -55,7 +55,7 @@ Styles aren't injected until they're used. This means:
 
 ```ts
 // This is defined but no CSS is injected yet
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { padding: '8px' },
 });
 
@@ -77,9 +77,9 @@ CSS rules are batched and inserted on the next frame:
 
 ```ts
 // Multiple style definitions
-const button = styles.component('button', { ... });
-const card = styles.component('card', { ... });
-const input = styles.component('input', { ... });
+const button = recipe('button', { ... });
+const card = recipe('card', { ... });
+const input = recipe('input', { ... });
 
 // All queued together, inserted in one operation
 // Uses requestAnimationFrame or microtask for batching
@@ -97,7 +97,7 @@ const input = styles.component('input', { ... });
 
 ```ts
 // ✅ Good - defined once
-const button = styles.component('button', { ... });
+const button = recipe('button', { ... });
 
 function Button() {
   return <button className={button()} />;
@@ -105,7 +105,7 @@ function Button() {
 
 // ❌ Bad - redefined on every render
 function Button() {
-  const button = styles.component('button', { ... }); // Don't do this!
+  const button = recipe('button', { ... }); // Don't do this!
   return <button className={button()} />;
 }
 ```
@@ -115,17 +115,19 @@ Module-level definitions are evaluated once. Creating styles inside components c
 ### 2. Avoid dynamic style values
 
 ```ts
-import { styles, createVar, assignVars } from 'typestyles';
+import { createTypeStyles, createVar, assignVars } from 'typestyles';
+
+const { recipe } = createTypeStyles({ scopeId: 'app' });
 
 // ❌ Bad - creates styles for every possible value
-const box = styles.component('box', {
+const box = recipe('box', {
   base: { width: props.width }, // Dynamic values in styles
 });
 
 // ✅ Good — use CSS custom properties for dynamic values (see Dynamic styling guide)
 const widthVar = createVar('boxWidth');
 
-const box = styles.component('box', {
+const box = recipe('box', {
   base: { display: 'block', width: widthVar },
 });
 
@@ -149,20 +151,20 @@ const color = tokens.create('color', {
   primary: '#0066ff',
 });
 
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { color: color.primary },
 });
 
-const link = styles.component('link', {
+const link = recipe('link', {
   base: { color: color.primary }, // Same reference
 });
 
 // ❌ Bad - recreate values
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { color: '#0066ff' },
 });
 
-const link = styles.component('link', {
+const link = recipe('link', {
   base: { color: '#0066ff' }, // Duplicated value
 });
 ```
@@ -173,7 +175,7 @@ Tokens ensure consistency and reduce memory usage.
 
 ```ts
 // ❌ Bad - too many variants for rarely used combinations
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { ... },
   primary: { ... },
   secondary: { ... },
@@ -184,7 +186,7 @@ const button = styles.component('button', {
 });
 
 // ✅ Good - compose smaller variants
-const button = styles.component('button', {
+const button = recipe('button', {
   base: { ... },
   primary: { ... },
   secondary: { ... },
@@ -212,7 +214,7 @@ Since styles are co-located with components, code splitting works automatically.
 
 ```ts
 // ❌ Bad - deep nesting increases selector complexity
-const card = styles.component('card', {
+const card = recipe('card', {
   base: {
     '& .header': {
       '& .title': {
@@ -225,11 +227,11 @@ const card = styles.component('card', {
 });
 
 // ✅ Good - flatter structure, separate styles
-const card = styles.component('card', {
+const card = recipe('card', {
   base: { ... },
 });
 
-const cardTitle = styles.component('card-title', {
+const cardTitle = recipe('card-title', {
   base: { fontWeight: 'bold' },
 });
 ```
@@ -267,10 +269,12 @@ To measure typestyles performance in your app:
 Add marks to measure specific operations:
 
 ```ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 
 performance.mark('styles-component-start');
-const button = styles.component('button', { ... });
+const button = recipe('button', { ... });
 performance.mark('styles-component-end');
 
 performance.measure(
@@ -291,7 +295,7 @@ performance.measure(
 ```ts
 // ❌ Bad - creates styles on every click
 function handleClick() {
-  const button = styles.component('dynamic-button', { ... });
+  const button = recipe('dynamic-button', { ... });
   // This accumulates in memory!
 }
 ```
@@ -409,7 +413,7 @@ However, you can optimize your build:
 
 ### Production checklist
 
-- [ ] No `styles.component()` / `styles.class()` definitions inside component bodies (define at module scope)
+- [ ] No `recipe()` / `style()` definitions inside component bodies (define at module scope)
 - [ ] No dynamic values in style objects
 - [ ] Tokens reused across components
 - [ ] Variants composed, not multiplied

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { createTypeStyles } from 'typestyles';
 import { createStyled, TypeStylesProvider } from '@typestyles/react';
 
-const { styles, tokens } = createTypeStyles({ scopeId: 'playground' });
+const api = createTypeStyles({ scopeId: 'playground' });
+const { tokens } = api;
 
 const themeColor = tokens.create('theme', {
   text: '#111827',
@@ -23,7 +24,7 @@ const darkTheme = tokens.createTheme({
   },
 });
 
-const styled = createStyled(styles);
+const styled = createStyled(api);
 
 const Panel = styled('div', {
   base: {
@@ -53,7 +54,7 @@ export default function App() {
   const [dark, setDark] = useState(false);
 
   return (
-    <TypeStylesProvider styles={styles}>
+    <TypeStylesProvider styles={api}>
       <div
         style={{
           padding: '2rem',

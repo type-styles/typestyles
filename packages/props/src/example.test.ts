@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { styles, reset, getRegisteredCss, flushSync } from 'typestyles';
+import { createTypeStyles, reset, getRegisteredCss, flushSync } from 'typestyles';
 import { defineProperties, createProps } from './index';
+
+const { recipe, compose } = createTypeStyles();
 
 describe('real-world example', () => {
   beforeEach(() => {
@@ -33,8 +35,8 @@ describe('real-world example', () => {
       }),
     );
 
-    // Define component styles using styles.component
-    const button = styles.component('button', {
+    // Define component styles using recipe
+    const button = recipe('button', {
       base: {
         borderRadius: '0.375rem',
         cursor: 'pointer',
@@ -59,7 +61,7 @@ describe('real-world example', () => {
     });
 
     // Compose button with atomic utilities
-    const primaryButton = styles.compose(
+    const primaryButton = compose(
       button,
       atoms({
         display: 'inline-flex',

@@ -24,7 +24,8 @@ describe.skipIf(!parityEnabled)('runtime/build parity', () => {
     await writeFile(
       entryFile,
       `
-import { styles } from 'typestyles';
+import { createStyles } from 'typestyles';
+const styles = createStyles();
 
 styles.component('parity-button', {
   base: { padding: '8px', borderWidth: '1px', borderStyle: 'solid' },
@@ -81,14 +82,15 @@ styles.component('parity-button', {
     await writeFile(
       entryFile,
       `
-import { styles, tokens, createTheme } from 'typestyles';
+import { createTypeStyles, createTheme } from 'typestyles';
+const { style, recipe, tokens } = createTypeStyles();
 
 const color = tokens.create('parity-color', { primary: '#0066ff', surface: '#ffffff' });
 createTheme('parity-dark', {
   base: { 'parity-color': { primary: '#66aaff', surface: '#111111' } },
 });
 
-styles.component('parity-themed-card', {
+recipe('parity-themed-card', {
   base: { color: color.primary, backgroundColor: color.surface },
 });
 `,

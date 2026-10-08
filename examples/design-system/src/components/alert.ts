@@ -1,4 +1,4 @@
-import { styles } from '../runtime';
+import { recipe } from '../runtime';
 import { designTokens as t } from '../tokens';
 import {
   semanticChannelAssignments,
@@ -20,115 +20,111 @@ import {
  *
  * **Shared:** `semanticTone.ts` — one table for tone channels; subtle mixes match badge.
  */
-export const alert = styles.component(
-  'alert',
-  (c) => {
-    const v = c.vars({
-      semantic: {
-        value: t.color.accent.default,
-        syntax: '<color>',
-        inherits: true,
-      },
-      solidBg: {
-        value: t.color.accent.default,
-        syntax: '<color>',
-        inherits: false,
-      },
-      solidFg: {
-        value: t.color.text.onAccent,
-        syntax: '<color>',
-        inherits: false,
-      },
-    });
+export const alert = recipe('alert', (c) => {
+  const v = c.vars({
+    semantic: {
+      value: t.color.accent.default,
+      syntax: '<color>',
+      inherits: true,
+    },
+    solidBg: {
+      value: t.color.accent.default,
+      syntax: '<color>',
+      inherits: false,
+    },
+    solidFg: {
+      value: t.color.text.onAccent,
+      syntax: '<color>',
+      inherits: false,
+    },
+  });
 
-    return {
-      slots: ['root', 'icon', 'body', 'title', 'content', 'action', 'actionLink'],
-      base: {
-        root: {
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: t.space[3],
-          padding: t.space[4],
-          borderRadius: t.radius.md,
-          lineHeight: 1.55,
+  return {
+    slots: ['root', 'icon', 'body', 'title', 'content', 'action', 'actionLink'],
+    base: {
+      root: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: t.space[3],
+        padding: t.space[4],
+        borderRadius: t.radius.md,
+        lineHeight: 1.55,
+      },
+      icon: {
+        flexShrink: 0,
+        display: 'inline-flex',
+        marginTop: '2px',
+        fontSize: t.fontSize.lg,
+        lineHeight: 1,
+      },
+      body: {
+        flex: 1,
+        minWidth: 0,
+      },
+      title: {
+        fontSize: t.fontSize.md,
+        fontWeight: t.fontWeight.semibold,
+        margin: 0,
+        color: v.semantic.var,
+      },
+      content: {
+        fontSize: t.fontSize.md,
+        margin: 0,
+        color: 'inherit',
+      },
+      action: {
+        marginTop: t.space[2],
+      },
+      actionLink: {
+        fontSize: t.fontSize.md,
+        fontWeight: t.fontWeight.medium,
+        color: 'inherit',
+        textDecoration: 'underline',
+        textUnderlineOffset: '2px',
+        '&:hover': {
+          textDecoration: 'none',
         },
-        icon: {
-          flexShrink: 0,
-          display: 'inline-flex',
-          marginTop: '2px',
-          fontSize: t.fontSize.lg,
-          lineHeight: 1,
-        },
-        body: {
-          flex: 1,
-          minWidth: 0,
-        },
-        title: {
-          fontSize: t.fontSize.md,
-          fontWeight: t.fontWeight.semibold,
-          margin: 0,
-          color: v.semantic.var,
-        },
-        content: {
-          fontSize: t.fontSize.md,
-          margin: 0,
-          color: 'inherit',
-        },
-        action: {
-          marginTop: t.space[2],
-        },
-        actionLink: {
-          fontSize: t.fontSize.md,
-          fontWeight: t.fontWeight.medium,
-          color: 'inherit',
-          textDecoration: 'underline',
-          textUnderlineOffset: '2px',
-          '&:hover': {
-            textDecoration: 'none',
-          },
-          '&:focus-visible': {
-            outline: `2px solid ${t.color.border.focus}`,
-            outlineOffset: '2px',
-            borderRadius: t.radius.sm,
-          },
+        '&:focus-visible': {
+          outline: `2px solid ${t.color.border.focus}`,
+          outlineOffset: '2px',
+          borderRadius: t.radius.sm,
         },
       },
-      variants: {
-        tone: {
-          info: { root: semanticChannelAssignments(v, 'accent') },
-          success: { root: semanticChannelAssignments(v, 'success') },
-          warning: { root: semanticChannelAssignments(v, 'warning') },
-          danger: { root: semanticChannelAssignments(v, 'danger') },
-          tip: { root: semanticChannelAssignments(v, 'info') },
-        },
-        appearance: {
-          subtle: {
-            root: {
-              backgroundColor: subtleBackgroundColor(v.semantic.var),
-              border: `1px solid ${subtleBorderColor(v.semantic.var)}`,
-              color: t.color.text.primary,
-            },
-          },
-          solid: {
-            root: {
-              backgroundColor: v.solidBg.var,
-              border: `1px solid ${v.solidBg.var}`,
-              color: v.solidFg.var,
-            },
-            title: { color: 'inherit' },
+    },
+    variants: {
+      tone: {
+        info: { root: semanticChannelAssignments(v, 'accent') },
+        success: { root: semanticChannelAssignments(v, 'success') },
+        warning: { root: semanticChannelAssignments(v, 'warning') },
+        danger: { root: semanticChannelAssignments(v, 'danger') },
+        tip: { root: semanticChannelAssignments(v, 'info') },
+      },
+      appearance: {
+        subtle: {
+          root: {
+            backgroundColor: subtleBackgroundColor(v.semantic.var),
+            border: `1px solid ${subtleBorderColor(v.semantic.var)}`,
+            color: t.color.text.primary,
           },
         },
-        contentGap: {
-          spaced: { content: { marginTop: t.space[1] } },
-          flush: { content: { marginTop: 0 } },
+        solid: {
+          root: {
+            backgroundColor: v.solidBg.var,
+            border: `1px solid ${v.solidBg.var}`,
+            color: v.solidFg.var,
+          },
+          title: { color: 'inherit' },
         },
       },
-      defaultVariants: {
-        tone: 'info',
-        appearance: 'subtle',
-        contentGap: 'spaced',
+      contentGap: {
+        spaced: { content: { marginTop: t.space[1] } },
+        flush: { content: { marginTop: 0 } },
       },
-    };
-  },
-  { layer: 'components' },
-);
+    },
+    defaultVariants: {
+      tone: 'info',
+      appearance: 'subtle',
+      contentGap: 'spaced',
+    },
+  };
+});

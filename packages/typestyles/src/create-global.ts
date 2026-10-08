@@ -18,17 +18,17 @@ type CreateGlobalOptions = {
   /**
    * Prefixes inserted rule keys so globals from different bundles dedupe independently.
    * Within one scope, each `selector` (+ optional `layer`) maps to a single rule: a second
-   * `global.style('body', …)` with different properties is ignored; non-production builds warn.
+   * `global.rule('body', …)` with different properties is ignored; non-production builds warn.
    */
   scopeId?: string;
-  /** Same breakpoint map as `createStyles({ breakpoints })` for responsive global styles. */
+  /** Same breakpoint map as `createTypeStyles({ breakpoints })` for responsive global styles. */
   breakpoints?: BreakpointsConfig;
 };
 
 type CreateGlobalWithLayers = CreateGlobalOptions & {
   layers: CascadeLayersInput;
   /**
-   * Default `@layer` for `style()` when the call (or recipe tuple) omits `{ layer }`.
+   * Default `@layer` for `rule()` / `rules()` when the call (or recipe tuple) omits `{ layer }`.
    * Must be one of the stack’s own layer names (not a prepended framework layer).
    */
   globalLayer?: string;
@@ -36,17 +36,19 @@ type CreateGlobalWithLayers = CreateGlobalOptions & {
 
 export type GlobalApiUnlayered = {
   readonly cascadeLayers: undefined;
-  style(tuple: GlobalStyleTuple): void;
-  style(selector: string, properties: CSSProperties, options?: { layer?: string }): void;
-  /** Apply multiple recipe tuples (e.g. {@link reset} from `typestyles/globals`). */
+  /** Insert rules for a single CSS selector. */
+  rule(selector: string, properties: CSSProperties, options?: { layer?: string }): void;
+  /** Insert rules for many selectors in one call (shared optional `{ layer }`). */
+  rules(styles: Record<string, CSSProperties>, options?: { layer?: string }): void;
+  /** Apply multiple `typestyles/globals` recipe tuples. */
   apply(...tuples: GlobalStyleTuple[]): void;
   fontFace(family: string, props: FontFaceProps): void;
 };
 
 export type GlobalApiLayered = {
   readonly cascadeLayers: ResolvedCascadeLayers;
-  style(tuple: GlobalStyleTuple): void;
-  style(selector: string, properties: CSSProperties, options?: { layer?: string }): void;
+  rule(selector: string, properties: CSSProperties, options?: { layer?: string }): void;
+  rules(styles: Record<string, CSSProperties>, options?: { layer?: string }): void;
   apply(...tuples: GlobalStyleTuple[]): void;
   fontFace(family: string, props: FontFaceProps): void;
 };
@@ -71,14 +73,8 @@ export function createGlobal(
     assertOwnLayer(stack, globalLayerDefault, 'createGlobal({ globalLayer })');
   }
 
-  const style = (
-    first: string | GlobalStyleTuple,
-    second?: CSSProperties,
-    third?: { layer?: string },
-  ): void => {
-    const { selector, properties, options: opts } = parseGlobalStyleArgs(first, second, third);
-
-    const rules = serializeStyle(selector, properties, { breakpoints }).map((r) => ({
+  const rule = (selector: string, properties: CSSProperties, opts?: { layer?: string }): void => {
+    const rulesCss = serializeStyle(selector, properties, { breakpoints }).map((r) => ({
       ...r,
       key: scopePrefix + r.key,
     }));
@@ -87,31 +83,39 @@ export function createGlobal(
       const layer = opts?.layer ?? globalLayerDefault;
       if (layer == null || layer === '') {
         throw new Error(
-          '[typestyles] `global.style(..., { layer })` (or a recipe tuple with `{ layer }`) is required when using `createGlobal({ layers })` without `globalLayer`.',
+          '[typestyles] `global.rule(..., { layer })` (or factory `layers.global`) is required when using cascade layers without a default global layer.',
         );
       }
-      assertOwnLayer(stack, layer, `global.style('${selector}', …)`);
-      insertRules(applyLayerToRules(rules, layer, stack));
+      assertOwnLayer(stack, layer, `global.rule('${selector}', …)`);
+      insertRules(applyLayerToRules(rulesCss, layer, stack));
       return;
     }
 
     if (process.env.NODE_ENV !== 'production' && opts?.layer != null) {
       console.warn(
-        '[typestyles] `layer` in `global.style(..., { layer })` is ignored when `createGlobal()` was created without `layers`.',
+        '[typestyles] `layer` in `global.rule(..., { layer })` is ignored when cascade layers were not configured.',
       );
     }
-    insertRules(rules);
+    insertRules(rulesCss);
+  };
+
+  const rules = (styles: Record<string, CSSProperties>, opts?: { layer?: string }): void => {
+    for (const [selector, properties] of Object.entries(styles)) {
+      rule(selector, properties, opts);
+    }
   };
 
   const apply = (...tuples: GlobalStyleTuple[]): void => {
     for (const t of tuples) {
-      style(t);
+      const parsed = parseGlobalStyleArgs(t);
+      rule(parsed.selector, parsed.properties, parsed.options);
     }
   };
 
   return {
     cascadeLayers: stack,
-    style,
+    rule,
+    rules,
     apply,
     fontFace: globalFontFace,
   } as GlobalApiUnlayered | GlobalApiLayered;

@@ -88,13 +88,13 @@ Note: `typestyles` should be a peer dependency so consuming apps can control the
 
 ## Scope isolation
 
-Published packages **must** use a `scopeId` to prevent class name collisions with consumer code or other libraries. Without one, `styles.component('button', …)` produces `button` in both your library and the consuming app — their CSS rules silently overwrite each other.
+Published packages **must** use a `scopeId` to prevent class name collisions with consumer code or other libraries. Without one, `recipe('button', …)` produces `button` in both your library and the consuming app — their CSS rules silently overwrite each other.
 
 ```ts
 // src/styles.ts
 import { createTypeStyles } from 'typestyles';
 
-export const { styles, tokens } = createTypeStyles({
+export const { style, recipe, tokens } = createTypeStyles({
   scopeId: '@myorg/ui-library',
 });
 ```
@@ -160,7 +160,9 @@ export const semanticColors = tokens.create('semantic-color', {
 
 ```ts
 // src/tokens/spacing.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const spacing = tokens.create('space', {
   0: '0',
@@ -192,7 +194,9 @@ export const spacing = tokens.create('space', {
 
 ```ts
 // src/tokens/typography.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const fontSize = tokens.create('font-size', {
   xs: '0.75rem', // 12px
@@ -237,10 +241,12 @@ export { fontSize, fontWeight, lineHeight } from './typography';
 
 ```ts
 // src/components/Button/Button.styles.ts
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
 import { semanticColors, spacing, fontSize, fontWeight } from '../../tokens';
 
-export const button = styles.component('button', {
+export const button = recipe('button', {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -373,7 +379,9 @@ export type { ButtonProps } from './Button';
 
 ```ts
 // src/tokens/themes.ts
-import { tokens } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
+
+const { tokens } = createTypeStyles({ scopeId: 'app' });
 
 export const darkTheme = tokens.createTheme({
   name: 'dark',
@@ -584,9 +592,11 @@ function App() {
 ```tsx
 import { Button } from '@myorg/ui-library';
 import { semanticColors, spacing } from '@myorg/ui-library/tokens';
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-const customCard = styles.component('custom-card', {
+const { style, recipe } = createTypeStyles({ scopeId: 'app' });
+
+const customCard = recipe('custom-card', {
   base: {
     padding: spacing[6],
     border: `2px solid ${semanticColors.primary}`,

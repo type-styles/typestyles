@@ -67,7 +67,7 @@ function conditionFromFeatures(features: SupportsQueryFeatures): string {
  *
  * @example Single declaration
  * ```ts
- * styles.class('grid', {
+ * style('grid', {
  *   display: 'flex',
  *   ...styles.atRuleBlock(styles.supports({ display: 'grid' }), {
  *     display: 'grid',

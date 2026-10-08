@@ -1,6 +1,8 @@
-import { styles } from 'typestyles';
+import { createTypeStyles } from 'typestyles';
 
-styles.component('esbuild-hero', {
+const { recipe } = createTypeStyles({ scopeId: 'app' });
+
+recipe('esbuild-hero', {
   base: {
     padding: '24px',
     fontFamily: 'system-ui, sans-serif',

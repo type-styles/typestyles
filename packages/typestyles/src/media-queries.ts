@@ -2,13 +2,13 @@ import type { MediaQueryKey } from './media';
 
 /**
  * Ready-to-use `@media (...)` string constants for common CSS media features,
- * grouped by feature. Drop a leaf value directly into a `styles.class` /
- * `styles.override` style object as a key — for `styles.component`, nest it
+ * grouped by feature. Drop a leaf value directly into a `style` /
+ * `override` style object as a key — for `recipe`, nest it
  * inside `base` or a variant's style, not at the config's top level:
  *
  * @example
  * ```ts
- * const card = styles.component('card', {
+ * const card = recipe('card', {
  *   base: {
  *     transition: 'transform 200ms ease',
  *     [mediaQueries.prefersReducedMotion.reduce]: { transition: 'none' },
