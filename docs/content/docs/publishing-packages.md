@@ -95,9 +95,9 @@ risk of colliding with their own or other packages' tokens.
 ## ESLint enforcement
 
 The `@typestyles/eslint-plugin` includes a `no-default-scope-in-package` rule
-that flags direct use of the default `style()` and `recipe()`
-exports — the ones without a `scopeId`. Enable it in your package's ESLint
-config:
+that flags `createTypeStyles()` / `createStyles()` calls that omit `scopeId`
+(and legacy unscoped `styles.class` / `styles.component` usage). Enable it in
+your package's ESLint config:
 
 ```js
 // eslint.config.js
@@ -122,10 +122,9 @@ export default [
 ];
 ```
 
-The rule reports on `style(…)` and `recipe(…)` — the default
-exports. Calls on custom bindings (e.g. `myStyles.class(…)` from
-`createTypeStyles`) are fine, because the factory requires you to set a
-`scopeId`.
+Recommended package setup is fine: create a scoped factory once, then call
+`style` / `recipe` / `hash` from that instance (including via re-exports from a
+`runtime.ts`). The rule watches the factory call, not every `style(…)` site.
 
 ## Checklist
 

@@ -600,10 +600,10 @@ export type StylesWithUtilsApiLayered<U extends StyleUtils, L extends string> = 
     overrides: CSSPropertiesWithUtils<U>,
   ) => void;
   override: OverrideFn<L>;
-  class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<L>) => string;
+  class: (name: string, properties: CSSPropertiesWithUtils<U>, options?: LayerOption<L>) => string;
   hashClass: (
     properties: CSSPropertiesWithUtils<U>,
-    options: LayerOption<L> & { label?: string },
+    options?: LayerOption<L> & { label?: string },
   ) => string;
   component: LayeredComponentFnWithUtils<L>;
   compose: typeof compose;
@@ -1194,12 +1194,12 @@ function createStylesWithUtilsLayered<U extends StyleUtils>(
       has: hasNested,
       is: isNested,
       where: whereNested,
-      class: (name: string, properties: CSSPropertiesWithUtils<U>, options: LayerOption<string>) =>
-        createClass(classNaming, name, apply(properties), options.layer),
+      class: (name: string, properties: CSSPropertiesWithUtils<U>, options?: LayerOption<string>) =>
+        createClass(classNaming, name, apply(properties), options?.layer),
       hashClass: (
         properties: CSSPropertiesWithUtils<U>,
-        options: LayerOption<string> & { label?: string },
-      ) => createHashClass(classNaming, apply(properties), options.label, options.layer),
+        options?: LayerOption<string> & { label?: string },
+      ) => createHashClass(classNaming, apply(properties), options?.label, options?.layer),
       component: component as unknown as LayeredComponentFnWithUtils<string>,
       compose,
       scope: (

@@ -56,4 +56,25 @@ describe('createTypeStyles', () => {
     expect(css).toContain('width: 20px');
     expect(css).toContain('height: 20px');
   });
+
+  it('utils + layers uses layers.style default when options are omitted', () => {
+    const { style, hash } = createTypeStyles({
+      scopeId: 'utils-layers',
+      utils: {
+        size: (value: string | number) => ({ width: value, height: value }),
+      },
+      layers: {
+        order: ['tokens', 'components'],
+        token: 'tokens',
+        style: 'components',
+      },
+    });
+    expect(() => style('box', { size: 40 })).not.toThrow();
+    expect(() => hash({ size: 20 }, { label: 'sq' })).not.toThrow();
+    flushSync();
+    const css = getRegisteredCss();
+    expect(css).toMatch(/@layer components/);
+    expect(css).toContain('width: 40px');
+    expect(css).toContain('width: 20px');
+  });
 });
