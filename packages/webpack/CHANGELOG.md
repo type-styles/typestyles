@@ -1,5 +1,12 @@
 # @typestyles/webpack
 
+## 0.5.4
+
+### Patch Changes
+
+- Updated dependencies [[`35afeef`](https://github.com/type-styles/typestyles/commit/35afeef56754392e8583cb71382bd36f63507027)]:
+  - @typestyles/build-runner@0.6.0
+
 ## 0.5.3
 
 ### Patch Changes
